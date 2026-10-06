@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Adding and Subtracting Integers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Adding and Subtracting Integers: type a ± b, then step through it. Step 1 puts a dot at a on the number line,
+   Step 2 jumps one unit at a time (right for adding a positive or taking away a negative, left otherwise),
+   and the answer lands the dot. Integer chips in the board's top-right corner act out the same steps:
+   chips are added or taken away, zero pairs are added when needed and cancel out. Positive chips green,
+   negative red, matching the algebra tiles (Shawn). */
+:root { --pos: rgb(92,191,122); --neg: rgb(239,107,107); --chip-ink: #1b2733; }
+.entry { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.nums { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.num { display: inline-flex; align-items: center; gap: 6px; }
+.num input { width: 110px; height: 68px; font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; text-align: center; }
+.num .flip { font-family: var(--font-num); font-size: 1.1rem; min-height: 68px; padding: 6px 10px; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-num); font-size: 2.2rem; line-height: 1; width: 68px; min-height: 64px; padding: 0; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.steps { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; }
+.track { display: flex; gap: 6px; }
+.track span { font-weight: 700; font-size: 1rem; padding: 6px 12px; border-radius: 999px; border: 2px solid var(--grid-major); color: var(--muted); white-space: nowrap; }
+.track span.on { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.track span.done { border-color: var(--pt); color: var(--pt); }
+#next { font-size: 1.3rem; min-height: 60px; padding: 10px 22px; background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); }
+#next:hover { background: var(--sheet); color: var(--pt); }
+#next:disabled { background: var(--chip); color: var(--muted); border-color: var(--grid-major); cursor: not-allowed; }
+#again { font-size: 1.15rem; min-height: 60px; padding: 10px 18px; }
+.err { margin: 10px 0 0; color: var(--warn); font-weight: 700; font-size: 1.2rem; }
+.entry-card { margin-bottom: 16px; padding: 12px 16px; }
+
+.board { padding: 10px; }
+.expr { font-family: var(--font-num); font-weight: 700; font-size: 72px; fill: var(--ink); }
+.expr .p { fill: var(--green); } .expr .n { fill: var(--warn); } .expr .ans { fill: var(--orange); }
+.say { font-family: var(--font-body); font-weight: 700; font-size: 36px; fill: var(--ink); }
+.say.hint { fill: var(--muted); font-weight: 400; }
+.nl { stroke: var(--ink); stroke-width: 3.5; }
+.nl-arrow { fill: var(--ink); }
+.tick { stroke: var(--ink); stroke-width: 2.5; }
+.tick.zero { stroke-width: 5; }
+.tlbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; }
+.tlbl.zero { font-size: 32px; }
+.start { fill: var(--pt); stroke: var(--sheet); stroke-width: 5; }
+.land { fill: var(--orange); stroke: var(--sheet); stroke-width: 5; }
+.halo { fill: var(--pt); opacity: 0.22; }
+.halo.o { fill: var(--orange); }
+.tag rect { fill: var(--pt); } .tag.o rect { fill: var(--orange); }
+.tag text { fill: var(--sheet); font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; }
+.hop { fill: none; stroke: var(--orange); stroke-width: 5; stroke-linecap: round; }
+.hopn { fill: var(--orange); font-family: var(--font-num); font-weight: 700; font-size: 20px; text-anchor: middle; }
+.arrowhead { fill: var(--orange); }
+
+.box { fill: var(--paper); stroke: var(--grid-major); stroke-width: 2; }
+.boxt { font-family: var(--font-body); font-weight: 700; font-size: 20px; fill: var(--muted); letter-spacing: 0.06em; }
+.boxc { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--ink); }
+.zone { stroke: var(--grid); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.chip { transition: transform 0.5s ease, opacity 0.5s ease; }
+.chip circle { stroke: var(--chip-ink); stroke-width: 2; }
+.chip.p circle { fill: var(--pos); } .chip.n circle { fill: var(--neg); }
+.chip text { fill: var(--chip-ink); font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; dominant-baseline: central; }
+.chip .ring { fill: none; stroke: var(--orange); stroke-width: 4; opacity: 0; transition: opacity 0.3s; }
+.chip.mark .ring { opacity: 1; }
+.chip > g { transform-box: fill-box; transform-origin: center; }
+.chip.pop > g { animation: pop 0.4s ease-out; }
+@keyframes pop { from { transform: scale(0); } 70% { transform: scale(1.2); } to { transform: scale(1); } }
+.chip.gone { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .chip { transition: none; } .chip.pop > g { animation: none; } }
+@media (max-width: 600px) { .num input { width: 88px; height: 56px; font-size: 2rem; } .steps { margin-left: 0; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Adding and Subtracting Integers</h1></div>
+  </header>
+
+  <section class="card entry-card">
+    <div class="entry">
+      <div class="nums">
+        <span class="num"><input id="a" type="text" inputmode="numeric" autocomplete="off" aria-label="First integer"><button type="button" class="flip" data-for="a" aria-label="Change the sign of the first integer">+/−</button></span>
+        <div class="seg" id="op" role="group" aria-label="Operation">
+          <button type="button" data-op="+" aria-pressed="true" aria-label="Add">+</button>
+          <button type="button" data-op="-" aria-pressed="false" aria-label="Subtract">−</button>
+        </div>
+        <span class="num"><input id="b" type="text" inputmode="numeric" autocomplete="off" aria-label="Second integer"><button type="button" class="flip" data-for="b" aria-label="Change the sign of the second integer">+/−</button></span>
+      </div>
+      <div class="steps">
+        <div class="track" id="track"><span>Step 1</span><span>Step 2</span><span>Answer</span></div>
+        <button type="button" id="next" disabled>Next step ▶</button>
+        <button type="button" id="again">Start over</button>
+      </div>
+    </div>
+    <p class="err" id="err" hidden></p>
+  </section>
+
+  <div class="board"><svg id="svg" viewBox="0 0 1200 600" role="img" aria-label="Number line with jumps and integer chips"></svg></div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const W = 1200, X0 = 50, X1 = 1150, LINE_Y = 500;
+  // Chip box in the top-right corner: green chips in the top rows, red chips under them, ten to a row.
+  const BX = 780, BY = 14, BW = 404, BH = 300, CR = 16, CS = 37, CX0 = BX + 34, GY = BY + 72, RY = BY + 172;
+  const MIN = -10, MAX = 10;
+  let op = "+", step = 0, run = 0, layer = {};
+
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const txt = (s, attrs, parent) => { const t = el("text", attrs, parent); t.textContent = s; return t; };
+  const fmt = v => v < 0 ? "−" + -v : String(v);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const live = id => id === run;
+
+  function parse(s) {
+    s = s.trim().replace(/[−–]/g, "-").replace(/^\+/, "");
+    return /^-?\d+$/.test(s) ? +s : NaN;
+  }
+  function read() {
+    const sa = $("a").value.trim(), sb = $("b").value.trim();
+    if (!sa || !sb) return null;
+    const a = parse(sa), b = parse(sb);
+    if (!Number.isInteger(a) || !Number.isInteger(b)) return { err: "Type a whole number in each box, like 3 or −5." };
+    if (a < MIN || a > MAX || b < MIN || b > MAX) return { err: "Use numbers from −10 to 10." };
+    const move = op === "+" ? b : -b;
+    return { a, b, move, r: a + move };
+  }
+
+  // Number line from −10 to 10, stretched when the answer goes past it. Every number is labeled;
+  // when they get crowded every other label drops to a second row.
+  let lo = MIN, hi = MAX;
+  const X = v => X0 + (v - lo) * (X1 - X0) / (hi - lo);
+  function drawLine(p) {
+    lo = Math.min(MIN, p ? p.r : 0); hi = Math.max(MAX, p ? p.r : 0);
+    const g = layer.line, sp = (X1 - X0) / (hi - lo), stagger = sp < 52;
+    el("line", { class: "nl", x1: X0 - 34, y1: LINE_Y, x2: X1 + 34, y2: LINE_Y }, g);
+    el("path", { class: "nl-arrow", d: `M${X0 - 46},${LINE_Y} l16,-11 v22 z` }, g);
+    el("path", { class: "nl-arrow", d: `M${X1 + 46},${LINE_Y} l-16,-11 v22 z` }, g);
+    for (let v = lo; v <= hi; v++) {
+      const x = X(v), z = v === 0 ? " zero" : "";
+      el("line", { class: "tick" + z, x1: x, y1: LINE_Y - 14, x2: x, y2: LINE_Y + 14 }, g);
+      txt(fmt(v), { class: "tlbl" + z, x, y: LINE_Y + 48 + (stagger && (v - lo) % 2 ? 32 : 0) }, g);
+    }
+  }
+
+  function dot(v, cls, label) {
+    const x = X(v), g = el("g", {}, layer.dots);
+    el("circle", { class: "halo" + (cls === "land" ? " o" : ""), cx: x, cy: LINE_Y, r: 30 }, g);
+    el("circle", { class: cls, cx: x, cy: LINE_Y, r: 17 }, g);
+    return g;
+  }
+  function tag(v, s, orange, y) {
+    const x = X(v), w = 28 + s.length * 19, g = el("g", { class: "tag" + (orange ? " o" : "") }, layer.dots);
+    el("rect", { x: x - w / 2, y: y - 25, width: w, height: 46, rx: 10 }, g);
+    el("path", { d: `M${x - 9},${y + 20} L${x},${y + 32} L${x + 9},${y + 20} z`, style: `fill:var(--${orange ? "orange" : "pt"})` }, g);
+    txt(s, { x, y: y + 10 }, g);
+  }
+
+  // Big expression and the step's sentence, top-left of the board.
+  function header(p) {
+    const g = layer.head; g.replaceChildren();
+    const t = txt("", { class: "expr", x: 24, y: 84 }, g);
+    const span = (s, c) => { const e = el("tspan", c ? { class: c } : {}, t); e.textContent = s; };
+    if (!p || p.err) {
+      span("? " + (op === "+" ? "+" : "−") + " ?");
+      say(p && p.err ? "" : "Type two integers.", true);
+      return;
+    }
+    span(fmt(p.a), p.a > 0 ? "p" : p.a < 0 ? "n" : "");
+    span(op === "+" ? " + " : " − ");
+    span(p.b < 0 ? "(" + fmt(p.b) + ")" : fmt(p.b), p.b > 0 ? "p" : p.b < 0 ? "n" : "");
+    span(" = "); span(step >= 3 ? fmt(p.r) : "?", step >= 3 ? "ans" : "");
+  }
+  function say(s, hint) {
+    const g = layer.head;
+    g.querySelectorAll(".say").forEach(n => n.remove());
+    // Wrap at about 36 characters so the sentence stays left of the chip box.
+    const lines = [""];
+    for (const w of s.split(" ")) {
+      const cur = lines[lines.length - 1];
+      if (cur && (cur + " " + w).length > 36) lines.push(w); else lines[lines.length - 1] = cur ? cur + " " + w : w;
+    }
+    lines.forEach((l, i) => txt(l, { class: "say" + (hint ? " hint" : ""), x: 26, y: 160 + i * 46 }, g));
+  }
+  function sentence(p) {
+    const n = Math.abs(p.b);
+    if (p.b === 0) return op === "+" ? "Adding 0 does not move. Stay at " + fmt(p.a) + "." : "Taking away 0 does not move. Stay at " + fmt(p.a) + ".";
+    if (op === "+") return p.b > 0 ? `Adding ${n} is moving right ${n}.` : `Negative ${n} is moving left ${n}.`;
+    return p.b > 0 ? `Taking away ${n} is moving left ${n}.` : `Taking away a negative is getting larger! Move right ${n}.`;
+  }
+
+  // ---- Integer chips ----
+  let chips = [];
+  function chipBox() {
+    const g = layer.box;
+    el("rect", { class: "box", x: BX, y: BY, width: BW, height: BH, rx: 14 }, g);
+    txt("INTEGER CHIPS", { class: "boxt", x: BX + 18, y: BY + 32 }, g);
+    el("line", { class: "zone", x1: BX + 14, y1: (GY + CS + RY) / 2, x2: BX + BW - 14, y2: (GY + CS + RY) / 2 }, g);
+    layer.cap = txt("", { class: "boxc", x: BX + BW / 2, y: BY + BH - 20, "text-anchor": "middle" }, g);
+  }
+  const caption = s => { layer.cap.textContent = s; };
+  const spot = c => ({ x: CX0 + (c.slot % 10) * CS, y: (c.pos ? GY : RY) + Math.floor(c.slot / 10) * CS });
+  function place(c) { const s = spot(c); c.g.style.transform = `translate(${s.x}px, ${s.y}px)`; }
+  function addChip(pos, slot) {
+    const g = el("g", { class: "chip pop " + (pos ? "p" : "n") }, layer.chips);
+    const inner = el("g", {}, g);
+    el("circle", { class: "ring", r: CR + 5 }, inner);
+    el("circle", { r: CR }, inner);
+    txt(pos ? "+" : "−", { y: 1 }, inner);
+    const c = { pos, slot, g };
+    g.style.transition = "none"; place(c); g.getBoundingClientRect(); g.style.transition = "";
+    chips.push(c);
+    return c;
+  }
+  const count = pos => chips.filter(c => c.pos === pos).length;
+  const nextSlot = pos => chips.filter(c => c.pos === pos).reduce((m, c) => Math.max(m, c.slot + 1), 0);
+  function compact() {
+    for (const pos of [true, false]) chips.filter(c => c.pos === pos).sort((p, q) => p.slot - q.slot).forEach((c, i) => { c.slot = i; place(c); });
+  }
+  async function remove(list, id) {
+    list.forEach(c => c.g.classList.add("mark"));
+    await wait(600); if (!live(id)) return;
+    list.forEach(c => { c.g.classList.add("gone"); const s = spot(c); c.g.style.transform = `translate(${s.x}px, ${s.y - 40}px)`; });
+    await wait(550); if (!live(id)) return;
+    list.forEach(c => c.g.remove());
+    chips = chips.filter(c => !list.includes(c));
+    compact();
+  }
+  async function addMany(pos, n, id, startSlot) {
+    for (let i = 0; i < n; i++) {
+      addChip(pos, startSlot + i);
+      await wait(Math.min(180, 1600 / n)); if (!live(id)) return;
+    }
+  }
+  function showStart(a) {
+    layer.chips.replaceChildren(); chips = [];
+    for (let i = 0; i < Math.abs(a); i++) addChip(a > 0, i);
+    caption(a === 0 ? "No chips: 0" : `Start with ${fmt(a)}`);
+  }
+
+  async function chipStep(p, id) {
+    const n = Math.abs(p.b), pos = p.b > 0;
+    if (n === 0) { caption("Nothing changes"); return; }
+    if (op === "+") {
+      caption(`Add ${n} ${pos ? "positive" : "negative"}${n > 1 ? "s" : ""}`);
+      await addMany(pos, n, id, nextSlot(pos)); if (!live(id)) return;
+      const pairs = Math.min(count(true), count(false));
+      if (pairs) {
+        await wait(500); if (!live(id)) return;
+        caption(`${pairs} zero pair${pairs > 1 ? "s" : ""} cancel out`);
+        const take = c => chips.filter(k => k.pos === c).sort((x, y) => x.slot - y.slot).slice(0, pairs);
+        await remove([...take(true), ...take(false)], id);
+      }
+    } else {
+      const have = count(pos);
+      if (have < n) {
+        const need = n - have, at = Math.max(nextSlot(true), nextSlot(false));
+        caption(`Add ${need} zero pair${need > 1 ? "s" : ""}`);
+        for (let i = 0; i < need; i++) {
+          addChip(true, at + i); addChip(false, at + i);
+          await wait(Math.min(260, 2000 / need)); if (!live(id)) return;
+        }
+        await wait(700); if (!live(id)) return;
+      }
+      caption(`Take away ${n} ${pos ? "positive" : "negative"}${n > 1 ? "s" : ""}`);
+      const list = chips.filter(c => c.pos === pos).sort((x, y) => y.slot - x.slot).slice(0, n);
+      await remove(list, id);
+    }
+  }
+
+  // ---- Jumps: one arc per unit, drawn one after another ----
+  async function jumps(p, id) {
+    const n = Math.abs(p.move), dir = Math.sign(p.move);
+    const sp = (X1 - X0) / (hi - lo), h = Math.min(62, sp * 1.05), dur = Math.min(420, 5000 / Math.max(n, 1));
+    for (let i = 0; i < n; i++) {
+      const x1 = X(p.a + dir * i), x2 = X(p.a + dir * (i + 1)), y = LINE_Y - 20;
+      const path = el("path", { class: "hop", d: `M${x1},${y} Q${(x1 + x2) / 2},${y - 2 * h} ${x2},${y}` }, layer.hops);
+      const L = path.getTotalLength();
+      path.style.strokeDasharray = L; path.style.strokeDashoffset = L;
+      path.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: dur, easing: "ease-in-out", fill: "forwards" });
+      await wait(dur); if (!live(id)) return;
+      path.style.strokeDashoffset = 0;
+      // Arrowhead pointing down onto the landing tick.
+      const ang = Math.atan2(2 * h, Math.abs(x2 - x1) / 2) * dir;
+      el("path", { class: "arrowhead", d: "M0,0 L-14,-8 L-14,8 z", transform: `translate(${x2},${y}) rotate(${(dir > 0 ? 0 : 180) + ang * 180 / Math.PI})` }, layer.hops);
+      txt(String(i + 1), { class: "hopn", x: (x1 + x2) / 2, y: y - h - 8 }, layer.hops);
+    }
+  }
+
+  function track() {
+    [...$("track").children].forEach((s, i) => { s.className = i + 1 === step ? "on" : i + 1 < step ? "done" : ""; });
+  }
+
+  async function go(to) {
+    const id = ++run, p = read();
+    const bad = p && p.err;
+    $("err").hidden = !bad; if (bad) $("err").textContent = p.err;
+    const ok = p && !bad;
+    step = ok ? to : 0;
+    $("next").disabled = !ok || step >= 3;
+    track();
+    if (step <= 1) {
+      layer.line.replaceChildren(); layer.hops.replaceChildren(); layer.dots.replaceChildren();
+      drawLine(ok ? p : null);
+      header(p);
+      if (!ok) { layer.chips.replaceChildren(); chips = []; caption(""); return; }
+      dot(p.a, "start"); tag(p.a, "Start " + fmt(p.a), false, 360);
+      say(`Start at ${fmt(p.a)}.`);
+      showStart(p.a);
+      return;
+    }
+    if (step === 2) {
+      header(p); say(sentence(p));
+      $("next").disabled = true;
+      await Promise.all([jumps(p, id), chipStep(p, id)]);
+      if (!live(id)) return;
+      $("next").disabled = false;
+      return;
+    }
+    // Answer: land the dot.
+    header(p);
+    dot(p.r, "land");
+    const near = Math.abs(X(p.r) - X(p.a)) < 140 && p.r !== p.a;
+    tag(p.r, fmt(p.r), true, near ? 290 : 360);
+    say(`You land on ${fmt(p.r)}.`);
+    caption(`Chips left: ${fmt(p.r)}`);
+  }
+
+  // Build the layers once: header and number line under the hops and dots; chip box on top in its corner.
+  for (const k of ["head", "line", "hops", "dots", "box", "chips"]) layer[k] = el("g", {});
+  chipBox();
+
+  $("op").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    op = b.dataset.op;
+    [...$("op").children].forEach(x => x.setAttribute("aria-pressed", x === b));
+    go(1);
+  });
+  for (const f of document.querySelectorAll(".flip")) f.addEventListener("click", () => {
+    const i = $(f.dataset.for), v = parse(i.value);
+    i.value = Number.isInteger(v) ? fmt(-v).replace("−", "-") : (i.value.trim().startsWith("-") ? i.value.trim().slice(1) : "-" + i.value.trim());
+    go(1);
+  });
+  $("a").addEventListener("input", () => go(1));
+  $("b").addEventListener("input", () => go(1));
+  $("next").addEventListener("click", () => go(step + 1));
+  $("again").addEventListener("click", () => go(1));
+  go(1);
+})();
+</script>
+
+</body>
+</html>
