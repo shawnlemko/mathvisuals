@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Linear Contexts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Linear Contexts: a table of values on the left, plotted as ordered pairs on a first-quadrant grid.
+   Headings are editable (e.g. n and C) and name the axes. Each axis has its own scale and max inputs;
+   the grid grows past the largest value so points never sit on the edge. */
+.wrap { max-width: 1400px; }
+.lc { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .lc { grid-template-columns: 1fr; } }
+table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num); }
+.tv th, .tv td { border: 2px solid var(--grid-major); padding: 0; }
+.tv th { background: var(--chip); }
+.tv input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--ink); text-align: center; padding: 8px 6px; }
+.tv th input { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 2rem; color: var(--pt); }
+.tv td input { font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; }
+.tv input:focus-visible { outline: 3px solid var(--pt); outline-offset: -3px; }
+.tv input.bad { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+/* The plot keeps its shape and fits the screen height, so the whole grid shows on a projector. */
+.plot { position: relative; width: min(100%, calc((100vh - 170px) * 860 / 760)); min-width: min(100%, 480px); margin: 0 auto; }
+.scale { position: absolute; display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--muted); font-size: 1.05rem; white-space: nowrap; }
+.scale label { display: flex; align-items: center; gap: 6px; } .scale label + label { margin-left: 10px; }
+.scale input::placeholder { color: var(--muted); opacity: 0.7; }
+#syBox { left: 4px; top: 2px; } #sxBox { right: 4px; bottom: 2px; }
+.scale input { width: 4em; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; text-align: center; color: var(--ink); background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 6px; padding: 2px 4px; }
+.g-line { stroke: var(--grid); stroke-width: 1; }
+.g-axis { stroke: var(--ink); stroke-width: 3; }
+.g-tick { fill: var(--ink); font-family: var(--font-num); font-size: 22px; font-weight: 700; }
+.g-name { fill: var(--pt); font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
+.g-pt { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+.fit { margin-top: 16px; text-align: center; }
+.fit button { width: 100%; font-family: var(--font-display); font-size: 1.4rem; padding: 12px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.fit button:hover { background: var(--sheet); color: var(--pt); }
+.fit p { margin: 12px 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; color: var(--warn); }
+.g-fit { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.g-pt.hit { fill: var(--green); transform-box: fill-box; transform-origin: center; }
+.g-pair.hit { fill: var(--green); }
+.g-pair { fill: var(--pt); font-family: var(--font-num); font-size: 22px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Linear Contexts</h1></div>
+  </header>
+
+  <div class="lc">
+    <div class="card">
+      <table class="tv">
+        <thead><tr>
+          <th><input id="hx" value="x" maxlength="12" aria-label="First column heading (horizontal axis)"></th>
+          <th><input id="hy" value="y" maxlength="12" aria-label="Second column heading (vertical axis)"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="fit">
+        <button type="button" id="fitBtn" aria-pressed="false">Draw line</button>
+        <p id="fitNote" aria-live="polite" hidden>Not linear</p>
+      </div>
+    </div>
+    <div class="board" id="board">
+      <div class="plot">
+        <svg id="svg" role="img" aria-label="First-quadrant grid showing the table values as ordered pairs"></svg>
+        <div class="scale" id="sxBox"><label>scale <input id="sx" type="number" min="0" step="any" value="1" aria-label="Horizontal axis scale"></label><label>max <input id="mx" type="number" min="0" step="any" aria-label="Horizontal axis maximum (blank fits the values)"></label></div>
+        <div class="scale" id="syBox"><label>scale <input id="sy" type="number" min="0" step="any" value="1" aria-label="Vertical axis scale"></label><label>max <input id="my" type="number" min="0" step="any" aria-label="Vertical axis maximum (blank fits the values)"></label></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  };
+  // Plain decimals without float noise (0.1 + 0.2 shows as 0.3).
+  const num = v => String(+v.toFixed(6));
+
+  // Plot area inside the SVG viewBox.
+  const W = 860, H = 760, L = 110, R = 40, T = 70, B = 120;
+  const PW = W - L - R, PH = H - T - B;
+  const svg = $("svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  // Table: always at least MIN rows, and one blank row after the last filled one.
+  const MIN = 8, rows = $("rows");
+  function addRow() {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input inputmode="decimal" autocomplete="off"></td><td><input inputmode="decimal" autocomplete="off"></td>`;
+    rows.appendChild(tr);
+  }
+  for (let i = 0; i < MIN; i++) addRow();
+  const filled = tr => [...tr.querySelectorAll("input")].some(i => i.value.trim() !== "");
+  function tidyRows() {
+    if (filled(rows.lastElementChild)) addRow();
+  }
+
+  // A cell is a number, blank, or bad (not a number, or negative: this grid is the first quadrant).
+  function parse(input) {
+    const s = input.value.trim().replace("−", "-");
+    if (s === "") { input.classList.remove("bad"); return null; }
+    const v = Number(s);
+    const ok = Number.isFinite(v) && v >= 0;
+    input.classList.toggle("bad", !ok);
+    return ok ? v : undefined;
+  }
+
+  // Grid extent per axis: at least 10 squares, and always one square of room past the largest value.
+  const squaresFor = (maxV, step) => Math.max(10, Math.ceil(maxV / step + 1 - 1e-9));
+  // Label every k-th line, k from 1, 2, 5, 10, ... so labels never crowd each other.
+  const kFor = (pxPerSquare, need) => { for (const k of [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]) if (pxPerSquare * k >= need) return k; return 1000; };
+
+  function scaleOf(id) {
+    const v = Number($(id).value);
+    const ok = Number.isFinite(v) && v > 0;
+    $(id).classList.toggle("bad", !ok);
+    return ok ? v : 1;
+  }
+
+  // A typed max sets where the axis ends (blank fits the values). Points beyond it still grow the grid so none disappear.
+  function squaresWith(id, maxV, step) {
+    const auto = squaresFor(maxV, step), v = Number($(id).value), blank = $(id).value.trim() === "";
+    const ok = blank || (Number.isFinite(v) && v > 0);
+    $(id).classList.toggle("bad", !ok);
+    $(id).placeholder = num(auto * step);
+    if (blank || !ok) return auto;
+    return Math.max(1, Math.ceil(v / step - 1e-9), Math.ceil(maxV / step + 1 - 1e-9) * (maxV > v ? 1 : 0));
+  }
+
+  function render() {
+    tidyRows();
+    const pts = [];
+    for (const tr of rows.children) {
+      const [a, b] = tr.querySelectorAll("input");
+      const x = parse(a), y = parse(b);
+      if (x != null && y != null) pts.push({ x, y });
+    }
+    const sx = scaleOf("sx"), sy = scaleOf("sy");
+    const maxX = Math.max(0, ...pts.map(p => p.x)), maxY = Math.max(0, ...pts.map(p => p.y));
+    const nx = Math.min(400, squaresWith("mx", maxX, sx)), ny = Math.min(400, squaresWith("my", maxY, sy));
+    const cw = PW / nx, ch = PH / ny;
+    const X = v => L + v / sx * cw, Y = v => T + PH - v / sy * ch;
+
+    svg.textContent = "";
+    const g = el("g", {}, svg);
+    const lx = Math.max(1, Math.ceil(4 / cw)), ly = Math.max(1, Math.ceil(4 / ch));
+    for (let i = lx; i <= nx; i += lx) el("line", { x1: L + i * cw, y1: T, x2: L + i * cw, y2: T + PH, class: "g-line" }, g);
+    for (let j = ly; j <= ny; j += ly) el("line", { x1: L, y1: T + PH - j * ch, x2: L + PW, y2: T + PH - j * ch, class: "g-line" }, g);
+    el("line", { x1: L, y1: T + PH, x2: L + PW + 14, y2: T + PH, class: "g-axis" }, g);
+    el("line", { x1: L, y1: T + PH, x2: L, y2: T - 14, class: "g-axis" }, g);
+
+    // Tick labels: x labels need room for their width, y labels for their height.
+    const wide = Math.max(num(nx * sx).length, 1) * 14 + 12;
+    const kx = kFor(cw, wide), ky = kFor(ch, 26);
+    el("text", { x: L - 10, y: T + PH + 30, class: "g-tick", "text-anchor": "end" }, g, "0");
+    for (let i = kx; i <= nx; i += kx) el("text", { x: L + i * cw, y: T + PH + 32, class: "g-tick", "text-anchor": "middle" }, g, num(i * sx));
+    for (let j = ky; j <= ny; j += ky) el("text", { x: L - 12, y: T + PH - j * ch + 8, class: "g-tick", "text-anchor": "end" }, g, num(j * sy));
+
+    // Axis names come from the table headings.
+    const hx = $("hx").value.trim() || "x", hy = $("hy").value.trim() || "y";
+    el("text", { x: L + PW / 2, y: H - 30, class: "g-name", "text-anchor": "middle" }, g, hx);
+    el("text", { x: 34, y: T + PH / 2, class: "g-name", "text-anchor": "middle", transform: `rotate(-90 34 ${T + PH / 2})` }, g, hy);
+
+    // Line of best fit (least squares). "Not linear" when it misses any point.
+    // Drawing order: points, then the line over them, then the ordered-pair labels on top.
+    let fit = null, missed = false;
+    const onLine = new Set();
+    if (showFit && pts.length >= 2) {
+      const n = pts.length, mx = pts.reduce((a, p) => a + p.x, 0) / n, my = pts.reduce((a, p) => a + p.y, 0) / n;
+      const sxx = pts.reduce((a, p) => a + (p.x - mx) ** 2, 0), sxy = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0);
+      if (sxx < 1e-9 * (1 + maxX)) { // every x is the same: a vertical line through all of them
+        fit = { x1: X(mx), y1: T + PH, x2: X(mx), y2: T };
+        pts.forEach(p => onLine.add(p));
+      } else {
+        const m = sxy / sxx, c = my - m * mx, x2 = nx * sx;
+        pts.forEach(p => { if (Math.abs(p.y - (m * p.x + c)) <= 1e-6 * (1 + Math.abs(p.y))) onLine.add(p); });
+        missed = onLine.size < n;
+        fit = { x1: X(0), y1: Y(c), x2: X(x2), y2: Y(m * x2 + c) };
+      }
+    }
+    $("fitNote").hidden = !(showFit && missed);
+
+    const dots = pts.map(p => el("circle", { cx: X(p.x), cy: Y(p.y), r: onLine.has(p) ? 13 : 10, class: onLine.has(p) ? "g-pt hit" : "g-pt" }, g));
+    let line = null;
+    if (fit) {
+      const clip = el("clipPath", { id: "plotClip" }, el("defs", {}, g));
+      el("rect", { x: L, y: T, width: PW, height: PH }, clip);
+      line = el("line", { ...fit, class: "g-fit", "clip-path": "url(#plotClip)", pathLength: 1 }, g);
+    }
+    // Labels flip left or below near the right and top edges.
+    for (const p of pts) {
+      const px = X(p.x), py = Y(p.y);
+      const left = px > L + PW - 150, below = py < T + 40;
+      el("text", { x: px + (left ? -16 : 16), y: py + (below ? 34 : -14), class: onLine.has(p) ? "g-pair hit" : "g-pair", "text-anchor": left ? "end" : "start" }, g, `(${num(p.x)}, ${num(p.y)})`);
+    }
+
+    // On a button press, the line sweeps across and each point it hits pops into green as the line reaches it.
+    if (animate && line && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const DUR = 1400, css = getComputedStyle(svg), blue = css.getPropertyValue("--pt").trim(), green = css.getPropertyValue("--green").trim();
+      line.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: DUR, easing: "ease-in-out", fill: "backwards" });
+      line.style.strokeDasharray = "1";
+      const len = Math.hypot(fit.x2 - fit.x1, fit.y2 - fit.y1) || 1;
+      pts.forEach((p, i) => {
+        if (!onLine.has(p)) return;
+        const along = Math.hypot(X(p.x) - fit.x1, Y(p.y) - fit.y1) / len;
+        const delay = Math.min(1, along) * DUR * 0.9;
+        dots[i].animate([
+          { fill: blue, transform: "scale(0.77)" },
+          { fill: green, transform: "scale(1.9)", offset: 0.35 },
+          { fill: green, transform: "scale(0.9)", offset: 0.7 },
+          { fill: green, transform: "scale(1)" }
+        ], { duration: 700, delay, easing: "ease-out", fill: "backwards" });
+      });
+    }
+  }
+
+  // Enter moves down a column, like a spreadsheet.
+  rows.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+    e.preventDefault();
+    const td = e.target.parentElement, col = [...td.parentElement.children].indexOf(td);
+    tidyRows();
+    const next = td.parentElement.nextElementSibling;
+    if (next) next.children[col].querySelector("input").focus();
+  });
+  let showFit = false;
+  $("fitBtn").addEventListener("click", () => {
+    showFit = !showFit;
+    $("fitBtn").textContent = showFit ? "Hide line" : "Draw line";
+    $("fitBtn").setAttribute("aria-pressed", String(showFit));
+    animate = showFit; render(); animate = false;
+  });
+  let animate = false;
+  document.addEventListener("input", render);
+  render();
+})();
+</script>
+
+</body>
+</html>

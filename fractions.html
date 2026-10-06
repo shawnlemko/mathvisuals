@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fraction Size Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Fraction Size Match: each mixed number is drawn as whole squares plus one square cut into
+   denominator-many columns. Size Match adds blue rows so both fractions use the same piece size. */
+h1 .a { color: var(--green); } h1 .b { color: var(--orange); }
+.entry { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; }
+.mixed { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; border: 2px solid currentColor; }
+.mixed.a { color: var(--green); } .mixed.b { color: var(--orange); }
+.mixed .stack { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.mixed .bar { width: 100%; height: 3px; background: currentColor; border-radius: 2px; }
+.mixed input { font-family: var(--font-num); font-weight: 700; color: var(--ink); background: var(--paper); border: 1px solid var(--grid-major); border-radius: 6px; text-align: center; -moz-appearance: textfield; }
+.mixed input::-webkit-inner-spin-button, .mixed input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.mixed .whole { width: 58px; height: 64px; font-size: 1.9rem; }
+.mixed .stack input { width: 52px; height: 38px; font-size: 1.3rem; }
+.mixed .tag { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.08em; text-transform: uppercase; }
+.ops { display: inline-flex; border: 1px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.ops button { border: 0; border-radius: 0; font-family: var(--font-num); font-size: 1.6rem; width: 52px; height: 52px; padding: 0; background: var(--sheet); }
+.ops button + button { border-left: 1px solid var(--grid-major); }
+.ops button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; }
+button.match { background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; padding: 12px 22px; min-height: 52px; }
+button.match:hover { background: var(--sheet); color: var(--pt); }
+button.match[aria-pressed="true"]::before { content: "✓ "; }
+.err { margin: 10px 0 0; color: var(--warn); font-weight: 700; }
+.entry-card { margin-bottom: 20px; }
+.presets { margin-top: 12px; }
+.presets .label { margin: 0; align-self: center; }
+
+.board { padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+.row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; }
+.row + .row { border-top: 1px dashed var(--grid-major); padding-top: 18px; }
+.row .name { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; text-align: center; }
+.row.a .name { color: var(--green); } .row.b .name { color: var(--orange); }
+.op-sign { font-family: var(--font-num); font-size: 2rem; font-weight: 700; text-align: center; margin: -6px 0 -10px; color: var(--muted); }
+.squares { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.sq { display: flex; flex-direction: column; align-items: center; gap: 4px; width: clamp(80px, 12vw, 116px); }
+.sq svg { display: block; width: 100%; height: auto; overflow: visible; }
+.sq .cap { font-size: 0.85rem; color: var(--muted); text-align: center; line-height: 1.25; min-height: 2.5em; }
+.sq .cap b { color: var(--pt); }
+.cell { stroke: none; }
+.row.a .cell.on { fill: var(--green); fill-opacity: 0.38; } .row.b .cell.on { fill: var(--orange); fill-opacity: 0.38; }
+.cell.off { fill: var(--sheet); }
+.cut { stroke: var(--ink); stroke-width: 2.2; }
+.newcut { stroke: var(--pt); stroke-width: 2.6; stroke-dasharray: 100; stroke-dashoffset: 0; animation: draw 0.6s ease-out both; }
+@keyframes draw { from { stroke-dashoffset: 100; } }
+@media (prefers-reduced-motion: reduce) { .newcut { animation: none; } }
+.edge { fill: none; stroke: var(--ink); stroke-width: 3; }
+
+/* Readout */
+.mx { display: inline-flex; align-items: center; gap: 6px; }
+.mx .w { font-size: 1.5rem; }
+.times { color: var(--pt); font-weight: 700; }
+.steps { display: grid; gap: 14px; }
+.step { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.2rem; }
+.step .who { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; width: 100%; }
+.step.a .who { color: var(--green); } .step.b .who { color: var(--orange); }
+.why { margin: 14px 0 0; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.why p { margin: 0; }
+.why p + p { margin-top: 8px; }
+.result { margin-top: 14px; }
+.answer-btn { margin-top: 12px; }
+
+/* Projector sizes: numbers must be readable from the back of a classroom. */
+.mixed .whole::placeholder { color: var(--grid-major); }
+.mixed .whole { width: 76px; height: 88px; font-size: 2.6rem; }
+.mixed .stack input { width: 68px; height: 52px; font-size: 1.9rem; }
+.ops button { width: 64px; height: 64px; font-size: 2.2rem; }
+.presets button { font-size: 1.25rem; padding: 8px 14px; }
+.row { grid-template-columns: 104px minmax(0, 1fr); }
+.row .name { font-size: 2.3rem; }
+.op-sign { font-size: 2.8rem; }
+.sq { width: clamp(96px, 14vw, 150px); }
+.sq .cap { font-size: 1.15rem; color: var(--ink); }
+.step { font-size: 1.9rem; gap: 12px; }
+.step .who { font-size: 1rem; }
+.mx .w { font-size: 1.35em; }
+.result .eq { font-size: 1.9rem; }
+.answer { font-size: 1em; }
+.answer-btn { font-size: 1.1rem; }
+.why, .result .hint { font-size: 1.1rem; }
+/* Math panel (bottom right): Shawn asked for bigger text here. */
+.panel .label { font-size: 1rem; }
+.step { font-size: 2.7rem; gap: 14px; }
+.step .who { font-size: 1.35rem; }
+.steps { gap: 22px; }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; } .panel > .card { flex: 1; } }
+/* The math panel's dashed line sits level with the board's divider; align() sizes both halves. */
+.steps { gap: 0; }
+.step { align-content: center; }
+.step.b { padding-top: 18px; }
+.split { border-top: 1px dashed var(--grid-major); }
+@media (max-width: 860px) { .step.a { padding-bottom: 14px; } .step.b { padding-top: 14px; } }
+@media (max-width: 600px) { .step, .result .eq { font-size: 2rem; } .row { grid-template-columns: 80px minmax(0, 1fr); } .row .name { font-size: 1.8rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Fraction Size Match</h1></div>
+    <p>Type two fractions. Each one is drawn as squares. Press <b>Size Match</b> to cut both into pieces of the same size.</p>
+  </header>
+
+  <section class="card entry-card">
+    <div class="entry">
+      <div class="mixed a" role="group" aria-label="First mixed number">
+        <span class="tag" aria-hidden="true">First</span>
+        <input class="whole" id="aw" placeholder="0" type="number" inputmode="numeric" min="0" max="5" aria-label="First whole number">
+        <span class="stack">
+          <input id="an" type="number" inputmode="numeric" min="0" max="11" aria-label="First numerator">
+          <span class="bar"></span>
+          <input id="ad" type="number" inputmode="numeric" min="1" max="12" aria-label="First denominator">
+        </span>
+      </div>
+      <div class="ops" id="ops" role="group" aria-label="Operation">
+        <button type="button" data-op="+" aria-label="Add">+</button>
+        <button type="button" data-op="-" aria-label="Subtract">−</button>
+      </div>
+      <div class="mixed b" role="group" aria-label="Second mixed number">
+        <span class="tag" aria-hidden="true">Second</span>
+        <input class="whole" id="bw" placeholder="0" type="number" inputmode="numeric" min="0" max="5" aria-label="Second whole number">
+        <span class="stack">
+          <input id="bn" type="number" inputmode="numeric" min="0" max="11" aria-label="Second numerator">
+          <span class="bar"></span>
+          <input id="bd" type="number" inputmode="numeric" min="1" max="12" aria-label="Second denominator">
+        </span>
+      </div>
+      <div class="actions">
+        <button type="button" class="match" id="match" aria-pressed="false">Size Match</button>
+        <button type="button" id="reset">Start over</button>
+      </div>
+    </div>
+    <p class="err" id="err" hidden></p>
+  </section>
+
+  <div class="main">
+    <div class="board" id="board" aria-live="polite"></div>
+
+    <div class="panel">
+      <section class="card" aria-live="polite">
+        <p class="label">The math</p>
+        <div class="steps" id="steps"></div>
+        <div class="why" id="why"></div>
+        <div class="result" id="result"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  const lcm = (a, b) => a / gcd(a, b) * b;
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const LIMITS = { w: [0, 5], d: [1, 12] };
+  const NAMES = [, "wholes", "halves", "thirds", "fourths", "fifths", "sixths", "sevenths", "eighths", "ninths", "tenths",
+    "elevenths", "twelfths", "thirteenths", "fourteenths", "fifteenths", "sixteenths", "seventeenths", "eighteenths", "nineteenths", "twentieths"];
+  const ONE = [, "whole", "half", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+    "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"];
+  const pieces = d => NAMES[d] || `1/${d} pieces`;
+
+  // Shawn asked to remove adding and subtracting: the page shows two fractions and Size Match only.
+  // Turn these back on to bring back the + / − picker or the combined problem with Show answer.
+  const SHOW_OP = false, SHOW_ANSWER = false;
+  let op = "+", matched = false;
+
+  // Reads the three boxes for one mixed number. Returns {w, n, d} or an error message.
+  function read(p, label) {
+    const raw = ["w", "n", "d"].map(k => $(p + k).value.trim());
+    const [w, n, d] = raw.map(v => (v === "" ? 0 : Number(v)));
+    if (raw[2] === "") return `Type a denominator for the ${label} fraction.`;
+    if (![w, n, d].every(Number.isInteger) || w < 0 || n < 0) return `Use whole numbers 0 or more in the ${label} fraction.`;
+    if (d < LIMITS.d[0] || d > LIMITS.d[1]) return `Keep the ${label} denominator between 1 and 12.`;
+    if (w > LIMITS.w[1]) return `Keep the ${label} whole number at 5 or less.`;
+    if (n >= d) return `In a mixed number the numerator is smaller than the denominator. Try ${w + Math.floor(n / d)} and ${n % d}/${d} for the ${label} fraction.`;
+    return { w, n, d };
+  }
+
+  // One square: d columns, n of them shaded; k > 1 adds k rows of blue cuts (the size match).
+  // horiz flips it on the diagonal: d rows shaded from the top, and the blue cuts become columns.
+  function square(d, n, k, cap, isNew, horiz) {
+    const box = document.createElement("div");
+    box.className = "sq";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("aria-hidden", "true");
+    const g = document.createElementNS(NS, "g");
+    if (horiz) g.setAttribute("transform", "matrix(0 1 1 0 0 0)");
+    svg.appendChild(g);
+    const add = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); g.appendChild(e); return e; };
+    add("rect", { x: 0, y: 0, width: 100, height: 100, class: "cell off" });
+    if (n > 0) add("rect", { x: 0, y: 0, width: 100 * n / d, height: 100, class: "cell on" });
+    for (let i = 1; i < d; i++) add("line", { x1: 100 * i / d, y1: 0, x2: 100 * i / d, y2: 100, class: "cut" });
+    for (let j = 1; j < k; j++) {
+      const l = add("line", { x1: 0, y1: 100 * j / k, x2: 100, y2: 100 * j / k, class: "newcut", pathLength: 100 });
+      if (!isNew) l.style.animation = "none";
+      else l.style.animationDelay = (j - 1) * 0.08 + "s";
+    }
+    add("rect", { x: 0, y: 0, width: 100, height: 100, class: "edge" });
+    box.appendChild(svg);
+    const c = document.createElement("div");
+    c.className = "cap";
+    c.innerHTML = cap;
+    box.appendChild(c);
+    return box;
+  }
+
+  const mixedHTML = (w, n, d, opts = {}) => {
+    const parts = [];
+    if (w || (!n && !opts.keepFrac)) parts.push(`<span class="w">${fmt(w)}</span>`);
+    if (n || opts.keepFrac) parts.push(`<span class="frac"><span>${n}</span><span>${d}</span></span>`);
+    return `<span class="mx">${parts.join("")}</span>`;
+  };
+  const plain = (w, n, d) => (w && n ? `${w} ${n}/${d}` : n ? `${n}/${d}` : `${w}`);
+
+  function render(animate = false) {
+    const A = read("a", "first"), B = read("b", "second");
+    const err = typeof A === "string" ? A : typeof B === "string" ? B : "";
+    $("err").hidden = !err;
+    $("err").textContent = err;
+    document.querySelectorAll(".ops button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.op === op)));
+    $("match").setAttribute("aria-pressed", String(matched));
+    if (err) return;
+
+    const L = lcm(A.d, B.d);
+    const kA = L / A.d, kB = L / B.d;
+    const sign = op === "+" ? "+" : "−";
+
+    // Board: whole squares stay whole; the fraction square gets the blue rows.
+    const board = $("board");
+    board.innerHTML = "";
+    [[A, kA, "a"], [B, kB, "b"]].forEach(([F, k, cls], i) => {
+      if (i === 1 && SHOW_OP) {
+        const s = document.createElement("div");
+        s.className = "op-sign"; s.textContent = sign; s.setAttribute("aria-hidden", "true");
+        board.appendChild(s);
+      }
+      const row = document.createElement("div");
+      row.className = "row " + cls;
+      row.innerHTML = `<div class="name">${mixedHTML(F.w, F.n, F.d)}</div><div class="squares"></div>`;
+      row.setAttribute("aria-label", `${i ? "Second" : "First"} number ${plain(F.w, F.n, F.d)}`);
+      const sq = row.querySelector(".squares");
+      for (let i = 0; i < F.w; i++) sq.appendChild(square(1, 1, 1, "1 whole"));
+      if (F.n > 0 || F.w === 0) {
+        const cap = matched && k > 1
+          ? `${F.n}/${F.d} = <b>${F.n * k}/${L}</b><br>each ${ONE[F.d]} cut into <b>${k}</b>`
+          : `${F.n}/${F.d}<br>${F.d === 1 ? "" : pieces(F.d)}`;
+        sq.appendChild(square(F.d, F.n, matched ? k : 1, cap, animate, i === 1));
+      }
+      board.appendChild(row);
+    });
+
+    // Readout: each fraction, then the combined problem.
+    const step = (F, k, cls, who) => {
+      let h = `<div class="step ${cls}"><span class="who">${who}</span>${mixedHTML(F.w, F.n, F.d, { keepFrac: true })}`;
+      if (matched) {
+        h += `<span>=</span><span class="mx">${F.w ? `<span class="w">${F.w}</span>` : ""}<span class="frac">` +
+          `<span>${F.n} <span class="times">× ${k}</span></span><span>${F.d} <span class="times">× ${k}</span></span></span></span>` +
+          `<span>=</span>${mixedHTML(F.w, F.n * k, L, { keepFrac: true })}`;
+      }
+      return h + "</div>";
+    };
+    $("steps").innerHTML = step(A, kA, "a", "First") + `<div class="split" aria-hidden="true"></div>` + step(B, kB, "b", "Second");
+    requestAnimationFrame(align);
+
+    // Shawn asked for no explanation text under the First and Second steps; the why block stays empty.
+    const why = $("why"), res = $("result");
+    why.hidden = true;
+    if (!matched) {
+      why.innerHTML = A.d === B.d
+        ? `<p>Both fractions are already in ${pieces(A.d)}, so the pieces are the same size.</p><p>Press <b>Size Match</b> to see the common size.</p>`
+        : `<p>The pieces are different sizes: ${pieces(A.d)} and ${pieces(B.d)}. ${SHOW_OP ? `You can't ${op === "+" ? "add" : "subtract"} pieces of different sizes.` : "To compare or combine them, the pieces need to be the same size."}</p><p>Press <b>Size Match</b> to cut both into the same size.</p>`;
+      res.innerHTML = "";
+      return;
+    }
+    why.innerHTML =
+      `<p><b class="c-pt">${L}</b> is the smallest number that both ${A.d} and ${B.d} go into, so both fractions can be cut into ${pieces(L)}.</p>` +
+      `<p>Multiplying the top and bottom by the same number is like multiplying by 1: the pieces get smaller, but the amount shaded stays the same.</p>`;
+
+    if (!SHOW_ANSWER) { res.innerHTML = ""; return; }
+    const nA = A.n * kA, nB = B.n * kB;
+    const total = (A.w * L + nA) + (op === "+" ? 1 : -1) * (B.w * L + nB);
+    const regroup = op === "-" && nA < nB && A.w > 0
+      ? `<p class="hint">${nA}/${L} is less than ${nB}/${L}, so trade 1 whole for ${L}/${L} first: ${A.w} ${nA}/${L} = ${A.w - 1} ${nA + L}/${L}.</p>` : "";
+    res.innerHTML =
+      `<p class="label">Now the pieces match</p>` +
+      `<div class="eq">${mixedHTML(A.w, nA, L, { keepFrac: true })}<span>${sign}</span>${mixedHTML(B.w, nB, L, { keepFrac: true })}<span>=</span>` +
+      `<span id="ans"><button type="button" class="answer-btn" id="showAns">Show answer</button></span></div>` + regroup;
+    $("showAns").addEventListener("click", () => { $("ans").innerHTML = answerHTML(total, L); });
+  }
+
+  // Lines up First/Second in the math panel with their rows of squares, so both dashed dividers are level.
+  // Whichever side is shorter is stretched. Skipped when the board and panel stack on narrow screens.
+  function align() {
+    const rows = $("board").querySelectorAll(".row");
+    const sa = $("steps").querySelector(".step.a"), sb = $("steps").querySelector(".step.b");
+    [...rows, sa, sb].forEach(e => e && (e.style.minHeight = ""));
+    if (rows.length < 2 || !sa || !sb || matchMedia("(max-width: 860px)").matches) return;
+    const box = e => e.getBoundingClientRect();
+    const gap = box(rows[1]).top - box(rows[0]).bottom;
+    const line = Math.max(box(rows[1]).top, box(sa).bottom);
+    rows[0].style.minHeight = line - gap - box(rows[0]).top + "px";
+    sa.style.minHeight = line - box(sa).top + "px";
+    const end = Math.max(box(rows[1]).bottom, box(sb).bottom);
+    rows[1].style.minHeight = end - box(rows[1]).top + "px";
+    sb.style.minHeight = end - box(sb).top + "px";
+  }
+  new ResizeObserver(() => requestAnimationFrame(align)).observe(document.querySelector(".main"));
+  if (document.fonts) document.fonts.ready.then(align);
+
+  // The answer as a mixed number in lowest terms; shows the improper count when it helps.
+  function answerHTML(total, L) {
+    const neg = total < 0, t = Math.abs(total);
+    const w = Math.floor(t / L), r = t % L, g = gcd(r, L) || 1;
+    const sgn = neg ? `<span class="w">−</span>` : "";
+    let h = `<span class="answer">${sgn}${mixedHTML(w, r / g, L / g)}</span>`;
+    if (g > 1 && r) h = `<span class="mx">${neg ? "−" : ""}${mixedHTML(w, r, L)}</span><span>=</span>` + h;
+    return h;
+  }
+
+  function setInputs(v) {
+    // A whole part of 0 leaves the box empty, so proper fractions read as proper fractions.
+    ["aw", "an", "ad"].forEach((id, i) => ($(id).value = i === 0 && !v[i] ? "" : v[i]));
+    op = v[3];
+    ["bw", "bn", "bd"].forEach((id, i) => ($(id).value = i === 0 && !v[4 + i] ? "" : v[4 + i]));
+    matched = false;
+    render();
+  }
+
+  ["aw", "an", "ad", "bw", "bn", "bd"].forEach(id => $(id).addEventListener("input", () => { matched = false; render(); }));
+  document.querySelectorAll(".ops button").forEach(b => b.addEventListener("click", () => { op = b.dataset.op; render(); }));
+  $("match").addEventListener("click", () => { matched = !matched; render(matched); });
+  $("reset").addEventListener("click", () => setInputs([0, 1, 2, "+", 0, 1, 3]));
+  $("ops").hidden = !SHOW_OP;
+
+  setInputs([0, 1, 2, "+", 0, 1, 3]);
+})();
+</script>
+
+</body>
+</html>

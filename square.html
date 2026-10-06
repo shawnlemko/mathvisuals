@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Completing the Square</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Completing the Square: type ax² + bx + c (a up to 4) and the tiles for it land scattered on the workspace.
+   Drag them into the outlined square corner (the area model) to build a square. Tile mechanics
+   (tray, snapping, box select, rotate, duplicate, delete, trash) are copied from Algebra Tile
+   Builder. Shawn's colour rule: every positive tile green, every negative tile red. */
+.wrap { max-width: 1560px; }
+.main { grid-template-columns: minmax(0, 1fr) 320px; }
+.board svg { max-height: calc(100vh - 150px); min-height: 320px; }
+.ws-bg { fill: var(--sheet); }
+.tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 2; }
+.mat { fill: var(--chip); fill-opacity: 0.5; stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 14 9; }
+.cell { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 6; }
+.zp { cursor: pointer; }
+.zp .bg { fill: var(--pt); stroke: var(--pt); stroke-width: 3; }
+.zp .lbl { fill: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 30px; dominant-baseline: central; pointer-events: none; }
+.zp:hover .bg { fill: var(--sheet); }
+.zp:hover .lbl { fill: var(--pt); }
+.zp:focus-visible { outline: none; }
+.zp:focus-visible .bg { stroke: var(--ink); stroke-width: 5; }
+.mat-edge { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linecap: square; }
+.tile rect { stroke: #1b2733; stroke-width: 2.5; }
+.tile text { letter-spacing: -0.06em; fill: #1b2733; font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.tile { cursor: grab; }
+.tile.sel rect { stroke: var(--pt); stroke-width: 7; }
+.tile.lift { opacity: 0.9; }
+.ghost { fill: none; stroke: var(--pt); stroke-width: 3; stroke-dasharray: 10 7; pointer-events: none; }
+.marquee { fill: var(--pt); fill-opacity: 0.1; stroke: var(--pt); stroke-width: 2.5; stroke-dasharray: 8 6; pointer-events: none; }
+.trash .can { fill: var(--sheet); stroke: var(--muted); stroke-width: 5; stroke-linejoin: round; }
+.trash .rib { stroke: var(--muted); stroke-width: 5; stroke-linecap: round; }
+.trash .pad { fill: transparent; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 8 6; }
+.trash.hot .can { stroke: var(--warn); fill: var(--chip); }
+.trash.hot .rib { stroke: var(--warn); }
+.trash.hot .pad { stroke: var(--warn); stroke-width: 4; stroke-dasharray: none; }
+.expr { display: flex; flex-direction: column; gap: 12px; }
+.expr label { font-size: 1.15rem; font-weight: 700; color: var(--muted); text-align: center; }
+.expr input { width: 100%; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; letter-spacing: -0.04em; text-align: center; color: var(--pt); background: var(--sheet); border: 3px solid var(--grid-major); border-radius: 10px; padding: 6px 8px; }
+.expr input.bad { color: var(--warn); border-color: var(--warn); }
+.why { margin: 0; color: var(--warn); font-weight: 700; font-size: 1.15rem; text-align: center; line-height: 1.3; }
+#make { font-size: 1.3rem; padding: 12px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#make:hover { background: var(--sheet); color: var(--pt); }
+.rot { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rot button { font-size: 1.3rem; padding: 14px 8px; background: var(--pt); color: var(--sheet); border-color: var(--pt); display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.15; }
+.rot button span { font-size: 2.4rem; line-height: 1; }
+.rot button:hover { background: var(--sheet); color: var(--pt); }
+.rot button:disabled { opacity: 0.4; cursor: default; background: var(--pt); color: var(--sheet); }
+#del:not(:disabled) { background: var(--warn); border-color: var(--warn); }
+#del:not(:disabled):hover { background: var(--sheet); color: var(--warn); }
+#split { font-size: 1.5rem; padding: 16px 8px; color: var(--sheet); background: var(--orange); border: 2px solid var(--orange); }
+#split:hover { background: var(--sheet); color: var(--orange); }
+#dims { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--green); border: 2px solid var(--green); }
+#dims:hover { background: var(--sheet); color: var(--green); }
+.done { border: 3px solid var(--green); display: flex; flex-direction: column; gap: 8px; font-family: var(--font-num); font-weight: 700; line-height: 1.25; }
+.done .big { font-size: 2.6rem; color: var(--green); }
+.done .note { font-size: 1.5rem; }
+.done .note.miss { color: var(--warn); }
+.done .eqn { font-size: 1.6rem; color: var(--ink); display: flex; flex-direction: column; }
+.done .eqn span { white-space: nowrap; }
+.done .big, .done .eqn { letter-spacing: -0.06em; }
+.done sup, .blocks sup { font-size: 0.6em; }
+.dim-brace { stroke: var(--ink); stroke-width: 3; fill: none; pointer-events: none; }
+.dim-text { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 34px; dominant-baseline: central; pointer-events: none; }
+.blocks { display: flex; flex-direction: column; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; line-height: 1.2; }
+.blocks:empty { display: none; }
+.blocks span { display: flex; align-items: center; gap: 14px; }
+.blocks i { font-style: normal; font-size: 1.6rem; color: #1b2733; display: inline-flex; align-items: center; justify-content: center; min-width: 64px; height: 46px; padding: 0 8px; border: 3px solid #1b2733; border-radius: 4px; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Completing the Square</h1></div>
+  </header>
+  <div class="main">
+    <div class="board"><svg id="svg" role="application" aria-label="Algebra tiles workspace with a square corner to build in. Drag tiles; more tiles are in the tray on the right."></svg></div>
+    <div class="panel">
+      <form class="card expr" id="form">
+        <label for="expr">Type ax² + bx + c</label>
+        <input id="expr" type="text" value="x² + 6x + 5" autocomplete="off" spellcheck="false" aria-label="Expression such as x² + 6x + 5 or 2x² + 8x + 3. a is 1 to 4 and b must split evenly into a squares.">
+        <p class="why" id="why" role="alert" hidden></p>
+        <button id="make" type="submit">Make tiles</button>
+      </form>
+      <button id="split" type="button" hidden>Ready to split?</button>
+      <button id="dims" type="button" hidden>Show dimensions</button>
+      <div class="card done" id="done" hidden></div>
+      <div class="card rot">
+        <button id="left" type="button" aria-label="Rotate selected tiles left"><span aria-hidden="true">↺</span>Rotate</button>
+        <button id="right" type="button" aria-label="Rotate selected tiles right"><span aria-hidden="true">↻</span>Rotate</button>
+        <button id="dup" type="button" aria-label="Duplicate selected tiles"><span aria-hidden="true">⧉</span>Duplicate</button>
+        <button id="del" type="button" aria-label="Delete selected tiles"><span aria-hidden="true">✕</span>Delete</button>
+      </div>
+      <div class="card" id="countCard"><div class="blocks" id="blocks"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  // Geometry (SVG units). U is one unit; X is the length of x, deliberately not a whole number of units.
+  // The workspace widens when a > 1 so a area models fit side by side.
+  const U = 46, X = 172, PAD = 22, GAP = 22;
+  const WS = { x: 0, y: 0, w: 1080, h: 820 };
+  const TRAY = { x: WS.w + 20, y: 0, w: X + U * 2 + GAP * 2 + PAD * 2, h: WS.h };
+  const SNAP = 40;
+  const EPS = 0.5;
+  const MINUS = "−";
+  const AMAX = 4, CMAX = 30;
+  const HMAX = a => a === 1 ? 5 : 3; // largest h in (x + h)² whose area models still fit
+  const matSize = h => X + Math.abs(h) * U + 40;
+  const MGAP = 76; // room between side-by-side area models for an upright width label
+
+  // Tile colours stay the same in dark mode; text stays dark on every fill.
+  const KINDS = [
+    { id: "x2", w: X, h: X, label: "x²", color: "#5cbf7a", fs: 48 },
+    { id: "x", w: U, h: X, label: "x", color: "#5cbf7a", fs: 34 },
+    { id: "1", w: U, h: U, label: "1", color: "#5cbf7a", fs: 28 },
+    { id: "-x2", w: X, h: X, label: MINUS + "x²", color: "#ef6b6b", fs: 48 },
+    { id: "-x", w: U, h: X, label: MINUS + "x", color: "#ef6b6b", fs: 30 },
+    { id: "-1", w: U, h: U, label: MINUS + "1", color: "#ef6b6b", fs: 22 }
+  ];
+  const kind = id => KINDS.find(k => k.id === id);
+
+  const svg = document.getElementById("svg");
+  const wsBg = el("rect", { class: "ws-bg", x: WS.x, y: WS.y, width: WS.w, height: WS.h }, svg);
+  // Area models: outlined squares with a thick top-left corner and dashed cells for x², the x strips
+  // and the ones of (x + h)². A single tile dropped inside one goes into the nearest free cell of its
+  // shape, turned to fit if needed.
+  const matLayer = el("g", {}, svg);
+  let mats = [], cells = [];
+  const CELLSNAP = 80;
+  function makeMat(x, y, h) {
+    const S = matSize(h), n = Math.abs(h), xs = [X], ys = [X], m = { x, y, w: S, h: S, cells: [] };
+    for (let i = 0; i < n; i++) { xs.push(U); ys.push(U); }
+    let cy = y + 3;
+    ys.forEach(ch => {
+      let cx = x + 3;
+      xs.forEach(cw => { m.cells.push({ x: cx, y: cy, w: cw, h: ch, mat: m }); cx += cw; });
+      cy += ch;
+    });
+    return m;
+  }
+  function drawMats() {
+    matLayer.replaceChildren();
+    cells = mats.flatMap(m => m.cells);
+    mats.forEach(m => {
+      el("rect", { class: "mat", x: m.x, y: m.y, width: m.w, height: m.h }, matLayer);
+      el("path", { class: "mat-edge", d: `M${m.x - 0.5},${m.y + m.h} V${m.y - 0.5} H${m.x + m.w}` }, matLayer);
+    });
+    cells.forEach(c => el("rect", { class: "cell", x: c.x, y: c.y, width: c.w, height: c.h }, matLayer));
+  }
+
+  // Tray and trash, drawn in their own group so they can move when the workspace widens.
+  const trayG = el("g", {}, svg);
+  el("rect", { class: "tray-bg", x: 1, y: 1, width: TRAY.w - 2, height: TRAY.h - 2, rx: 12 }, trayG);
+  const trayLayer = el("g", {}, trayG);
+  const TR = { w: 150, h: 110, lx: (TRAY.w - 150) / 2, y: TRAY.h - PAD - 110 };
+  const trash = el("g", { class: "trash", "aria-label": "Trash" }, trayG);
+  el("rect", { class: "pad", x: TR.lx, y: TR.y, width: TR.w, height: TR.h, rx: 12 }, trash);
+  const cx = TR.lx + TR.w / 2, top = TR.y + 22;
+  el("path", { class: "can", d: `M${cx - 30},${top + 12} L${cx - 24},${top + 78} L${cx + 24},${top + 78} L${cx + 30},${top + 12} Z` }, trash);
+  el("path", { class: "can", d: `M${cx - 40},${top + 12} L${cx + 40},${top + 12} M${cx - 12},${top + 2} L${cx + 12},${top + 2} L${cx + 12},${top + 12} L${cx - 12},${top + 12} Z` }, trash);
+  [-12, 0, 12].forEach(dx => el("line", { class: "rib", x1: cx + dx, y1: top + 26, x2: cx + dx, y2: top + 64 }, trash));
+
+  // Zero pair button in the bottom-left of the workspace: adds a green 1 and a red −1 side by side.
+  const ZP = { x: 40, y: WS.h - PAD - 70, w: 290, h: 70 };
+  const zp = el("g", { class: "zp", role: "button", tabindex: 0, "aria-label": "Add a zero pair: one positive and one negative unit tile" }, svg);
+  el("rect", { class: "bg", x: ZP.x, y: ZP.y, width: ZP.w, height: ZP.h, rx: 12 }, zp);
+  [["#5cbf7a", "1"], ["#ef6b6b", MINUS + "1"]].forEach(([fill, txt], i) => {
+    const gx = ZP.x + 14 + i * 38, gy = ZP.y + (ZP.h - 34) / 2;
+    el("rect", { x: gx, y: gy, width: 34, height: 34, rx: 3, fill, stroke: "#1b2733", "stroke-width": 2 }, zp);
+    const t = el("text", { x: gx + 17, y: gy + 18, "font-size": i ? 15 : 19, "text-anchor": "middle", "dominant-baseline": "central", fill: "#1b2733", "font-family": "var(--font-num)", "font-weight": 700, "pointer-events": "none" }, zp);
+    t.textContent = txt;
+  });
+  el("text", { class: "lbl", x: ZP.x + 102, y: ZP.y + ZP.h / 2 + 1 }, zp).textContent = "Zero pair";
+  const wsLayer = el("g", {}, svg);
+  const dimLayer = el("g", {}, svg);
+  const fx = el("g", {}, svg); // ghosts and the selection box draw above the tiles
+
+  function drawTile(g, k, w, h) {
+    g.replaceChildren();
+    el("rect", { x: 0, y: 0, width: w, height: h, rx: 4, fill: k.color }, g);
+    const t = el("text", { x: w / 2, y: h / 2 + 1, "font-size": k.fs }, g);
+    // A raised 2 for x² (the font's ² glyph reads as a separate character).
+    if (!k.label.endsWith("²")) { t.textContent = k.label; return; }
+    t.textContent = k.label.slice(0, -1);
+    el("tspan", { dy: "-0.42em", "font-size": "0.62em" }, t).textContent = "2";
+  }
+
+  // Tray: positive tiles in the top row, negative tiles in the row below, at true size.
+  KINDS.forEach((k, i) => {
+    const row = Math.floor(i / 3), col = i % 3;
+    k.lx = PAD + [0, X + GAP, X + U + GAP * 2][col];
+    k.ty = TRAY.y + PAD + row * (X + GAP * 2);
+    const g = el("g", { class: "tile", transform: `translate(${k.lx},${k.ty})`, "aria-label": k.label }, trayLayer);
+    g.dataset.kind = i;
+    drawTile(g, k, k.w, k.h);
+  });
+
+  function layout(w) {
+    WS.w = w;
+    wsBg.setAttribute("width", w);
+    TRAY.x = w + 20;
+    trayG.setAttribute("transform", `translate(${TRAY.x},0)`);
+    TR.x = TRAY.x + TR.lx;
+    KINDS.forEach(k => { k.tx = TRAY.x + k.lx; });
+    svg.setAttribute("viewBox", `0 0 ${TRAY.x + TRAY.w} ${WS.h}`);
+  }
+
+  const tiles = []; // { g, k, x, y, w, h, sel }
+  const place = t => t.g.setAttribute("transform", `translate(${t.x},${t.y})`);
+  const setSel = (t, on) => { t.sel = on; t.g.classList.toggle("sel", on); };
+  const clearSel = () => tiles.forEach(t => setSel(t, false));
+
+  function newTile(k, x, y, turned) {
+    const g = el("g", { class: "tile" }, wsLayer);
+    const t = { g, k, x, y, w: turned ? k.h : k.w, h: turned ? k.w : k.h, sel: false };
+    drawTile(g, k, t.w, t.h);
+    g.__tile = t; tiles.push(t); place(t);
+    return t;
+  }
+  function removeTile(t) { t.g.remove(); tiles.splice(tiles.indexOf(t), 1); }
+
+  const overlap = (a, b) => a.x < b.x + b.w - EPS && b.x < a.x + a.w - EPS && a.y < b.y + b.h - EPS && b.y < a.y + a.h - EPS;
+  const inBox = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+  const inWs = r => r.x >= WS.x - EPS && r.x + r.w <= WS.x + WS.w + EPS && r.y >= WS.y - EPS && r.y + r.h <= WS.y + WS.h + EPS;
+  const near = (a, b) => Math.abs(a - b) < EPS;
+
+  // ---- The typed expression ----
+  // Reads ax² + bx + c in any order (x^2, x2, ² and − all accepted). a is 1 to 4; b is nonzero and
+  // splits evenly into a squares with the x tiles shared between two sides (b a multiple of 2a);
+  // h = b / 2a is at most 5 (a = 1) or 3; |c| ≤ 30.
+  function parse(s) {
+    s = s.replace(/\s+/g, "").replace(/[−–]/g, "-").replace(/²/g, "^2").replace(/\*\*/g, "^").toLowerCase();
+    if (!s || /[^0-9x^+\-]/.test(s)) return null;
+    const terms = s.match(/[+-]?[^+-]+/g);
+    if (!terms || terms.join("") !== s) return null;
+    let a = 0, b = 0, c = 0;
+    for (const t of terms) {
+      const m = t.match(/^([+-]?)(\d*)(x\^?2|x)?$/);
+      if (!m || (!m[2] && !m[3])) return null;
+      const n = (m[1] === "-" ? -1 : 1) * (m[2] ? +m[2] : 1);
+      if (!m[3]) c += n; else if (m[3] === "x") b += n; else a += n;
+    }
+    return { a, b, c };
+  }
+  // Why a typed expression can't be made into squares, in a few words ("" when it can).
+  function problem(p) {
+    if (!p) return "Type it like 2x² + 8x + 3";
+    const { a, b, c } = p;
+    if (a < 1 || a > AMAX) return "The number in front of x² can be 1 to 4";
+    if (!b) return "It needs an x term";
+    if (b % (2 * a)) return a === 1 ? "The x number must be even" : `With ${a}x², the x number must be a multiple of ${2 * a}`;
+    if (Math.abs(b / (2 * a)) > HMAX(a)) return `With ${a > 1 ? a : ""}x², the x number can be up to ${2 * a * HMAX(a)}`;
+    if (Math.abs(c) > CMAX) return "The last number can be −30 to 30";
+    return "";
+  }
+  const parseOk = s => { const p = parse(s); return p && !problem(p) ? p : null; };
+  const sup2 = "<sup>2</sup>";
+  function poly(a, b, c) {
+    let s = (a > 1 ? a : "") + "x" + sup2 + " " + (b < 0 ? MINUS : "+") + " " + (Math.abs(b) === 1 ? "" : Math.abs(b)) + "x";
+    if (c) s += " " + (c < 0 ? MINUS : "+") + " " + Math.abs(c);
+    return s;
+  }
+  const binom = h => "(x " + (h < 0 ? MINUS : "+") + " " + Math.abs(h) + ")";
+
+  // Free spot for a w × h tile: random places inside `area` first (kept apart from other tiles and
+  // clear of the area models and the zero pair button), then a scan of the area, then of the workspace.
+  function findSpot(w, h, area) {
+    const M = 14;
+    const keep = mats.map(m => ({ x: m.x - 24, y: m.y - 24, w: m.w + 48, h: m.h + 48 }))
+      .concat([{ x: ZP.x - 20, y: ZP.y - 20, w: ZP.w + 40, h: ZP.h + 40 }]);
+    const free = (r, m) => inWs(r) && keep.every(k => !overlap(r, k)) &&
+      tiles.every(o => !overlap({ x: r.x - m, y: r.y - m, w: r.w + 2 * m, h: r.h + 2 * m }, o));
+    for (let i = 0; i < 600; i++) {
+      const r = { x: Math.round(area.x + Math.random() * (area.w - w)), y: Math.round(area.y + Math.random() * (area.h - h)), w, h };
+      if (area.w >= w && area.h >= h && free(r, M)) return r;
+    }
+    for (const ar of [area, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD }])
+      for (let y = ar.y; y + h <= ar.y + ar.h; y += 12) for (let x = ar.x; x + w <= ar.x + ar.w; x += 12) {
+        const r = { x, y, w, h };
+        if (free(r, 4)) return r;
+      }
+    // Crowded: anywhere off the area models, then anywhere at all.
+    for (const skipMats of [true, false])
+      for (let y = PAD; y + h <= WS.h; y += 12) for (let x = PAD; x + w <= WS.w; x += 12) {
+        const r = { x, y, w, h };
+        if (inWs(r) && tiles.every(o => !overlap(r, o)) && !(skipMats && mats.some(m => overlap(r, m)))) return r;
+      }
+    return null;
+  }
+
+  // Make the tiles for the expression, scattered around the workspace with x tiles turned either way
+  // at random. With a = 1 the area model is there from the start; with a > 1 it waits for Ready to split?
+  let target = null, split = true;
+  const splitBtn = document.getElementById("split");
+  function makeTiles(p) {
+    tiles.slice().forEach(removeTile);
+    target = p;
+    const h = p.b / (2 * p.a), S = matSize(h);
+    layout(p.a === 1 ? 1080 : Math.max(1080, p.a * (S + MGAP) + MGAP));
+    split = p.a === 1;
+    mats = split ? [makeMat(40, 40, h)] : [];
+    drawMats();
+    splitBtn.hidden = split;
+    const list = [];
+    for (let i = 0; i < p.a; i++) list.push([kind("x2"), false]);
+    for (let i = 0; i < Math.abs(p.b); i++) list.push([kind(p.b > 0 ? "x" : "-x"), Math.random() < 0.5]);
+    for (let i = 0; i < Math.abs(p.c); i++) list.push([kind(p.c > 0 ? "1" : "-1"), false]);
+    const all = { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD };
+    for (const [k, turned] of list) {
+      const spot = findSpot(turned ? k.h : k.w, turned ? k.w : k.h, all);
+      if (spot) newTile(k, spot.x, spot.y, turned);
+    }
+    dimsOn = false;
+    refresh();
+  }
+
+  // Ready to split?: one area model per x² tile asked for (a of them), side by side. The x² and x
+  // tiles are shared out evenly, each share scattered under its own area model; ones go anywhere free.
+  function splitTiles() {
+    if (!target || split || drag) return;
+    const a = target.a, h = target.b / (2 * a), S = matSize(h);
+    mats = [];
+    for (let i = 0; i < a; i++) mats.push(makeMat(MGAP + i * (S + MGAP), 40, h));
+    drawMats();
+    split = true;
+    splitBtn.hidden = true;
+    const moving = tiles.slice();
+    tiles.length = 0;
+    const share = [[], []];
+    moving.forEach(t => share[/x2$/.test(t.k.id) ? 0 : /x$/.test(t.k.id) ? 1 : 2]?.push(t));
+    const rest = moving.filter(t => !/x2?$/.test(t.k.id));
+    const put = (t, area) => {
+      const spot = findSpot(t.w, t.h, area);
+      if (spot) { t.x = spot.x; t.y = spot.y; }
+      tiles.push(t); place(t);
+    };
+    share.forEach(list => list.forEach((t, j) => {
+      const m = mats[j % a], y = m.y + m.h + 24;
+      put(t, { x: Math.max(PAD, m.x - 20), y, w: m.w + 40, h: WS.h - PAD - y });
+    }));
+    rest.forEach(t => put(t, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD }));
+    clearSel();
+    refresh();
+  }
+  splitBtn.addEventListener("click", splitTiles);
+  // Panel: how many of each tile are on the workspace, with the tile's colour.
+  const blocks = document.getElementById("blocks"), countCard = document.getElementById("countCard");
+  const leftBtn = document.getElementById("left"), rightBtn = document.getElementById("right");
+  const dupBtn = document.getElementById("dup"), delBtn = document.getElementById("del");
+  function refresh() {
+    const n = {};
+    tiles.forEach(t => { n[t.k.id] = (n[t.k.id] || 0) + 1; });
+    blocks.innerHTML = KINDS.filter(k => n[k.id]).map(k =>
+      `<span><i style="background:${k.color}">${k.label.replace("²", sup2)}</i>× ${n[k.id]}</span>`).join("");
+    countCard.hidden = !tiles.length;
+    const any = tiles.some(t => t.sel);
+    leftBtn.disabled = rightBtn.disabled = dupBtn.disabled = delBtn.disabled = !any;
+    showSquare();
+  }
+
+  // ---- Square check ----
+  // Tiles that touch along an edge form a group. A group is an area model when it fills its bounding
+  // rectangle as a grid: the top row sets the columns, the left column sets the rows, every tile
+  // fills exactly one cell, and each tile's sign is the row sign times the column sign. It is a
+  // completed square when both sides are the same x + h. The Show dimensions button appears only
+  // while there is such a rectangle (Shawn) and toggles the braces and the result card.
+  const done = document.getElementById("done");
+  const touch = (a, b) => {
+    const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return (Math.abs(ox) < EPS && oy > EPS) || (Math.abs(oy) < EPS && ox > EPS);
+  };
+  const sgn = t => t.k.id.startsWith("-") ? -1 : 1;
+  function findModels() {
+    const seen = new Set(), found = [];
+    for (const t0 of tiles) {
+      if (seen.has(t0)) continue;
+      const comp = [t0]; seen.add(t0);
+      for (let i = 0; i < comp.length; i++) for (const o of tiles) if (!seen.has(o) && touch(comp[i], o)) { seen.add(o); comp.push(o); }
+      if (comp.length < 2) continue;
+      const m = model(comp);
+      if (!m || !comp.some(t => t.k.id.endsWith("x2"))) continue; // only rectangles built around x²
+      m.square = m.len[0] === m.wid[0] && m.len[1] === m.wid[1] && m.len[0] === 1 && m.len[1] !== 0;
+      found.push(m);
+    }
+    return found.sort((a, b) => (b.square - a.square) || (a.x0 - b.x0));
+  }
+  function model(comp) {
+    const x0 = Math.min(...comp.map(t => t.x)), x1 = Math.max(...comp.map(t => t.x + t.w));
+    const y0 = Math.min(...comp.map(t => t.y)), y1 = Math.max(...comp.map(t => t.y + t.h));
+    const area = comp.reduce((a, t) => a + t.w * t.h, 0);
+    if (Math.abs(area - (x1 - x0) * (y1 - y0)) > 1) return null;
+    const cols = comp.filter(t => near(t.y, y0)).sort((a, b) => a.x - b.x);
+    const rows = comp.filter(t => near(t.x, x0)).sort((a, b) => a.y - b.y);
+    const cs = cols.map(sgn), rs = rows.map(t => sgn(t) * cs[0]);
+    for (const t of comp) {
+      const c = cols.findIndex(k => near(k.x, t.x) && near(k.w, t.w));
+      const r = rows.findIndex(k => near(k.y, t.y) && near(k.h, t.h));
+      if (c < 0 || r < 0 || sgn(t) !== cs[c] * rs[r]) return null;
+    }
+    // Each side as [x count, ones]; a side of −x − h is the same square as x + h.
+    const side = (list, size, signs) => {
+      const s = [0, 0];
+      list.forEach((t, i) => { s[near(t[size], X) ? 0 : 1] += signs[i]; });
+      return s[0] < 0 || (!s[0] && s[1] < 0) ? [-s[0], -s[1]] : s;
+    };
+    return { tiles: comp, x0, x1, y0, y1, len: side(cols, "w", cs), wid: side(rows, "h", rs) };
+  }
+  function side(a, b) {
+    const out = [];
+    if (a) out.push((a < 0 ? MINUS : "") + (Math.abs(a) === 1 ? "" : Math.abs(a)) + "x");
+    if (b) out.push(out.length ? (b < 0 ? MINUS + " " : "+ ") + Math.abs(b) : (b < 0 ? MINUS : "") + Math.abs(b));
+    return out.join(" ") || "0";
+  }
+  const dimsBtn = document.getElementById("dims");
+  let dimsOn = false;
+  dimsBtn.addEventListener("click", () => { dimsOn = !dimsOn; showSquare(); });
+  function showSquare() {
+    dimLayer.replaceChildren();
+    const ms = drag && drag.kind === "move" ? [] : findModels();
+    dimsBtn.hidden = !ms.length;
+    if (!ms.length) dimsOn = false;
+    dimsBtn.textContent = dimsOn ? "Hide dimensions" : "Show dimensions";
+    done.hidden = !dimsOn;
+    if (!dimsOn) return;
+    ms.forEach(m => drawBraces(m, side(...m.len), side(...m.wid), mats.length > 1));
+    // Completed: as many matching squares as area models asked for (a after the split, else 1).
+    const n = target && split ? target.a : 1, sq = ms.filter(m => m.square).slice(0, n);
+    if (sq.length === n && sq.every(m => m.len[1] === sq[0].len[1])) {
+      const h = sq[0].len[1], A = n > 1 ? n : "";
+      let html = `<div class="big">${A}${binom(h)}${sup2}</div>`;
+      if (target && target.a === n && target.b === 2 * n * h) {
+        const d = target.c - n * h * h;
+        if (d < 0) html += `<div class="note miss">${-d} ${-d === 1 ? "one" : "ones"} missing</div>`;
+        else if (d > 0) html += `<div class="note">${d} extra ${d === 1 ? "one" : "ones"}</div>`;
+        html += `<div class="eqn"><span>${poly(target.a, target.b, target.c)}</span><span>= ${A}${binom(h)}${sup2}${d ? " " + (d < 0 ? MINUS : "+") + " " + Math.abs(d) : ""}</span></div>`;
+      }
+      done.innerHTML = html;
+      return;
+    }
+    const wrap = t => t.includes(" ") ? "(" + t + ")" : t;
+    done.innerHTML = `<div class="big">${ms.map(m => m.square ? binom(m.len[1]) + sup2 : wrap(side(...m.len)) + wrap(side(...m.wid))).join(" + ")}</div>`;
+  }
+  // Braces with the length above (or below) and the width left (or right) of the rectangle.
+  // Beside several area models the width label stands upright on the left so it fits between them.
+  function drawBraces(m, lenLbl, widLbl, upright) {
+    const up = m.y0 >= 64, lt = upright || m.x0 >= 30 + widLbl.length * 21;
+    const by = up ? m.y0 - 12 : m.y1 + 12, bx = lt ? m.x0 - 12 : m.x1 + 12, d = up ? -12 : 12, e = lt ? -12 : 12;
+    el("path", { class: "dim-brace", d: `M${m.x0 + 3},${by - d} v${d} H${m.x1 - 3} v${-d}` }, dimLayer);
+    el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + d * 2, "text-anchor": "middle" }, dimLayer).textContent = lenLbl;
+    el("path", { class: "dim-brace", d: `M${bx - e},${m.y0 + 3} h${e} V${m.y1 - 3} h${-e}` }, dimLayer);
+    if (upright) {
+      const tx = bx - 26, ty = (m.y0 + m.y1) / 2;
+      el("text", { class: "dim-text", x: tx, y: ty, "text-anchor": "middle", transform: `rotate(-90 ${tx} ${ty})` }, dimLayer).textContent = widLbl;
+    } else el("text", { class: "dim-text", x: bx + e, y: (m.y0 + m.y1) / 2, "text-anchor": lt ? "end" : "start" }, dimLayer).textContent = widLbl;
+  }
+
+  function toSvg(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+
+  // Best nudge (dx, dy) that puts a moving tile edge to edge with a resting one, lined up with one of
+  // its corners: beside it (tops or bottoms level) or above/below it (left or right edges level).
+  // Tiles also snap into a matching area model cell, into the square corner and against its edges.
+  // Rejected if any moving tile would overlap a resting tile or leave the workspace.
+  function findSnap(moving) {
+    const rest = tiles.filter(t => !moving.includes(t));
+    let best = null;
+    for (const m of moving) {
+      for (const cl of cells) if (near(cl.w, m.w) && near(cl.h, m.h)) {
+        const dx = cl.x - m.x, dy = cl.y - m.y, d = Math.hypot(dx, dy);
+        // Counted as a little closer than it is so a cell wins over a nearby tile edge.
+        if (d <= CELLSNAP && (!best || d / 2 < best.d) && moving.every(mm => {
+          const r = { x: mm.x + dx, y: mm.y + dy, w: mm.w, h: mm.h };
+          return inWs(r) && rest.every(o => !overlap(r, o));
+        })) best = { dx, dy, d: d / 2 };
+      }
+      const c = [];
+      for (const mt of mats) {
+        const k = mt.cells[0];
+        c.push([k.x - m.x, k.y - m.y]);
+        if (m.x >= k.x - SNAP && m.x < mt.x + mt.w) c.push([0, k.y - m.y]);
+        if (m.y >= k.y - SNAP && m.y < mt.y + mt.h) c.push([k.x - m.x, 0]);
+      }
+      for (const s of rest) {
+        for (const x of [s.x + s.w, s.x - m.w]) for (const y of [s.y, s.y + s.h - m.h]) c.push([x - m.x, y - m.y]);
+        for (const y of [s.y + s.h, s.y - m.h]) for (const x of [s.x, s.x + s.w - m.w]) c.push([x - m.x, y - m.y]);
+      }
+      for (const [dx, dy] of c) {
+        const d = Math.hypot(dx, dy);
+        if (d > SNAP || (best && d >= best.d)) continue;
+        const ok = moving.every(mm => {
+          const r = { x: mm.x + dx, y: mm.y + dy, w: mm.w, h: mm.h };
+          return inWs(r) && rest.every(o => !overlap(r, o));
+        });
+        if (ok) best = { dx, dy, d };
+      }
+    }
+    return best;
+  }
+
+  // A single tile let go inside an area model goes into the nearest free cell of its shape (either
+  // way round, so an x tile turns to fit a strip on the top or the side).
+  function cellDrop(t) {
+    const p = { x: t.x + t.w / 2, y: t.y + t.h / 2 };
+    const mt = mats.find(m => inBox(p, { x: m.x - 20, y: m.y - 20, w: m.w + 40, h: m.h + 40 }));
+    if (!mt) return null;
+    let best = null;
+    for (const c of mt.cells) {
+      const same = near(c.w, t.w) && near(c.h, t.h), turn = near(c.w, t.h) && near(c.h, t.w);
+      if (!same && !turn) continue;
+      if (tiles.some(o => o !== t && overlap(o, c))) continue;
+      const d = Math.hypot(c.x + c.w / 2 - p.x, c.y + c.h / 2 - p.y);
+      if (!best || d < best.d) best = { c, d, turn: !same };
+    }
+    return best;
+  }
+
+  // Shift a group back inside the workspace.
+  function keepIn(group) {
+    const minX = Math.min(...group.map(t => t.x)), maxX = Math.max(...group.map(t => t.x + t.w));
+    const minY = Math.min(...group.map(t => t.y)), maxY = Math.max(...group.map(t => t.y + t.h));
+    const sx = minX < WS.x ? WS.x - minX : maxX > WS.x + WS.w ? WS.x + WS.w - maxX : 0;
+    const sy = minY < WS.y ? WS.y - minY : maxY > WS.y + WS.h ? WS.y + WS.h - maxY : 0;
+    group.forEach(t => { t.x += sx; t.y += sy; });
+  }
+
+  // Rotate the selected tiles a quarter turn about the middle of the group. Labels stay upright.
+  function rotate(dir) {
+    const group = tiles.filter(t => t.sel);
+    if (!group.length || drag) return;
+    const minX = Math.min(...group.map(t => t.x)), maxX = Math.max(...group.map(t => t.x + t.w));
+    const minY = Math.min(...group.map(t => t.y)), maxY = Math.max(...group.map(t => t.y + t.h));
+    const ox = (minX + maxX) / 2, oy = (minY + maxY) / 2;
+    const old = group.map(t => [t.x, t.y, t.w, t.h]);
+    group.forEach(t => {
+      const dx = t.x + t.w / 2 - ox, dy = t.y + t.h / 2 - oy;
+      const nx = dir > 0 ? -dy : dy, ny = dir > 0 ? dx : -dx;
+      [t.w, t.h] = [t.h, t.w];
+      t.x = Math.round(ox + nx - t.w / 2); t.y = Math.round(oy + ny - t.h / 2);
+    });
+    keepIn(group);
+    // If the turned group would land on other tiles, slide it down until it is clear.
+    const rest = tiles.filter(t => !t.sel);
+    const hits = () => group.some(t => rest.some(o => overlap(t, o)));
+    for (let step = 0; hits() && step < 60; step++) {
+      group.forEach(t => { t.y += 12; });
+      if (!group.every(inWs)) break;
+    }
+    if (hits() || !group.every(inWs)) {
+      group.forEach((t, i) => { [t.x, t.y, t.w, t.h] = old[i]; });
+    }
+    group.forEach(t => { drawTile(t.g, t.k, t.w, t.h); place(t); });
+    showSquare();
+  }
+  // Copy the selected tiles into the first clear spot beside, below, above or left of them.
+  // The copies become the selection.
+  function duplicate() {
+    const group = tiles.filter(t => t.sel);
+    if (!group.length || drag) return;
+    const minX = Math.min(...group.map(t => t.x)), maxX = Math.max(...group.map(t => t.x + t.w));
+    const minY = Math.min(...group.map(t => t.y)), maxY = Math.max(...group.map(t => t.y + t.h));
+    const gw = maxX - minX, gh = maxY - minY, D = 24;
+    const tries = [[gw + D, 0], [0, gh + D], [0, -gh - D], [-gw - D, 0], [gw + D, gh + D], [D, D]];
+    for (let i = 1; i <= 12; i++) tries.push([D * i, D * i], [-D * i, D * i]);
+    const fits = (dx, dy) => group.every(t => {
+      const r = { x: t.x + dx, y: t.y + dy, w: t.w, h: t.h };
+      return inWs(r) && tiles.every(o => !overlap(r, o));
+    });
+    const [dx, dy] = tries.find(([a, b]) => fits(a, b)) || [D, D];
+    clearSel();
+    group.forEach(t => setSel(newTile(t.k, t.x + dx, t.y + dy, t.w !== t.k.w), true));
+    keepIn(tiles.filter(t => t.sel));
+    tiles.filter(t => t.sel).forEach(place);
+    refresh();
+  }
+  function deleteSel() {
+    if (drag) return;
+    tiles.filter(t => t.sel).forEach(removeTile);
+    refresh();
+  }
+  dupBtn.addEventListener("click", duplicate);
+  delBtn.addEventListener("click", deleteSel);
+  leftBtn.addEventListener("click", () => rotate(-1));
+  rightBtn.addEventListener("click", () => rotate(1));
+
+  let drag = null; // { kind: "move", group, start, origin[] } or { kind: "box", start, rect }
+  const ghosts = [];
+  function showGhosts(group, snap) {
+    ghosts.forEach(g => g.remove()); ghosts.length = 0;
+    if (!snap) return;
+    group.forEach(t => ghosts.push(el("rect", { class: "ghost", x: t.x + snap.dx, y: t.y + snap.dy, width: t.w, height: t.h, rx: 4 }, fx)));
+  }
+  function showCell(c) {
+    showGhosts([], null);
+    ghosts.push(el("rect", { class: "ghost", x: c.x, y: c.y, width: c.w, height: c.h, rx: 4 }, fx));
+  }
+  function overTrash(p) { return inBox(p, TR) || inBox(p, TRAY); }
+
+  svg.addEventListener("pointerdown", e => {
+    if (drag) return;
+    e.preventDefault();
+    const p = toSvg(e);
+    if (e.target.closest(".zp")) return;
+    const g = e.target.closest(".tile");
+    let group;
+    if (g && g.dataset.kind !== undefined) {
+      // Pull a fresh copy off the tray; the tray tile stays put.
+      clearSel();
+      const k = KINDS[+g.dataset.kind];
+      group = [newTile(k, k.tx, k.ty)];
+    } else if (g && g.__tile) {
+      const t = g.__tile;
+      if (e.shiftKey) { setSel(t, !t.sel); refresh(); return; }
+      if (!t.sel) clearSel();
+      group = t.sel ? tiles.filter(x => x.sel) : [t];
+    }
+    svg.setPointerCapture(e.pointerId);
+    if (group) {
+      group.forEach(t => { wsLayer.appendChild(t.g); t.g.classList.add("lift"); });
+      drag = { kind: "move", id: e.pointerId, group, start: p, origin: group.map(t => [t.x, t.y]), moved: false, fromTray: !!(g && g.dataset.kind !== undefined) };
+    } else {
+      if (!e.shiftKey) clearSel();
+      drag = { kind: "box", id: e.pointerId, start: p, rect: el("rect", { class: "marquee", x: p.x, y: p.y, width: 0, height: 0 }, fx) };
+    }
+    refresh();
+  });
+
+  svg.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = toSvg(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    if (drag.kind === "move") {
+      if (Math.hypot(dx, dy) > 3) drag.moved = true;
+      dimLayer.replaceChildren();
+      drag.group.forEach((t, i) => { t.x = drag.origin[i][0] + dx; t.y = drag.origin[i][1] + dy; place(t); });
+      const bin = overTrash(p);
+      trash.classList.toggle("hot", bin);
+      const cd = !bin && drag.group.length === 1 ? cellDrop(drag.group[0]) : null;
+      if (cd) showCell(cd.c);
+      else showGhosts(drag.group, bin ? null : findSnap(drag.group));
+    } else {
+      const r = { x: Math.min(p.x, drag.start.x), y: Math.min(p.y, drag.start.y), w: Math.abs(dx), h: Math.abs(dy) };
+      drag.rect.setAttribute("x", r.x); drag.rect.setAttribute("y", r.y);
+      drag.rect.setAttribute("width", r.w); drag.rect.setAttribute("height", r.h);
+      tiles.forEach(t => setSel(t, overlap(t, r)));
+      refresh();
+    }
+  });
+
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
+    if (drag.kind === "box") { drag.rect.remove(); drag = null; refresh(); return; }
+    const group = drag.group, p = toSvg(e);
+    showGhosts(group, null);
+    trash.classList.remove("hot");
+    group.forEach(t => t.g.classList.remove("lift"));
+    if (drag.fromTray && !drag.moved) { group.forEach(removeTile); drag = null; refresh(); return; }
+    if (e.type === "pointercancel") {
+      group.forEach((t, i) => { t.x = drag.origin[i][0]; t.y = drag.origin[i][1]; place(t); });
+    } else if (overTrash(p)) {
+      group.forEach(removeTile);
+    } else {
+      const cd = group.length === 1 ? cellDrop(group[0]) : null;
+      const snap = cd ? null : findSnap(group);
+      if (cd) {
+        const t = group[0];
+        if (cd.turn) { [t.w, t.h] = [t.h, t.w]; drawTile(t.g, t.k, t.w, t.h); }
+        t.x = cd.c.x; t.y = cd.c.y;
+      } else if (snap) group.forEach(t => { t.x += snap.dx; t.y += snap.dy; });
+      else keepIn(group);
+      group.forEach(place);
+      // What was just moved stays selected, ready for the rotate buttons.
+      group.forEach(t => setSel(t, true));
+    }
+    drag = null;
+    refresh();
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // Delete or Backspace removes the selected tiles; R rotates them (not while typing).
+  document.addEventListener("keydown", e => {
+    if (drag || e.target.closest("input")) return;
+    if (e.key === "Delete" || e.key === "Backspace") {
+      const sel = tiles.filter(t => t.sel);
+      if (sel.length) { e.preventDefault(); sel.forEach(removeTile); refresh(); }
+    } else if (e.key === "r" || e.key === "R") {
+      rotate(e.shiftKey ? -1 : 1);
+    }
+  });
+
+  // Put the zero pair in the first clear spot above the button, working up and to the right.
+  function zeroPair() {
+    if (drag) return;
+    const w = 2 * U, h = U;
+    const blocked = r => !inWs(r) || mats.some(m => overlap(r, m)) || overlap(r, ZP) || tiles.some(o => overlap(r, o));
+    let spot = null;
+    for (let y = ZP.y - h - 16; !spot && y >= PAD; y -= 14) for (let x = ZP.x; !spot && x + w <= WS.w - PAD; x += 14) {
+      const r = { x, y, w, h };
+      if (!blocked({ x: x - 6, y: y - 6, w: w + 12, h: h + 12 })) spot = r;
+    }
+    for (let x = ZP.x + ZP.w + 20; !spot && x + w <= WS.w - PAD; x += 14) {
+      const r = { x, y: ZP.y + (ZP.h - h) / 2, w, h };
+      if (!blocked(r)) spot = r;
+    }
+    if (!spot) return;
+    clearSel();
+    setSel(newTile(kind("1"), spot.x, spot.y), true);
+    setSel(newTile(kind("-1"), spot.x + U, spot.y), true);
+    refresh();
+  }
+  zp.addEventListener("click", zeroPair);
+  zp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zeroPair(); } });
+
+  const input = document.getElementById("expr");
+  const why = document.getElementById("why");
+  let typing = null;
+  function check() {
+    const msg = problem(parse(input.value));
+    input.classList.toggle("bad", !!msg);
+    why.textContent = msg;
+    why.hidden = !msg;
+    return msg ? null : parse(input.value);
+  }
+  // A good expression makes its tiles by itself a moment after typing stops; Make tiles redoes it.
+  input.addEventListener("input", () => {
+    clearTimeout(typing);
+    const p = check();
+    if (p) typing = setTimeout(() => makeTiles(p), 900);
+  });
+  document.getElementById("form").addEventListener("submit", e => {
+    e.preventDefault();
+    clearTimeout(typing);
+    const p = check();
+    if (p) makeTiles(p);
+  });
+
+  makeTiles(parseOk(input.value));
+})();
+</script>
+
+</body>
+</html>

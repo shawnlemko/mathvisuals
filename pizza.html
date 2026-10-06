@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Creating the Area Formula</title>
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Creating the Area Formula (pizza): the pizza is cut into n slices and rearranged, alternating up and down,
+   into a shape that approaches a rectangle r tall and half the circumference (2πr / 2) long.
+   The panel builds Area = πr² in symbols (Shawn: numbers don't matter). Half the crust is orange, half blue; radius purple.
+   Shawn removed the circumference view and the radius slider; the pizza is always full size. */
+:root {
+  --cheese: #f4c64e; --cheese-edge: #e2a93a; --cut: #6b3a14;
+  --crust-a: #d9661c; --crust-b: #2f5fd0; --rad: #6a4bc4;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --crust-a: #f08a4b; --crust-b: #7aa2ff; --rad: #a98ef5; } }
+:root[data-theme="dark"] { --crust-a: #f08a4b; --crust-b: #7aa2ff; --rad: #a98ef5; }
+</style>
+<style>
+.wrap { max-width: 1560px; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 20px; align-items: start; }
+@media (max-width: 960px) { .stage { grid-template-columns: 1fr; } }
+.board { padding: 12px; }
+.board svg { margin: 0 auto; max-height: calc(100vh - 230px); }
+.panel { gap: 16px; }
+
+.ctl { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; }
+.ctl + .ctl { margin-top: 18px; }
+.ctl label { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.ctl output { font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; line-height: 1; }
+.ctl input { grid-column: 1 / -1; height: 40px; }
+#n { accent-color: var(--crust-a); }
+
+.calc { display: flex; flex-direction: column; gap: 14px; }
+.formula i, .step i { font-family: var(--font-display); font-weight: 800; }
+.formula { font-family: var(--font-display); font-weight: 800; font-size: 2.3rem; line-height: 1.15; background: var(--chip); border-radius: 10px; padding: 8px 14px; }
+.step { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; line-height: 1.3; }
+.step b { font-family: var(--font-num); font-size: 1.75rem; }
+.step .ans { background: var(--chip); border-radius: 8px; padding: 0 8px; }
+.nw { white-space: nowrap; }
+.c-a { color: var(--crust-a); } .c-b { color: var(--crust-b); } .c-r { color: var(--rad); }
+
+/* Board drawing */
+.cheese { fill: var(--cheese); stroke: var(--cheese-edge); stroke-width: 3; }
+.crust { fill: none; stroke-linecap: butt; }
+.crust.a { stroke: var(--crust-a); } .crust.b { stroke: var(--crust-b); }
+.cut { fill: none; stroke: var(--cut); stroke-width: 1.6; stroke-opacity: 0.75; stroke-linejoin: round; }
+.rad { stroke: var(--rad); stroke-width: 6; stroke-linecap: round; }
+.meas { stroke-width: 4; stroke-linecap: round; }
+.meas.a { stroke: var(--crust-a); } .meas.b { stroke: var(--crust-b); }
+.txt { font-family: var(--font-display); font-weight: 800; font-size: 34px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.txt.a { fill: var(--crust-a); } .txt.b { fill: var(--crust-b); } .txt.r { fill: var(--rad); } .txt.ink { fill: var(--ink); }
+.shadow { fill: #1b2733; opacity: 0.14; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Creating the Area Formula</h1></div>
+  </header>
+  <div class="stage">
+    <div class="board"><svg id="svg" role="img" aria-label="A pizza cut into slices, and the slices or crust pieces rearranged beside it."></svg></div>
+    <aside class="panel">
+      <div class="card">
+        <div class="ctl"><label for="n" id="n-name">Slices</label><output id="n-out" for="n"></output>
+          <input type="range" id="n" min="4" max="64" step="2" value="8"></div>
+      </div>
+      <div class="card calc" id="calc" aria-live="polite"></div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg");
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  };
+  const st = { n: 8, r: 10 }; // radius fixed at full size (Shawn removed the radius slider)
+  const PI = Math.PI, deg = a => a * 180 / PI;
+  const pt = (R, a) => [R * Math.cos(a), R * Math.sin(a)];
+  const arc = (R, a0, a1) => { const p = pt(R, a0), q = pt(R, a1); return `M${p} A${R} ${R} 0 0 1 ${q}`; };
+  const wedge = (R, a0, a1) => { const p = pt(R, a0), q = pt(R, a1); return `M0,0 L${p} A${R} ${R} 0 0 1 ${q} Z`; };
+  // Pizza art (cheese only; the crust is drawn per piece) centered on 0,0, reused by every slice through <use>.
+  function defineArt(defs, Rc) {
+    const g = el("g", { id: "art" }, defs);
+    el("circle", { r: Rc, class: "cheese" }, g);
+  }
+  // The drawing grows with the radius slider: full size at radius 10.
+  const crustW = R => Math.max(4, R * 0.12);
+
+  // A whole pizza at cx, cy: cheese, crust pieces (colored by `color(i)`), cut lines.
+  function pizza(cx, cy, R, ct, n, color, o = 0) {
+    const g = el("g", { transform: `translate(${cx} ${cy})` }, svg);
+    el("circle", { r: R, cx: 6, cy: 10, class: "shadow" }, g);
+    el("use", { href: "#art" }, g);
+    const th = 2 * PI / n;
+    for (let i = 0; i < n; i++) el("path", { d: arc(R - ct / 2, o + i * th, o + (i + 1) * th), class: `crust ${color(i)}`, "stroke-width": ct }, g);
+    for (let i = 0; i < n; i++) { const [x, y] = pt(R, o + i * th); el("line", { x1: 0, y1: 0, x2: x, y2: y, class: "cut" }, g); }
+    el("circle", { r: R, class: "cut" }, g);
+    return g;
+  }
+
+  function drawArea() {
+    const n = st.n, R = 15 * st.r, ct = crustW(R), th = 2 * PI / n, half = n / 2, o = PI; // o: slice 0 starts at the left, so the top half is orange
+    svg.setAttribute("viewBox", "0 0 1060 470");
+    const defs = el("defs", {}, svg);
+    defineArt(defs, R - ct + 1);
+    for (let i = 0; i < n; i++) {
+      const cp = el("clipPath", { id: `w${i}` }, defs);
+      el("path", { d: wedge(R + 2, o + i * th - 0.003, o + (i + 1) * th + 0.003) }, cp);
+    }
+    const cx = 190, cy = 235;
+    // First half of the crust is orange, second half blue: the halves end up on top and bottom.
+    const pz = pizza(cx, cy, R, ct, n, i => (i < half ? "a" : "b"), o);
+    el("line", { x1: 0, y1: 0, x2: R, y2: 0, class: "rad" }, pz);
+    el("text", { x: R / 2, y: -14, class: "txt r", "text-anchor": "middle" }, pz, "r");
+    el("text", { x: R / 2, y: 38, class: "txt r", "text-anchor": "middle" }, pz, "radius");
+
+    // Rearranged: orange-crust slices point up (tip at the bottom), blue ones point down, alternating.
+    const w = 2 * R * Math.sin(th / 2), h = R * Math.cos(th / 2), W = half * w + w / 2;
+    const left = 420, room = 620, ox = left + (room - W) / 2 + w / 2, yb = cy + h / 2;
+    for (let i = 0; i < n; i++) {
+      const phi = deg(o + (i + 0.5) * th), up = i < half, j = up ? i : i - half;
+      const tx = up ? ox + j * w : ox + j * w + w / 2, ty = up ? yb : yb - h;
+      const g = el("g", { transform: `translate(${tx} ${ty}) rotate(${(up ? -90 : 90) - phi})` }, svg);
+      el("use", { href: "#art", "clip-path": `url(#w${i})` }, g);
+      el("path", { d: arc(R - ct / 2, o + i * th, o + (i + 1) * th), class: `crust ${up ? "a" : "b"}`, "stroke-width": ct }, g);
+      el("path", { d: wedge(R, o + i * th, o + (i + 1) * th), class: "cut" }, g);
+    }
+    // Measures: half the crust along the top and along the bottom, radius up the left side.
+    const bulge = R - h, yt = yb - h - bulge - 16, ybot = yb + bulge + 16;
+    const meas = (x1, x2, y, c, ty, label, fy, formula) => {
+      el("line", { x1, y1: y, x2, y2: y, class: `meas ${c}` }, svg);
+      [x1, x2].forEach(x => el("line", { x1: x, y1: y - 9, x2: x, y2: y + 9, class: `meas ${c}` }, svg));
+      el("text", { x: (x1 + x2) / 2, y: ty, class: `txt ${c}`, "text-anchor": "middle" }, svg, label);
+      el("text", { x: (x1 + x2) / 2, y: fy, class: `txt ${c}`, "text-anchor": "middle" }, svg, formula);
+    };
+    meas(ox - w / 2, ox + half * w - w / 2, yt, "a", yt - 14, "half the circumference", yt - 54, "2πr / 2");
+    meas(ox, ox + half * w, ybot, "b", ybot + 78, "half the circumference", ybot + 38, "2πr / 2");
+    const ea = -PI / 2 - th / 2, [ex, ey] = pt(R, ea);
+    el("line", { x1: ox, y1: yb, x2: ox + ex, y2: yb + ey, class: "rad" }, svg);
+    el("text", { x: ox + ex * 0.75 - 16, y: yb + ey / 2 - 6, class: "txt r", "text-anchor": "end" }, svg, "radius");
+    el("text", { x: ox + ex * 0.6 - 16, y: yb + ey / 2 + 32, class: "txt r", "text-anchor": "end" }, svg, "r");
+  }
+
+  // Builds each formula in symbols from the picture; no numbers, per Shawn.
+  function calc() {
+    const r = `<i class="c-r">r</i>`, d = `<i class="c-d">d</i>`, sq = "<sup>2</sup>";
+    {
+      $("calc").innerHTML =
+        `<div class="step">Area = <span class="c-b">base</span> × <span class="c-r">height</span></div>` +
+        `<div class="step"><span class="c-b">Base</span> = half the circumference <span class="nw">= ½ × 2π${r}</span> <span class="nw">= <span class="c-b">π</span>${r}</span></div>` +
+        `<div class="step"><span class="c-r">Height</span> = radius <span class="nw">= ${r}</span></div>` +
+        `<div class="step">Area <span class="nw">= <span class="c-b">π</span>${r} × ${r}</span></div>` +
+        `<div class="formula">Area = π${r}${sq}</div>`;
+    }
+  }
+
+  function render() {
+    svg.textContent = "";
+    drawArea();
+    $("n-out").textContent = st.n;
+    calc();
+  }
+
+  $("n").addEventListener("input", e => { st.n = +e.target.value; render(); });
+  render();
+})();
+</script>
+
+</body>
+</html>
