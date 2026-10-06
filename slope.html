@@ -47,20 +47,36 @@
   --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
-.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
 h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
 /* Every tool page has this at the top-left, linking to index.html (the main page). */
-a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
   background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
-  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
 a.main-btn span { font-size: 1.3rem; line-height: 1; }
 a.main-btn:hover { background: var(--sheet); color: var(--pt); }
 a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
 header p { margin: 0; color: var(--muted); max-width: 52ch; }
 .main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
 .board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
 .board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
 .panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -132,6 +148,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .hide-btn { margin-left: auto; font-family: var(--font-display); font-size: 1.05rem; padding: 10px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .hide-btn:hover { background: var(--sheet); color: var(--pt); }
 h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 </style>
 
 <div class="wrap">
@@ -354,8 +371,8 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
   let A, B;
   let hidden = false; // "Hide slope" button: students predict before the answer shows
   const differs = other => (x, y) => !(x === other().x && y === other().y); // the two points must differ
-  A = b.point({ name: "A", x: -3, y: -2, onMove: render, allow: differs(() => B) });
-  B = b.point({ name: "B", x: 3, y: 2, onMove: render, allow: differs(() => A) });
+  A = b.point({ name: "A", x: 2, y: 2, onMove: render, allow: differs(() => B) });
+  B = b.point({ name: "B", x: 8, y: 6, onMove: render, allow: differs(() => A) });
 
   function render() {
     const rise = B.y - A.y, run = B.x - A.x;
@@ -375,7 +392,11 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
     b.show(tri, show && rise !== 0 && run !== 0);
     if (show && run !== 0) lblRun.set("run = " + fmt(run), (b.sx(A.x) + b.sx(C.x)) / 2, b.sy(A.y) + (rise > 0 ? 32 : -14));
     else lblRun.hide();
-    if (show && rise !== 0) lblRise.set("rise = " + fmt(rise), b.sx(C.x) + (run >= 0 ? 12 : -12), (b.sy(C.y) + b.sy(B.y)) / 2 + 8, run >= 0 ? "start" : "end");
+    if (show && rise !== 0) {
+      // Label sits outside the triangle unless that would run off the grid edge.
+      const right = run >= 0 ? C.x <= b.max - 4 : C.x < b.min + 4;
+      lblRise.set("rise = " + fmt(rise), b.sx(C.x) + (right ? 12 : -12), (b.sy(C.y) + b.sy(B.y)) / 2 + 8, right ? "start" : "end");
+    }
     else lblRise.hide();
 
     // Readout
@@ -448,9 +469,6 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
   render();
 })();
 </script>
-nt = hidden ? "Show slope" : "Hide slope";
-    $("hideBtn").setAttribute("aria-pressed", String(hidden));
-    render();
-  
+
 </body>
 </html>
