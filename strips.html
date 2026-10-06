@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fraction Strips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Fraction Strips: drag tiles off the tray on the right (a fresh one appears each time), snap them
+   end to end or stacked, box-select with a drag on empty space, and drop on the trash to remove. */
+.wrap { max-width: 1560px; }
+.board { padding: 8px; }
+.ws-bg { fill: var(--sheet); }
+.tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 2; }
+.tile rect { stroke: #1b2733; stroke-width: 2.5; }
+.tile text { fill: #1b2733; font-family: var(--font-num); font-weight: 700; font-size: 28px; text-anchor: middle; pointer-events: none; }
+.tile line { stroke: #1b2733; stroke-width: 3; }
+.tile { cursor: grab; }
+.tile.sel rect { stroke: var(--pt); stroke-width: 7; }
+.tile.lift { opacity: 0.9; }
+/* Bold line where edges of stacked rows line up, showing equal lengths (Shawn). */
+.match { stroke: #1b2733; stroke-width: 9; stroke-linecap: butt; pointer-events: none; }
+header { align-items: end; }
+#dup { display: inline-flex; align-items: center; gap: 10px; font-size: 1.3rem; min-height: 56px; padding: 10px 20px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#dup span { font-size: 1.8rem; line-height: 1; }
+#dup:hover { background: var(--sheet); color: var(--pt); }
+#dup:disabled { opacity: 0.4; cursor: default; background: var(--pt); color: var(--sheet); }
+.ghost { fill: none; stroke: var(--pt); stroke-width: 3; stroke-dasharray: 10 7; pointer-events: none; }
+.marquee { fill: var(--pt); fill-opacity: 0.1; stroke: var(--pt); stroke-width: 2.5; stroke-dasharray: 8 6; pointer-events: none; }
+.trash .can { fill: var(--sheet); stroke: var(--muted); stroke-width: 5; stroke-linejoin: round; }
+.trash .rib { stroke: var(--muted); stroke-width: 5; stroke-linecap: round; }
+.trash .pad { fill: transparent; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 8 6; }
+.trash.hot .can { stroke: var(--warn); fill: var(--chip); }
+.trash.hot .rib { stroke: var(--warn); }
+.trash.hot .pad { stroke: var(--warn); stroke-width: 4; stroke-dasharray: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Fraction Strips</h1></div>
+    <button id="dup" type="button" disabled aria-label="Duplicate selected tiles"><span aria-hidden="true">⧉</span>Duplicate</button>
+  </header>
+  <div class="board"><svg id="svg" role="application" aria-label="Fraction strips workspace. Drag tiles from the tray on the right."></svg></div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  // Geometry (SVG units). One whole is W wide; the workspace holds two wholes side by side.
+  const W = 480, H = 64, GAP = 10, PAD = 20;
+  const WS = { x: 0, y: 0, w: 1010, h: 820 };
+  const TRAY = { x: WS.w + 20, y: 0, w: W + PAD * 2, h: 820 };
+  const SNAP = 40;   // how close an edge must be to snap
+  const EPS = 0.5;
+
+  // Tray: 1, 1/2, 1/3, 1/4, 1/5, 1/6, 1/8, 1/10, 1/12. Text stays dark on every fill, so tiles read in dark mode too.
+  const KINDS = [
+    { d: 1, color: "#f28b82" }, { d: 2, color: "#f7b267" }, { d: 3, color: "#f6dc6b" },
+    { d: 4, color: "#9fd89a" }, { d: 5, color: "#7fd3d8" }, { d: 6, color: "#8fb8f2" },
+    { d: 8, color: "#bba6f0" }, { d: 10, color: "#f2a7d8" }, { d: 12, color: "#cdb994" }
+  ];
+
+  const svg = document.getElementById("svg");
+  svg.setAttribute("viewBox", `0 0 ${TRAY.x + TRAY.w} ${WS.h}`);
+  el("rect", { class: "ws-bg", x: WS.x, y: WS.y, width: WS.w, height: WS.h }, svg);
+  el("rect", { class: "tray-bg", x: TRAY.x + 1, y: TRAY.y + 1, width: TRAY.w - 2, height: TRAY.h - 2, rx: 12 }, svg);
+  const trayLayer = el("g", {}, svg);
+
+  // Trash can at the bottom of the tray.
+  const TR = { w: 150, h: 110 };
+  TR.x = TRAY.x + TRAY.w - PAD - TR.w; TR.y = TRAY.h - PAD - TR.h;
+  const trash = el("g", { class: "trash", "aria-label": "Trash" }, svg);
+  el("rect", { class: "pad", x: TR.x, y: TR.y, width: TR.w, height: TR.h, rx: 12 }, trash);
+  const cx = TR.x + TR.w / 2, top = TR.y + 22;
+  el("path", { class: "can", d: `M${cx - 30},${top + 12} L${cx - 24},${top + 78} L${cx + 24},${top + 78} L${cx + 30},${top + 12} Z` }, trash);
+  el("path", { class: "can", d: `M${cx - 40},${top + 12} L${cx + 40},${top + 12} M${cx - 12},${top + 2} L${cx + 12},${top + 2} L${cx + 12},${top + 12} L${cx - 12},${top + 12} Z` }, trash);
+  [-12, 0, 12].forEach(dx => el("line", { class: "rib", x1: cx + dx, y1: top + 26, x2: cx + dx, y2: top + 64 }, trash));
+
+  const wsLayer = el("g", {}, svg);
+  const matchLayer = el("g", {}, svg);
+  const fx = el("g", {}, svg); // ghosts and the selection box draw above the tiles
+
+  function drawTile(g, k, w) {
+    el("rect", { x: 0, y: 0, width: w, height: H, rx: 4, fill: k.color }, g);
+    if (k.d === 1) { el("text", { x: w / 2, y: H / 2 + 10 }, g).textContent = "1"; return; }
+    const m = w / 2, half = k.d >= 10 ? 13 : 11;
+    el("text", { x: m, y: H / 2 - 6 }, g).textContent = "1";
+    el("line", { x1: m - half, y1: H / 2, x2: m + half, y2: H / 2 }, g);
+    el("text", { x: m, y: H / 2 + 26 }, g).textContent = String(k.d);
+  }
+
+  // Tray: one tile per size at true scale, left aligned, so the tray itself reads as a fraction wall.
+  KINDS.forEach((k, i) => {
+    k.w = W / k.d;
+    k.tx = TRAY.x + PAD; k.ty = TRAY.y + PAD + i * (H + GAP);
+    const g = el("g", { class: "tile", transform: `translate(${k.tx},${k.ty})`, "aria-label": k.d === 1 ? "1 whole" : `1/${k.d}` }, trayLayer);
+    g.dataset.kind = i;
+    drawTile(g, k, k.w);
+  });
+
+  const tiles = []; // { g, k, x, y, w, sel }
+  const place = t => t.g.setAttribute("transform", `translate(${t.x},${t.y})`);
+  const dupBtn = document.getElementById("dup");
+  const syncDup = () => { dupBtn.disabled = !tiles.some(t => t.sel); };
+  const setSel = (t, on) => { t.sel = on; t.g.classList.toggle("sel", on); syncDup(); };
+  const clearSel = () => tiles.forEach(t => setSel(t, false));
+
+  function newTile(k, x, y) {
+    const g = el("g", { class: "tile" }, wsLayer);
+    drawTile(g, k, k.w);
+    const t = { g, k, x, y, w: k.w, sel: false };
+    g.__tile = t; tiles.push(t); place(t);
+    return t;
+  }
+  function removeTile(t) { t.g.remove(); tiles.splice(tiles.indexOf(t), 1); syncDup(); }
+
+  // Where a tile edge in one row lines up with a tile edge in the row touching it above or below,
+  // draw a bold line across both rows. Tiles being dragged are left out until they land.
+  function drawMatches(skip = []) {
+    matchLayer.replaceChildren();
+    const ts = tiles.filter(t => !skip.includes(t)), seen = new Set();
+    for (const a of ts) for (const b of ts) {
+      if (Math.abs(b.y - (a.y + H)) > EPS) continue;
+      for (const ea of [a.x, a.x + a.w]) for (const eb of [b.x, b.x + b.w]) {
+        if (Math.abs(ea - eb) > EPS) continue;
+        const key = Math.round(ea) + "," + Math.round(a.y);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        el("line", { class: "match", x1: ea, y1: a.y, x2: ea, y2: a.y + 2 * H }, matchLayer);
+      }
+    }
+  }
+
+  function toSvg(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  const overlap = (a, b) => a.x < b.x + b.w - EPS && b.x < a.x + a.w - EPS && a.y < b.y + H - EPS && b.y < a.y + H - EPS;
+  const inBox = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+
+  // Best nudge (dx, dy) that puts a moving tile edge-to-edge with a resting one: end to end in a row,
+  // or stacked above/below lined up with a left or right edge. Rejected if any moving tile would overlap.
+  function findSnap(moving) {
+    const rest = tiles.filter(t => !moving.includes(t));
+    let best = null;
+    for (const m of moving) for (const s of rest) {
+      const c = [
+        [s.x + s.w - m.x, s.y - m.y], [s.x - m.w - m.x, s.y - m.y]
+      ];
+      for (const y of [s.y + H, s.y - H]) {
+        for (const ex of [s.x, s.x + s.w]) { c.push([ex - m.x, y - m.y]); c.push([ex - m.w - m.x, y - m.y]); }
+      }
+      for (const [dx, dy] of c) {
+        const d = Math.hypot(dx, dy);
+        if (d > SNAP || (best && d >= best.d)) continue;
+        const ok = moving.every(mm => {
+          const r = { x: mm.x + dx, y: mm.y + dy, w: mm.w };
+          return r.x >= WS.x - EPS && r.x + r.w <= WS.x + WS.w + EPS && r.y >= WS.y - EPS && r.y + H <= WS.y + WS.h + EPS
+            && rest.every(o => !overlap(r, o));
+        });
+        if (ok) best = { dx, dy, d };
+      }
+    }
+    return best;
+  }
+
+  let drag = null; // { kind: "move", group, start, origin[] } or { kind: "box", start, rect }
+  const ghosts = [];
+  function showGhosts(group, snap) {
+    ghosts.forEach(g => g.remove()); ghosts.length = 0;
+    if (!snap) return;
+    group.forEach(t => ghosts.push(el("rect", { class: "ghost", x: t.x + snap.dx, y: t.y + snap.dy, width: t.w, height: H, rx: 4 }, fx)));
+  }
+  function overTrash(p) { return inBox(p, TR) || inBox(p, TRAY); }
+
+  svg.addEventListener("pointerdown", e => {
+    if (drag) return;
+    e.preventDefault();
+    const p = toSvg(e);
+    const g = e.target.closest(".tile");
+    let group;
+    if (g && g.dataset.kind !== undefined) {
+      // Pull a fresh copy off the tray; the tray tile stays put.
+      clearSel();
+      const k = KINDS[+g.dataset.kind];
+      group = [newTile(k, k.tx, k.ty)];
+    } else if (g && g.__tile) {
+      const t = g.__tile;
+      if (e.shiftKey) { setSel(t, !t.sel); return; }
+      if (!t.sel) { clearSel(); }
+      group = t.sel ? tiles.filter(x => x.sel) : [t];
+    }
+    svg.setPointerCapture(e.pointerId);
+    if (group) {
+      group.forEach(t => { wsLayer.appendChild(t.g); t.g.classList.add("lift"); });
+      drag = { kind: "move", id: e.pointerId, group, start: p, origin: group.map(t => [t.x, t.y]), moved: false, fromTray: !!(g && g.dataset.kind !== undefined) };
+    } else {
+      if (!e.shiftKey) clearSel();
+      drag = { kind: "box", id: e.pointerId, start: p, rect: el("rect", { class: "marquee", x: p.x, y: p.y, width: 0, height: 0 }, fx) };
+    }
+  });
+
+  svg.addEventListener("pointermove", e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const p = toSvg(e), dx = p.x - drag.start.x, dy = p.y - drag.start.y;
+    if (drag.kind === "move") {
+      if (Math.hypot(dx, dy) > 3) drag.moved = true;
+      drag.group.forEach((t, i) => { t.x = drag.origin[i][0] + dx; t.y = drag.origin[i][1] + dy; place(t); });
+      const bin = overTrash(p);
+      trash.classList.toggle("hot", bin);
+      showGhosts(drag.group, bin ? null : findSnap(drag.group));
+      if (!drag.hid) { drag.hid = true; drawMatches(drag.group); }
+    } else {
+      const r = { x: Math.min(p.x, drag.start.x), y: Math.min(p.y, drag.start.y), w: Math.abs(dx), h: Math.abs(dy) };
+      drag.rect.setAttribute("x", r.x); drag.rect.setAttribute("y", r.y);
+      drag.rect.setAttribute("width", r.w); drag.rect.setAttribute("height", r.h);
+      tiles.forEach(t => setSel(t, t.x < r.x + r.w && r.x < t.x + t.w && t.y < r.y + r.h && r.y < t.y + H));
+    }
+  });
+
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId);
+    if (drag.kind === "box") { drag.rect.remove(); drag = null; return; }
+    const group = drag.group, p = toSvg(e);
+    showGhosts(group, null);
+    trash.classList.remove("hot");
+    group.forEach(t => t.g.classList.remove("lift"));
+    if (drag.fromTray && !drag.moved) { group.forEach(removeTile); drag = null; drawMatches(); return; }
+    if (e.type === "pointercancel") {
+      group.forEach((t, i) => { t.x = drag.origin[i][0]; t.y = drag.origin[i][1]; place(t); });
+    } else if (overTrash(p)) {
+      group.forEach(removeTile);
+    } else {
+      const snap = findSnap(group);
+      if (snap) group.forEach(t => { t.x += snap.dx; t.y += snap.dy; });
+      else {
+        // Keep the group inside the workspace.
+        const minX = Math.min(...group.map(t => t.x)), maxX = Math.max(...group.map(t => t.x + t.w));
+        const minY = Math.min(...group.map(t => t.y)), maxY = Math.max(...group.map(t => t.y + H));
+        const sx = minX < WS.x ? WS.x - minX : maxX > WS.x + WS.w ? WS.x + WS.w - maxX : 0;
+        const sy = minY < WS.y ? WS.y - minY : maxY > WS.y + WS.h ? WS.y + WS.h - maxY : 0;
+        group.forEach(t => { t.x += sx; t.y += sy; });
+      }
+      group.forEach(place);
+    }
+    drag = null;
+    drawMatches();
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // Copy the selected tiles into the first clear spot below, beside or above them. The copies become the selection.
+  dupBtn.addEventListener("click", () => {
+    const group = tiles.filter(t => t.sel);
+    if (!group.length || drag) return;
+    const minX = Math.min(...group.map(t => t.x)), maxX = Math.max(...group.map(t => t.x + t.w));
+    const minY = Math.min(...group.map(t => t.y)), maxY = Math.max(...group.map(t => t.y + H));
+    const gw = maxX - minX, gh = maxY - minY, D = 24;
+    const tries = [[0, gh + D], [gw + D, 0], [0, -gh - D], [-gw - D, 0]];
+    for (let i = 1; i <= 20; i++) tries.push([0, gh + D * i], [D * i, D * i], [D * i, -D * i]);
+    const fits = (dx, dy) => group.every(t => {
+      const r = { x: t.x + dx, y: t.y + dy, w: t.w };
+      return r.x >= WS.x && r.x + r.w <= WS.x + WS.w && r.y >= WS.y && r.y + H <= WS.y + WS.h && tiles.every(o => !overlap(r, o));
+    });
+    const [dx, dy] = tries.find(([a, b]) => fits(a, b)) || [D, D];
+    clearSel();
+    group.forEach(t => setSel(newTile(t.k, Math.min(Math.max(t.x + dx, WS.x), WS.x + WS.w - t.w), Math.min(Math.max(t.y + dy, WS.y), WS.y + WS.h - H)), true));
+    drawMatches();
+  });
+
+  // Delete or Backspace removes the selected tiles.
+  document.addEventListener("keydown", e => {
+    if ((e.key === "Delete" || e.key === "Backspace") && !drag) {
+      const sel = tiles.filter(t => t.sel);
+      if (sel.length) { e.preventDefault(); sel.forEach(removeTile); drawMatches(); }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

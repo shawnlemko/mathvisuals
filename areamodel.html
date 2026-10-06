@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Area Model Multiplication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Area Model: an a × b rectangle of unit blocks. The snap button merges every ten blocks in a row
+   (or column) into one rod, then every ten rods into a 10 × 10 flat. The rectangle is split into
+   tens and ones on each side, and each partial product is labeled in its region. */
+.wrap { max-width: 1400px; }
+/* Keep the whole rectangle on one projected screen. */
+.board svg { max-height: calc(100vh - 190px); min-height: 320px; }
+.cell { stroke: #1b2733; stroke-width: 1.5; }
+.u { background: #f6c945; } .rod { background: #5cbf7a; } .flat { background: #7aa7ec; }
+.thin { stroke: #1b2733; stroke-opacity: 0.28; stroke-width: 1; pointer-events: none; }
+.outline { fill: none; stroke: #1b2733; stroke-width: 3; pointer-events: none; }
+.split { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 12 8; }
+.part { font-family: var(--font-num); font-weight: 700; font-size: 30px; fill: var(--pt); text-anchor: middle; dominant-baseline: central; }
+.brace { stroke: var(--pt); stroke-width: 3; fill: none; }
+.prod-bg { fill: var(--sheet); fill-opacity: 0.94; stroke: var(--ink); stroke-width: 2; }
+.prod { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.factors { display: flex; align-items: center; justify-content: center; gap: 14px; font-family: var(--font-num); font-weight: 700; font-size: 2.6rem; }
+.factors input { width: 3.2em; font: inherit; text-align: center; color: var(--pt); background: var(--sheet); border: 3px solid var(--grid-major); border-radius: 10px; padding: 4px 6px; }
+.factors input.bad { color: var(--warn); border-color: var(--warn); }
+#snap { width: 100%; margin-top: 16px; font-size: 1.35rem; padding: 14px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#snap:hover { background: var(--sheet); color: var(--pt); }
+#snap:disabled { opacity: 0.45; cursor: default; }
+.blocks { display: flex; flex-direction: column; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; line-height: 1.2; }
+.blocks i { display: inline-block; width: 34px; height: 34px; border: 3px solid #1b2733; border-radius: 4px; vertical-align: -5px; margin-right: 14px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Area Model Multiplication</h1></div>
+  </header>
+  <div class="main">
+    <div class="board"><svg id="svg" role="img" aria-label="Area model rectangle built from base-ten blocks"></svg></div>
+    <div class="panel">
+      <div class="card">
+        <div class="factors">
+          <input id="a" type="number" min="1" max="20" step="1" value="13" aria-label="First factor (width)">
+          <span>×</span>
+          <input id="b" type="number" min="1" max="20" step="1" value="12" aria-label="Second factor (height)">
+        </div>
+        <button id="snap" type="button">Snap tens together</button>
+      </div>
+      <div class="card"><div class="blocks" id="blocks"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const S = 36, G = 6;          // cell size and the gap between loose blocks
+  const LM = 92, TM = 76, PAD = 16;
+  // Block colours stay the same in dark mode so ones, tens and hundreds keep their look.
+  const COLORS = { u: [246, 201, 69], rod: [92, 191, 122], flat: [122, 167, 236] };
+
+  const svg = document.getElementById("svg");
+  const inA = document.getElementById("a"), inB = document.getElementById("b");
+  const snapBtn = document.getElementById("snap");
+  let A = 13, B = 12, stage = 0, cells = [], outlines = null, anim = 0;
+
+  // Which block a cell belongs to at a stage. Stage 1: rows of ten in the tens columns become
+  // horizontal rods; columns of ten in the tens rows (ones columns) become vertical rods.
+  // Stage 2: ten rods inside a tens-by-tens square become a flat.
+  function group(r, c, s) {
+    const tc = Math.floor(A / 10) * 10, tr = Math.floor(B / 10) * 10;
+    if (s >= 2 && c < tc && r < tr) return { kind: "flat", id: `f${Math.floor(r / 10)},${Math.floor(c / 10)}` };
+    if (s >= 1 && c < tc) return { kind: "rod", id: `h${r},${Math.floor(c / 10)}` };
+    if (s >= 1 && r < tr) return { kind: "rod", id: `v${c},${Math.floor(r / 10)}` };
+    return { kind: "u", id: `u${r},${c}` };
+  }
+  const maxStage = () => (A >= 10 && B >= 10 ? 2 : A >= 10 || B >= 10 ? 1 : 0);
+
+  // Insets per side: none where the neighbour is part of the same block.
+  function geom(cell, s) {
+    const g = group(cell.r, cell.c, s), h = G / 2;
+    const same = (r, c) => r >= 0 && c >= 0 && r < B && c < A && group(r, c, s).id === g.id;
+    const l = same(cell.r, cell.c - 1) ? 0 : h, rt = same(cell.r, cell.c + 1) ? 0 : h;
+    const t = same(cell.r - 1, cell.c) ? 0 : h, bt = same(cell.r + 1, cell.c) ? 0 : h;
+    return { x: LM + cell.c * S + l, y: TM + cell.r * S + t, w: S - l - rt, h: S - t - bt, col: COLORS[g.kind], loose: g.kind === "u" };
+  }
+  function place(cell, g) {
+    cell.node.setAttribute("x", g.x); cell.node.setAttribute("y", g.y);
+    cell.node.setAttribute("width", g.w); cell.node.setAttribute("height", g.h);
+    cell.node.setAttribute("rx", g.loose ? 3 : 0);
+    cell.node.style.fill = `rgb(${g.col.join(",")})`;
+    // Loose blocks keep their own border; merged blocks lose it and share one outline.
+    cell.node.style.strokeOpacity = g.loose ? 1 : 0;
+  }
+
+  function parts(n) { const t = Math.floor(n / 10) * 10, o = n % 10; return [t, o].filter(v => v > 0); }
+
+  function draw() {
+    cancelAnimationFrame(anim);
+    svg.textContent = "";
+    const W = Math.max(A, 12) * S, H = Math.max(B, 12) * S;
+    svg.setAttribute("viewBox", `0 0 ${LM + W + PAD} ${TM + H + PAD}`);
+    const blocks = el("g", {}, svg);
+    cells = [];
+    for (let r = 0; r < B; r++) for (let c = 0; c < A; c++) {
+      const cell = { r, c, node: el("rect", { class: "cell" }, blocks) };
+      cells.push(cell);
+      place(cell, geom(cell, stage));
+    }
+    // Faint unit lines over merged blocks so every square can still be counted.
+    const thin = el("g", {}, svg);
+    for (let c = 1; c < A; c++) el("line", { class: "thin", x1: LM + c * S, y1: TM, x2: LM + c * S, y2: TM + B * S }, thin);
+    for (let r = 1; r < B; r++) el("line", { class: "thin", x1: LM, y1: TM + r * S, x2: LM + A * S, y2: TM + r * S }, thin);
+    outlines = el("g", {}, svg);
+    drawOutlines(1);
+
+    // Tens / ones split along each side, with the part lengths labeled.
+    const pa = parts(A), pb = parts(B), fx = el("g", {}, svg);
+    let x = LM;
+    pa.forEach((p, i) => {
+      el("path", { class: "brace", d: `M${x + 3},${TM - 14} v-12 H${x + p * S - 3} v12` }, fx);
+      el("text", { class: "part", x: x + p * S / 2, y: TM - 48 }, fx).textContent = p;
+      x += p * S;
+      if (i < pa.length - 1) el("line", { class: "split", x1: x, y1: TM - 8, x2: x, y2: TM + B * S + 8 }, fx);
+    });
+    let y = TM;
+    pb.forEach((p, i) => {
+      el("path", { class: "brace", d: `M${LM - 14},${y + 3} h-12 V${y + p * S - 3} h12` }, fx);
+      el("text", { class: "part", x: LM - 56, y: y + p * S / 2 }, fx).textContent = p;
+      y += p * S;
+      if (i < pb.length - 1) el("line", { class: "split", x1: LM - 8, y1: y, x2: LM + A * S + 8, y2: y }, fx);
+    });
+    // Each region's partial product in its middle.
+    const rows = [];
+    let y0 = TM;
+    pb.forEach(q => {
+      let x0 = LM;
+      pa.forEach(p => {
+        const v = p * q, txt = String(v), w = p * S, h = q * S;
+        // Labels may spill past a one-block-wide region so they stay readable.
+        const fs = Math.min(34, (Math.max(w, 70) - 4) / (txt.length * 0.62 + 0.4), (Math.max(h, 40) - 4) / 1.25);
+        const bw = txt.length * fs * 0.62 + fs * 0.4, bh = fs * 1.25;
+        el("rect", { class: "prod-bg", x: x0 + w / 2 - bw / 2, y: y0 + h / 2 - bh / 2, width: bw, height: bh, rx: 6 }, fx);
+        el("text", { class: "prod", x: x0 + w / 2, y: y0 + h / 2 + 1, "font-size": fs }, fx).textContent = txt;
+        rows.push([p, q, v]);
+        x0 += w;
+      });
+      y0 += q * S;
+    });
+    fillPanel(rows);
+    snapLabel();
+  }
+
+  function drawOutlines(opacity) {
+    outlines.textContent = "";
+    outlines.style.opacity = opacity;
+    const boxes = {};
+    cells.forEach(cell => {
+      const g = group(cell.r, cell.c, stage);
+      if (g.kind === "u") return;
+      const b = boxes[g.id] || (boxes[g.id] = { r0: cell.r, c0: cell.c, r1: cell.r, c1: cell.c });
+      b.r0 = Math.min(b.r0, cell.r); b.c0 = Math.min(b.c0, cell.c); b.r1 = Math.max(b.r1, cell.r); b.c1 = Math.max(b.c1, cell.c);
+    });
+    for (const id in boxes) {
+      const b = boxes[id];
+      el("rect", { class: "outline", x: LM + b.c0 * S + G / 2, y: TM + b.r0 * S + G / 2,
+        width: (b.c1 - b.c0 + 1) * S - G, height: (b.r1 - b.r0 + 1) * S - G }, outlines);
+    }
+  }
+
+  function fillPanel(rows) {
+    countBlocks();
+  }
+
+  function countBlocks() {
+    const ids = { u: new Set(), rod: new Set(), flat: new Set() };
+    cells.forEach(c => { const g = group(c.r, c.c, stage); ids[g.kind].add(g.id); });
+    const item = (n, cls, one, many) => `<span><i class="${cls}"></i>${n} ${n === 1 ? one : many}</span>`;
+    document.getElementById("blocks").innerHTML = [
+      ids.flat.size ? item(ids.flat.size, "flat", "hundred", "hundreds") : "",
+      ids.rod.size ? item(ids.rod.size, "rod", "ten", "tens") : "",
+      ids.u.size ? item(ids.u.size, "u", "one", "ones") : ""
+    ].join("");
+  }
+
+  function snapLabel() {
+    const m = maxStage();
+    snapBtn.disabled = m === 0;
+    snapBtn.textContent = m === 0 ? "No tens to snap" : stage >= m ? "Break into ones" : stage === 0 ? "Snap tens together" : "Snap hundreds together";
+  }
+
+  // One stage change: the blocks that join slide together and recolour, one block after another.
+  function go(next) {
+    cancelAnimationFrame(anim);
+    const from = cells.map(c => geom(c, stage));
+    const prev = stage;
+    stage = next;
+    const to = cells.map(c => geom(c, stage));
+    const key = c => group(c.r, c.c, Math.max(prev, next)).id;
+    const order = {}; let k = 0;
+    cells.forEach(c => { if (!(key(c) in order)) order[key(c)] = k++; });
+    const STEP = Math.min(90, 1400 / Math.max(k, 1)), DUR = 380;
+    cells.forEach(c => { c.node.style.strokeOpacity = 1; c.node.setAttribute("rx", 0); });
+    drawOutlines(0);
+    countBlocks();
+    snapLabel();
+    const t0 = performance.now();
+    const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const lerp = (a, b, t) => a + (b - a) * t;
+    function frame(now) {
+      let done = true;
+      cells.forEach((c, i) => {
+        const raw = Math.min(1, Math.max(0, (now - t0 - order[key(c)] * STEP) / DUR));
+        if (raw < 1) done = false;
+        const t = ease(raw), f = from[i], g = to[i];
+        c.node.setAttribute("x", lerp(f.x, g.x, t)); c.node.setAttribute("y", lerp(f.y, g.y, t));
+        c.node.setAttribute("width", lerp(f.w, g.w, t)); c.node.setAttribute("height", lerp(f.h, g.h, t));
+        c.node.style.fill = `rgb(${f.col.map((v, j) => Math.round(lerp(v, g.col[j], t))).join(",")})`;
+        c.node.style.strokeOpacity = lerp(f.loose ? 1 : 0.3, g.loose ? 1 : 0.3, t);
+      });
+      if (!done) { anim = requestAnimationFrame(frame); return; }
+      cells.forEach((c, i) => place(c, to[i]));
+      drawOutlines(1);
+    }
+    anim = requestAnimationFrame(frame);
+  }
+
+  snapBtn.addEventListener("click", () => go(stage >= maxStage() ? 0 : stage + 1));
+
+  function read(input) {
+    const v = Number(input.value);
+    const ok = input.value !== "" && Number.isInteger(v) && v >= 1 && v <= 20;
+    input.classList.toggle("bad", !ok);
+    return ok ? v : null;
+  }
+  function onInput() {
+    const a = read(inA), b = read(inB);
+    if (a === null || b === null || (a === A && b === B)) return;
+    A = a; B = b; stage = 0;
+    draw();
+  }
+  inA.addEventListener("input", onInput);
+  inB.addEventListener("input", onInput);
+  [inA, inB].forEach(i => i.addEventListener("change", () => {
+    if (read(i) === null) { i.value = i === inA ? A : B; i.classList.remove("bad"); }
+  }));
+
+  draw();
+})();
+</script>
+
+</body>
+</html>

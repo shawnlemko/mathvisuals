@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Rise Over Run Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+.hide-btn { margin-left: auto; font-family: var(--font-display); font-size: 1.05rem; padding: 10px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.hide-btn:hover { background: var(--sheet); color: var(--pt); }
+h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1><span class="r">Rise</span> over <span class="n">Run</span> Lab</h1></div>
+    <p>Drag point A or B, or use the sliders. The slope updates as you go. Points snap to whole numbers.</p>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="plane" role="img" aria-label="Coordinate plane with a line through points A and B"></svg>
+    </div>
+
+    <div class="panel">
+      <section class="card" aria-live="polite">
+        <p class="label">Slope</p>
+        <div class="points"><span><b>A</b> <span id="aTxt"></span></span><span><b>B</b> <span id="bTxt"></span></span></div>
+        <div class="eq">
+          <span class="var">m</span><span>=</span>
+          <span class="frac"><span class="c-green">rise</span><span class="c-orange">run</span></span><span>=</span>
+          <span class="frac"><span class="c-green">y₂ − y₁</span><span class="c-orange">x₂ − x₁</span></span>
+        </div>
+        <div class="eq">
+          <span>=</span>
+          <span class="frac"><span class="c-green" id="subRise"></span><span class="c-orange" id="subRun"></span></span><span>=</span>
+          <span class="frac"><span class="c-green" id="fRise"></span><span class="c-orange" id="fRun"></span></span>
+          <span id="ansWrap"></span>
+          <button type="button" id="hideBtn" class="hide-btn" aria-pressed="false">Hide slope</button>
+        </div>
+        <div class="verdict" id="verdict"><span class="pill" id="pill"></span><p id="note"></p></div>
+      </section>
+
+      <section class="card">
+        <p class="label">Rise and run</p>
+        <div class="slider"><label for="rise" class="c-green">Rise</label><input type="range" id="rise" class="green" min="-10" max="10" step="1"><output id="riseOut" class="c-green"></output></div>
+        <div class="slider"><label for="run" class="c-orange">Run</label><input type="range" id="run" class="orange" min="-10" max="10" step="1"><output id="runOut" class="c-orange"></output></div>
+        <p class="hint" id="hint">The sliders move point B relative to A.</p>
+        <div class="toggles">
+          <label><input type="checkbox" id="tTri" checked> Show rise and run</label>
+          <label><input type="checkbox" id="tCoord" checked> Show coordinates</label>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* MathBoard: a coordinate-plane board shared by the concept visuals.
+   Usage:
+     const b = MathBoard.create(svgEl, { min: -10, max: 10 });
+     const A = b.point({ name: "A", x: -3, y: -2, onMove: render });
+     const ln = b.line();            // b.lineThrough(ln, A, B) extends it across the plane
+     const s  = b.segment("green");  // b.setSegment(s, p, q, { arrow: true })
+     const t  = b.label("green");    // t.set("rise = 4", x, y, "start") / t.hide()
+     const f  = b.fill("green");     // b.setPolygon(f, [p, q, r])
+   Points snap to integers and stay inside [min, max]. Helpers: MathBoard.fmt (true minus sign), MathBoard.gcd. */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const set = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  function create(svg, opts = {}) {
+    const min = opts.min ?? -10, max = opts.max ?? 10, unit = opts.unit ?? 30, pad = opts.pad ?? 30;
+    const size = (max - min) * unit + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    const sx = x => pad + (x - min) * unit;
+    const sy = y => pad + (max - y) * unit;
+    const clamp = v => Math.max(min, Math.min(max, v));
+
+    const defs = el("defs", {}, svg);
+    ["green", "orange"].forEach(c => {
+      const m = el("marker", { id: `mb-arr-${c}`, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: `mb-arrow ${c}` }, m);
+    });
+
+    // Layers keep drawing order fixed: grid, fills, lines, labels, points.
+    const layers = {};
+    ["grid", "fills", "lines", "labels", "points"].forEach(n => (layers[n] = el("g", {}, svg)));
+
+    const g = layers.grid;
+    const major = opts.majorEvery ?? 0, tickEvery = opts.tickEvery ?? 1; // grade 8: every line labeled, counting by 1
+    for (let i = min; i <= max; i++) {
+      const cls = i === 0 ? "mb-axis" : major && i % major === 0 ? "mb-major" : "mb-minor";
+      el("line", { x1: sx(i), y1: sy(min), x2: sx(i), y2: sy(max), class: cls }, g);
+      el("line", { x1: sx(min), y1: sy(i), x2: sx(max), y2: sy(i), class: cls }, g);
+    }
+    for (let i = min; i <= max; i++) {
+      if (i === 0 || i % tickEvery) continue;
+      el("text", { x: sx(i), y: sy(0) + 22, class: "mb-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, g).textContent = fmt(i);
+    }
+    el("text", { x: sx(max) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(max) + 16, class: "mb-tick" }, g).textContent = "y";
+
+    function toPlane(evt) {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: clamp(Math.round((p.x - pad) / unit + min)), y: clamp(Math.round(max - (p.y - pad) / unit)) };
+    }
+
+    const show = (e, on) => { e.style.display = on ? "" : "none"; };
+
+    const board = {
+      svg, min, max, sx, sy, clamp, toPlane, layers, show,
+      line(cls = "") { return el("line", { class: `mb-line ${cls}` }, layers.lines); },
+      segment(color) { return el("line", { class: `mb-seg ${color}` }, layers.lines); },
+      fill(color) { return el("path", { class: `mb-fill ${color}` }, layers.fills); },
+
+      // Draw `line` through plane points p and q, extended to the edges of the plane.
+      lineThrough(line, p, q) {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        if (dx === 0 && dy === 0) return show(line, false);
+        show(line, true);
+        if (dx === 0) return set(line, { x1: sx(p.x), y1: sy(min), x2: sx(p.x), y2: sy(max) });
+        const m = dy / dx, pts = [];
+        [min, max].forEach(x => { const y = p.y + m * (x - p.x); if (y >= min - 1e-9 && y <= max + 1e-9) pts.push([x, y]); });
+        if (m !== 0) [min, max].forEach(y => { const x = p.x + (y - p.y) / m; if (x > min && x < max) pts.push([x, y]); });
+        const a = pts[0], b = pts[pts.length - 1];
+        set(line, { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]) });
+      },
+
+      // Segment from p to q in plane units. `arrow` adds an arrowhead at q; `gap` stops short of q (px), e.g. to clear a point.
+      setSegment(seg, p, q, { arrow = false, gap = 0 } = {}) {
+        let x2 = sx(q.x), y2 = sy(q.y);
+        const L = Math.hypot(x2 - sx(p.x), y2 - sy(p.y));
+        if (gap && L > gap) { x2 -= (x2 - sx(p.x)) / L * gap; y2 -= (y2 - sy(p.y)) / L * gap; }
+        set(seg, { x1: sx(p.x), y1: sy(p.y), x2, y2 });
+        const color = seg.classList.contains("green") ? "green" : "orange";
+        arrow ? seg.setAttribute("marker-end", `url(#mb-arr-${color})`) : seg.removeAttribute("marker-end");
+      },
+
+      setPolygon(path, pts) {
+        path.setAttribute("d", pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z");
+      },
+
+      // Text with a backing chip so grid lines never cut through it. x, y are in px.
+      label(color = "") {
+        const bg = el("rect", { class: "mb-lbl-bg", rx: 5 }, layers.labels);
+        const t = el("text", { class: `mb-lbl ${color}` }, layers.labels);
+        return {
+          set(text, x, y, anchor = "middle") {
+            t.textContent = text; set(t, { x, y, "text-anchor": anchor });
+            show(t, true); show(bg, true);
+            const b = t.getBBox();
+            set(bg, { x: b.x - 5, y: b.y - 2, width: b.width + 10, height: b.height + 4 });
+          },
+          hide() { show(t, false); show(bg, false); }
+        };
+      },
+
+      /* Draggable, keyboard-movable point. onMove(point) runs after every move.
+         `allow(x, y)` can veto a position (return false). */
+      point({ name, x, y, onMove, allow, showCoords = true }) {
+        const h = el("g", { class: "mb-handle", tabindex: 0, role: "slider", "aria-label": `Point ${name}. Use arrow keys to move.` }, layers.points);
+        el("circle", { class: "hit", r: 26 }, h);
+        const ring = el("circle", { class: "ring", r: 18 }, h);
+        el("circle", { class: "dot", r: 14 }, h);
+        el("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, h).textContent = name;
+        const coord = el("text", { class: "mb-coord" }, h);
+        const P = {
+          name, x, y, el: h, showCoords,
+          moveTo(nx, ny, silent) {
+            nx = clamp(nx); ny = clamp(ny);
+            if (nx === P.x && ny === P.y) return;
+            if (allow && !allow(nx, ny)) return;
+            P.x = nx; P.y = ny; P.draw();
+            if (!silent && onMove) onMove(P);
+          },
+          // Place the coordinate tag; `away` is a point the tag should face away from.
+          draw(away) {
+            h.setAttribute("transform", `translate(${sx(P.x)},${sy(P.y)})`);
+            h.setAttribute("aria-valuetext", `(${P.x}, ${P.y})`);
+            coord.textContent = `(${fmt(P.x)}, ${fmt(P.y)})`;
+            let dx = away && P.x < away.x ? -1 : 1, dy = away && P.y < away.y ? -1 : 1;
+            if (P.x >= max - 2) dx = -1; if (P.x <= min + 2) dx = 1;
+            if (P.y >= max - 1) dy = -1; if (P.y <= min + 1) dy = 1;
+            set(coord, { x: dx * 20, y: dy > 0 ? -18 : 34, "text-anchor": dx > 0 ? "start" : "end" });
+            show(coord, P.showCoords);
+          }
+        };
+        h.addEventListener("pointerdown", e => { e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); ring.setAttribute("r", 24); h.focus(); });
+        h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = toPlane(e); P.moveTo(p.x, p.y); } });
+        const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); ring.setAttribute("r", 18); };
+        h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+        h.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+          if (!d) return; e.preventDefault(); P.moveTo(P.x + d[0], P.y + d[1]);
+        });
+        P.draw();
+        return P;
+      }
+    };
+    return board;
+  }
+
+  window.MathBoard = { create, fmt, gcd };
+})();
+</script>
+<script>
+(() => {
+  const { fmt, gcd } = MathBoard;
+  const $ = id => document.getElementById(id);
+  const paren = n => (n < 0 ? "(" + fmt(n) + ")" : String(n));
+  const b = MathBoard.create($("plane"), { min: -10, max: 10 });
+
+  // Drawing order: fill, line, run/rise segments, labels, points.
+  const tri = b.fill("green");
+  const ln = b.line();
+  const segRun = b.segment("orange"), segRise = b.segment("green");
+  const lblRun = b.label("orange"), lblRise = b.label("green");
+  let A, B;
+  let hidden = false; // "Hide slope" button: students predict before the answer shows
+  const differs = other => (x, y) => !(x === other().x && y === other().y); // the two points must differ
+  A = b.point({ name: "A", x: -3, y: -2, onMove: render, allow: differs(() => B) });
+  B = b.point({ name: "B", x: 3, y: 2, onMove: render, allow: differs(() => A) });
+
+  function render() {
+    const rise = B.y - A.y, run = B.x - A.x;
+    const show = $("tTri").checked;
+    A.showCoords = B.showCoords = $("tCoord").checked;
+    A.draw(B); B.draw(A);
+
+    b.lineThrough(ln, A, B);
+
+    // Slope triangle: A to C is the run, C to B is the rise.
+    const C = { x: B.x, y: A.y };
+    b.setSegment(segRun, A, C, { arrow: true, gap: rise === 0 ? 16 : 0 });
+    b.setSegment(segRise, C, B, { arrow: true, gap: 16 });
+    b.setPolygon(tri, [A, C, B]);
+    b.show(segRun, show && run !== 0);
+    b.show(segRise, show && rise !== 0);
+    b.show(tri, show && rise !== 0 && run !== 0);
+    if (show && run !== 0) lblRun.set("run = " + fmt(run), (b.sx(A.x) + b.sx(C.x)) / 2, b.sy(A.y) + (rise > 0 ? 32 : -14));
+    else lblRun.hide();
+    if (show && rise !== 0) lblRise.set("rise = " + fmt(rise), b.sx(C.x) + (run >= 0 ? 12 : -12), (b.sy(C.y) + b.sy(B.y)) / 2 + 8, run >= 0 ? "start" : "end");
+    else lblRise.hide();
+
+    // Readout
+    $("aTxt").textContent = `(${fmt(A.x)}, ${fmt(A.y)})`;
+    $("bTxt").textContent = `(${fmt(B.x)}, ${fmt(B.y)})`;
+    $("subRise").textContent = `${fmt(B.y)} − ${paren(A.y)}`;
+    $("subRun").textContent = `${fmt(B.x)} − ${paren(A.x)}`;
+    $("fRise").textContent = fmt(rise);
+    $("fRun").textContent = fmt(run);
+
+    const ans = $("ansWrap"), pill = $("pill"), note = $("note");
+    let kind, text, color;
+    if (run === 0) {
+      ans.innerHTML = `<span>=</span> <span class="answer warn">undefined</span>`;
+      kind = "Undefined"; color = "var(--warn)";
+      text = "The run is 0, and you can't divide by zero. The line is vertical, so it has no slope.";
+    } else {
+      const g = gcd(rise, run) || 1;
+      let n = rise / g, d = run / g;
+      if (d < 0) { n = -n; d = -d; }
+      const simple = d === 1 ? fmt(n) : `<span class="frac"><span>${fmt(n)}</span><span>${d}</span></span>`;
+      const dec = Number.isInteger(rise / run) ? "" : `<span class="dec">≈ ${fmt(+(rise / run).toFixed(2))}</span>`;
+      ans.innerHTML = `<span>=</span> <span class="answer">${simple}${dec}</span>`;
+      if (rise === 0) { kind = "Zero"; color = "var(--muted)"; text = `The rise is 0, so the slope is 0 ÷ ${fmt(run)} = 0. The line is horizontal.`; }
+      else if (n > 0) {
+        kind = "Positive"; color = "var(--green)";
+        text = "The line goes up as you read from left to right." +
+          (Math.abs(n) > d ? " The rise is bigger than the run, so it is steep." : Math.abs(n) < d ? " The run is bigger than the rise, so it is gentle." : " The rise equals the run.");
+      } else {
+        kind = "Negative"; color = "var(--orange)";
+        text = "The line goes down as you read from left to right." +
+          (rise < 0 && run > 0 ? " The rise is negative because B is lower than A." : run < 0 && rise > 0 ? " The run is negative because B is left of A." : "");
+      }
+    }
+    if (hidden) {
+      ans.innerHTML = `<span>=</span> <span class="answer hidden">?</span>`;
+      $("fRise").textContent = "?"; $("fRun").textContent = "?";
+    } else { pill.textContent = kind; pill.style.color = color; note.textContent = text; }
+    $("verdict").hidden = hidden; // the verdict would give the answer away
+
+    $("rise").value = rise; $("riseOut").textContent = fmt(rise);
+    $("run").value = run; $("runOut").textContent = fmt(run);
+  }
+
+  function place(ax, ay, bx, by) { A.x = ax; A.y = ay; B.x = bx; B.y = by; render(); }
+
+  // Sliders move B relative to A, shifting A when B would leave the grid.
+  function fromSliders(changed) {
+    let rise = +$("rise").value, run = +$("run").value;
+    if (rise === 0 && run === 0) {
+      if (changed === "rise") rise = B.y - A.y > 0 ? 1 : -1; else run = B.x - A.x > 0 ? 1 : -1;
+      $("hint").textContent = "Rise and run can't both be 0, because A and B would be the same point.";
+    } else $("hint").textContent = "The sliders move point B relative to A.";
+    let ax = A.x, ay = A.y;
+    if (ax + run > b.max) ax = b.max - run; if (ax + run < b.min) ax = b.min - run;
+    if (ay + rise > b.max) ay = b.max - rise; if (ay + rise < b.min) ay = b.min - rise;
+    place(ax, ay, ax + run, ay + rise);
+  }
+  $("rise").addEventListener("input", () => fromSliders("rise"));
+  $("run").addEventListener("input", () => fromSliders("run"));
+
+  ["tTri", "tCoord"].forEach(id => $(id).addEventListener("change", render));
+  $("hideBtn").addEventListener("click", () => {
+    hidden = !hidden;
+    $("hideBtn").textContent = hidden ? "Show slope" : "Hide slope";
+    $("hideBtn").setAttribute("aria-pressed", String(hidden));
+    render();
+  });
+
+  render();
+})();
+</script>
+nt = hidden ? "Show slope" : "Hide slope";
+    $("hideBtn").setAttribute("aria-pressed", String(hidden));
+    render();
+  
+</body>
+</html>

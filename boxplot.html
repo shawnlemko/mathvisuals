@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Box Plot Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Box Plot Generator: a one-column table of values on the left, its box plot on a number line on the right.
+   Quartiles use the median-of-halves method (the median is left out of both halves when the count is odd). */
+.wrap { max-width: 1400px; }
+.bp { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .bp { grid-template-columns: 1fr; } }
+table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num); }
+.tv th, .tv td { border: 2px solid var(--grid-major); padding: 0; }
+.tv th { background: var(--chip); }
+.tv input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--ink); text-align: center; padding: 8px 6px; }
+.tv th input { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 2rem; color: var(--pt); }
+.tv td input { font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; }
+.tv input:focus-visible { outline: 3px solid var(--pt); outline-offset: -3px; }
+.tv input.bad { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.clear { margin-top: 16px; }
+.clear button { width: 100%; font-family: var(--font-display); font-size: 1.3rem; padding: 10px 16px; }
+.board { display: flex; flex-direction: column; justify-content: center; }
+@media (min-width: 861px) { .board { min-height: 420px; } }
+.board svg { width: 100%; }
+.g-axis { stroke: var(--ink); stroke-width: 3; }
+.g-tick { stroke: var(--ink); stroke-width: 3; }
+.g-minor { stroke: var(--ink); stroke-width: 1.5; }
+.g-num { fill: var(--ink); font-family: var(--font-num); font-size: 26px; font-weight: 700; }
+.g-name { fill: var(--pt); font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
+.g-box { fill: color-mix(in srgb, var(--pt) 16%, transparent); stroke: var(--pt); stroke-width: 5; }
+.g-whisk { stroke: var(--pt); stroke-width: 5; stroke-linecap: round; }
+.g-med { stroke: var(--orange); stroke-width: 7; stroke-linecap: round; }
+.g-lead { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 6; }
+.g-lab { font-family: var(--font-display); font-weight: 800; font-size: 26px; fill: var(--muted); }
+.g-val { font-family: var(--font-num); font-weight: 700; font-size: 34px; fill: var(--ink); }
+.g-lab.med, .g-val.med { fill: var(--orange); }
+.g-btn { cursor: pointer; }
+.g-btn rect { fill: var(--chip); stroke: var(--grid-major); stroke-width: 2; }
+.g-btn:hover rect, .g-btn:focus-visible rect { stroke: var(--pt); }
+.g-btn:focus { outline: none; }
+.g-btn:focus-visible rect { stroke-width: 4; }
+.g-btn.on rect { fill: color-mix(in srgb, var(--pt) 14%, var(--sheet)); stroke: var(--pt); stroke-width: 3; }
+.how { margin: 4px 12px 12px; padding: 12px 18px; border-left: 6px solid var(--pt); background: var(--chip); border-radius: 6px;
+  font-family: var(--font-body); font-size: 1.6rem; line-height: 1.35; }
+.how b { font-family: var(--font-display); }
+.how .n { font-family: var(--font-num); font-weight: 700; white-space: nowrap; }
+.how .l { white-space: normal; }
+.how mark { background: color-mix(in srgb, var(--orange) 22%, transparent); color: inherit; border-radius: 4px; padding: 0 3px; }
+.g-empty { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 34px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Box Plot Generator</h1></div>
+  </header>
+
+  <div class="bp">
+    <div class="card">
+      <table class="tv">
+        <thead><tr><th><input id="hd" value="Data" maxlength="16" aria-label="Column heading (names the number line)"></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="clear"><button type="button" id="clearBtn">Clear table</button></div>
+    </div>
+    <div class="board">
+      <svg id="svg" role="group" aria-label="Box plot of the table values on a number line"></svg>
+      <p class="how" id="how" aria-live="polite" hidden></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  };
+  // Plain decimals without float noise (0.1 + 0.2 shows as 0.3).
+  const num = v => String(+v.toFixed(6)).replace("-", "−");
+
+  const W = 1000, H = 500, L = 60, R = 60, AXIS = 360, BOX_T = 220, BOX_B = 310;
+  const svg = $("svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  // Table: always at least MIN rows, and one blank row after the last filled one.
+  const MIN = 10, rows = $("rows");
+  function addRow(v = "") {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input inputmode="decimal" autocomplete="off" aria-label="Value"></td>`;
+    tr.querySelector("input").value = v;
+    rows.appendChild(tr);
+  }
+  while (rows.children.length < MIN) addRow();
+  function tidyRows() {
+    if (rows.lastElementChild.querySelector("input").value.trim() !== "") addRow();
+  }
+
+  function parse(input) {
+    const s = input.value.trim().replace("−", "-");
+    if (s === "") { input.classList.remove("bad"); return null; }
+    const v = Number(s);
+    const ok = Number.isFinite(v);
+    input.classList.toggle("bad", !ok);
+    return ok ? v : null;
+  }
+
+  const median = a => { const n = a.length, h = n >> 1; return n % 2 ? a[h] : (a[h - 1] + a[h]) / 2; };
+  // Median of halves: for an odd count the middle value belongs to neither half.
+  function summary(a) {
+    const n = a.length, h = n >> 1;
+    const lo = a.slice(0, h), hi = a.slice(n % 2 ? h + 1 : h);
+    return {
+      min: a[0], max: a[n - 1], med: median(a),
+      q1: lo.length ? median(lo) : a[0], q3: hi.length ? median(hi) : a[n - 1]
+    };
+  }
+
+  // Number line: a 1, 2 or 5 step (times a power of ten) giving at most about 12 labels, one step of room each side.
+  function axisFor(min, max) {
+    const span = Math.max(max - min, 1);
+    let step = 1;
+    for (const p of [-2, -1, 0, 1, 2, 3, 4, 5, 6]) {
+      const found = [1, 2, 5].map(m => m * 10 ** p).find(s => span / s <= 10);
+      if (found) { step = found; break; }
+    }
+    return { step, lo: Math.floor(min / step) * step - step, hi: Math.ceil(max / step) * step + step };
+  }
+
+  // Friendly grade 7 explanation for each label, with this data's own numbers.
+  // The set is shown in braces with its middle number(s) highlighted.
+  const N = v => `<span class="n">${num(v)}</span>`;
+  function set(a) {
+    const n = a.length, h = n >> 1, mid = n % 2 ? [h] : [h - 1, h];
+    return `<span class="n l">{${a.map((v, i) => mid.includes(i) ? `<mark>${num(v)}</mark>` : num(v)).join(", ")}}</span>`;
+  }
+  function middle(a) {
+    const n = a.length, h = n >> 1;
+    if (n % 2) return `The middle value is ${N(a[h])}.`;
+    return `This time the middle is between two values. Let's find the mean: <span class="n">(${num(a[h - 1])} + ${num(a[h])}) ÷ 2 = ${num((a[h - 1] + a[h]) / 2)}</span>`;
+  }
+  function explain(key, a) {
+    const n = a.length, h = n >> 1, lo = a.slice(0, h), hi = a.slice(n % 2 ? h + 1 : h);
+    switch (key) {
+      case "Min": return `The <b>min</b> is the smallest value: ${N(a[0])}`;
+      case "Max": return `The <b>max</b> is the largest value: ${N(a[n - 1])}`;
+      case "Median": return `The <b>median</b> is the middle value when the numbers are in order: ${set(a)}<br>${middle(a)}`;
+      case "Q1": return lo.length ? `<b>Q1</b> is the median value of the lower half: ${set(lo)}<br>${middle(lo)}` : `With only one value, <b>Q1</b> is ${N(a[0])}`;
+      case "Q3": return hi.length ? `<b>Q3</b> is the median value of the upper half: ${set(hi)}<br>${middle(hi)}` : `With only one value, <b>Q3</b> is ${N(a[0])}`;
+    }
+  }
+  let picked = null;
+
+  function render() {
+    tidyRows();
+    const vals = [...rows.querySelectorAll("input")].map(parse).filter(v => v != null).sort((a, b) => a - b);
+    svg.textContent = "";
+    const g = el("g", {}, svg);
+    const name = $("hd").value.trim();
+
+    $("how").hidden = !picked || !vals.length;
+    if (picked && vals.length) $("how").innerHTML = explain(picked, vals);
+    if (!vals.length) {
+      el("text", { x: W / 2, y: H / 2, class: "g-empty", "text-anchor": "middle" }, g, "Type values in the table");
+      return;
+    }
+    const s = summary(vals);
+    const { step, lo, hi } = axisFor(s.min, s.max);
+    const X = v => L + (v - lo) / (hi - lo) * (W - L - R);
+
+    // Axis with arrows, ticks and labels; small ticks between labels.
+    el("line", { x1: L - 30, y1: AXIS, x2: W - R + 30, y2: AXIS, class: "g-axis" }, g);
+    el("path", { d: `M${L - 40} ${AXIS} l16 -10 v20 z M${W - R + 40} ${AXIS} l-16 -10 v20 z`, fill: "currentColor", style: "color: var(--ink)" }, g);
+    const lead = Math.round(step / 10 ** Math.floor(Math.log10(step) + 1e-9));
+    const minor = step / (lead === 2 ? 2 : 5);
+    for (let i = 0; lo + i * minor <= hi + 1e-9; i++) {
+      const v = lo + i * minor, x = X(v);
+      const major = Math.abs(v / step - Math.round(v / step)) < 1e-6;
+      el("line", { x1: x, y1: AXIS - (major ? 14 : 8), x2: x, y2: AXIS + (major ? 14 : 8), class: major ? "g-tick" : "g-minor" }, g);
+      if (major) el("text", { x, y: AXIS + 48, class: "g-num", "text-anchor": "middle" }, g, num(v));
+    }
+    if (name) el("text", { x: W / 2, y: AXIS + 108, class: "g-name", "text-anchor": "middle" }, g, name);
+
+    // The box plot itself.
+    const mid = (BOX_T + BOX_B) / 2;
+    el("line", { x1: X(s.min), y1: mid, x2: X(s.q1), y2: mid, class: "g-whisk" }, g);
+    el("line", { x1: X(s.q3), y1: mid, x2: X(s.max), y2: mid, class: "g-whisk" }, g);
+    for (const v of [s.min, s.max]) el("line", { x1: X(v), y1: mid - 26, x2: X(v), y2: mid + 26, class: "g-whisk" }, g);
+    el("rect", { x: X(s.q1), y: BOX_T, width: Math.max(X(s.q3) - X(s.q1), 0.01), height: BOX_B - BOX_T, class: "g-box" }, g);
+    el("line", { x1: X(s.med), y1: BOX_T, x2: X(s.med), y2: BOX_B, class: "g-med" }, g);
+
+    // Labels in one row above the plot, name over value. Crowded labels spread sideways
+    // and a slanted leader still points to their spot on the plot.
+    const marks = [["Min", s.min], ["Q1", s.q1], ["Median", s.med], ["Q3", s.q3], ["Max", s.max]].map(([lab, v]) =>
+      ({ lab, v, x: X(v), w: Math.max(lab.length * 15, num(v).length * 21) + 30 }));
+    const GAP = 12, left = 20, right = W - 20;
+    marks.forEach((m, i) => { m.lx = Math.max(m.x, i ? marks[i - 1].lx + marks[i - 1].w / 2 + GAP + m.w / 2 : left + m.w / 2); });
+    for (let i = marks.length - 1; i >= 0; i--) {
+      const m = marks[i], lim = i < marks.length - 1 ? marks[i + 1].lx - marks[i + 1].w / 2 - GAP - m.w / 2 : right - m.w / 2;
+      m.lx = Math.min(m.lx, lim);
+    }
+    const base = BOX_T - 80;
+    for (const m of marks) {
+      const cls = m.lab === "Median" ? " med" : "";
+      const top = (m.lab === "Min" || m.lab === "Max") ? mid - 26 : BOX_T;
+      el("line", { x1: m.lx, y1: base + 14, x2: m.x, y2: top - 6, class: "g-lead" }, g);
+      // Each label is a button: click it to explain where its value comes from.
+      const b = el("g", { class: "g-btn" + (picked === m.lab ? " on" : ""), role: "button", tabindex: 0,
+        "aria-pressed": String(picked === m.lab), "aria-label": `${m.lab} ${num(m.v)}, explain` }, g);
+      el("rect", { x: m.lx - m.w / 2, y: base - 66, width: m.w, height: 80, rx: 10 }, b);
+      el("text", { x: m.lx, y: base - 36, class: "g-lab" + cls, "text-anchor": "middle" }, b, m.lab);
+      el("text", { x: m.lx, y: base, class: "g-val" + cls, "text-anchor": "middle" }, b, num(m.v));
+      const pick = () => { picked = picked === m.lab ? null : m.lab; render(); svg.querySelector(`[aria-label^="${m.lab} "]`).focus(); };
+      b.addEventListener("click", pick);
+      b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+    }
+  }
+
+  // Enter moves down the column, like a spreadsheet.
+  rows.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+    e.preventDefault();
+    tidyRows();
+    const next = e.target.closest("tr").nextElementSibling;
+    if (next) next.querySelector("input").focus();
+  });
+  $("clearBtn").addEventListener("click", () => {
+    rows.textContent = "";
+    for (let i = 0; i < MIN; i++) addRow();
+    render();
+    rows.querySelector("input").focus();
+  });
+  document.addEventListener("input", render);
+  render();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Introducing Algebra Tiles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 16px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Introducing Algebra Tiles: the Area Model Multiplication page with x allowed in each factor
+   (x, 2x, -x, x + 3, 2x - 1, 5 + 3, or a plain number). Each typed term is its own part, with a
+   slight partition between terms. Positive tiles are green, negative tiles red. Ones still snap into tens and hundreds like the area model. */
+.wrap { max-width: 1400px; }
+/* Keep the whole rectangle on one projected screen. */
+.board svg { max-height: calc(100vh - 190px); min-height: 320px; }
+.cell, .tile { stroke: #1b2733; stroke-width: 1.5; }
+.tile { stroke-width: 2.5; }
+.thin { stroke: #1b2733; stroke-opacity: 0.28; stroke-width: 1; pointer-events: none; }
+.outline { fill: none; stroke: #1b2733; stroke-width: 3; pointer-events: none; }
+.split { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 12 8; }
+.part { font-family: var(--font-num); font-weight: 700; font-size: 30px; fill: var(--pt); text-anchor: middle; dominant-baseline: central; }
+.brace { stroke: var(--pt); stroke-width: 3; fill: none; }
+.prod-bg { fill: var(--sheet); fill-opacity: 0.94; stroke: var(--ink); stroke-width: 2; }
+.prod { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.how { margin: 0 0 12px; text-align: center; font-size: 1.35rem; font-weight: 700; color: var(--muted); }
+.factors { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.3rem; }
+.factors input { flex: 1 1 0; min-width: 0; max-width: 5.6em; font: inherit; text-align: center; color: var(--pt); background: var(--sheet); border: 3px solid var(--grid-major); border-radius: 10px; padding: 4px 6px; }
+.factors input.bad { color: var(--warn); border-color: var(--warn); }
+#snap { width: 100%; margin-top: 16px; font-size: 1.35rem; padding: 14px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#snap:hover { background: var(--sheet); color: var(--pt); }
+.blocks { display: flex; flex-direction: column; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; line-height: 1.2; }
+.blocks sup { font-size: 0.6em; line-height: 0; }
+.blocks i { display: inline-block; width: 34px; height: 34px; border: 3px solid #1b2733; border-radius: 4px; vertical-align: -5px; margin-right: 14px; }
+@media (max-width: 520px) { .how { font-size: 1.1rem; } .factors { font-size: 1.5rem; gap: 8px; } .blocks { font-size: 1.5rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Introducing Algebra Tiles</h1></div>
+  </header>
+  <div class="main">
+    <div class="board"><svg id="svg" role="img" aria-label="Area model built from algebra tiles"></svg></div>
+    <div class="panel">
+      <div class="card">
+        <p class="how">Type 13 × 5 or type x + 3 × 5</p>
+        <div class="factors">
+          <input id="a" type="text" value="x + 3" autocomplete="off" spellcheck="false" aria-label="First factor (width), such as x + 3, 2x, or 12">
+          <span>×</span>
+          <input id="b" type="text" value="x + 2" autocomplete="off" spellcheck="false" aria-label="Second factor (height), such as x + 2, -x, or 7">
+        </div>
+        <button id="snap" type="button">Snap tens together</button>
+      </div>
+      <div class="card"><div class="blocks" id="blocks"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const S = 36, G = 6;          // one unit and the gap between loose tiles
+  const XP = 158;               // length of x: deliberately not a whole number of units
+  const LM = 112, TM = 76, PAD = 16;
+  const MAXX = 5, MAXN = 20;    // largest x coefficient and number, either sign
+  // Shawn's rule: every positive tile is green and every negative tile is red (same in dark mode).
+  const GREEN = [92, 191, 122], RED = [239, 107, 107];
+  const COLORS = { u: GREEN, rod: GREEN, flat: GREEN, nu: RED, nrod: RED, nflat: RED };
+  const TILE = { x2: "rgb(92,191,122)", x: "rgb(92,191,122)", neg: "rgb(239,107,107)" };
+  const MINUS = "−";
+  const PG = 16;                // the slight partition between typed terms, as in 5 + 3
+  const MAXTERMS = 6;
+
+  const svg = document.getElementById("svg");
+  const inA = document.getElementById("a"), inB = document.getElementById("b");
+  const snapBtn = document.getElementById("snap");
+  // Each factor is the list of terms as typed: "x + 3" -> [{x:1}, {n:3}], "5 + 3" -> [{n:5}, {n:3}].
+  let P = parse("x + 3"), Q = parse("x + 2");
+  let regions = [], stage = 0, cells = [], outlines = null, anim = 0, tileCount = {};
+
+  // Terms such as "2x - 1", "-x", "3 + x", "5 + 3", "13". Null if a term is not ax or a number,
+  // or the sizes are over the limits (x terms up to 5x in all, numbers up to 20 in all).
+  function parse(str) {
+    const s = str.replace(/[−–—]/g, "-").replace(/\s+/g, "").toLowerCase();
+    if (!s) return null;
+    const raw = s.match(/[+-]?[^+-]+/g);
+    if (!raw || raw.join("") !== s || raw.length > MAXTERMS) return null;
+    const terms = [];
+    let sx = 0, sn = 0;
+    for (const t of raw) {
+      const m = t.match(/^([+-]?)(\d*)(x?)$/);
+      if (!m || (!m[2] && !m[3])) return null;
+      const sign = m[1] === "-" ? -1 : 1;
+      const v = sign * (m[2] ? Number(m[2]) : 1);
+      if (v === 0) continue;
+      terms.push({ x: !!m[3], v });
+      if (m[3]) sx += Math.abs(v); else sn += Math.abs(v);
+    }
+    if (!terms.length || sx > MAXX || sn > MAXN) return null;
+    return terms;
+  }
+
+  // Which block a ones cell belongs to at a stage (same rule as the area model, within its region).
+  function group(cell, s) {
+    const R = cell.reg, r = cell.r, c = cell.c;
+    const tc = Math.floor(R.A / 10) * 10, tr = Math.floor(R.B / 10) * 10;
+    if (s >= 2 && c < tc && r < tr) return { kind: "flat", id: `${R.id}f${Math.floor(r / 10)},${Math.floor(c / 10)}` };
+    if (s >= 1 && c < tc) return { kind: "rod", id: `${R.id}h${r},${Math.floor(c / 10)}` };
+    if (s >= 1 && r < tr) return { kind: "rod", id: `${R.id}v${c},${Math.floor(r / 10)}` };
+    return { kind: "u", id: `${R.id}u${r},${c}` };
+  }
+  const regionStage = R => (R.A >= 10 && R.B >= 10 ? 2 : R.A >= 10 || R.B >= 10 ? 1 : 0);
+  const maxStage = () => regions.reduce((m, R) => Math.max(m, regionStage(R)), 0);
+  const colorOf = (kind, neg) => COLORS[(neg ? "n" : "") + kind];
+
+  function geom(cell, s) {
+    const g = group(cell, s), h = G / 2, R = cell.reg;
+    const same = (r, c) => r >= 0 && c >= 0 && r < R.B && c < R.A && group({ reg: R, r, c }, s).id === g.id;
+    const l = same(cell.r, cell.c - 1) ? 0 : h, rt = same(cell.r, cell.c + 1) ? 0 : h;
+    const t = same(cell.r - 1, cell.c) ? 0 : h, bt = same(cell.r + 1, cell.c) ? 0 : h;
+    return { x: R.ox + cell.c * S + l, y: R.oy + cell.r * S + t, w: S - l - rt, h: S - t - bt, col: colorOf(g.kind, R.neg), loose: g.kind === "u" };
+  }
+  function place(cell, g) {
+    cell.node.setAttribute("x", g.x); cell.node.setAttribute("y", g.y);
+    cell.node.setAttribute("width", g.w); cell.node.setAttribute("height", g.h);
+    cell.node.setAttribute("rx", g.loose ? 3 : 0);
+    cell.node.style.fill = `rgb(${g.col.join(",")})`;
+    cell.node.style.strokeOpacity = g.loose ? 1 : 0;
+  }
+
+  // Each side as parts along the edge, in the order typed. A number splits into tens and ones;
+  // different terms are separated by the partition PG.
+  function sideParts(terms) {
+    const out = [];
+    let pos = 0;
+    terms.forEach((t, ti) => {
+      if (ti) pos += PG;
+      if (t.x) { out.push({ x: true, v: t.v, pos, len: Math.abs(t.v) * XP, term: ti }); pos += Math.abs(t.v) * XP; return; }
+      const n = Math.abs(t.v), sg = Math.sign(t.v), tens = Math.floor(n / 10) * 10, o = n % 10;
+      if (tens) { out.push({ x: false, v: sg * tens, pos, len: tens * S, term: ti }); pos += tens * S; }
+      if (o) { out.push({ x: false, v: sg * o, pos, len: o * S, term: ti }); pos += o * S; }
+    });
+    return { parts: out, total: pos };
+  }
+  function term(coef, deg) {
+    const sg = coef < 0 ? MINUS : "", n = Math.abs(coef);
+    if (deg === 0) return sg + n;
+    return sg + (n === 1 ? "" : n) + (deg === 2 ? "x²" : "x");
+  }
+
+  // Text with a raised 2 for x² (the font's ² glyph reads as a separate character).
+  function setTerm(node, txt) {
+    if (!txt.endsWith("²")) { node.textContent = txt; return; }
+    node.textContent = txt.slice(0, -1);
+    el("tspan", { dy: "-0.42em", "font-size": "0.62em" }, node).textContent = "2";
+  }
+
+  function draw() {
+    cancelAnimationFrame(anim);
+    svg.textContent = "";
+    const A = sideParts(P), B = sideParts(Q), pa = A.parts, pb = B.parts;
+    const RW = A.total, RH = B.total, MIN = 12 * S;
+    svg.setAttribute("viewBox", `0 0 ${LM + Math.max(RW, MIN) + PAD} ${TM + Math.max(RH, MIN) + PAD}`);
+
+    // x² and x tiles; the number-by-number regions become ones regions.
+    const tiles = el("g", {}, svg);
+    tileCount = { x2: 0, nx2: 0, x: 0, nx: 0 };
+    regions = [];
+    const tile = (x, y, w, h, neg, kind) => {
+      el("rect", { class: "tile", x: x + G / 2, y: y + G / 2, width: w - G, height: h - G, rx: 4,
+        style: `fill:${neg ? TILE.neg : TILE[kind]}` }, tiles);
+      tileCount[(neg ? "n" : "") + kind]++;
+    };
+    pb.forEach((q, qi) => pa.forEach((p, pi) => {
+      const x0 = LM + p.pos, y0 = TM + q.pos, neg = p.v * q.v < 0, np = Math.abs(p.v), nq = Math.abs(q.v);
+      if (p.x && q.x) {
+        for (let i = 0; i < np; i++) for (let j = 0; j < nq; j++) tile(x0 + i * XP, y0 + j * XP, XP, XP, neg, "x2");
+      } else if (p.x) {
+        for (let i = 0; i < np; i++) for (let j = 0; j < nq; j++) tile(x0 + i * XP, y0 + j * S, XP, S, neg, "x");
+      } else if (q.x) {
+        for (let i = 0; i < np; i++) for (let j = 0; j < nq; j++) tile(x0 + i * S, y0 + j * XP, S, XP, neg, "x");
+      } else {
+        regions.push({ id: `r${qi}.${pi}`, ox: x0, oy: y0, A: np, B: nq, neg });
+      }
+    }));
+
+    // Ones, which snap into tens and hundreds.
+    const blocks = el("g", {}, svg), thin = el("g", {}, svg);
+    cells = [];
+    regions.forEach(R => {
+      for (let r = 0; r < R.B; r++) for (let c = 0; c < R.A; c++) {
+        const cell = { reg: R, r, c, node: el("rect", { class: "cell" }, blocks) };
+        cells.push(cell);
+        place(cell, geom(cell, stage));
+      }
+      for (let c = 1; c < R.A; c++) el("line", { class: "thin", x1: R.ox + c * S, y1: R.oy, x2: R.ox + c * S, y2: R.oy + R.B * S }, thin);
+      for (let r = 1; r < R.B; r++) el("line", { class: "thin", x1: R.ox, y1: R.oy + r * S, x2: R.ox + R.A * S, y2: R.oy + r * S }, thin);
+    });
+    outlines = el("g", {}, svg);
+    drawOutlines(1);
+
+    // Parts along each side, split lines, and each region's product.
+    const fx = el("g", {}, svg);
+    pa.forEach((p, i) => {
+      const x = LM + p.pos;
+      el("path", { class: "brace", d: `M${x + 3},${TM - 14} v-12 H${x + p.len - 3} v12` }, fx);
+      el("text", { class: "part", x: x + p.len / 2, y: TM - 48 }, fx).textContent = term(p.v, p.x ? 1 : 0);
+      const n = pa[i + 1];
+      if (n) { const xb = (x + p.len + LM + n.pos) / 2; el("line", { class: "split", x1: xb, y1: TM - 8, x2: xb, y2: TM + RH + 8 }, fx); }
+    });
+    pb.forEach((q, i) => {
+      const y = TM + q.pos;
+      el("path", { class: "brace", d: `M${LM - 14},${y + 3} h-12 V${y + q.len - 3} h12` }, fx);
+      el("text", { class: "part", x: LM - 62, y: y + q.len / 2 }, fx).textContent = term(q.v, q.x ? 1 : 0);
+      const n = pb[i + 1];
+      if (n) { const yb = (y + q.len + TM + n.pos) / 2; el("line", { class: "split", x1: LM - 8, y1: yb, x2: LM + RW + 8, y2: yb }, fx); }
+    });
+    pb.forEach(q => pa.forEach(p => {
+      const x0 = LM + p.pos, y0 = TM + q.pos, w = p.len, h = q.len;
+      const txt = term(p.v * q.v, (p.x ? 1 : 0) + (q.x ? 1 : 0));
+      // Labels may spill past a one-unit-wide region so they stay readable.
+      const fs = Math.min(34, (Math.max(w, 70) - 4) / (txt.length * 0.62 + 0.4), (Math.max(h, 40) - 4) / 1.25);
+      const bw = txt.length * fs * 0.62 + fs * 0.4, bh = fs * 1.25;
+      el("rect", { class: "prod-bg", x: x0 + w / 2 - bw / 2, y: y0 + h / 2 - bh / 2, width: bw, height: bh, rx: 6 }, fx);
+      setTerm(el("text", { class: "prod", x: x0 + w / 2, y: y0 + h / 2 + 1, "font-size": fs }, fx), txt);
+    }));
+    countBlocks();
+    snapLabel();
+  }
+
+  function drawOutlines(opacity) {
+    outlines.textContent = "";
+    outlines.style.opacity = opacity;
+    const boxes = {};
+    cells.forEach(cell => {
+      const g = group(cell, stage);
+      if (g.kind === "u") return;
+      const b = boxes[g.id] || (boxes[g.id] = { R: cell.reg, r0: cell.r, c0: cell.c, r1: cell.r, c1: cell.c });
+      b.r0 = Math.min(b.r0, cell.r); b.c0 = Math.min(b.c0, cell.c); b.r1 = Math.max(b.r1, cell.r); b.c1 = Math.max(b.c1, cell.c);
+    });
+    for (const id in boxes) {
+      const b = boxes[id];
+      el("rect", { class: "outline", x: b.R.ox + b.c0 * S + G / 2, y: b.R.oy + b.r0 * S + G / 2,
+        width: (b.c1 - b.c0 + 1) * S - G, height: (b.r1 - b.r0 + 1) * S - G }, outlines);
+    }
+  }
+
+  function countBlocks() {
+    const ids = {};
+    ["u", "rod", "flat", "nu", "nrod", "nflat"].forEach(k => { ids[k] = new Set(); });
+    cells.forEach(c => { const g = group(c, stage); ids[(c.reg.neg ? "n" : "") + g.kind].add(g.id); });
+    const item = (n, fill, one, many) => n ? `<span><i style="background:${fill}"></i>${n} ${n === 1 ? one : many}</span>` : "";
+    const rgb = (k, neg) => `rgb(${colorOf(k, neg).join(",")})`;
+    document.getElementById("blocks").innerHTML = [
+      item(tileCount.x2, TILE.x2, "x<sup>2</sup> tile", "x<sup>2</sup> tiles"),
+      item(tileCount.nx2, TILE.neg, "negative x<sup>2</sup> tile", "negative x<sup>2</sup> tiles"),
+      item(tileCount.x, TILE.x, "x tile", "x tiles"),
+      item(tileCount.nx, TILE.neg, "negative x tile", "negative x tiles"),
+      item(ids.flat.size, rgb("flat"), "hundred", "hundreds"),
+      item(ids.nflat.size, rgb("flat", true), "negative hundred", "negative hundreds"),
+      item(ids.rod.size, rgb("rod"), "ten", "tens"),
+      item(ids.nrod.size, rgb("rod", true), "negative ten", "negative tens"),
+      item(ids.u.size, rgb("u"), "one", "ones"),
+      item(ids.nu.size, rgb("u", true), "negative one", "negative ones")
+    ].join("");
+  }
+
+  function snapLabel() {
+    const m = maxStage();
+    snapBtn.hidden = m === 0;
+    snapBtn.textContent = stage >= m ? "Break into ones" : stage === 0 ? "Snap tens together" : "Snap hundreds together";
+  }
+
+  // One stage change: the ones that join slide together and recolour, one block after another.
+  function go(next) {
+    cancelAnimationFrame(anim);
+    const from = cells.map(c => geom(c, stage));
+    const prev = stage;
+    stage = next;
+    const to = cells.map(c => geom(c, stage));
+    const key = c => group(c, Math.max(prev, next)).id;
+    const order = {}; let k = 0;
+    cells.forEach(c => { if (!(key(c) in order)) order[key(c)] = k++; });
+    const STEP = Math.min(90, 1400 / Math.max(k, 1)), DUR = 380;
+    cells.forEach(c => { c.node.style.strokeOpacity = 1; c.node.setAttribute("rx", 0); });
+    drawOutlines(0);
+    countBlocks();
+    snapLabel();
+    const t0 = performance.now();
+    const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const lerp = (a, b, t) => a + (b - a) * t;
+    function frame(now) {
+      let done = true;
+      cells.forEach((c, i) => {
+        const raw = Math.min(1, Math.max(0, (now - t0 - order[key(c)] * STEP) / DUR));
+        if (raw < 1) done = false;
+        const t = ease(raw), f = from[i], g = to[i];
+        c.node.setAttribute("x", lerp(f.x, g.x, t)); c.node.setAttribute("y", lerp(f.y, g.y, t));
+        c.node.setAttribute("width", lerp(f.w, g.w, t)); c.node.setAttribute("height", lerp(f.h, g.h, t));
+        c.node.style.fill = `rgb(${f.col.map((v, j) => Math.round(lerp(v, g.col[j], t))).join(",")})`;
+        c.node.style.strokeOpacity = lerp(f.loose ? 1 : 0.3, g.loose ? 1 : 0.3, t);
+      });
+      if (!done) { anim = requestAnimationFrame(frame); return; }
+      cells.forEach((c, i) => place(c, to[i]));
+      drawOutlines(1);
+    }
+    anim = requestAnimationFrame(frame);
+  }
+
+  snapBtn.addEventListener("click", () => go(stage >= maxStage() ? 0 : stage + 1));
+
+  function read(input) {
+    const f = parse(input.value);
+    input.classList.toggle("bad", !f);
+    return f;
+  }
+  function onInput() {
+    const p = read(inA), q = read(inB);
+    if (!p || !q) return;
+    if (JSON.stringify([p, q]) === JSON.stringify([P, Q])) return;
+    P = p; Q = q; stage = 0;
+    draw();
+  }
+  inA.addEventListener("input", onInput);
+  inB.addEventListener("input", onInput);
+
+  draw();
+})();
+</script>
+
+</body>
+</html>
