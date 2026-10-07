@@ -794,12 +794,22 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
     if (from === "g" && (to === "si" || to === "sp")) {
       const { A, B, C } = L;
       if (to === "si") {
-        if (A !== 0 || C !== 0) S.add(`Move the ${A && C ? "x term and the number" : A ? "x term" : "number"} to the right side, so the y term is alone. ${A && C ? "They change" : "It changes"} sign when crossing the =.`,
-          [F(mark(S.cur, ["x", "c"], "hl"), 900), F([...sideT([[B, "y", "", "y"]]), EQ(), ...mark(sideT([[-A, "x", "", "x"], [-C, "", "", "c"]]), ["x", "c"], "flip")], 900)]);
-        if (B !== 1) {
-          const right = [[-A, "x", "x"], [-C, "", "c"]];
-          divideAll(S, B, [[B, "y", "y"]], right, rawT(B, right));
-          S.add("Simplify the fractions.", [F(mark(S.cur, ["x", "c"], "hl"), 900), F(mark(siT(m, yi), ["x", "c"], "new"), 700)]);
+        // Keep the y term positive: if B is negative, move the y term instead of everything else.
+        const yPos = B > 0, b2 = Math.abs(B);
+        if (yPos) {
+          if (A !== 0 || C !== 0) S.add(`Tip: keep the y term positive. Here it already is, so move the ${A && C ? "x term and the number" : A ? "x term" : "number"} to the right side. ${A && C ? "They change" : "It changes"} sign when crossing the =.`,
+            [F(mark(S.cur, ["x", "c"], "hl"), 900), F([...sideT([[B, "y", "", "y"]]), EQ(), ...mark(sideT([[-A, "x", "", "x"], [-C, "", "", "c"]]), ["x", "c"], "flip")], 900)]);
+        } else {
+          S.add("Tip: keep the y term positive. The y term is negative, so move it to the right side, where it becomes positive.",
+            [F(mark(S.cur, ["y"], "hl"), 900), F([...sideT([[A, "x", "", "x"], [C, "", "", "c"]], "z0"), EQ(), ...mark(sideT([[b2, "y", "", "y"]]), ["y"], "flip")], 900)]);
+          if (A !== 0 || C !== 0) S.add("Switch the sides, so y is on the left.",
+            [F(S.cur, 500), F([...sideT([[b2, "y", "", "y"]]), EQ(), ...sideT([[A, "x", "", "x"], [C, "", "", "c"]])], 900)]);
+        }
+        const rx = yPos ? -A : A, rc = yPos ? -C : C;
+        if (b2 !== 1) {
+          const right = [[rx, "x", "x"], [rc, "", "c"]];
+          divideAll(S, b2, [[b2, "y", "y"]], right, rawT(b2, right));
+          if (!same(siT(m, yi), S.cur)) S.add("Simplify the fractions.", [F(mark(S.cur, ["x", "c"], "hl"), 900), F(mark(siT(m, yi), ["x", "c"], "new"), 700)]);
         }
       } else {
         S.one("In general form, the slope is m = −A ÷ B.", [tk(V("m"), "mv"), EQ(), tk(raw(-A, B), "f"), EQ(), tk(signed(m, "c-green"), "m")].map((t, i) => i === 3 ? { ...t, k: "=2" } : t));
