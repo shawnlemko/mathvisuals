@@ -145,13 +145,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* GCF and LCM: type 2 or 3 whole numbers (2 to 999) and step through one of three strategies.
+/* GCF and LCM: type 2 or 3 whole numbers (2 to 999) and step through one of two strategies.
    Factor Tree splits each number into primes, then lines the primes up in columns: the columns every number
    has make the GCF (green), one of every column makes the LCM (orange).
    Ladder divides by primes the numbers share; GCF = the left side, LCM = the L (left side and bottom row).
    With 3 numbers the ladder keeps going for the LCM with primes that go into two of them, bringing the other down.
-   Line Up (only when the LCM is 60 or less) shows the numbers as rows of squares split into groups, then
-   rods laid end to end until they line up. Each prime has its own color in every view. */
+   The ladder sits on the left; the white space on the right coaches each step: the answer to the last question,
+   then the next question ("What prime number can 12 and 18 both be divided by?"), and at the end a GCF box and an
+   LCM box that say what each one means. Each prime has its own color in every view. */
 :root { --p2: #2f5fd0; --p3: #7a3fc0; --p5: #0f7f8c; --p7: #b8326f; --p11: #8a6a12; --p13: #4a5bb0; --px: #5b6b7a; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --p2: #7aa2ff; --p3: #b58cff; --p5: #4fd0dc; --p7: #ff7fb5; --p11: #e0c060; --p13: #9aa8ff; --px: #9aabbb; }
@@ -213,27 +214,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .gbox { fill: var(--green); fill-opacity: 0.1; stroke: var(--green); stroke-width: 4; }
 .lbox { fill: var(--orange); fill-opacity: 0.1; stroke: var(--orange); stroke-width: 5; stroke-linejoin: round; }
 .rule { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
-.sq { fill: var(--c); fill-opacity: 0.16; stroke: var(--c); stroke-width: 2; }
-.sq.alt { fill-opacity: 0.42; }
-.sq.left { fill: var(--warn); stroke: var(--warn); fill-opacity: 0.3; }
-.grp { fill: none; stroke: var(--c); stroke-width: 5; }
-.grp.g { stroke: var(--green); }
-.cnt { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
-.cnt.no { fill: var(--warn); }
-.mark { font-family: var(--font-display); font-weight: 800; dominant-baseline: central; }
-.mark.ok { fill: var(--green); } .mark.no { fill: var(--warn); }
-.rod { fill: var(--c); fill-opacity: 0.2; stroke: var(--c); stroke-width: 3; }
-.unit { stroke: var(--c); stroke-opacity: 0.35; stroke-width: 1.5; }
-.rodn { font-family: var(--font-num); font-weight: 700; fill: var(--c); text-anchor: middle; dominant-baseline: central; }
-.joint { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
-.chk { stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 7 7; opacity: 0.6; }
-.chk.now { stroke: var(--ink); stroke-width: 4; opacity: 1; }
-.chk.hit { stroke: var(--orange); stroke-width: 6; stroke-dasharray: none; opacity: 1; }
-.chkn { font-family: var(--font-num); font-weight: 700; fill: var(--muted); text-anchor: middle; }
-.chkn.now { fill: var(--ink); } .chkn.hit { fill: var(--orange); }
-.ruler { stroke: var(--ink); stroke-width: 3; }
-.tk { stroke: var(--ink); stroke-width: 2; }
-.tkn { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
+.coach { font-family: var(--font-body); color: var(--ink); font-size: 30px; line-height: 1.3; height: 100%; display: flex; flex-direction: column; gap: 22px; }
+.coach .a { font-weight: 700; }
+.coach .a b { font-size: 40px; }
+.coach .a .m { font-family: var(--font-num); font-size: 27px; color: var(--muted); display: block; margin-top: 4px; }
+.coach .q { font-family: var(--font-display); font-weight: 800; font-size: 38px; line-height: 1.2; color: var(--pt); border-left: 8px solid var(--pt); padding-left: 18px; }
+.coach .q small { display: block; font-family: var(--font-body); font-weight: 400; font-size: 26px; color: var(--muted); margin-top: 6px; }
+.coach .box { border: 4px solid var(--c); border-radius: 14px; padding: 10px 18px; font-size: 26px; line-height: 1.25; }
+.coach .box.g { --c: var(--green); } .coach .box.l { --c: var(--orange); }
+.coach .box h3 { margin: 0 0 2px; font-family: var(--font-display); font-weight: 800; font-size: 40px; color: var(--c); }
+.coach .box .op { font-weight: 700; font-size: 30px; color: var(--c); margin-bottom: 6px; }
+.coach .boxes { margin-top: auto; display: flex; flex-direction: column; gap: 14px; }
 .fresh { animation: pop 0.5s ease-out both; transform-box: fill-box; transform-origin: center; }
 @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fresh { animation: none; } }
@@ -246,7 +237,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="tabs" id="tabs" role="group" aria-label="Strategy">
       <button type="button" data-m="tree" aria-pressed="true">Factor Tree</button>
       <button type="button" data-m="ladder" aria-pressed="false">Ladder</button>
-      <button type="button" data-m="line" aria-pressed="false">Line Up</button>
     </div>
   </header>
 
@@ -261,7 +251,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           <input id="n3" type="text" inputmode="numeric" autocomplete="off" aria-label="Third number (optional)" placeholder="+">
         </div>
         <p class="err" id="err" hidden></p>
-        <p class="hint" id="lhint" hidden>Line Up is for small numbers that line up by 60.</p>
         <div class="go">
           <button type="button" id="back">◀ Back</button>
           <button type="button" id="next">Next step ▶</button>
@@ -283,7 +272,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const $ = id => document.getElementById(id);
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg");
-  const W = 1200, H = 860, LINE_MAX = 60;
+  const W = 1200, H = 860;
   let mode = "tree", nums = [], plan = null, step = 0, fwd = false;
   let hideAns = false, shown = { gcf: false, lcm: false };
 
@@ -306,8 +295,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Answers can be hidden so students predict first.
   const A = (k, v) => hideAns && !shown[k] ? "?" : fmt(v);
   // "2 × 3 = 6", or just "6" for a single factor.
-  const prod = (ps, k, v) => ps.length > 1 ? `${ps.join(" × ")} = ${A(k, v)}` : A(k, v);
+  // Long products (more than 6 primes) are grouped with exponents: 2⁹ × 3² × 5 × 11.
+  const sup = e => String(e).replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+  const short = ps => ps.length <= 6 ? ps.join(" × ") : [...new Set(ps)].map(p => { const e = ps.filter(q => q === p).length; return e > 1 ? p + sup(e) : p; }).join(" × ");
+  const prod = (ps, k, v) => ps.length > 1 ? `${short(ps)} = ${A(k, v)}` : A(k, v);
   const m = s => `<span class="m">${s}</span>`;
+  const fr = at => fwd && at === step ? " fresh" : "";
+  // Wrapped text on the board (questions, explainers) as HTML inside the SVG, so it scales with the board.
+  const coach = (x, y, w, h, html) => {
+    const fo = el("foreignObject", { x, y, width: w, height: h });
+    const d = document.createElement("div");
+    d.className = "coach"; d.innerHTML = html;
+    fo.appendChild(d);
+  };
 
   // ---------- Factor Tree ----------
   function buildTree(n) {
@@ -323,7 +323,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const trees = ns.map(buildTree);
     const D = Math.max(...trees.map(depthOf)), levels = Math.max(1, D);
     const Ls = trees.map(t => Math.max(leafCount(t), 2)), sumL = Ls.reduce((a, b) => a + b);
-    const TOP = 60, BOT = 420, gapY = D ? (BOT - TOP) / D : 0;
+    const TOP = 50, BOT = 300, gapY = D ? (BOT - TOP) / D : 0;
     const nodes = [];
     let x = 30, minLw = 999;
     trees.forEach((t, i) => {
@@ -382,10 +382,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       }
       if (k < T) return;
 
-      el("line", { class: "sep", x1: 20, y1: 458, x2: 1180, y2: 458 });
-      const rowH = Math.min(78, 370 / (ns.length + 2)), TY = 478;
-      const colW = Math.min(88, 700 / cols.length), cs = Math.min(colW, rowH) * 0.84;
-      const cx = i => 250 + (i + 0.5) * colW, endX = 250 + cols.length * colW + 18;
+      el("line", { class: "sep", x1: 20, y1: 356, x2: 1180, y2: 356 });
+      const rowH = Math.min(84, 470 / (ns.length + 2)), TY = 376;
+      const colW = Math.min(80, 460 / cols.length), cs = Math.min(colW, rowH) * 0.84;
+      const cx = i => 250 + (i + 0.5) * colW;
       const ry = i => TY + (i + 0.5) * rowH;
       const cfs = p => Math.min(cs * 0.6, cs * 1.5 / String(p).length);
       const cell = (i, p, parent, at) => {
@@ -403,14 +403,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         const row = el("g", {}, el("g", { transform: `translate(0 ${ry(ns.length)})` }), G);
         txt("GCF =", { class: "lbl g", x: 230, y: 0, "text-anchor": "end", "font-size": fsA }, row);
         cols.forEach((c, i) => { if (c.full) cell(i, c.p, row); });
-        txt(gP.length ? `→ ${A("gcf", g)}` : `${A("gcf", g)} (no shared primes)`, { class: "lbl g", x: gP.length ? endX : 262, y: 0, "font-size": fsA }, row);
+        if (!gP.length) txt("1", { class: "lbl g", x: 262, y: 0, "font-size": fsA }, row);
       }
       if (k >= LC) {
         const row = el("g", {}, el("g", { transform: `translate(0 ${ry(ns.length + 1)})` }), LC);
         txt("LCM =", { class: "lbl l", x: 230, y: 0, "text-anchor": "end", "font-size": fsA }, row);
         cols.forEach((c, i) => cell(i, c.p, row));
-        txt(`→ ${A("lcm", L)}`, { class: "lbl l", x: endX, y: 0, "font-size": fsA }, row);
       }
+      const both = ns.length === 2 ? "both numbers" : "all the numbers";
+      let html = '<div class="boxes">';
+      if (k >= G) html += `<div class="box g${fr(G)}"><h3>GCF = ${A("gcf", g)}</h3>` + (gP.length > 1 ? `<div class="op">${prod(gP, "gcf", g)}</div>` : "") +
+        (gP.length ? `The GCF is the smallest pieces (primes) that are in common: the columns ${both} have.` : `No prime piece is in common, so the GCF is 1.`) + "</div>";
+      if (k >= LC) html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3><div class="op">${prod(lP, "lcm", L)}</div>` +
+        `The LCM uses every piece each number needs. Shared pieces count once.</div>`;
+      coach(740, 372, 445, 480, html + "</div>");
     }
     return { steps, draw, gcfAt: G, lcmAt: LC };
   }
@@ -449,12 +455,27 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     steps.push({ r: rows.length, say: () => (n > 2 && divs.length > p1 ? "No prime goes into two of them now. " : "") +
       `LCM: multiply the L, the left side and the bottom row. ${m(prod(lF, "lcm", L))}` });
 
+    // Coaching on the right: the answer to the last question, then the next question.
+    const all = vals => n === 2 ? `both ${list(vals)}` : `all of ${list(vals)}`;
+    const qAll = vals => `What prime number can ${n === 2 ? `${vals[0]} and ${vals[1]} both` : `${list(vals)} all`} be divided by?`;
+    const q2 = vals => `What prime number can at least two of ${list(vals)} be divided by?`;
+    const divLine = (i, skip) => rows[i].map((v, j) => skip[j] ? `${v} comes down` : `${v} ÷ ${divs[i]} = ${rows[i + 1][j]}`).join("<br>");
+    const coachAt = k => {
+      if (k === 0) return { q: qAll(rows[0]) + "<small>Try 2, then 3, 5, 7 …</small>" };
+      if (k < G) { const i = k - 1; return { a: `<b>${divs[i]}</b> ✓ Divide each one by ${divs[i]}.<span class="m">${divLine(i, down[i + 1])}</span>`, q: qAll(rows[i + 1]) }; }
+      if (k === G) return { a: `None! Only 1 divides ${all(rows[p1])}, so stop.`,
+        q: n > 2 ? "For the LCM, keep going. " + q2(rows[p1]) : "What do you get when you multiply the L, the left side and the bottom row?" };
+      if (k < LC) { const i = p1 + (k - G - 1), no = rows[i].filter((v, j) => down[i + 1][j]);
+        return { a: `<b>${divs[i]}</b> ✓ Divide the ones it goes into. Bring ${list(no)} down.<span class="m">${divLine(i, down[i + 1])}</span>`, q: q2(rows[i + 1]) }; }
+      return { a: n > 2 ? `None! No prime divides two of ${list(bottom)}, so stop.` : "" };
+    };
+
     function draw(k) {
-      const s = steps[k], newRow = k > 0 && steps[k - 1].r < s.r, R = rows.length, rowH = Math.min(120, 600 / R), fs = Math.min(70, rowH * 0.6), TOP = 30;
-      const divX = 300, barX = 360, colW = n === 3 ? 200 : 250;
-      const colX = j => barX + 120 + j * colW, rightX = colX(n - 1) + 120;
+      const s = steps[k], newRow = k > 0 && steps[k - 1].r < s.r, R = rows.length, rowH = Math.min(120, 780 / R), fs = Math.min(64, rowH * 0.6), TOP = 30;
+      const divX = 70, barX = 120, colW = n === 3 ? 150 : 190;
+      const colX = j => barX + 90 + j * colW, rightX = colX(n - 1) + 85;
       const y = i => TOP + (i + 0.5) * rowH;
-      const halfW = Math.max(46, String(Math.max(...divs, 2)).length * fs * 0.32 + 14);
+      const halfW = Math.max(40, String(Math.max(...divs, 2)).length * fs * 0.32 + 12);
       if (k >= G && p1) el("rect", { class: "gbox", x: divX - halfW, y: TOP + 4, width: halfW * 2, height: p1 * rowH - 8, rx: 12 }, svg, G);
       if (k >= LC) {
         const x1 = divX - halfW - 6, x2 = divX + halfW + 6, yT = TOP, yB0 = TOP + (R - 1) * rowH, yB1 = TOP + R * rowH;
@@ -465,7 +486,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           const dn = down[i][j];
           const gg = el("g", {}, svg, newRow && i + 1 === s.r ? k : -1);
           txt(fmt(v), { class: "num" + (dn ? " dn" : ""), x: colX(j), y: y(i), "font-size": fs }, gg);
-          if (dn) txt("↓", { class: "num dn", x: colX(j) - fs * 1.15, y: y(i), "font-size": fs * 0.6 }, gg);
+          if (dn) txt("↓", { class: "num dn", x: colX(j) - fs * 1.05, y: y(i), "font-size": fs * 0.6 }, gg);
         });
         if (i + 1 < s.r) {
           const at = newRow && i + 2 === s.r ? k : -1;
@@ -474,89 +495,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           el("line", { class: "rule", x1: barX, y1: y(i) + rowH * 0.5, x2: rightX, y2: y(i) + rowH * 0.5 }, svg, at);
         }
       }
-      const by = TOP + R * rowH + 80, fsA = 50;
-      if (k >= G) txt(p1 ? `GCF = ${prod(divs.slice(0, p1), "gcf", g)}` : `GCF = ${A("gcf", g)}  (no shared prime)`, { class: "say g", x: W / 2, y: by, "font-size": fsA }, svg, G);
-      if (k >= LC) txt(`LCM = ${prod(lF, "lcm", L)}`, { class: "say l", x: W / 2, y: by + 76, "font-size": lF.length > 8 ? 38 : fsA }, svg, LC);
-    }
-    return { steps, draw, gcfAt: G, lcmAt: LC };
-  }
-
-  // ---------- Line Up ----------
-  function linePlan(ns, g, L) {
-    const n = ns.length, mn = Math.min(...ns), mx = Math.max(...ns), iMax = ns.indexOf(mx);
-    const cands = [];
-    for (let d = 2; d <= mn; d++) if (mn % d === 0) cands.push(d);
-    const mk = (ok) => `<b class="${ok ? "ok" : "no"}">${ok ? "✓" : "✗"}</b>`;
-    const steps = [{ ph: "g", d: 0, say: () => `Here are ${list(ns)} as rows of squares. Which group size fits every row with none left over?` }];
-    cands.forEach(d => steps.push({ ph: "g", d, say: () => `Groups of ${d}: ` + ns.map(v => `${v} ${mk(v % d === 0)}`).join(", ") }));
-    const G = steps.length;
-    steps.push({ ph: "g", d: g, fin: true, say: () => g > 1 ? `The biggest group that fits every row: GCF = ${A("gcf", g)}.` : `Only groups of 1 fit every row. GCF = ${A("gcf", g)}.` });
-    for (let t = mx; t <= L; t += mx) {
-      const others = ns.filter((v, i) => i !== iMax), hit = t % L === 0;
-      steps.push({ ph: "l", t, say: () => (t === mx ? "Now lay copies end to end. " : "") +
-        `The ${mx}s reach ${t}. ` + others.map(a => `The ${a}s ${t % a ? "miss" : "land on"} ${t} ${mk(t % a === 0)}`).join(". ") + "." +
-        (hit ? ` They line up! LCM = ${A("lcm", L)}.` : "") });
-    }
-    const LC = steps.length - 1;
-    const rowGap = 190, y0 = (H - n * rowGap) / 2 + 70;
-    const ry = i => y0 + i * rowGap;
-    const rc = ["p2", "p3", "p5"];
-    const x0 = 210;
-
-    function draw(k) {
-      const s = steps[k];
-      ns.forEach((v, i) => txt(v, { class: "lbl", x: x0 - 30, y: ry(i), "text-anchor": "end", "font-size": 54 }));
-      if (s.ph === "g") {
-        const d = s.d, u = Math.min(70, 900 / mx), h = Math.min(70, u * 1.6);
-        txt(d ? (s.fin ? `GCF = ${A("gcf", g)}` : `Groups of ${d}`) : "Which group size fits every row?",
-          { class: "say" + (s.fin ? " g" : ""), x: W / 2, y: 90, "font-size": 52 }, svg, k);
-        ns.forEach((v, i) => {
-          const row = el("g", { class: rc[i] });
-          const left = d ? v % d : 0, y = ry(i) - h / 2;
-          for (let j = 0; j < v; j++) {
-            const isLeft = d && j >= v - left;
-            el("rect", { class: "sq" + (isLeft ? " left" : d && Math.floor(j / d) % 2 ? " alt" : ""), x: x0 + j * u + 1.5, y, width: u - 3, height: h, rx: Math.min(6, u * 0.15) }, row);
-          }
-          if (d) {
-            for (let q = 0; q < Math.floor(v / d); q++)
-              el("rect", { class: "grp" + (s.fin ? " g" : ""), x: x0 + q * d * u - 1, y: y - 5, width: d * u + 2, height: h + 10, rx: 10 }, row, k);
-            const ok = !left;
-            txt(ok ? "✓" : "✗", { class: "mark " + (ok ? "ok" : "no"), x: x0 + v * u + 22, y: ry(i), "font-size": 60 }, svg, k);
-            txt(ok ? `${v / d} groups of ${d}` : `${Math.floor(v / d)} groups of ${d}, ${left} left over`,
-              { class: "cnt" + (ok ? "" : " no"), x: x0, y: y + h + 44, "font-size": 30 }, svg, k);
-          }
-        });
-        return;
-      }
-      // Rods laid end to end, checked at each multiple of the biggest number.
-      const t = s.t, prev = t - mx, v1 = 920 / L, h = 64, top = ry(0) - h / 2 - 70, bot = ry(n - 1) + h / 2 + 40;
-      const X = val => x0 + val * v1;
-      for (let c = mx; c < t; c += mx) {
-        el("line", { class: "chk", x1: X(c), y1: top + 10, x2: X(c), y2: bot });
-        txt(c, { class: "chkn", x: X(c), y: top, "font-size": 28 });
-      }
-      const hit = t % L === 0;
-      el("line", { class: "chk " + (hit ? "hit" : "now"), x1: X(t), y1: top + 10, x2: X(t), y2: bot }, svg, k);
-      txt(t, { class: "chkn " + (hit ? "hit" : "now"), x: X(t), y: top, "font-size": 36 }, svg, k);
-      txt(hit ? `They line up! LCM = ${A("lcm", L)}` : `Do they all land on ${t}?`, { class: "say" + (hit ? " l" : ""), x: W / 2, y: 70, "font-size": 50 }, svg, k);
-      ns.forEach((a, i) => {
-        const row = el("g", { class: rc[i] }), y = ry(i) - h / 2, cnt = Math.ceil(t / a), had = prev > 0 ? Math.ceil(prev / a) : 0;
-        for (let j = 0; j < cnt; j++) {
-          const rg = el("g", {}, row, j >= had ? k : -1), w = a * v1;
-          el("rect", { class: "rod", x: X(j * a), y, width: w, height: h, rx: 6 }, rg);
-          if (v1 >= 9) for (let q = 1; q < a; q++) el("line", { class: "unit", x1: X(j * a + q), y1: y + 4, x2: X(j * a + q), y2: y + h - 4 }, rg);
-          if (w >= 44) txt(a, { class: "rodn", x: X(j * a) + w / 2, y: ry(i), "font-size": Math.min(34, w * 0.45) }, rg);
-          if (w >= 40 || j === cnt - 1) txt((j + 1) * a, { class: "joint", x: X((j + 1) * a), y: y + h + 32, "font-size": 26 }, rg);
-        }
-      });
-      const ly = bot + 50;
-      el("line", { class: "ruler", x1: X(0), y1: ly, x2: X(L), y2: ly });
-      const every = v1 >= 30 ? 1 : 5;
-      for (let q = 0; q <= L; q++) {
-        const big = q % every === 0;
-        el("line", { class: "tk", x1: X(q), y1: ly - (big ? 12 : 6), x2: X(q), y2: ly + (big ? 12 : 6) });
-        if (big) txt(q, { class: "tkn", x: X(q), y: ly + 40, "font-size": 24 });
-      }
+      const c = coachAt(k);
+      let html = `<div class="${fr(k).trim()}">` + (c.a ? `<div class="a">${c.a}</div>` : "") + "</div>";
+      if (c.q) html += `<div class="q${fr(k)}">${c.q}</div>`;
+      html += '<div class="boxes">';
+      const gl = divs.slice(0, p1);
+      if (k >= G) html += `<div class="box g${fr(G)}"><h3>GCF = ${A("gcf", g)}</h3>` + (gl.length > 1 ? `<div class="op">${prod(gl, "gcf", g)}</div>` : "") +
+        (gl.length ? "Multiply the left side. " : "No prime divides them all. ") + `The GCF is the <b>greatest</b> number that divides into ${list(ns)}.</div>`;
+      if (k >= LC) html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3>${lF.length > 1 ? `<div class="op">${prod(lF, "lcm", L)}</div>` : ""}` +
+        `Multiply the L. The LCM is the <b>least</b> number that ${list(ns)} ${n === 2 ? "both" : "all"} divide into.</div>`;
+      coach(Math.max(rightX + 40, 560), 20, 1185 - Math.max(rightX + 40, 560), 830, html + "</div>");
     }
     return { steps, draw, gcfAt: G, lcmAt: LC };
   }
@@ -577,11 +525,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (r.err) { plan = null; nums = []; }
     else nums = r.ns;
     const L = nums.length ? nums.reduce(lcm) : 0, g = nums.length ? nums.reduce(gcd) : 0;
-    const canLine = !!nums.length && L <= LINE_MAX;
-    $("tabs").querySelector('[data-m="line"]').disabled = !canLine;
-    $("lhint").hidden = canLine || !nums.length;
-    if (mode === "line" && !canLine && nums.length) setMode("tree", true);
-    if (nums.length) plan = (mode === "tree" ? treePlan : mode === "ladder" ? ladderPlan : linePlan)(nums, g, L);
+    if (nums.length) plan = (mode === "tree" ? treePlan : ladderPlan)(nums, g, L);
     step = 0; fwd = false;
     render();
   }
