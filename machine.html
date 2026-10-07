@@ -168,6 +168,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .v { font-family: var(--font-display); font-style: italic; font-weight: 800; }
 .fn { color: inherit; }
 sup { font-size: 0.62em; line-height: 0; }
+/* Stacked fractions and square roots, inside the rule, the steps and the calculations. */
+.sfrac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.8em; line-height: 1.1; margin: 0 0.12em; }
+.sfrac > span { padding: 0 0.2em; }
+.sfrac > span:first-child { border-bottom: 0.1em solid currentColor; padding-bottom: 0.08em; }
+.sfrac > span:last-child { padding-top: 0.08em; }
+.rad { white-space: nowrap; }
+.rad-in { border-top: 0.09em solid currentColor; padding: 0.04em 0.12em 0; margin-left: 0.02em; }
 
 /* The machine */
 .machine { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px 20px 20px; border-radius: 20px;
@@ -177,7 +184,12 @@ sup { font-size: 0.62em; line-height: 0; }
 .machine::after { right: -24px; clip-path: polygon(0 22%, 100% 0, 100% 100%, 0 78%); }
 .bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--grid-major); border: 2px solid var(--ink); }
 .plate { position: relative; background: var(--sheet); border: 3px solid var(--ink); border-radius: 12px; padding: 8px 14px; text-align: center; }
-.plate .label { margin: 0 0 2px; }
+.plate-top { display: flex; align-items: center; justify-content: center; gap: 6px 16px; flex-wrap: wrap; margin-bottom: 2px; }
+.plate .label { margin: 0; }
+.keys { display: flex; gap: 6px; }
+.keys button { min-width: 46px; height: 40px; padding: 0 8px; font-family: var(--font-num); font-size: 1.15rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.keys .sfrac { font-size: 0.8rem; }
+.keys sup { font-size: 0.75em; line-height: 1; align-self: flex-start; margin-top: 4px; }
 #ruleShow { display: block; width: 100%; background: none; border: 0; padding: 4px; font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--ink); cursor: text; white-space: nowrap; overflow-x: auto; }
 #ruleShow:hover { background: var(--chip); }
 #rule { width: 100%; height: 64px; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; color: var(--ink); background: var(--paper);
@@ -237,7 +249,16 @@ td:last-child { color: var(--orange); }
       <span class="bolt" style="left:10px;top:10px"></span><span class="bolt" style="right:10px;top:10px"></span>
       <span class="bolt" style="left:10px;bottom:10px"></span><span class="bolt" style="right:10px;bottom:10px"></span>
       <div class="plate">
-        <p class="label">Rule</p>
+        <div class="plate-top">
+          <p class="label">Rule</p>
+          <div class="keys" role="group" aria-label="Insert into the rule">
+            <button type="button" data-k="sq" aria-label="Squared"><span class="v">x</span><sup>2</sup></button>
+            <button type="button" data-k="pow" aria-label="Power"><span class="v">x</span><sup>n</sup></button>
+            <button type="button" data-k="root" aria-label="Square root"><span class="rad">√<span class="rad-in">&nbsp;&nbsp;</span></span></button>
+            <button type="button" data-k="frac" aria-label="Fraction"><span class="sfrac"><span>a</span><span>b</span></span></button>
+            <button type="button" data-k="par" aria-label="Brackets">( )</button>
+          </div>
+        </div>
         <button type="button" id="ruleShow" aria-label="Rule. Click to change it."></button>
         <input id="rule" type="text" autocomplete="off" spellcheck="false" value="f(x) = 2x + 3" aria-label="Rule" hidden>
         <p class="err" id="ruleErr" hidden></p>
@@ -272,7 +293,7 @@ td:last-child { color: var(--orange); }
   // ---------- Reading the rule ----------
   const SUP = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
   function tokenize(s) {
-    s = s.replace(/\*\*/g, "^").replace(/[−–—]/g, "-").replace(/[×·∙*]/g, "*").replace(/[÷:]/g, "/")
+    s = s.replace(/\*\*/g, "^").replace(/[−–—]/g, "-").replace(/[×·∙*]/g, "*").replace(/:/g, "÷").replace(/sqrt/gi, "√")
       .replace(/\[/g, "(").replace(/\]/g, ")").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m => "^" + [...m].map(c => SUP[c]).join(""));
     const out = [];
     let i = 0;
@@ -282,7 +303,8 @@ td:last-child { color: var(--orange); }
       const num = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
       if (num) { out.push({ k: "num", v: parseFloat(num[1]) }); i += num[1].length; continue; }
       if (/[A-Za-z]/.test(c)) { out.push({ k: "var", v: c }); i++; continue; }
-      if ("+-*/^()".includes(c)) { out.push({ k: c }); i++; continue; }
+      if (c === "÷") { out.push({ k: "/", v: "÷" }); i++; continue; }
+      if ("+-*/^()√".includes(c)) { out.push({ k: c }); i++; continue; }
       throw new Error("I can't read the “" + c + "” sign.");
     }
     return out;
@@ -293,7 +315,7 @@ td:last-child { color: var(--orange); }
     let p = 0;
     const peek = (o = 0) => t[p + o] || { k: "end" };
     const eat = k => { if (peek().k !== k) throw new Error(k === ")" ? "Check the brackets: one is missing a partner." : "Something is missing in the rule."); return t[p++]; };
-    const startsFactor = () => ["num", "var", "("].includes(peek().k);
+    const startsFactor = () => ["num", "var", "(", "√"].includes(peek().k);
     function expr() {
       let a = term();
       while (peek().k === "+" || peek().k === "-") { const op = t[p++].k; a = { t: "bin", op, a, b: term() }; }
@@ -302,7 +324,12 @@ td:last-child { color: var(--orange); }
     function term() {
       let a = unary();
       for (;;) {
-        if (peek().k === "*" || peek().k === "/") { const op = t[p++].k; a = { t: "bin", op, a, b: unary() }; }
+        if (peek().k === "*" || peek().k === "/") {
+          const tok = t[p++];
+          a = { t: "bin", op: tok.k, a, b: unary() };
+          // Typed with / it shows as a stacked fraction; typed with ÷ it keeps the ÷ sign.
+          if (tok.k === "/" && tok.v !== "÷") a.frac = true;
+        }
         else if (startsFactor()) a = { t: "bin", op: "*", implicit: true, a, b: power() };
         else return a;
       }
@@ -327,6 +354,7 @@ td:last-child { color: var(--orange); }
       if (k === "num") return { t: "num", v: t[p++].v };
       if (k === "var") return { t: "var", name: t[p++].v };
       if (k === "(") { p++; const e = expr(); eat(")"); e.paren = true; return e; }
+      if (k === "√") { p++; if (["end", ")", "+", "-", "*", "/", "^"].includes(peek().k)) throw new Error("Put a number or bracket after the √ sign, like √(x + 1)."); return { t: "sqrt", a: primary() }; }
       if (k === ")") throw new Error("Check the brackets: one is missing a partner.");
       if (k === "end") throw new Error("The rule ends too soon. Finish it, like 2x + 3.");
       throw new Error("Two signs are in a row. Put a number or letter between them.");
@@ -388,7 +416,10 @@ td:last-child { color: var(--orange); }
     if (n.t === "var") return varHtml(n.name);
     let s;
     const first = n.paren ? true : lead;
+    const inner = c => { const was = c.paren; c.paren = false; const h = show(c, "", true); c.paren = was; return h; };
     if (n.t === "neg") s = MINUS + show(n.a, "neg", false);
+    else if (n.t === "sqrt") s = '<span class="rad">√<span class="rad-in">' + inner(n.a) + "</span></span>";
+    else if (n.frac) s = '<span class="sfrac"><span>' + inner(n.a) + "</span><span>" + inner(n.b) + "</span></span>";
     else if (n.op === "^") s = show(n.a, "base", first) + "<sup>" + show(n.b, "exp") + "</sup>";
     else if (n.implicit) s = show(n.a, "impL", first) + show(n.b, "imp", false);
     else s = show(n.a, "left", first) + OPS[n.op] + show(n.b, "right", false);
@@ -417,15 +448,15 @@ td:last-child { color: var(--orange); }
     };
     let root = sub(tree);
     const list = [{ html: show(root), calc: "" }];
-    const PREC = { "^": 3, neg: 2.5, "*": 2, "/": 2, "+": 1, "-": 1 };
+    const PREC = { "^": 3, sqrt: 3, neg: 2.5, "*": 2, "/": 2, "+": 1, "-": 1 };
     for (let guard = 0; guard < 60 && root.t !== "num"; guard++) {
       let best = null;
       (function find(n, depth, parent, side) {
         if (n.t === "num") { n.fresh = false; return; }
         const d = depth + (n.paren ? 1 : 0);
-        const ready = n.a.t === "num" && (n.t === "neg" || n.b.t === "num");
+        const ready = n.a.t === "num" && (!n.b || n.b.t === "num");
         if (ready) {
-          const key = [d, PREC[n.t === "neg" ? "neg" : n.op], -n.id];
+          const key = [d, PREC[n.t === "bin" ? n.op : n.t], -n.id];
           if (!best || key[0] > best.key[0] || (key[0] === best.key[0] && (key[1] > best.key[1] || (key[1] === best.key[1] && key[2] > best.key[2]))))
             best = { n, parent, side, key };
         }
@@ -435,6 +466,8 @@ td:last-child { color: var(--orange); }
       const n = best.n, a = n.a.v, b = n.b ? n.b.v : 0;
       let v, calc;
       if (n.t === "neg") { v = -a; calc = MINUS + "(" + fmt(a) + ")"; }
+      else if (n.t === "sqrt") { v = a < 0 ? NaN : Math.sqrt(a); calc = '<span class="rad">√<span class="rad-in">' + fmt(a) + "</span></span>"; }
+      else if (n.frac) { v = b === 0 ? NaN : a / b; calc = '<span class="sfrac"><span>' + fmt(a) + "</span><span>" + fmt(b) + "</span></span>"; }
       else if (n.op === "^") { v = Math.pow(a, b); calc = calcSide(a, true) + "<sup>" + fmt(b) + "</sup>"; }
       else {
         v = n.op === "+" ? a + b : n.op === "-" ? a - b : n.op === "*" ? a * b : b === 0 ? NaN : a / b;
@@ -492,6 +525,7 @@ td:last-child { color: var(--orange); }
       $("ruleErr").hidden = true;
       const lhs = r.fn ? r.fn + "(" + varHtml(r.inVar) + ")" : outName();
       $("ruleShow").innerHTML = lhs + " = " + show(r.tree);
+      fitRule();
       $("inVar").textContent = r.inVar;
       $("start").disabled = false;
       if (!keepTable) { history.length = 0; resetRun(); }
@@ -506,6 +540,16 @@ td:last-child { color: var(--orange); }
     }
   }
 
+  // A long rule gets smaller so the whole thing shows on the nameplate.
+  function fitRule() {
+    const el = $("ruleShow");
+    if (el.hidden) return;
+    let fs = 2.4;
+    el.style.fontSize = fs + "rem";
+    while (fs > 1.2 && el.scrollWidth > el.clientWidth + 1) { fs -= 0.1; el.style.fontSize = fs.toFixed(2) + "rem"; }
+  }
+  addEventListener("resize", fitRule);
+
   function editRule() {
     if (running) return;
     $("ruleShow").hidden = true;
@@ -515,9 +559,31 @@ td:last-child { color: var(--orange); }
   }
   function doneRule() {
     if ($("rule").hidden) return;
-    if (setRule($("rule").value)) { $("rule").hidden = true; $("ruleShow").hidden = false; }
+    if (setRule($("rule").value)) { $("rule").hidden = true; $("ruleShow").hidden = false; fitRule(); }
   }
   $("ruleShow").addEventListener("click", editRule);
+
+  // Notation keys: put a power, root, fraction or brackets where the cursor is, wrapping any selected text.
+  const KEYS = { sq: ["", "²", ""], pow: ["", "^", ""], root: ["√(", "", ")"], frac: ["(", ")/(", ")"], par: ["(", "", ")"] };
+  for (const b of document.querySelectorAll(".keys button")) {
+    b.addEventListener("mousedown", e => e.preventDefault()); // keep the cursor in the rule box
+    b.addEventListener("click", () => {
+      if (running) return;
+      const box = $("rule");
+      if (box.hidden) { $("ruleShow").hidden = true; box.hidden = false; box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+      const [pre, mid, post] = KEYS[b.dataset.k];
+      const a = box.selectionStart, z = box.selectionEnd, sel = box.value.slice(a, z);
+      // Fraction with nothing selected: the cursor goes in the top. With a selection, it becomes the top and the cursor goes in the bottom.
+      const text = pre + sel + mid + post;
+      box.setRangeText(text, a, z, "end");
+      let caret = a + pre.length + sel.length;
+      if (b.dataset.k === "frac" && sel) caret += mid.length;
+      else if (b.dataset.k !== "frac") caret += mid.length;
+      box.setSelectionRange(caret, caret);
+      box.focus();
+      setRule(box.value);
+    });
+  }
   $("rule").addEventListener("input", () => { const ok = setRule($("rule").value); if (!ok) resetRun(); });
   $("rule").addEventListener("blur", doneRule);
   $("rule").addEventListener("keydown", e => { if (e.key === "Enter") { doneRule(); if ($("rule").hidden) $("inp").focus(); } });
