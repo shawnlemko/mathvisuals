@@ -186,6 +186,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .it { transition: transform .9s cubic-bezier(.4, 0, .2, 1), opacity .4s; }
 .it .face { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 2; transition: stroke .3s, fill .3s; }
 .it .pip { fill: var(--ink); }
+/* Coloured shapes: solid fills that stay the same in dark mode, with a dark edge so yellow reads on white. */
+:root { --sh-red: #d63c3c; --sh-blue: #2f6fe0; --sh-green: #2e9e5b; --sh-yellow: #f4c430; }
+.it .shape { stroke: #1b2733; stroke-width: 2; stroke-linejoin: round; }
 .it .rank { font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; }
 .it .suit { font-size: 26px; text-anchor: middle; }
 .it .redsuit { fill: var(--red); } .it .blacksuit { fill: var(--ink); }
@@ -240,6 +243,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="seg-btns" role="group" aria-label="Sample space">
       <button type="button" data-space="die">One die</button>
       <button type="button" data-space="cards">Deck of cards</button>
+      <button type="button" data-space="shapes">Coloured shapes</button>
     </div>
   </header>
 
@@ -299,6 +303,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // ---------- Sample spaces and events ----------
   const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
   const SUITS = [["♥", "red"], ["♦", "red"], ["♣", "black"], ["♠", "black"]];
+  const COLOURS = ["red", "blue", "green", "yellow"], SHAPES = ["circle", "square", "triangle", "star"];
   const SPACES = {
     die: {
       unit: "roll", total: "6 outcomes",
@@ -330,6 +335,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       ],
       defaults: ["heart", "king"],
     },
+    shapes: {
+      unit: "shape", total: "16 shapes",
+      items: COLOURS.flatMap((c, ci) => SHAPES.map((sh, shi) => ({ c, ci, sh, shi, label: c + " " + sh }))),
+      events: [
+        ["blue", "Blue", "blue", "Blue", o => o.c === "blue"],
+        ["redS", "Red", "red", "Red", o => o.c === "red"],
+        ["green", "Green", "green", "Green", o => o.c === "green"],
+        ["yellow", "Yellow", "yellow", "Yellow", o => o.c === "yellow"],
+        ["star", "Star", "a star", "Star", o => o.sh === "star"],
+        ["circle", "Circle", "a circle", "Circle", o => o.sh === "circle"],
+        ["square", "Square", "a square", "Square", o => o.sh === "square"],
+        ["triangle", "Triangle", "a triangle", "Triangle", o => o.sh === "triangle"],
+      ],
+      defaults: ["blue", "star"],
+    },
   };
 
   // ---------- Venn geometry ----------
@@ -358,7 +378,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   function makeItem(o, kind) {
     const g = el("g", { class: "it" }, itemLayer);
-    if (kind === "die") {
+    if (kind === "shapes") {
+      el("rect", { class: "face", x: -DIE / 2, y: -DIE / 2, width: DIE, height: DIE, rx: 12 }, g);
+      const a = { class: "shape", fill: `var(--sh-${o.c})` };
+      if (o.sh === "circle") el("circle", { ...a, r: 21 }, g);
+      else if (o.sh === "square") el("rect", { ...a, x: -19, y: -19, width: 38, height: 38, rx: 3 }, g);
+      else if (o.sh === "triangle") el("path", { ...a, d: "M0,-22 L23,18 L-23,18 Z" }, g);
+      else {
+        const pts = [];
+        for (let i = 0; i < 10; i++) { const r = i % 2 ? 10 : 24, t = -Math.PI / 2 + i * Math.PI / 5; pts.push(`${(r * Math.cos(t)).toFixed(1)},${(r * Math.sin(t) + 2).toFixed(1)}`); }
+        el("polygon", { ...a, points: pts.join(" ") }, g);
+      }
+      el("g", { class: "badge", transform: `translate(${DIE / 2 - 6},${-DIE / 2 + 6})` }, g);
+    } else if (kind === "die") {
       el("rect", { class: "face", x: -DIE / 2, y: -DIE / 2, width: DIE, height: DIE, rx: 12 }, g);
       for (const [px, py] of PIPS[o.v]) el("circle", { class: "pip", cx: px * 17, cy: py * 17, r: 6.5 }, g);
       el("g", { class: "badge", transform: `translate(${DIE / 2 - 6},${-DIE / 2 + 6})` }, g);
@@ -379,7 +411,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Find the largest item size so each region of the Venn diagram has room for its outcomes.
   function packVenn(sp, groups, apart) {
     const [ax, bx] = apart ? LAYOUT.apart : LAYOUT.overlap;
-    const baseW = sp === "die" ? DIE : CW, baseH = sp === "die" ? DIE : CH;
+    const baseW = sp === "cards" ? CW : DIE, baseH = sp === "cards" ? CH : DIE;
     // Keep outcomes off the sample space title and the circle names.
     const lw = t => t.length * 16 + 20;
     const la = lw(lblA.textContent), lb = lw(lblB.textContent);
@@ -429,7 +461,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     items.forEach(o => makeItem(o, space));
     // Start: the whole sample space laid out neatly, before sorting.
     startPos = new Map();
-    if (space === "die") items.forEach((o, i) => startPos.set(o, [500 + (i - 2.5) * 130, CY, 1.4]));
+    if (space === "shapes") items.forEach(o => startPos.set(o, [500 + (o.shi - 1.5) * 105, CY + (o.ci - 1.5) * 105, 1.3]));
+    else if (space === "die") items.forEach((o, i) => startPos.set(o, [500 + (i - 2.5) * 130, CY, 1.4]));
     else items.forEach(o => startPos.set(o, [500 + (o.ri - 6) * 70, CY - 150 + o.si * 100, 1.12]));
     spaceLbl.textContent = "Sample space: " + S.total;
     setupEvents();

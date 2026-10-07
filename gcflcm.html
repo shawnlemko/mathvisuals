@@ -146,8 +146,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </style>
 <style>
 /* GCF and LCM: type 2 or 3 whole numbers (2 to 999) and step through one of two strategies.
-   Factor Tree splits each number into primes, then lines the primes up in columns: the columns every number
-   has make the GCF (green), one of every column makes the LCM (orange).
+   Factor Tree splits each number into primes and lines matching primes up. The GCF is the primes every number
+   has in common (green); the LCM uses each prime the most times any one number has it (orange). Explanations use
+   the math (shared primes, most copies, powers), never the column layout (Shawn).
    Ladder divides by primes the numbers share; GCF = the left side, LCM = the L (left side and bottom row).
    With 3 numbers the ladder keeps going for the LCM with primes that go into two of them, bringing the other down.
    The ladder sits on the left; the white space on the right coaches each step: the answer to the last question,
@@ -223,6 +224,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .coach .box { border: 4px solid var(--c); border-radius: 14px; padding: 10px 18px; font-size: 26px; line-height: 1.25; }
 .coach .box.g { --c: var(--green); } .coach .box.l { --c: var(--orange); }
 .coach .box h3 { margin: 0 0 2px; font-family: var(--font-display); font-weight: 800; font-size: 40px; color: var(--c); }
+.coach .box ul { margin: 2px 0 0; padding-left: 1.1em; }
+.coach .box li b { color: var(--c); }
+.coach .box .sk { font-weight: 700; margin-top: 2px; }
+.coach .box .sk b { color: var(--c); }
+.coach .tight .box { font-size: 24px; padding: 8px 16px; }
+.coach .tight .box h3 { font-size: 36px; }
+.coach .tight { gap: 10px; }
 .coach .box .op { font-weight: 700; font-size: 30px; color: var(--c); margin-bottom: 6px; }
 .coach .boxes { margin-top: auto; display: flex; flex-direction: column; gap: 14px; }
 .fresh { animation: pop 0.5s ease-out both; transform-box: fill-box; transform-origin: center; }
@@ -298,6 +306,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Long products (more than 6 primes) are grouped with exponents: 2⁹ × 3² × 5 × 11.
   const sup = e => String(e).replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
   const short = ps => ps.length <= 6 ? ps.join(" × ") : [...new Set(ps)].map(p => { const e = ps.filter(q => q === p).length; return e > 1 ? p + sup(e) : p; }).join(" × ");
+  // Powers form: 2 × 2 × 3 → 2² × 3.
+  const pw = ps => [...new Set(ps)].map(p => { const e = ps.filter(q => q === p).length; return e > 1 ? p + sup(e) : p; }).join(" × ");
+  const word = c => ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][c] || String(c);
+  // Skip counting up to the LCM: "8, 16, 24". Long lists keep the first three and the last.
+  const skip = (v, L) => {
+    const last = hideAns && !shown.lcm ? "?" : `<b>${fmt(L)}</b>`, c = L / v;
+    const head = []; for (let i = 1; i < Math.min(c, c > 6 ? 4 : c); i++) head.push(fmt(i * v));
+    return head.join(", ") + (c > 6 ? ", …, " : head.length ? ", " : "") + last;
+  };
   const prod = (ps, k, v) => ps.length > 1 ? `${short(ps)} = ${A(k, v)}` : A(k, v);
   const m = s => `<span class="m">${s}</span>`;
   const fr = at => fwd && at === step ? " fresh" : "";
@@ -361,11 +378,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       } });
     }
     const T = steps.length;
-    steps.push({ say: () => "Line up the primes. Matching primes go in the same column.<br>" + ns.map(n => m(`${n} = ${factor(n).join(" × ")}`)).join("<br>") });
+    steps.push({ say: () => "Write each number as a product of primes. Matching primes line up.<br>" + ns.map(n => { const f = factor(n), p = pw(f); return m(`${n} = ${f.join(" × ")}${p !== f.join(" × ") ? " = " + p : ""}`); }).join("<br>") });
     const G = steps.length;
-    steps.push({ say: () => gP.length ? `GCF: take the columns every number has. ${m(prod(gP, "gcf", g))}` : `No column is full, so GCF = ${A("gcf", g)}.` });
+    steps.push({ say: () => gP.length ? `GCF: the primes every number has in common. ${m(prod(gP, "gcf", g))}` : `No prime is in every number, so GCF = ${A("gcf", g)}.` });
     const LC = steps.length;
-    steps.push({ say: () => `LCM: take one of every column. ${m(prod(lP, "lcm", L))}` });
+    steps.push({ say: () => `LCM: use each prime the most times any one number has it. ${m(`${pw(lP)} = ${A("lcm", L)}`)}` });
 
     function draw(k) {
       const lev = Math.min(k, levels);
@@ -410,13 +427,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         txt("LCM =", { class: "lbl l", x: 230, y: 0, "text-anchor": "end", "font-size": fsA }, row);
         cols.forEach((c, i) => cell(i, c.p, row));
       }
-      const both = ns.length === 2 ? "both numbers" : "all the numbers";
       let html = '<div class="boxes">';
       if (k >= G) html += `<div class="box g${fr(G)}"><h3>GCF = ${A("gcf", g)}</h3>` + (gP.length > 1 ? `<div class="op">${prod(gP, "gcf", g)}</div>` : "") +
-        (gP.length ? `The GCF is the smallest pieces (primes) that are in common: the columns ${both} have.` : `No prime piece is in common, so the GCF is 1.`) + "</div>";
-      if (k >= LC) html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3><div class="op">${prod(lP, "lcm", L)}</div>` +
-        `The LCM uses every piece each number needs. Shared pieces count once.</div>`;
-      coach(740, 372, 445, 480, html + "</div>");
+        (gP.length ? `The GCF is the smallest pieces (primes) that are in common: ${list(ns)} ${ns.length === 2 ? "both" : "all"} have ${gP.join(" × ")} inside them.` : `No prime piece is in common, so the GCF is 1.`) + "</div>";
+      if (k >= LC) {
+        const most = primes.map(p => { const c = Math.max(...counts.map(cc => cc[p] || 0)), i = counts.findIndex(cc => (cc[p] || 0) === c);
+          return `<li><b>${word(c)} ${p}${c > 1 ? "s" : ""}</b>, because ${ns[i]} = ${pw(factor(ns[i]))}</li>`; }).join("");
+        const pf = pw(lP);
+        html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3>` +
+          `<div class="op">${pf} = ${A("lcm", L)}</div>` +
+          `For each prime, use the most copies any one number has:<ul>${most}</ul></div>`;
+      }
+      coach(740, 368, 445, 488, html.replace('class="boxes"', 'class="boxes tight"') + "</div>");
     }
     return { steps, draw, gcfAt: G, lcmAt: LC };
   }
@@ -503,7 +525,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       if (k >= G) html += `<div class="box g${fr(G)}"><h3>GCF = ${A("gcf", g)}</h3>` + (gl.length > 1 ? `<div class="op">${prod(gl, "gcf", g)}</div>` : "") +
         (gl.length ? "Multiply the left side. " : "No prime divides them all. ") + `The GCF is the <b>greatest</b> number that divides into ${list(ns)}.</div>`;
       if (k >= LC) html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3>${lF.length > 1 ? `<div class="op">${prod(lF, "lcm", L)}</div>` : ""}` +
-        `Multiply the L. The LCM is the <b>least</b> number that ${list(ns)} ${n === 2 ? "both" : "all"} divide into.</div>`;
+        `Multiply the L. The LCM is the first number you reach when you count by ${list(ns.map(v => v + "s"))}:` +
+        ns.map(v => `<div class="sk">${v}s: ${skip(v, L)}</div>`).join("") + "</div>";
       coach(Math.max(rightX + 40, 560), 20, 1185 - Math.max(rightX + 40, 560), 830, html + "</div>");
     }
     return { steps, draw, gcfAt: G, lcmAt: LC };
