@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Function Machine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Function Machine: a typed rule sits on the machine's nameplate. Input on the left, Start sends it in,
+   the window shows each operation in order of operations, and the answer drops out to Output on the right. */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.side .card { display: flex; flex-direction: column; gap: 14px; }
+.big-label { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; margin: 0; }
+.in-row { display: flex; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; }
+.in-row .v { font-family: var(--font-display); font-style: italic; font-weight: 800; }
+#inp { width: 100%; min-width: 0; height: 68px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--pt); border-radius: 10px; text-align: center; }
+#start { min-height: 64px; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); border-radius: 12px; }
+#start:hover { background: var(--sheet); color: var(--pt); }
+#start:disabled { opacity: 0.45; cursor: default; background: var(--pt); color: var(--sheet); }
+.chip { align-self: center; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; color: var(--pt);
+  background: color-mix(in srgb, var(--pt) 12%, var(--sheet)); border: 2px solid var(--pt); border-radius: 12px; padding: 4px 16px; white-space: nowrap; }
+.chip.out { color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, var(--sheet)); border-color: var(--orange); }
+.chip.gone { visibility: hidden; }
+.chip.empty { color: var(--muted); border-style: dashed; border-color: var(--grid-major); background: transparent; }
+.flier { position: fixed; z-index: 10; margin: 0; pointer-events: none; transition: transform 0.7s cubic-bezier(.5,0,.3,1), opacity 0.3s; }
+.v { font-family: var(--font-display); font-style: italic; font-weight: 800; }
+.fn { color: inherit; }
+sup { font-size: 0.62em; line-height: 0; }
+
+/* The machine */
+.machine { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px 20px 20px; border-radius: 20px;
+  background: color-mix(in srgb, var(--pt) 9%, var(--sheet)); border: 4px solid var(--ink); }
+.machine::before, .machine::after { content: ""; position: absolute; top: 50%; width: 22px; height: 110px; margin-top: -55px; background: var(--ink); }
+.machine::before { left: -24px; clip-path: polygon(0 0, 100% 22%, 100% 78%, 0 100%); }
+.machine::after { right: -24px; clip-path: polygon(0 22%, 100% 0, 100% 100%, 0 78%); }
+.bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: var(--grid-major); border: 2px solid var(--ink); }
+.plate { position: relative; background: var(--sheet); border: 3px solid var(--ink); border-radius: 12px; padding: 8px 14px; text-align: center; }
+.plate .label { margin: 0 0 2px; }
+#ruleShow { display: block; width: 100%; background: none; border: 0; padding: 4px; font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--ink); cursor: text; white-space: nowrap; overflow-x: auto; }
+#ruleShow:hover { background: var(--chip); }
+#rule { width: 100%; height: 64px; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; color: var(--ink); background: var(--paper);
+  border: 2px solid var(--pt); border-radius: 10px; text-align: center; }
+.err { margin: 6px 0 0; color: var(--warn); font-weight: 700; font-size: 1.15rem; }
+.window { position: relative; flex: 1 1 auto; min-height: 220px; overflow-y: auto; background: var(--sheet); border: 3px solid var(--ink); border-radius: 12px; padding: 14px 18px; }
+.gear { position: absolute; right: 36px; bottom: 34px; width: 84px; height: 84px; color: var(--grid-major); pointer-events: none; }
+.machine.run .gear { color: var(--pt); animation: spin 1.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .machine.run .gear { animation: none; } .flier { transition-duration: 0.01s; } }
+/* --fs shrinks when a long rule has many steps, so every step stays in the window. */
+.steps { --fs: 2.4rem; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; padding-right: 60px; }
+.line { font-family: var(--font-num); font-weight: 700; font-size: var(--fs); white-space: nowrap; }
+.calc { font-family: var(--font-num); font-weight: 700; font-size: calc(var(--fs) * 0.7); color: var(--orange); white-space: nowrap; margin: 2px 0 0 1.2em; }
+.calc .n { display: inline-block; font-family: var(--font-body); font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 8px; }
+.line .new { color: var(--orange); background: color-mix(in srgb, var(--orange) 16%, transparent); border-radius: 6px; padding: 0 4px; }
+.line .sub { color: var(--pt); }
+.line.final .new { color: var(--sheet); background: var(--orange); }
+.row-in { animation: pop 0.35s ease-out; }
+@keyframes pop { from { opacity: 0; } }
+
+/* History table */
+table { border-collapse: collapse; width: 100%; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; text-align: center; }
+th { font-family: var(--font-num); font-size: 1.3rem; border-bottom: 3px solid var(--ink); padding: 4px 6px; }
+th:first-child, td:first-child { border-right: 3px solid var(--ink); color: var(--pt); }
+td { padding: 3px 6px; border-bottom: 1px solid var(--grid); }
+td:last-child { color: var(--orange); }
+.tbl-head { display: flex; align-items: center; justify-content: space-between; }
+.tbl-head .label { margin: 0; }
+#clear { font-size: 0.85rem; padding: 4px 10px; }
+@media (min-width: 861px) and (min-height: 520px) {
+  .stage > .machine { overflow: visible; }
+  .stage > .side { overflow-y: visible; }
+  .side .tcard { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
+@media (max-width: 860px) { .machine::before, .machine::after { display: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Function Machine</h1></div>
+  </header>
+
+  <div class="stage">
+    <div class="side">
+      <section class="card">
+        <p class="big-label c-pt">Input</p>
+        <label class="in-row"><span class="v" id="inVar">x</span><span>=</span><input id="inp" type="text" inputmode="decimal" autocomplete="off" value="4" aria-label="Input value"></label>
+        <div class="chip" id="inChip"></div>
+        <button type="button" id="start">Start</button>
+        <p class="err" id="inErr" hidden></p>
+      </section>
+    </div>
+
+    <section class="machine" id="machine">
+      <span class="bolt" style="left:10px;top:10px"></span><span class="bolt" style="right:10px;top:10px"></span>
+      <span class="bolt" style="left:10px;bottom:10px"></span><span class="bolt" style="right:10px;bottom:10px"></span>
+      <div class="plate">
+        <p class="label">Rule</p>
+        <button type="button" id="ruleShow" aria-label="Rule. Click to change it."></button>
+        <input id="rule" type="text" autocomplete="off" spellcheck="false" value="f(x) = 2x + 3" aria-label="Rule" hidden>
+        <p class="err" id="ruleErr" hidden></p>
+      </div>
+      <div class="window" id="win" aria-live="polite">
+        <div class="steps" id="steps"></div>
+      </div>
+      <svg class="gear" viewBox="-50 -50 100 100" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M-6-46h12l2 11 8 3 9-6 9 9-6 9 3 8 11 2v12l-11 2-3 8 6 9-9 9-9-6-8 3-2 11h-12l-2-11-8-3-9 6-9-9 6-9-3-8-11-2v-12l11-2 3-8-6-9 9-9 9 6 8-3zM0-14a14 14 0 1 0 0 28a14 14 0 1 0 0-28z"/></svg>
+
+    </section>
+
+    <div class="side">
+      <section class="card">
+        <p class="big-label c-orange">Output</p>
+        <div class="chip out empty" id="outChip">?</div>
+      </section>
+      <section class="card tcard">
+        <div class="tbl-head"><p class="label">Table</p><button type="button" id="clear">Clear</button></div>
+        <table><thead><tr><th id="thIn"></th><th id="thOut"></th></tr></thead><tbody id="tbody"></tbody></table>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MINUS = "−";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = ms => new Promise(r => setTimeout(r, reduced ? Math.min(ms, 250) : ms));
+
+  // ---------- Reading the rule ----------
+  const SUP = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
+  function tokenize(s) {
+    s = s.replace(/\*\*/g, "^").replace(/[−–—]/g, "-").replace(/[×·∙*]/g, "*").replace(/[÷:]/g, "/")
+      .replace(/\[/g, "(").replace(/\]/g, ")").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, m => "^" + [...m].map(c => SUP[c]).join(""));
+    const out = [];
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (/\s/.test(c)) { i++; continue; }
+      const num = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+      if (num) { out.push({ k: "num", v: parseFloat(num[1]) }); i += num[1].length; continue; }
+      if (/[A-Za-z]/.test(c)) { out.push({ k: "var", v: c }); i++; continue; }
+      if ("+-*/^()".includes(c)) { out.push({ k: c }); i++; continue; }
+      throw new Error("I can't read the “" + c + "” sign.");
+    }
+    return out;
+  }
+
+  function parse(src) {
+    const t = tokenize(src);
+    let p = 0;
+    const peek = (o = 0) => t[p + o] || { k: "end" };
+    const eat = k => { if (peek().k !== k) throw new Error(k === ")" ? "Check the brackets: one is missing a partner." : "Something is missing in the rule."); return t[p++]; };
+    const startsFactor = () => ["num", "var", "("].includes(peek().k);
+    function expr() {
+      let a = term();
+      while (peek().k === "+" || peek().k === "-") { const op = t[p++].k; a = { t: "bin", op, a, b: term() }; }
+      return a;
+    }
+    function term() {
+      let a = unary();
+      for (;;) {
+        if (peek().k === "*" || peek().k === "/") { const op = t[p++].k; a = { t: "bin", op, a, b: unary() }; }
+        else if (startsFactor()) a = { t: "bin", op: "*", implicit: true, a, b: power() };
+        else return a;
+      }
+    }
+    function unary() {
+      if (peek().k === "+") { p++; return unary(); }
+      if (peek().k === "-") {
+        p++;
+        // −2x reads as the number −2 times x; −x² stays the opposite of x².
+        if (peek().k === "num" && peek(1).k !== "^") return { t: "num", v: -t[p++].v };
+        return { t: "neg", a: unary() };
+      }
+      return power();
+    }
+    function power() {
+      const base = primary();
+      if (peek().k === "^") { p++; return { t: "bin", op: "^", a: base, b: unary() }; }
+      return base;
+    }
+    function primary() {
+      const k = peek().k;
+      if (k === "num") return { t: "num", v: t[p++].v };
+      if (k === "var") return { t: "var", name: t[p++].v };
+      if (k === "(") { p++; const e = expr(); eat(")"); e.paren = true; return e; }
+      if (k === ")") throw new Error("Check the brackets: one is missing a partner.");
+      if (k === "end") throw new Error("The rule ends too soon. Finish it, like 2x + 3.");
+      throw new Error("Two signs are in a row. Put a number or letter between them.");
+    }
+    if (!t.length) throw new Error("Type a rule, like f(x) = 2x + 3.");
+    const e = expr();
+    if (p < t.length) throw new Error(peek().k === ")" ? "Check the brackets: one is missing a partner." : "Something is missing in the rule.");
+    return e;
+  }
+
+  // "f(x) = 2x + 3", "y = 3x − 4", "C = 5n + 2", or just "2x + 3".
+  function readRule(text) {
+    const s = text.trim();
+    let fn = null, out = "y", inVar = null, rhs = s;
+    let m = /^([A-Za-z])\s*\(\s*([A-Za-z])\s*\)\s*=(.*)$/.exec(s);
+    if (m) { fn = m[1]; inVar = m[2]; rhs = m[3]; }
+    else if ((m = /^([A-Za-z]+)\s*=(.*)$/.exec(s))) { out = m[1]; rhs = m[2]; }
+    else if (s.includes("=")) throw new Error("Put the output name before the = sign, like y = 2x + 3.");
+    if (rhs.includes("=")) throw new Error("Use just one = sign.");
+    const tree = parse(rhs);
+    const vars = new Set();
+    (function walk(n) { if (n.t === "var") vars.add(n.name); if (n.a) walk(n.a); if (n.b) walk(n.b); })(tree);
+    if (fn) {
+      const other = [...vars].find(v => v !== inVar);
+      if (other) throw new Error("This rule uses " + inVar + ", so use only " + inVar + " after the = sign.");
+    } else {
+      if (vars.size > 1) throw new Error("Use just one letter for the input, like x.");
+      inVar = vars.size ? [...vars][0] : (out === "x" ? "n" : "x");
+      if (inVar === out) throw new Error("The output needs a different letter than the input.");
+    }
+    let id = 0;
+    (function number(n) { if (n.a) number(n.a); n.id = id++; if (n.b) number(n.b); })(tree);
+    return { fn, out, inVar, tree };
+  }
+
+  // ---------- Numbers and printing ----------
+  const fmt = v => {
+    if (!isFinite(v)) return "undefined";
+    let r = Math.round(v * 1000) / 1000;
+    if (Object.is(r, -0)) r = 0;
+    const s = String(Math.abs(r));
+    return (r < 0 ? MINUS : "") + s;
+  };
+  const rough = v => isFinite(v) && Math.abs(Math.round(v * 1000) / 1000 - v) > 1e-9;
+  const varHtml = name => '<span class="v">' + name + "</span>";
+  const OPS = { "+": " + ", "-": " " + MINUS + " ", "*": " × ", "/": " ÷ " };
+
+  // Prints a tree as HTML. Numbers put in for the input are blue; the newest answer is highlighted.
+  function show(n, ctx = "", lead = true) {
+    if (n.t === "num") {
+      let s = fmt(n.v);
+      if (n.fresh) s = '<span class="new">' + s + "</span>";
+      else if (n.sub) s = '<span class="sub">' + s + "</span>";
+      // Brackets: −3 after a sign or under an exponent, a put-in number next to a letter or another bracket: 2(4), (4)², −(4).
+      const neg = n.v < 0, put = n.sub || n.wasParen;
+      const wrap = (neg && !lead && ctx !== "exp") || ctx === "imp" || (ctx === "impL" && put) || ((ctx === "base" || ctx === "neg") && (neg || put)) || (ctx === "right" && neg);
+      return wrap ? "(" + s + ")" : s;
+    }
+    if (n.t === "var") return varHtml(n.name);
+    let s;
+    const first = n.paren ? true : lead;
+    if (n.t === "neg") s = MINUS + show(n.a, "neg", false);
+    else if (n.op === "^") s = show(n.a, "base", first) + "<sup>" + show(n.b, "exp") + "</sup>";
+    else if (n.implicit) s = show(n.a, "impL", first) + show(n.b, "imp", false);
+    else s = show(n.a, "left", first) + OPS[n.op] + show(n.b, "right", false);
+    return n.paren ? "(" + s + ")" : s;
+  }
+  // Inside an exponent or at the far left, a negative number needs no brackets.
+  function calcSide(v, right) { const s = fmt(v); return v < 0 && right ? "(" + s + ")" : s; }
+
+  // −9 needs no step of its own once 9 is worked out: the minus joins the new number.
+  function fold(n) {
+    if (n.a) n.a = fold(n.a);
+    if (n.b) n.b = fold(n.b);
+    if (n.t === "neg" && n.a.t === "num" && n.a.fresh && !n.a.sub && n.a.v >= 0)
+      return { t: "num", v: -n.a.v, fresh: true, id: n.id, wasParen: !!n.paren };
+    return n;
+  }
+
+  // The operations in order: brackets first (deepest first), then exponents, then × and ÷, then + and −, left to right.
+  function steps(tree, x) {
+    const sub = n => {
+      const c = Object.assign({}, n);
+      if (n.t === "var") return { t: "num", v: x, sub: true, id: n.id, paren: false };
+      if (n.a) c.a = sub(n.a);
+      if (n.b) c.b = sub(n.b);
+      return c;
+    };
+    let root = sub(tree);
+    const list = [{ html: show(root), calc: "" }];
+    const PREC = { "^": 3, neg: 2.5, "*": 2, "/": 2, "+": 1, "-": 1 };
+    for (let guard = 0; guard < 60 && root.t !== "num"; guard++) {
+      let best = null;
+      (function find(n, depth, parent, side) {
+        if (n.t === "num") { n.fresh = false; return; }
+        const d = depth + (n.paren ? 1 : 0);
+        const ready = n.a.t === "num" && (n.t === "neg" || n.b.t === "num");
+        if (ready) {
+          const key = [d, PREC[n.t === "neg" ? "neg" : n.op], -n.id];
+          if (!best || key[0] > best.key[0] || (key[0] === best.key[0] && (key[1] > best.key[1] || (key[1] === best.key[1] && key[2] > best.key[2]))))
+            best = { n, parent, side, key };
+        }
+        find(n.a, d, n, "a");
+        if (n.b) find(n.b, d, n, "b");
+      })(root, 0, null, null);
+      const n = best.n, a = n.a.v, b = n.b ? n.b.v : 0;
+      let v, calc;
+      if (n.t === "neg") { v = -a; calc = MINUS + "(" + fmt(a) + ")"; }
+      else if (n.op === "^") { v = Math.pow(a, b); calc = calcSide(a, true) + "<sup>" + fmt(b) + "</sup>"; }
+      else {
+        v = n.op === "+" ? a + b : n.op === "-" ? a - b : n.op === "*" ? a * b : b === 0 ? NaN : a / b;
+        calc = calcSide(a, false) + OPS[n.op] + calcSide(b, true);
+      }
+      if (Math.abs(v) > 1e12) v = NaN;
+      calc += (rough(v) ? " ≈ " : " = ") + fmt(v);
+      const res = { t: "num", v, fresh: true, id: n.id, wasParen: !!n.paren };
+      if (best.parent) best.parent[best.side] = res; else root = res;
+      root = fold(root);
+      list.push({ html: show(root), calc });
+      if (!isFinite(v)) return { list, value: NaN };
+    }
+    return { list, value: root.v };
+  }
+
+  // ---------- Page ----------
+  let rule = null, running = false;
+  const history = [];
+  const inLabel = x => rule.fn ? rule.fn + "(" + x + ")" : varHtml(rule.inVar) + " = " + x;
+  const outName = x => rule.fn ? rule.fn + "(" + x + ")" : (rule.out.length === 1 ? varHtml(rule.out) : rule.out);
+
+  function readInput() {
+    const s = $("inp").value.trim().replace(/[−–]/g, "-");
+    const m = /^(-?)\s*(\d+\.?\d*|\.\d+)(?:\s*\/\s*(\d+\.?\d*))?$/.exec(s);
+    if (!m) return null;
+    let v = parseFloat(m[2]);
+    if (m[3] !== undefined) { const d = parseFloat(m[3]); if (!d) return null; v /= d; }
+    return m[1] ? -v : v;
+  }
+
+  function showInChip() {
+    const v = readInput();
+    $("inChip").innerHTML = rule ? inLabel(v === null ? "?" : fmt(v)) : "?";
+  }
+
+  function drawTable() {
+    if (!rule) return;
+    $("thIn").innerHTML = varHtml(rule.inVar);
+    $("thOut").innerHTML = rule.fn ? rule.fn + "(" + varHtml(rule.inVar) + ")" : outName();
+    $("tbody").innerHTML = history.map(h => "<tr><td>" + fmt(h.x) + "</td><td>" + (isFinite(h.y) ? fmt(h.y) : "undefined") + "</td></tr>").join("");
+  }
+
+  function resetRun() {
+    $("steps").innerHTML = "";
+    $("steps").style.removeProperty("--fs");
+    $("outChip").className = "chip out empty";
+    $("outChip").textContent = "?";
+  }
+
+  function setRule(text, keepTable) {
+    try {
+      const r = readRule(text);
+      rule = r;
+      $("ruleErr").hidden = true;
+      const lhs = r.fn ? r.fn + "(" + varHtml(r.inVar) + ")" : outName();
+      $("ruleShow").innerHTML = lhs + " = " + show(r.tree);
+      $("inVar").textContent = r.inVar;
+      $("start").disabled = false;
+      if (!keepTable) { history.length = 0; resetRun(); }
+      drawTable();
+      showInChip();
+      return true;
+    } catch (e) {
+      $("ruleErr").textContent = e.message;
+      $("ruleErr").hidden = false;
+      $("start").disabled = true;
+      return false;
+    }
+  }
+
+  function editRule() {
+    if (running) return;
+    $("ruleShow").hidden = true;
+    $("rule").hidden = false;
+    $("rule").focus();
+    $("rule").select();
+  }
+  function doneRule() {
+    if ($("rule").hidden) return;
+    if (setRule($("rule").value)) { $("rule").hidden = true; $("ruleShow").hidden = false; }
+  }
+  $("ruleShow").addEventListener("click", editRule);
+  $("rule").addEventListener("input", () => { const ok = setRule($("rule").value); if (!ok) resetRun(); });
+  $("rule").addEventListener("blur", doneRule);
+  $("rule").addEventListener("keydown", e => { if (e.key === "Enter") { doneRule(); if ($("rule").hidden) $("inp").focus(); } });
+
+  $("inp").addEventListener("input", () => { $("inErr").hidden = true; showInChip(); });
+  $("inp").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  $("start").addEventListener("click", go);
+  $("clear").addEventListener("click", () => { history.length = 0; drawTable(); });
+
+  // Shrinks the step text until every step fits in the window (never below a size that reads from the back).
+  function fit() {
+    const win = $("win"), box = $("steps");
+    let fs = 2.4;
+    box.style.setProperty("--fs", fs + "rem");
+    while (fs > 1 && (win.scrollHeight > win.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1)) {
+      fs -= 0.05;
+      box.style.setProperty("--fs", fs.toFixed(2) + "rem");
+    }
+    win.scrollTop = win.scrollHeight;
+  }
+  addEventListener("resize", () => { if ($("steps").children.length) fit(); });
+
+  // Moves a copy of `from` so it lands on the box `to` (or a point), then removes the copy.
+  async function fly(from, toRect, html, cls) {
+    const r = from.getBoundingClientRect();
+    const f = document.createElement("div");
+    f.className = "chip flier " + cls;
+    f.innerHTML = html;
+    f.style.left = r.left + "px"; f.style.top = r.top + "px";
+    document.body.appendChild(f);
+    const w = f.offsetWidth, h = f.offsetHeight;
+    const dx = toRect.left + toRect.width / 2 - (r.left + w / 2), dy = toRect.top + toRect.height / 2 - (r.top + h / 2);
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transform = "translate(" + dx + "px," + dy + "px) scale(0.8)"; }));
+    await wait(750);
+    f.remove();
+  }
+
+  async function go() {
+    if (running || !rule) return;
+    doneRule();
+    if (!rule || !$("rule").hidden) return;
+    const x = readInput();
+    if (x === null) { $("inErr").textContent = "Type a number, like 4, −2, 1.5 or 3/4."; $("inErr").hidden = false; return; }
+    running = true;
+    $("start").disabled = true;
+    resetRun();
+    showInChip();
+    const { list, value } = steps(rule.tree, x);
+    const m = $("machine"), mr = m.getBoundingClientRect();
+    const mouthIn = { left: mr.left - 10, top: mr.top + mr.height / 2 - 20, width: 20, height: 40 };
+    const chip = $("inChip");
+    chip.classList.add("gone");
+    await fly(chip, mouthIn, chip.innerHTML, "");
+    chip.classList.remove("gone");
+    m.classList.add("run");
+
+    const box = $("steps");
+    const lead = (rule.fn ? rule.fn + '(<span class="sub">' + fmt(x) + "</span>)" : outName()) + " = ";
+    list.forEach((s, i) => { s.lead = i === 0 ? lead : "= "; });
+    for (let i = 0; i < list.length; i++) {
+      const s = list[i];
+      if (i) {
+        const calc = document.createElement("div");
+        calc.className = "calc row-in";
+        calc.innerHTML = '<span class="n">Step ' + i + "</span>" + s.calc;
+        box.append(calc);
+      }
+      const line = document.createElement("div");
+      line.className = "line row-in" + (i === list.length - 1 && i > 0 ? " final" : "");
+      line.innerHTML = s.lead + s.html;
+      box.append(line);
+      fit();
+      await wait(i === 0 ? 900 : 1300);
+    }
+    m.classList.remove("run");
+
+    const out = $("outChip");
+    const outHtml = (rule.fn ? rule.fn + '(<span class="c-pt">' + fmt(x) + "</span>)" : outName()) + " = " + (isFinite(value) ? fmt(value) : "undefined");
+    const mouthOut = { left: mr.right - 10, top: mr.top + mr.height / 2 - 20, width: 20, height: 40 };
+    const tmp = document.createElement("div");
+    tmp.style.cssText = "position:fixed;left:" + mouthOut.left + "px;top:" + mouthOut.top + "px;width:1px;height:1px";
+    document.body.appendChild(tmp);
+    await fly(tmp, out.getBoundingClientRect(), outHtml, "out");
+    tmp.remove();
+    out.className = "chip out";
+    out.innerHTML = outHtml;
+
+    const i = history.findIndex(h => h.x === x);
+    if (i >= 0) history.splice(i, 1);
+    history.push({ x, y: value });
+    if (history.length > 12) history.shift();
+    drawTable();
+    running = false;
+    $("start").disabled = false;
+  }
+
+  setRule($("rule").value);
+})();
+</script>
+
+</body>
+</html>

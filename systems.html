@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Solving Linear Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Solving Linear Systems: type two equations, pick Elimination or Substitution, then Next step walks the algebra.
+   Every step also shows on the graph: a multiplied equation pulses as the same line, an equation with one letter left
+   is a vertical or horizontal purple line through the crossing, and the answer is the green point where the lines cross. */
+:root { --l1: var(--pt); --l2: var(--orange); --help: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --help: #b88cff; } }
+:root[data-theme="dark"] { --help: #b88cff; }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+@media (min-width: 861px) and (min-height: 520px) { .panel { overflow: hidden !important; } }
+.panel { gap: 12px; }
+.card { padding: 12px 16px; }
+
+.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.tabs button { flex: 1; border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.15rem; padding: 10px 6px; }
+.tabs button + button { border-left: 2px solid var(--grid-major); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+
+.eqin { display: flex; align-items: center; gap: 10px; }
+.eqin + .eqin { margin-top: 8px; }
+.eqin label { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; width: 1.4em; text-align: center; }
+.eqin input { flex: 1; min-width: 0; font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; padding: 6px 10px; border-radius: 8px;
+  border: 2px solid var(--grid-major); border-left: 8px solid var(--c); background: var(--sheet); color: var(--ink); }
+.eqin input[aria-invalid="true"] { border-color: var(--warn); }
+.e1 { --c: var(--l1); } .e2 { --c: var(--l2); }
+.e1 label { color: var(--l1); } .e2 label { color: var(--l2); }
+.err { color: var(--warn); font-weight: 700; margin: 6px 0 0; }
+
+.steps { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+#work { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.stp { padding: 6px 0 8px; border-bottom: 1px dashed var(--grid); opacity: 0.55; }
+.stp.now { opacity: 1; }
+.stp:last-child { border-bottom: 0; }
+.cap { margin: 0 0 4px; font-weight: 700; font-size: 1.05rem; }
+.row { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; }
+.row i, .el i { font-style: normal; }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.7em; line-height: 1.1; margin: 0 1px; }
+.fr > span:first-child { border-bottom: 2px solid currentColor; padding: 0 2px; }
+table.el { border-collapse: collapse; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
+.el td { padding: 1px 6px; text-align: right; white-space: nowrap; }
+.el td.tag { font-family: var(--font-display); font-size: 1.1rem; color: var(--muted); text-align: left; padding-left: 0; }
+.el tr.r1 td.tag { color: var(--l1); } .el tr.r2 td.tag { color: var(--l2); }
+.el td.gone { text-decoration: line-through; text-decoration-thickness: 3px; text-decoration-color: var(--warn); color: var(--muted); }
+.el tr.sum td { border-top: 3px solid var(--ink); }
+.el tr.sum td.tag { border-top: 0; }
+.el td.op { color: var(--muted); }
+.answer.big { font-family: var(--font-num); font-size: 1.8rem; color: var(--green); }
+.answer.no { color: var(--warn); font-size: 1.4rem; }
+.nav { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid var(--grid); }
+.nav button { font-family: var(--font-display); font-size: 1.2rem; padding: 12px 16px; }
+.nav #next { flex: 1; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.nav #next:hover { background: var(--sheet); color: var(--pt); }
+.nav button:disabled { opacity: 0.4; cursor: default; }
+
+/* Board drawing */
+.ln { stroke-width: 5; stroke-linecap: round; fill: none; }
+.ln.l1 { stroke: var(--l1); } .ln.l2 { stroke: var(--l2); }
+.ln.l2.same { stroke-dasharray: 14 12; }
+.ln.pulse { animation: pulse 0.9s ease-in-out 2; }
+@keyframes pulse { 50% { stroke-width: 13; } }
+.hl { stroke: var(--help); stroke-width: 4; stroke-dasharray: 12 8; }
+.hl.new { animation: pop 0.7s ease-out; }
+@keyframes pop { from { opacity: 0; } }
+.lbl { font-family: var(--font-num); font-size: 21px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.lbl.l1 { fill: var(--l1); } .lbl.l2 { fill: var(--l2); } .lbl.hp { fill: var(--help); } .lbl.sol { fill: var(--green); font-size: 24px; }
+.sol-dot { fill: var(--green); stroke: var(--sheet); stroke-width: 4; }
+.sol-ring { fill: none; stroke: var(--green); stroke-width: 3; opacity: 0.45; }
+@media (prefers-reduced-motion: reduce) { .ln.pulse, .hl.new { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Solving Linear Systems</h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="plane" role="img" aria-label="Coordinate plane with the two lines of the system"></svg>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <div class="tabs" id="tabs">
+          <button type="button" data-m="elim" aria-pressed="true">Elimination</button>
+          <button type="button" data-m="sub" aria-pressed="false">Substitution</button>
+        </div>
+        <div class="eqin e1"><label for="in1">①</label><input id="in1" value="2x + 3y = 12" autocomplete="off" spellcheck="false" aria-label="Equation 1"></div>
+        <div class="eqin e2"><label for="in2">②</label><input id="in2" value="x − y = 1" autocomplete="off" spellcheck="false" aria-label="Equation 2"></div>
+        <p class="err" id="err" hidden></p>
+      </section>
+
+      <section class="card steps">
+        <div id="work" aria-live="polite"></div>
+        <div class="nav">
+          <button type="button" id="back">◀ Back</button>
+          <button type="button" id="next">Next step ▶</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MathBoard: a coordinate-plane board shared by the concept visuals.
+   Usage:
+     const b = MathBoard.create(svgEl, { min: -10, max: 10 });
+     const A = b.point({ name: "A", x: -3, y: -2, onMove: render });
+     const ln = b.line();            // b.lineThrough(ln, A, B) extends it across the plane
+     const s  = b.segment("green");  // b.setSegment(s, p, q, { arrow: true })
+     const t  = b.label("green");    // t.set("rise = 4", x, y, "start") / t.hide()
+     const f  = b.fill("green");     // b.setPolygon(f, [p, q, r])
+   Points snap to integers and stay inside [min, max]. Helpers: MathBoard.fmt (true minus sign), MathBoard.gcd. */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const set = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  function create(svg, opts = {}) {
+    const min = opts.min ?? -10, max = opts.max ?? 10, unit = opts.unit ?? 30, pad = opts.pad ?? 30;
+    const size = (max - min) * unit + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    const sx = x => pad + (x - min) * unit;
+    const sy = y => pad + (max - y) * unit;
+    const clamp = v => Math.max(min, Math.min(max, v));
+
+    const defs = el("defs", {}, svg);
+    ["green", "orange"].forEach(c => {
+      const m = el("marker", { id: `mb-arr-${c}`, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: `mb-arrow ${c}` }, m);
+    });
+
+    // Layers keep drawing order fixed: grid, fills, lines, labels, points.
+    const layers = {};
+    ["grid", "fills", "lines", "labels", "points"].forEach(n => (layers[n] = el("g", {}, svg)));
+
+    const g = layers.grid;
+    const major = opts.majorEvery ?? 0, tickEvery = opts.tickEvery ?? 1; // grade 8: every line labeled, counting by 1
+    for (let i = min; i <= max; i++) {
+      const cls = i === 0 ? "mb-axis" : major && i % major === 0 ? "mb-major" : "mb-minor";
+      el("line", { x1: sx(i), y1: sy(min), x2: sx(i), y2: sy(max), class: cls }, g);
+      el("line", { x1: sx(min), y1: sy(i), x2: sx(max), y2: sy(i), class: cls }, g);
+    }
+    for (let i = min; i <= max; i++) {
+      if (i === 0 || i % tickEvery) continue;
+      el("text", { x: sx(i), y: sy(0) + 22, class: "mb-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, g).textContent = fmt(i);
+    }
+    el("text", { x: sx(max) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(max) + 16, class: "mb-tick" }, g).textContent = "y";
+
+    function toPlane(evt) {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: clamp(Math.round((p.x - pad) / unit + min)), y: clamp(Math.round(max - (p.y - pad) / unit)) };
+    }
+
+    const show = (e, on) => { e.style.display = on ? "" : "none"; };
+
+    const board = {
+      svg, min, max, sx, sy, clamp, toPlane, layers, show,
+      line(cls = "") { return el("line", { class: `mb-line ${cls}` }, layers.lines); },
+      segment(color) { return el("line", { class: `mb-seg ${color}` }, layers.lines); },
+      fill(color) { return el("path", { class: `mb-fill ${color}` }, layers.fills); },
+
+      // Draw `line` through plane points p and q, extended to the edges of the plane.
+      lineThrough(line, p, q) {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        if (dx === 0 && dy === 0) return show(line, false);
+        show(line, true);
+        if (dx === 0) return set(line, { x1: sx(p.x), y1: sy(min), x2: sx(p.x), y2: sy(max) });
+        const m = dy / dx, pts = [];
+        [min, max].forEach(x => { const y = p.y + m * (x - p.x); if (y >= min - 1e-9 && y <= max + 1e-9) pts.push([x, y]); });
+        if (m !== 0) [min, max].forEach(y => { const x = p.x + (y - p.y) / m; if (x > min && x < max) pts.push([x, y]); });
+        const a = pts[0], b = pts[pts.length - 1];
+        set(line, { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]) });
+      },
+
+      // Segment from p to q in plane units. `arrow` adds an arrowhead at q; `gap` stops short of q (px), e.g. to clear a point.
+      setSegment(seg, p, q, { arrow = false, gap = 0 } = {}) {
+        let x2 = sx(q.x), y2 = sy(q.y);
+        const L = Math.hypot(x2 - sx(p.x), y2 - sy(p.y));
+        if (gap && L > gap) { x2 -= (x2 - sx(p.x)) / L * gap; y2 -= (y2 - sy(p.y)) / L * gap; }
+        set(seg, { x1: sx(p.x), y1: sy(p.y), x2, y2 });
+        const color = seg.classList.contains("green") ? "green" : "orange";
+        arrow ? seg.setAttribute("marker-end", `url(#mb-arr-${color})`) : seg.removeAttribute("marker-end");
+      },
+
+      setPolygon(path, pts) {
+        path.setAttribute("d", pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z");
+      },
+
+      // Text with a backing chip so grid lines never cut through it. x, y are in px.
+      label(color = "") {
+        const bg = el("rect", { class: "mb-lbl-bg", rx: 5 }, layers.labels);
+        const t = el("text", { class: `mb-lbl ${color}` }, layers.labels);
+        return {
+          set(text, x, y, anchor = "middle") {
+            t.textContent = text; set(t, { x, y, "text-anchor": anchor });
+            show(t, true); show(bg, true);
+            const b = t.getBBox();
+            set(bg, { x: b.x - 5, y: b.y - 2, width: b.width + 10, height: b.height + 4 });
+          },
+          hide() { show(t, false); show(bg, false); }
+        };
+      },
+
+      /* Draggable, keyboard-movable point. onMove(point) runs after every move.
+         `allow(x, y)` can veto a position (return false). */
+      point({ name, x, y, onMove, allow, showCoords = true }) {
+        const h = el("g", { class: "mb-handle", tabindex: 0, role: "slider", "aria-label": `Point ${name}. Use arrow keys to move.` }, layers.points);
+        el("circle", { class: "hit", r: 26 }, h);
+        const ring = el("circle", { class: "ring", r: 18 }, h);
+        el("circle", { class: "dot", r: 14 }, h);
+        el("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, h).textContent = name;
+        const coord = el("text", { class: "mb-coord" }, h);
+        const P = {
+          name, x, y, el: h, showCoords,
+          moveTo(nx, ny, silent) {
+            nx = clamp(nx); ny = clamp(ny);
+            if (nx === P.x && ny === P.y) return;
+            if (allow && !allow(nx, ny)) return;
+            P.x = nx; P.y = ny; P.draw();
+            if (!silent && onMove) onMove(P);
+          },
+          // Place the coordinate tag; `away` is a point the tag should face away from.
+          draw(away) {
+            h.setAttribute("transform", `translate(${sx(P.x)},${sy(P.y)})`);
+            h.setAttribute("aria-valuetext", `(${P.x}, ${P.y})`);
+            coord.textContent = `(${fmt(P.x)}, ${fmt(P.y)})`;
+            let dx = away && P.x < away.x ? -1 : 1, dy = away && P.y < away.y ? -1 : 1;
+            if (P.x >= max - 2) dx = -1; if (P.x <= min + 2) dx = 1;
+            if (P.y >= max - 1) dy = -1; if (P.y <= min + 1) dy = 1;
+            set(coord, { x: dx * 20, y: dy > 0 ? -18 : 34, "text-anchor": dx > 0 ? "start" : "end" });
+            show(coord, P.showCoords);
+          }
+        };
+        h.addEventListener("pointerdown", e => { e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); ring.setAttribute("r", 24); h.focus(); });
+        h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = toPlane(e); P.moveTo(p.x, p.y); } });
+        const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); ring.setAttribute("r", 18); };
+        h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+        h.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+          if (!d) return; e.preventDefault(); P.moveTo(P.x + d[0], P.y + d[1]);
+        });
+        P.draw();
+        return P;
+      }
+    };
+    return board;
+  }
+
+  window.MathBoard = { create, fmt, gcd };
+})();
+</script>
+<script>
+(() => {
+  const { fmt, gcd } = MathBoard;
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const svg = $("plane");
+  const b = MathBoard.create(svg, { min: -10, max: 10 });
+  const { sx, sy, min, max, layers } = b;
+  const TAG = ["①", "②"];
+
+  /* ---------- Fractions (answers are not always whole numbers) ---------- */
+  const R = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
+  const add = (p, q) => R(p.n * q.d + q.n * p.d, p.d * q.d);
+  const sub = (p, q) => add(p, R(-q.n, q.d));
+  const mul = (p, q) => R(p.n * q.n, p.d * q.d);
+  const div = (p, q) => R(p.n * q.d, p.d * q.n);
+  const isZ = p => p.n === 0, isOne = p => p.n === 1 && p.d === 1;
+  const abs = p => R(Math.abs(p.n), p.d);
+  const val = p => p.n / p.d;
+  const numH = r => r.d === 1 ? fmt(r.n) : (r.n < 0 ? "−" : "") + `<span class="fr"><span>${Math.abs(r.n)}</span><span>${r.d}</span></span>`;
+  const numT = r => r.d === 1 ? fmt(r.n) : `${fmt(r.n)}/${r.d}`;
+
+  /* Terms are [coef, "x" | "y" | "" (a number) | "(", inner(H)] and print like 2x − 3y + 4 or 2(x − 1). */
+  function ex(terms, H) {
+    const N = H ? numH : numT;
+    let out = "";
+    for (const [c, v, inner] of terms) {
+      if (isZ(c)) continue;
+      const first = out === "", neg = c.n < 0, mag = abs(c), one = isOne(mag);
+      const C = !H && mag.d !== 1 && v !== "" ? "(" + N(mag) + ")" : N(mag);   // (3/2)x reads better than 3/2x
+      const body = v === "" ? N(mag) : v === "(" ? (one ? "" : C) + "(" + inner(H) + ")" : (one ? "" : C) + (H ? `<i>${v}</i>` : v);
+      out += first ? (neg ? "−" : "") + body : (neg ? " − " : " + ") + body;
+    }
+    return out || "0";
+  }
+  const eqn = (L, Rt, H) => ex(L, H) + " = " + ex(Rt, H);
+  const both = (L, Rt) => ({ h: eqn(L, Rt, true), t: eqn(L, Rt, false) });
+  const std = q => [[R(q.a), "x"], [R(q.b), "y"]];
+  const stdEq = q => both(std(q), [[R(q.c), ""]]);
+  const other = v => (v === "x" ? "y" : "x");
+  const co = (q, v) => (v === "x" ? q.a : q.b);
+
+  /* ---------- Reading what the teacher types ---------- */
+  // Any linear equation in x and y with whole-number coefficients: 2x + 3y = 12, y = 2x − 1, 3x = 2y + 6, x = 4.
+  function parseSide(s) {
+    const t = { x: 0, y: 0, k: 0, n: 0 };
+    const re = /([+-]?)(\d*)([xy]?)/y;
+    let pos = 0;
+    while (pos < s.length) {
+      re.lastIndex = pos;
+      const m = re.exec(s);
+      if (!m || m[0] === "" || (!m[2] && !m[3]) || (pos > 0 && !m[1])) return null;
+      if (m[2].length > 3) return null;
+      const c = (m[1] === "-" ? -1 : 1) * (m[2] ? +m[2] : 1);
+      t[m[3] || "k"] += c; t.n++;
+      pos = re.lastIndex;
+    }
+    return t.n ? t : null;
+  }
+  function parse(str) {
+    const s = str.replace(/\s+/g, "").replace(/[−–—]/g, "-").replace(/[XY]/g, c => c.toLowerCase());
+    if (/[./]/.test(s)) return { err: "Use whole numbers only." };
+    const parts = s.split("=");
+    if (parts.length !== 2) return { err: "Type an equation like 2x + 3y = 12." };
+    const L = parseSide(parts[0]), Rt = parseSide(parts[1]);
+    if (!L || !Rt) return { err: "Type an equation like 2x + 3y = 12." };
+    const q = { a: L.x - Rt.x, b: L.y - Rt.y, c: Rt.k - L.k };
+    if (!q.a && !q.b) return { err: "The equation needs an x or a y." };
+    const side = t => [[R(t.x), "x"], [R(t.y), "y"], [R(t.k), ""]];
+    q.typed = both(side(L), side(Rt));
+    q.std = !Rt.x && !Rt.y && !L.k;                       // already ax + by = c
+    q.iso = ["x", "y"].find(v => L[v] === 1 && L.n === 1 && !Rt[v]) || null; // typed as y = ... or x = ...
+    return q;
+  }
+
+  /* ---------- Steps ---------- */
+  let E = [], method = "elim", steps = [], at = 0;
+  let sc;                                              // the graph for the step being built
+  const T = i => TAG[i];
+  const scene = ch => (sc = { ...sc, lab: sc.lab.slice(), help: sc.help.map(h => ({ ...h })), hi: -1, ...ch });
+  const push = (cap, html) => steps.push({ cap, html, sc });
+  const rowH = h => `<div class="row">${h}</div>`;
+  const setHelp = (v, value, text) => {
+    const h = sc.help.find(h => h.v === v);
+    if (h) { h.val = value; h.text = text; } else sc.help.push({ v, val: value, text });
+  };
+  const dirWord = u => (u === "x" ? "straight up-and-down" : "flat");
+
+  function solution() {
+    const [p, q] = E, D = p.a * q.b - q.a * p.b;
+    if (D) return { x: R(p.c * q.b - q.c * p.b, D), y: R(p.a * q.c - q.a * p.c, D) };
+    return null;
+  }
+
+  // Finish an equation with one letter: K·w + M = C. Pushes the move and divide rows; returns w.
+  function finishOne(w, K, M, C) {
+    let rhs = sub(C, M);
+    if (!isZ(M)) {
+      const r = both([[K, w]], [[rhs, ""]]);
+      setHelp(w, div(rhs, K), r.t); scene({});
+      push(M.n > 0 ? `Subtract ${numT(M)} from both sides.` : `Add ${numT(abs(M))} to both sides.`, rowH(r.h));
+    }
+    const x = div(rhs, K);
+    if (!isOne(K)) {
+      const r = both([[R(1), w]], [[x, ""]]);
+      setHelp(w, x, r.t); scene({});
+      push(`Divide both sides by ${numT(K)}.`, rowH(r.h));
+    }
+    return x;
+  }
+
+  // Put a known value into an equation q (in x, y order) and solve for the other letter.
+  function plugIn(u, value, q, j) {
+    const v = other(u), cu = R(co(q, u)), cv = R(co(q, v));
+    const plain = isOne(abs(cu)) && value.d === 1 && value.n > 0;
+    const known = plain ? [mul(cu, value), ""] : [cu, "(", H => (H ? numH : numT)(value)];
+    const terms = u === "x" ? [known, [cv, v]] : [[cv, v], known];
+    const vv = div(sub(R(q.c), mul(cu, value)), cv);
+    const r1 = both(terms, [[R(q.c), ""]]);
+    setHelp(v, vv, r1.t); scene({});
+    push(`Put ${u} = ${numT(value)} into equation ${T(j)}.`, rowH(r1.h));
+    const M = mul(cu, value);
+    if (!plain) {
+      const t2 = u === "x" ? [[M, ""], [cv, v]] : [[cv, v], [M, ""]];
+      const r2 = both(t2, [[R(q.c), ""]]);
+      setHelp(v, vv, r2.t); scene({});
+      push("Multiply.", rowH(r2.h));
+    }
+    return finishOne(v, cv, M, R(q.c));
+  }
+
+  function answer() {
+    const s = solution();
+    const off = Math.abs(val(s.x)) > 10 || Math.abs(val(s.y)) > 10;
+    scene({ point: true });
+    push(`The lines cross at (${numT(s.x)}, ${numT(s.y)}). That point works in both equations.` + (off ? " The crossing is off this grid." : ""),
+      `<span class="answer big">(${numH(s.x)}, ${numH(s.y)})</span>`);
+  }
+  function noAnswer(always) {
+    scene({ hi: 2 });
+    if (always) push("Both equations make the same line. Every point on it works, so there are infinitely many solutions.", `<span class="answer no">Infinitely many solutions</span>`);
+    else push("The lines are parallel. They never cross, so there is no solution.", `<span class="answer no">No solution</span>`);
+  }
+
+  // Elimination table: rows in columns x | y | = | number; `gone` strikes the letter that cancels.
+  function table(rows) {
+    return `<table class="el">${rows.map(r => {
+      const { a, b: bb } = r.q;
+      const xs = a ? ex([[R(a), "x"]], true) : "";
+      const ys = !bb ? "" : a ? (bb < 0 ? "− " : "+ ") + ex([[R(Math.abs(bb)), "y"]], true) : ex([[R(bb), "y"]], true);
+      const zero = r.sum && !r.q.a && !r.q.b;
+      const g = v => (r.gone && r.gone.includes(v) ? ' class="gone"' : "");
+      return `<tr class="${r.cls || ""}${r.sum ? " sum" : ""}"><td class="tag">${r.tag || ""}</td><td class="op">${r.op || ""}</td>` +
+        `<td${g("x")}>${zero ? "0" : xs}</td><td${g("y")}>${ys}</td><td>=</td><td>${numH(R(r.q.c))}</td></tr>`;
+    }).join("")}</table>`;
+  }
+
+  function elimination() {
+    let A = E.map(q => ({ a: q.a, b: q.b, c: q.c }));
+    if (!E[0].std || !E[1].std) {
+      A = A.map((q, i) => (E[i].std || q.a > 0 || (!q.a && q.b > 0) ? q : { a: -q.a, b: -q.b, c: -q.c }));
+      scene({ lab: A.map(q => stdEq(q).t) });
+      push("Line up the x's, the y's and the numbers.", table(A.map((q, i) => ({ q, tag: T(i), cls: "r" + (i + 1) }))));
+    }
+    const D = A[0].a * A[1].b - A[1].a * A[0].b;
+    // One equation already has only one letter: solve it, then put it in the other.
+    const lone = D ? [0, 1].find(i => !A[i].a || !A[i].b) : undefined;
+    if (lone !== undefined) {
+      const q = A[lone], w = q.a ? "x" : "y", K = R(co(q, w));
+      scene({});
+      setHelp(w, div(R(q.c), K), stdEq(q).t);
+      push(`Equation ${T(lone)} only has ${w}, so there is nothing to cancel.`, rowH(stdEq(q).h));
+      const x = finishOne(w, K, R(0), R(q.c));
+      const o = A[1 - lone];
+      if (co(o, w)) plugIn(w, x, o, 1 - lone);
+      else {
+        // The other equation only has the other letter too.
+        const v = other(w);
+        scene({}); setHelp(v, R(o.c, co(o, v)), stdEq(o).t);
+        push(`Equation ${T(1 - lone)} only has ${v}.`, rowH(stdEq(o).h));
+        finishOne(v, R(co(o, v)), R(0), R(o.c));
+      }
+      return answer();
+    }
+    // Pick the letter to cancel: fewest equations to multiply, no negative multiplier if we can help it.
+    const plans = ["y", "x"].filter(v => co(A[0], v) && co(A[1], v)).map(v => {
+      const p = co(A[0], v), q = co(A[1], v), L = Math.abs(p * q) / gcd(p, q);
+      let m1 = L / Math.abs(p), m2 = L / Math.abs(q);
+      if (Math.sign(p) === Math.sign(q)) { if (m2 > 1 || m1 === 1) m2 = -m2; else m1 = -m1; }
+      const cost = (m1 !== 1) + (m2 !== 1) + (m1 < 0 || m2 < 0 ? 0.5 : 0);
+      return { v, m: [m1, m2], cost, L };
+    }).sort((p, q) => p.cost - q.cost || p.L - q.L);
+    const { v, m } = plans[0], u = other(v);
+    const S = A.map((q, i) => ({ a: q.a * m[i], b: q.b * m[i], c: q.c * m[i] }));
+    const tagOf = i => (m[i] === 1 ? T(i) : `${T(i)}×${m[i] < 0 ? "(" + fmt(m[i]) + ")" : m[i]}`);
+    [0, 1].forEach(i => {
+      if (m[i] === 1) return;
+      scene({ hi: i }); sc.lab[i] = stdEq(S[i]).t;
+      push(`Multiply equation ${T(i)} by ${fmt(m[i])} so the ${v}'s are opposites. On the graph it's still the same line!`,
+        table([{ q: S[i], tag: tagOf(i), cls: "r" + (i + 1) }]));
+    });
+    const sum = { a: S[0].a + S[1].a, b: S[0].b + S[1].b, c: S[0].c + S[1].c };
+    const tbl = table([{ q: S[0], tag: tagOf(0), cls: "r1", gone: D ? v : "xy" },
+                       { q: S[1], tag: tagOf(1), cls: "r2", op: "+", gone: D ? v : "xy" },
+                       { q: sum, sum: true }]);
+    if (!D) {
+      scene({ hi: 2 });
+      push(`Add the equations. Everything cancels, and 0 = ${fmt(sum.c)} is ${sum.c ? "never" : "always"} true.`, tbl);
+      return noAnswer(!sum.c);
+    }
+    const K = R(co(sum, u)), C = R(sum.c);
+    scene({}); setHelp(u, div(C, K), both([[K, u]], [[C, ""]]).t);
+    push(`Add the equations. The ${v}'s cancel! With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.`, tbl);
+    const x = finishOne(u, K, R(0), C);
+    // Put it back into the equation with the simplest other letter.
+    const j = [0, 1].sort((p, q) => Math.abs(co(A[p], v)) - Math.abs(co(A[q], v)))[0];
+    plugIn(u, x, A[j], j);
+    answer();
+  }
+
+  function substitution() {
+    const D = E[0].a * E[1].b - E[1].a * E[0].b;
+    // Pick the equation and letter that are easiest to get alone (y = ... ties win: that's slope-intercept form).
+    let best = null;
+    [0, 1].forEach(i => ["y", "x"].forEach(v => {
+      const k = co(E[i], v), l = co(E[i], other(v)), kj = co(E[1 - i], v);
+      if (!k) return;
+      const score = (E[i].iso === v ? -1 : !l ? 0 : Math.abs(k) === 1 ? 1 : 2 + Math.abs(k)) + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + (k < 0 ? 0.1 : 0) + i * 0.01;
+      if (!best || score < best.score) best = { i, v, score };
+    }));
+    const { i, v } = best, u = other(v), j = 1 - i, q = E[i], Q = E[j];
+    const k = R(co(q, v)), l = R(co(q, u)), c = R(q.c);
+    const pp = div(R(-co(q, u)), k), qq = div(c, k);
+    const Ex = H => ex([[pp, u], [qq, ""]], H);
+    const iso = both([[R(1), v]], [[pp, u], [qq, ""]]);
+    if (q.iso !== v) {
+      let moved = false;
+      if (!isZ(l) || !q.std) {
+        const r = both([[k, v]], [[R(-co(q, u)), u], [c, ""]]);
+        scene({ hi: i }); sc.lab[i] = r.t;
+        push(`Get ${v} by itself in equation ${T(i)}. ${isZ(l) ? "" : `Move the ${u} term to the other side. `}It's still the same line!`, rowH(r.h));
+        moved = true;
+      }
+      if (!isOne(k)) {
+        scene({ hi: i }); sc.lab[i] = iso.t;
+        push(moved ? `Divide both sides by ${numT(k)}.` : `Get ${v} by itself in equation ${T(i)}. Divide both sides by ${numT(k)}.`, rowH(iso.h));
+      }
+    }
+    const s = solution();
+    let w;
+    const kj = R(co(Q, v)), lj = R(co(Q, u)), cj = R(Q.c);
+    if (isZ(kj)) {
+      // The other equation has no v at all: it already has only u.
+      scene({}); setHelp(u, s ? s[u] : R(0), stdEq(Q).t);
+      push(isOne(lj) ? `Equation ${T(j)} already says ${Q.typed.t}.` : `Equation ${T(j)} only has ${u}, so solve it.`, rowH(Q.typed.h));
+      w = finishOne(u, lj, R(0), cj);
+    } else {
+      const put = [kj, "(", Ex], mine = [lj, u];
+      const r1 = both(v === "x" ? [put, mine] : [mine, put], [[cj, ""]]);
+      scene({}); if (s) setHelp(u, s[u], r1.t); else sc.hi = 2;
+      push(`Put (${Ex(false)}) in place of ${v} in equation ${T(j)}.` + (s ? ` With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.` : ""), rowH(r1.h));
+      const a1 = [mul(kj, pp), u], a2 = [mul(kj, qq), ""];
+      const r2 = both(v === "x" ? [a1, a2, mine] : [mine, a1, a2], [[cj, ""]]);
+      scene({}); if (s) setHelp(u, s[u], r2.t); else sc.hi = 2;
+      push("Multiply to clear the brackets.", rowH(r2.h));
+      const K = add(mul(kj, pp), lj), M = mul(kj, qq);
+      const r3 = both([[K, u], [M, ""]], [[cj, ""]]);
+      if (isZ(K)) {
+        const ok = M.n * cj.d === cj.n * M.d;
+        scene({ hi: 2 });
+        push(`Combine the ${u}'s. They cancel, and ${r3.t} is ${ok ? "always" : "never"} true.`, rowH(r3.h));
+        return noAnswer(ok);
+      }
+      if (!isZ(mul(kj, pp)) && !isZ(lj)) { scene({}); setHelp(u, s[u], r3.t); push(`Combine the ${u}'s.`, rowH(r3.h)); }
+      w = finishOne(u, K, M, cj);
+    }
+    if (!s) return noAnswer(false);
+    // Back into v = ...
+    if (isZ(pp)) {
+      scene({}); setHelp(v, qq, iso.t);
+      push(`Equation ${T(i)} already says ${iso.t}.`, rowH(iso.h));
+    } else {
+      const r1 = both([[R(1), v]], [[pp, "(", H => (H ? numH : numT)(w)], [qq, ""]]);
+      scene({}); setHelp(v, s[v], r1.t);
+      push(`Put ${u} = ${numT(w)} into ${iso.t}.`, rowH(r1.h));
+      const r2 = both([[R(1), v]], [[s[v], ""]]);
+      if (r2.t !== r1.t) { scene({}); setHelp(v, s[v], r2.t); push("Work it out.", rowH(r2.h)); }
+    }
+    answer();
+  }
+
+  function build() {
+    steps = []; at = 0;
+    sc = { lab: [E[0].typed.t, E[1].typed.t], hi: -1, help: [], point: false };
+    push("The answer is where the two lines cross. Press Next step.", "");
+    if (method === "elim") elimination(); else substitution();
+  }
+
+  /* ---------- Drawing ---------- */
+  const gLines = el("g", {}, layers.lines), gHelp = el("g", {}, layers.lines);
+  const gLbl = el("g", {}, layers.labels), gPt = el("g", {}, layers.points);
+  // Where a·x + b·y = c meets the edge of the grid.
+  function clip(a, b2, c) {
+    const pts = [];
+    const ok = t => t >= min - 1e-9 && t <= max + 1e-9;
+    if (b2) [min, max].forEach(x => { const y = (c - a * x) / b2; if (ok(y)) pts.push([x, y]); });
+    if (a) [min, max].forEach(y => { const x = (c - b2 * y) / a; if (ok(x)) pts.push([x, y]); });
+    if (pts.length < 2) return null;
+    let best = [pts[0], pts[1]], d = -1;
+    pts.forEach(p => pts.forEach(q => { const e = Math.hypot(p[0] - q[0], p[1] - q[1]); if (e > d) { d = e; best = [p, q]; } }));
+    return d > 1e-9 ? best : null;
+  }
+  function label(text, x, y, cls, anchor = "middle") {
+    const t = el("text", { x, y, class: "lbl " + cls, "text-anchor": anchor }, gLbl);
+    t.textContent = text;
+    // Keep the label on the board.
+    const bb = t.getBBox(), lo = sx(min) - 20, hi = sx(max) + 20;
+    let dx = 0;
+    if (bb.x < lo) dx = lo - bb.x; else if (bb.x + bb.width > hi) dx = hi - bb.x - bb.width;
+    if (dx) t.setAttribute("x", x + dx);
+    return t;
+  }
+  let lastHelp = "", lastHi = "";
+  const hitBox = (p, q) => p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height;
+  function draw() {
+    gLines.replaceChildren(); gHelp.replaceChildren(); gLbl.replaceChildren(); gPt.replaceChildren();
+    const s = steps.length ? steps[at].sc : null;
+    const same = E[0] && E[1] && E[0].a * E[1].b === E[1].a * E[0].b && E[0].a * E[1].c === E[1].a * E[0].c && E[0].b * E[1].c === E[1].b * E[0].c;
+    const segs = [], boxes = [];  // what a line's label should stay off
+    const base = E.map((q, i) => {
+      if (!q) return null;
+      const seg = clip(q.a, q.b, q.c);
+      if (!seg) return null;
+      const ln = el("line", { x1: sx(seg[0][0]), y1: sy(seg[0][1]), x2: sx(seg[1][0]), y2: sy(seg[1][1]), class: `ln l${i + 1}${i && same ? " same" : ""}` }, gLines);
+      if (s && (s.hi === i || s.hi === 2) && lastHi !== at + ":" + i) ln.classList.add("pulse");
+      segs.push({ i, seg });
+      return seg;
+    });
+    if (s) {
+      if (s.hi >= 0) lastHi = at + ":" + (s.hi === 2 ? 1 : s.hi);
+      s.help.forEach(h => {
+        const v = val(h.val);
+        if (v < min || v > max) return;
+        const seg = h.v === "x" ? [[v, min], [v, max]] : [[min, v], [max, v]];
+        const ln = el("line", { x1: sx(seg[0][0]), y1: sy(seg[0][1]), x2: sx(seg[1][0]), y2: sy(seg[1][1]), class: "hl" }, gHelp);
+        if (!lastHelp.includes("|" + h.v + v + "|")) ln.classList.add("new");
+        segs.push({ i: -1, seg });
+        if (h.text.length > 16) return;                   // long working rows stay in the panel
+        // Put the label on the far side of the grid from the crossing.
+        const so = solution(), far = h.v === "x" ? (so && val(so.y) < 0 ? 8.6 : -8.6) : (so && val(so.x) < 0 ? 8.6 : -8.6);
+        const t = h.v === "x" ? label(h.text, sx(v) + (v > 5 ? -10 : 10), sy(far) + 8, "hp", v > 5 ? "end" : "start")
+                              : label(h.text, sx(far), sy(v) + (v > 8 ? 26 : -10), "hp", far > 0 ? "end" : "start");
+        boxes.push(t.getBBox());
+      });
+      lastHelp = "|" + s.help.map(h => h.v + val(h.val)).join("|") + "|";
+      if (s.point) {
+        const sol = solution(), X = val(sol.x), Y = val(sol.y);
+        if (X >= min && X <= max && Y >= min && Y <= max) {
+          el("circle", { cx: sx(X), cy: sy(Y), r: 20, class: "sol-ring" }, gPt);
+          el("circle", { cx: sx(X), cy: sy(Y), r: 11, class: "sol-dot" }, gPt);
+          const right = X < 4;
+          boxes.push(label(`(${numT(sol.x)}, ${numT(sol.y)})`, sx(X) + (right ? 26 : -26), sy(Y) + (Y > 8 ? 34 : -16), "sol", right ? "start" : "end").getBBox());
+        }
+      }
+    }
+    // Each line's equation sits beside it, at the spot that stays clear of the axes, the other lines and other labels.
+    const sol = E[0] && E[1] ? solution() : null;
+    const cross = sol ? { x: sx(val(sol.x)), y: sy(val(sol.y)) } : null;
+    const axisX = { x: sx(min) - 30, y: sy(0) - 22, width: sx(max) - sx(min) + 60, height: 48 };
+    const axisY = { x: sx(0) - 40, y: sy(max) - 30, width: 44, height: sy(min) - sy(max) + 60 };
+    base.forEach((seg, i) => {
+      if (!seg) return;
+      const [p0, p1] = seg;
+      const nx = -(sy(p1[1]) - sy(p0[1])), ny = sx(p1[0]) - sx(p0[0]), L = Math.hypot(nx, ny) || 1;
+      let ox = nx / L, oy = ny / L;
+      if (oy > 0) { ox = -ox; oy = -oy; }
+      let best = null;
+      for (let k = 0; k <= 16; k++) {
+        const t = 0.08 + 0.84 * k / 16;
+        for (const side of [1, -1]) {
+          const px = sx(p0[0] + (p1[0] - p0[0]) * t) + ox * 22 * side, py = sy(p0[1] + (p1[1] - p0[1]) * t) + oy * 22 * side + 7;
+          const anchor = ox * side < -0.3 ? "end" : ox * side > 0.3 ? "start" : "middle";
+          const tx = label(s ? s.lab[i] : E[i].typed.t, px, py, "l" + (i + 1), anchor);
+          const bb = tx.getBBox(); tx.remove();
+          let pen = Math.abs(t - (i ? 0.75 : 0.25)) + (side < 0 ? 0.3 : 0);
+          if (bb.y < sy(max) - 24 || bb.y + bb.height > sy(min) + 24 || bb.x < sx(min) - 24 || bb.x + bb.width > sx(max) + 24) pen += 50;
+          if (hitBox(bb, axisX)) pen += 6; if (hitBox(bb, axisY)) pen += 6;
+          boxes.forEach(o => { if (hitBox(bb, o)) pen += 20; });
+          segs.forEach(o => {
+            if (o.i === i) return;
+            for (let m = 0; m <= 40; m++) {
+              const X = sx(o.seg[0][0] + (o.seg[1][0] - o.seg[0][0]) * m / 40), Y = sy(o.seg[0][1] + (o.seg[1][1] - o.seg[0][1]) * m / 40);
+              if (X > bb.x - 4 && X < bb.x + bb.width + 4 && Y > bb.y - 4 && Y < bb.y + bb.height + 4) { pen += 10; break; }
+            }
+          });
+          if (cross && Math.hypot(bb.x + bb.width / 2 - cross.x, bb.y + bb.height / 2 - cross.y) < 60) pen += 8;
+          if (!best || pen < best.pen) best = { pen, px, py, anchor, bb };
+        }
+      }
+      label(s ? s.lab[i] : E[i].typed.t, best.px, best.py, "l" + (i + 1), best.anchor);
+      boxes.push(best.bb);
+    });
+  }
+
+  /* ---------- Panel ---------- */
+  function show() {
+    const work = $("work");
+    work.innerHTML = steps.slice(0, at + 1).map((s, i) =>
+      `<div class="stp${i === at ? " now" : ""}"><p class="cap">${s.cap}</p>${s.html}</div>`).join("");
+    work.scrollTop = work.scrollHeight;
+    $("back").disabled = at === 0;
+    $("next").disabled = !steps.length;
+    $("next").textContent = at === steps.length - 1 ? "Start over ↺" : "Next step ▶";
+    draw();
+  }
+
+  function read() {
+    const errs = [];
+    E = ["in1", "in2"].map((id, i) => {
+      const q = parse($(id).value);
+      $(id).setAttribute("aria-invalid", q.err ? "true" : "false");
+      if (q.err) { errs.push(`Equation ${T(i)}: ${q.err}`); return null; }
+      return q;
+    });
+    $("err").hidden = !errs.length;
+    $("err").textContent = errs.join(" ");
+    if (errs.length) { steps = []; at = 0; $("work").innerHTML = ""; $("back").disabled = $("next").disabled = true; draw(); return; }
+    build(); show();
+  }
+
+  ["in1", "in2"].forEach(id => $(id).addEventListener("input", read));
+  $("tabs").addEventListener("click", e => {
+    const btn = e.target.closest("button"); if (!btn) return;
+    method = btn.dataset.m;
+    $("tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
+    if (E[0] && E[1]) { build(); show(); }
+  });
+  $("next").addEventListener("click", () => { at = at === steps.length - 1 ? 0 : at + 1; show(); });
+  $("back").addEventListener("click", () => { if (at > 0) { at--; show(); } });
+
+  read();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Compound Shapes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Compound Shapes: one shape stacked on another. Surface Area / Volume switch at the top; the panel lists
+   every formula step, and the selected step lights up the part of the solid it calculates.
+   Flat faces where the shapes join are hidden (not counted); that step lifts the top shape to show them. */
+:root { --c-bot: #4f7fd9; --c-top: #9a63d6; --hl: #e08a00; --hide: #d23a3a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; } }
+:root[data-theme="dark"] { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; }
+.wrap { max-width: 1500px; }
+.main { grid-template-columns: minmax(0, 1fr) minmax(0, 500px); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { padding: 0; overflow: hidden; position: relative; }
+#view { display: block; width: 100%; height: min(70vh, 720px); min-height: 360px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+#view.drag { cursor: grabbing; }
+@media (min-width: 861px) and (min-height: 520px) { #view { flex: 1 1 auto; height: 100%; min-height: 0; } .panel { overflow: hidden !important; } }
+.turn { position: absolute; left: 14px; bottom: 10px; margin: 0; color: var(--muted); font-size: 0.95rem; pointer-events: none; }
+
+/* Surface Area / Volume switch */
+.master { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 14px; }
+.master button { min-height: 54px; min-width: 8.5em; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; border-radius: 10px; }
+.master button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+
+/* Shape pickers */
+.shapes { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
+.pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.pick + .pick { padding-top: 10px; border-top: 1px dashed var(--grid-major); }
+.pick .who { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; min-width: 4.4em; display: inline-flex; align-items: center; gap: 8px; }
+.pick .who i, .step i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.pick select { flex: 1 1 10em; min-height: 46px; font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 6px 10px; }
+.dims { display: flex; flex-wrap: wrap; gap: 6px 14px; width: 100%; }
+.dim { display: inline-flex; align-items: center; gap: 4px; }
+.dim .dk { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 1.4rem; min-width: 1em; text-align: center; }
+.dim button { width: 40px; height: 40px; padding: 0; font-size: 1.4rem; line-height: 1; }
+.dim output { font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; min-width: 1.6em; text-align: center; }
+
+/* Steps */
+.steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px; }
+.steps ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.step { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 0; padding: 5px 10px; border: 2px solid transparent; background: transparent; border-radius: 10px; }
+.step:hover { border-color: var(--grid-major); }
+.step[aria-pressed="true"] { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 14%, var(--sheet)); }
+.st-t { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 700; }
+.st-m { font-family: var(--font-num); font-weight: 500; font-size: 1.12rem; line-height: 1.6; padding-left: 22px; }
+.st-m .nw { white-space: nowrap; }
+.st-m b { font-weight: 700; }
+.st-m s { color: var(--hide); text-decoration-thickness: 3px; }
+.st-m .frac { font-size: 0.75em; vertical-align: middle; line-height: 1.1; }
+.step.total .st-t { font-family: var(--font-display); font-size: 1.2rem; }
+.step.total .st-m { font-size: 1.35rem; }
+.step.total .st-m b { background: var(--chip); border-radius: 8px; padding: 0 10px; font-size: 1.6rem; }
+.step.warn .st-t, .step.warn .st-m { color: var(--warn); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Compound Shapes</h1></div>
+    <div class="master" role="group" aria-label="Surface area or volume">
+      <button type="button" data-mode="sa" aria-pressed="true">Surface Area</button>
+      <button type="button" data-mode="vol" aria-pressed="false">Volume</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="board"><canvas id="view" role="img" aria-label="Compound shape. Drag to turn it."></canvas><p class="turn">Drag to turn</p></div>
+    <div class="panel">
+      <div class="card shapes">
+        <div class="pick"><span class="who"><i style="background:var(--c-top)"></i>Top</span><select id="sel-top" aria-label="Top shape"></select><div class="dims" id="dims-top"></div></div>
+        <div class="pick"><span class="who"><i style="background:var(--c-bot)"></i>Bottom</span><select id="sel-bot" aria-label="Bottom shape"></select><div class="dims" id="dims-bot"></div></div>
+      </div>
+      <div class="card steps"><ol id="steps" aria-live="polite"></ol></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---------- numbers ----------
+  const PI = 3.14;
+  const r2 = x => Math.round((x + Number.EPSILON) * 100) / 100;
+  const f = x => String(r2(x));
+  const sq = x => f(x) + "²", cu = x => f(x) + "³";
+  const fr = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+  const ans = v => `<span class="nw">= <b>${f(v)}</b></span>`;
+
+  // ---------- shapes ----------
+  const TYPES = {
+    cyl:    { name: "Cylinder",           dims: ["r", "h"],      def: { r: 3, h: 5 } },
+    cone:   { name: "Cone",               dims: ["r", "h"],      def: { r: 3, h: 4 } },
+    prism:  { name: "Rectangular prism",  dims: ["l", "w", "h"], def: { l: 6, w: 4, h: 4 } },
+    sqpyr:  { name: "Square pyramid",     dims: ["b", "h"],      def: { b: 6, h: 4 } },
+    tripyr: { name: "Triangular pyramid", dims: ["b", "h"],      def: { b: 6, h: 5 } },
+    sphere: { name: "Sphere",             dims: ["r"],           def: { r: 3 } },
+    hemi:   { name: "Hemisphere",         dims: ["r"],           def: { r: 3 } }
+  };
+  const DIM_WORD = { r: "radius", h: "height", l: "length", w: "width", b: "base side" };
+  const shapes = { top: { type: "cone", d: { r: 3, h: 4 } }, bot: { type: "cyl", d: { r: 3, h: 5 } } };
+  let mode = "sa", sel = 0, STEPS = [];
+
+  const N = 48;   // strips on curved surfaces
+  const circlePts = r => Array.from({ length: N }, (_, k) => { const a = 2 * Math.PI * k / N; return [r * Math.cos(a), r * Math.sin(a)]; });
+  // The flat face a shape stands on (in x, z). A sphere only touches at a point.
+  function footprint(sh) {
+    const d = sh.d;
+    switch (sh.type) {
+      case "cyl": case "cone": case "hemi": return { kind: "circle", r: d.r, pts: circlePts(d.r) };
+      case "prism": return { kind: "poly", pts: [[-d.l / 2, -d.w / 2], [d.l / 2, -d.w / 2], [d.l / 2, d.w / 2], [-d.l / 2, d.w / 2]] };
+      case "sqpyr": { const b = d.b / 2; return { kind: "poly", pts: [[-b, -b], [b, -b], [b, b], [-b, b]] }; }
+      case "tripyr": { const R = d.b / Math.sqrt(3); return { kind: "poly", pts: [0, 1, 2].map(k => { const a = Math.PI / 2 + k * 2 * Math.PI / 3; return [R * Math.cos(a), R * Math.sin(a)]; }) }; }
+    }
+    return { kind: "point", pts: [[0, 0]] };
+  }
+  // Does face a fit inside face b (both centered)?
+  function inside(a, b) {
+    const e = 1e-6;
+    if (b.kind === "circle") return a.kind === "circle" ? a.r <= b.r + e : a.pts.every(([x, z]) => Math.hypot(x, z) <= b.r + e);
+    const P = b.pts, n = P.length;
+    const dist = (x, z, i) => {
+      const [ax, az] = P[i], [bx, bz] = P[(i + 1) % n], L = Math.hypot(bx - ax, bz - az);
+      let nx = -(bz - az) / L, nz = (bx - ax) / L;
+      if (-ax * nx - az * nz < 0) { nx = -nx; nz = -nz; }
+      return (x - ax) * nx + (z - az) * nz;
+    };
+    if (a.kind === "circle") { for (let i = 0; i < n; i++) if (dist(0, 0, i) < a.r - e) return false; return true; }
+    return a.pts.every(([x, z]) => { for (let i = 0; i < n; i++) if (dist(x, z, i) < -e) return false; return true; });
+  }
+  const height = sh => sh.type === "sphere" ? 2 * sh.d.r : sh.type === "hemi" ? sh.d.r : sh.d.h;
+
+  // ---------- 3D meshes ----------
+  // Built standing on the flat face (y = 0, part "join"), going up. The bottom shape is flipped so its flat face
+  // is on top, where the top shape sits. Parts: join, cap (the other flat end), side, fb / lr (prism walls).
+  const vsub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const vdot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const vcross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const vnorm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+  function mesh(sh) {
+    const d = sh.d, F = [], H = height(sh);
+    const face = (P, n, part) => F.push({ P, n: vnorm(n), part });
+    const ring = (pts, y) => pts.map(([x, z]) => [x, y, z]);
+    const sphereBands = (M, phiMax, cy) => {
+      const p = (i, k) => { const ph = phiMax * i / M, th = 2 * Math.PI * k / N; return [d.r * Math.sin(ph) * Math.cos(th), cy + d.r * Math.cos(ph), d.r * Math.sin(ph) * Math.sin(th)]; };
+      for (let i = 0; i < M; i++) for (let k = 0; k < N; k++) {
+        const ph = phiMax * (i + 0.5) / M, th = 2 * Math.PI * (k + 0.5) / N;
+        face([p(i, k), p(i, k + 1), p(i + 1, k + 1), p(i + 1, k)], [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)], "side");
+      }
+    };
+    switch (sh.type) {
+      case "cyl": {
+        const b = ring(circlePts(d.r), 0), t = ring(circlePts(d.r), H);
+        face(b, [0, -1, 0], "join"); face(t, [0, 1, 0], "cap");
+        for (let k = 0; k < N; k++) { const k2 = (k + 1) % N, a = 2 * Math.PI * (k + 0.5) / N; face([b[k], b[k2], t[k2], t[k]], [Math.cos(a), 0, Math.sin(a)], "side"); }
+        break;
+      }
+      case "cone": {
+        const b = ring(circlePts(d.r), 0), A = [0, H, 0];
+        face(b, [0, -1, 0], "join");
+        for (let k = 0; k < N; k++) { const k2 = (k + 1) % N, a = 2 * Math.PI * (k + 0.5) / N; face([b[k], b[k2], A], [H * Math.cos(a), d.r, H * Math.sin(a)], "side"); }
+        break;
+      }
+      case "prism": {
+        const fp = footprint(sh).pts, b = ring(fp, 0), t = ring(fp, H);
+        face(b, [0, -1, 0], "join"); face(t, [0, 1, 0], "cap");
+        const ns = [[0, 0, -1], [1, 0, 0], [0, 0, 1], [-1, 0, 0]];
+        for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; face([b[i], b[j], t[j], t[i]], ns[i], i % 2 ? "lr" : "fb"); }
+        break;
+      }
+      case "sqpyr": case "tripyr": {
+        const fp = footprint(sh).pts, b = ring(fp, 0), A = [0, H, 0], n = b.length;
+        face(b, [0, -1, 0], "join");
+        for (let i = 0; i < n; i++) {
+          const p = b[i], q = b[(i + 1) % n];
+          let nn = vcross(vsub(q, p), vsub(A, p));
+          if (vdot(nn, [(p[0] + q[0]) / 2, 0, (p[2] + q[2]) / 2]) < 0) nn = nn.map(x => -x);
+          face([p, q, A], nn, "side");
+        }
+        break;
+      }
+      case "sphere": sphereBands(16, Math.PI, d.r); break;
+      case "hemi": face(ring(circlePts(d.r), 0), [0, -1, 0], "join"); sphereBands(8, Math.PI / 2, 0); break;
+    }
+    // Neighbours across each edge; a sharp fold is a crease (always drawn), a gentle one only on the outline.
+    const key = p => p.map(v => v.toFixed(4)).join(",");
+    const edges = new Map();
+    F.forEach((fc, i) => {
+      fc.E = fc.P.map((p, j) => {
+        const ka = key(p), kb = key(fc.P[(j + 1) % fc.P.length]);
+        if (ka === kb) return null;
+        const ek = ka < kb ? ka + "|" + kb : kb + "|" + ka;
+        if (!edges.has(ek)) edges.set(ek, []);
+        edges.get(ek).push([i, j]);
+        return { nb: -1, crease: true };
+      });
+    });
+    edges.forEach(list => {
+      if (list.length !== 2) return;
+      const [[i, a], [j, b]] = list, smooth = vdot(F[i].n, F[j].n) > 0.9;
+      F[i].E[a] = { nb: j, crease: !smooth }; F[j].E[b] = { nb: i, crease: !smooth };
+    });
+    return { F, H };
+  }
+
+  // ---------- steps ----------
+  function derived(sh) {
+    const d = sh.d, o = {};
+    if (sh.type === "tripyr") { o.t = r2(Math.sqrt(d.b * d.b - (d.b / 2) ** 2)); o.in = r2(o.t / 3); o.s = r2(Math.sqrt(d.h * d.h + o.in * o.in)); }
+    if (sh.type === "sqpyr") o.s = r2(Math.sqrt(d.h * d.h + (d.b / 2) ** 2));
+    if (sh.type === "cone") o.s = r2(Math.sqrt(d.h * d.h + d.r * d.r));
+    return o;
+  }
+  function flatFace(sh) {
+    const d = sh.d, o = derived(sh);
+    switch (sh.type) {
+      case "cyl": case "cone": case "hemi": return { sym: "πr²", sub: `3.14 × ${sq(d.r)}`, v: r2(PI * d.r * d.r), word: "circle" };
+      case "prism": return { sym: "l × w", sub: `${d.l} × ${d.w}`, v: d.l * d.w, word: "face" };
+      case "sqpyr": return { sym: "b × b", sub: `${d.b} × ${d.b}`, v: d.b * d.b, word: "face" };
+      case "tripyr": return { sym: `${fr(1, 2)} × b × t`, sub: `${fr(1, 2)} × ${d.b} × ${f(o.t)}`, v: r2(d.b * o.t / 2), word: "triangle" };
+    }
+    return null;
+  }
+  const NAME = role => TYPES[shapes[role].type].name;
+  const S = (role, title, math, x) => Object.assign({ role, focus: role, title: `${NAME(role)}: ${title}`, math, hl: [] }, x);
+
+  // Steps that every pyramid / cone needs first: the base triangle height and the slant height.
+  function helperSteps(role, forSA) {
+    const sh = shapes[role], d = sh.d, o = derived(sh), out = [], K = role + ":join";
+    if (sh.type === "tripyr") out.push(S(role, "height of the base triangle", `t = √(b² − (b ÷ 2)²) = √(${sq(d.b)} − ${sq(d.b / 2)}) ${ans(o.t)}`, { hl: [K], over: "tri" }));
+    if (!forSA) return out;
+    if (sh.type === "cone") out.push(S(role, "slant height", `s = √(h² + r²) = √(${sq(d.h)} + ${sq(d.r)}) ${ans(o.s)}`, { over: "slant" }));
+    if (sh.type === "sqpyr") out.push(S(role, "slant height", `s = √(h² + (b ÷ 2)²) = √(${sq(d.h)} + ${sq(d.b / 2)}) ${ans(o.s)}`, { over: "slant" }));
+    if (sh.type === "tripyr") out.push(S(role, "slant height", `s = √(h² + (t ÷ 3)²) = √(${sq(d.h)} + ${sq(o.in)}) ${ans(o.s)}`, { over: "slant" }));
+    return out;
+  }
+
+  function saShape(role) {
+    const sh = shapes[role], d = sh.d, o = derived(sh), K = p => role + ":" + p, end = role === "bot" ? "bottom" : "top";
+    const out = helperSteps(role, true), add = (title, math, v, hl) => out.push(S(role, title, math + " " + ans(v), { v: r2(v), hl }));
+    switch (sh.type) {
+      case "cyl":
+        add(`${end} circle`, `πr² = 3.14 × ${sq(d.r)}`, PI * d.r * d.r, [K("cap")]);
+        add("curved side", `2πrh = 2 × 3.14 × ${d.r} × ${d.h}`, 2 * PI * d.r * d.h, [K("side")]);
+        break;
+      case "prism":
+        add(`${end} face`, `l × w = ${d.l} × ${d.w}`, d.l * d.w, [K("cap")]);
+        add("front and back", `2 × l × h = 2 × ${d.l} × ${d.h}`, 2 * d.l * d.h, [K("fb")]);
+        add("left and right", `2 × w × h = 2 × ${d.w} × ${d.h}`, 2 * d.w * d.h, [K("lr")]);
+        break;
+      case "cone": add("curved side", `πrs = 3.14 × ${d.r} × ${f(o.s)}`, PI * d.r * o.s, [K("side")]); break;
+      case "sqpyr": add("4 triangles", `4 × ${fr(1, 2)} × b × s = 4 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, 2 * d.b * o.s, [K("side")]); break;
+      case "tripyr": add("3 triangles", `3 × ${fr(1, 2)} × b × s = 3 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, 1.5 * d.b * o.s, [K("side")]); break;
+      case "hemi": add("curved dome", `${fr(1, 2)} × 4πr² = 2 × 3.14 × ${sq(d.r)}`, 2 * PI * d.r * d.r, [K("side")]); break;
+      case "sphere": add("whole surface", `4πr² = 4 × 3.14 × ${sq(d.r)}`, 4 * PI * d.r * d.r, [K("side")]); break;
+    }
+    return out;
+  }
+
+  // Where the two shapes touch: covered parts are not counted; any part of the bigger face that still shows is.
+  function joinSteps() {
+    const out = [], A = flatFace(shapes.bot), B = flatFace(shapes.top);
+    const botName = () => `top ${A.word}`, topName = () => `bottom ${B.word}`;
+    if (!A || !B) {   // a sphere only touches at one point, so the other flat face is all showing
+      if (A) out.push(S("bot", botName(), `${A.sym} = ${A.sub} ${ans(A.v)}`, { v: A.v, hl: ["bot:join"] }));
+      if (B) out.push(S("top", topName(), `${B.sym} = ${B.sub} ${ans(B.v)}`, { v: B.v, hl: ["top:join"] }));
+      return out;
+    }
+    const fa = footprint(shapes.bot), fb = footprint(shapes.top), topIn = inside(fb, fa), botIn = inside(fa, fb);
+    if (!topIn && !botIn) {
+      out.push({ warn: true, focus: null, title: "The top hangs over the edge", math: "Make the top smaller or the bottom bigger.", hl: [] });
+      return out;
+    }
+    const small = topIn ? "top" : "bot", big = small === "top" ? "bot" : "top", vs = topIn ? B.v : A.v;
+    out.push({ focus: null, lift: true, title: "Where they join: covered, not counted", math: `<s>${f(vs)}</s> + <s>${f(vs)}</s>`, hl: [],
+               hide: [{ role: small }, { role: big, hole: small }] });
+    if (!(topIn && botIn)) {
+      const bigF = big === "bot" ? A : B, smallF = big === "bot" ? B : A, v = r2(bigF.v - smallF.v);
+      out.push(S(big, big === "bot" ? `${botName()} that shows` : `${topName()} that shows`,
+        `${bigF.sub} − ${smallF.sub} = ${f(bigF.v)} − ${f(smallF.v)} ${ans(v)}`, { v, ring: { role: big, hole: small } }));
+    }
+    return out;
+  }
+
+  function volShape(role) {
+    const sh = shapes[role], d = sh.d, o = derived(sh), K = p => role + ":" + p, out = helperSteps(role, false);
+    const base = (sym, sub, v, part) => { out.push(S(role, "base area", `${sym} = ${sub} ${ans(v)}`, { hl: [K(part)] })); return r2(v); };
+    const vol = (math, v) => out.push(S(role, "volume", math + " " + ans(v), { v: r2(v), whole: [role] }));
+    switch (sh.type) {
+      case "cyl": { const B = base("πr²", `3.14 × ${sq(d.r)}`, PI * d.r * d.r, "cap"); vol(`base area × h = ${f(B)} × ${d.h}`, B * d.h); break; }
+      case "prism": { const B = base("l × w", `${d.l} × ${d.w}`, d.l * d.w, "cap"); vol(`base area × h = ${f(B)} × ${d.h}`, B * d.h); break; }
+      case "cone": { const B = base("πr²", `3.14 × ${sq(d.r)}`, PI * d.r * d.r, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
+      case "sqpyr": { const B = base("b × b", `${d.b} × ${d.b}`, d.b * d.b, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
+      case "tripyr": { const B = base(`${fr(1, 2)} × b × t`, `${fr(1, 2)} × ${d.b} × ${f(o.t)}`, d.b * o.t / 2, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
+      case "sphere": vol(`${fr(4, 3)} × πr³ = ${fr(4, 3)} × 3.14 × ${cu(d.r)}`, 4 / 3 * PI * d.r ** 3); break;
+      case "hemi": vol(`${fr(1, 2)} × ${fr(4, 3)}πr³ = ${fr(2, 3)} × 3.14 × ${cu(d.r)}`, 2 / 3 * PI * d.r ** 3); break;
+    }
+    return out;
+  }
+
+  function buildSteps() {
+    let list;
+    if (mode === "sa") list = [...saShape("top"), ...saShape("bot"), ...joinSteps()];
+    else list = [...volShape("top"), ...volShape("bot")];
+    const counted = list.filter(s => s.v !== undefined);
+    const ok = !list.some(s => s.warn);
+    const sum = r2(counted.reduce((m, s) => m + s.v, 0));
+    const total = { total: true, focus: null, title: mode === "sa" ? "Total surface area" : "Total volume",
+      math: ok ? `${counted.map(s => f(s.v)).join(" + ")} <span class="nw">= <b>${f(sum)}</b> ${mode === "sa" ? "units²" : "units³"}</span>` : "?",
+      hl: counted.flatMap(s => s.hl), ring: (counted.find(s => s.ring) || {}).ring, whole: mode === "vol" ? ["bot", "top"] : [] };
+    list.push(total);
+    return list;
+  }
+
+  // ---------- drawing ----------
+  const cv = document.getElementById("view"), ctx = cv.getContext("2d");
+  // Pastel solids with dark edges, the same in light and dark mode (like 3D Shapes and Nets).
+  const COL = { bot: [143, 184, 242], top: [201, 167, 240], hl: [255, 190, 70], hide: [226, 70, 70], pale: [222, 227, 234], edge: [27, 39, 51] };
+  const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const rgba = (c, k = 1, a = 1) => `rgba(${c.map(v => Math.max(0, Math.min(255, Math.round(v * k)))).join(",")},${a})`;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  let BOT = [], TOP = [], Hb = 1, Ht = 1, lift = 0, liftGoal = 0, yaw = -0.6, pitch = 0.38, raf = 0;
+  const L = vnorm([-0.35, 0.55, 0.75]);
+
+  function buildWorld() {
+    const mb = mesh(shapes.bot), mt = mesh(shapes.top);
+    Hb = mb.H; Ht = mt.H;
+    BOT = mb.F.map(fc => ({ ...fc, role: "bot", P: fc.P.map(p => [p[0], Hb - p[1], p[2]]), n: [fc.n[0], -fc.n[1], fc.n[2]] }));
+    TOP = mt.F.map(fc => ({ ...fc, role: "top", P: fc.P.map(p => [p[0], p[1] + Hb, p[2]]) }));
+  }
+  // Shape coordinates (standing on its flat face) to world coordinates, with the top lifted when needed.
+  const toW = (role, p) => role === "bot" ? [p[0], Hb - p[1], p[2]] : [p[0], p[1] + Hb + lift, p[2]];
+
+  let hatch = null;
+  function hatchPattern() {
+    if (hatch) return hatch;
+    const c = document.createElement("canvas"); c.width = c.height = 12;
+    const g = c.getContext("2d");
+    g.strokeStyle = "rgba(120,10,10,.75)"; g.lineWidth = 2.2;
+    g.beginPath(); g.moveTo(-3, 15); g.lineTo(15, -3); g.moveTo(-3, 3); g.lineTo(3, -3); g.moveTo(9, 15); g.lineTo(15, 9); g.stroke();
+    return (hatch = ctx.createPattern(c, "repeat"));
+  }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const ink = css("--ink") || "#1b2733", sheet = css("--sheet") || "#fff", fnum = css("--font-num");
+    const step = STEPS[sel] || { hl: [] };
+    const cY = Math.cos(yaw), sY = Math.sin(yaw), cP = Math.cos(pitch), sP = Math.sin(pitch);
+    const rot = v => { const x1 = v[0] * cY + v[2] * sY, z1 = -v[0] * sY + v[2] * cY; return [x1, v[1] * cP - z1 * sP, v[1] * sP + z1 * cP]; };
+    const cy = (Hb + Ht + lift) / 2;
+    let R = 0.5;
+    BOT.forEach(fc => fc.P.forEach(p => { R = Math.max(R, Math.hypot(p[0], p[1] - cy, p[2])); }));
+    TOP.forEach(fc => fc.P.forEach(p => { R = Math.max(R, Math.hypot(p[0], p[1] + lift - cy, p[2])); }));
+    const k = Math.min(W * 0.34, H * 0.43) / R;
+    const scr = p => { const q = rot([p[0], p[1] - cy, p[2]]); return [W / 2 + q[0] * k, H / 2 - q[1] * k]; };
+    const depth = p => rot(p)[2];
+    const lists = { bot: BOT, top: TOP };
+    for (const role of ["bot", "top"]) {
+      const off = role === "top" ? lift : 0;
+      lists[role].forEach(fc => { fc.Q = fc.P.map(p => scr([p[0], p[1] + off, p[2]])); fc.nv = rot(fc.n); fc.front = fc.nv[2] > 1e-6; });
+    }
+    const hl = new Set(step.hl), whole = new Set(step.whole || []);
+    const ghost = role => step.focus && step.focus !== role;
+    const lit = (fc, c) => rgba(c, 0.78 + 0.3 * Math.abs(vdot(fc.nv, L)));
+    const path = Q => { ctx.beginPath(); Q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); };
+    const isHl = fc => whole.has(fc.role) || hl.has(fc.role + ":" + fc.part);
+    const faceCol = fc => isHl(fc) ? COL.hl : mix(COL[fc.role], COL.pale, step.total && mode === "vol" ? 0 : 0.55);
+    const above = rot([0, 1, 0])[2] > 0;
+    const order = above ? ["bot", "top"] : ["top", "bot"];
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+
+    // Regions on the flat join faces: the ring that still shows, and the red parts that are covered.
+    const regions = [];
+    if (step.ring) regions.push({ role: step.ring.role, outer: footprint(shapes[step.ring.role]).pts, inner: footprint(shapes[step.ring.hole]).pts, col: COL.hl });
+    (step.hide || []).forEach(h => regions.push({ role: h.role, outer: footprint(shapes[h.hole || h.role]).pts, inner: null, col: COL.hide, hatch: true }));
+    function drawRegion(rg, front) {
+      const n = rg.role === "bot" ? [0, 1, 0] : [0, -1, 0];
+      if ((rot(n)[2] > 0) !== front) return;
+      const toQ = pts => pts.map(([x, z]) => scr(toW(rg.role, [x, 0, z])));
+      ctx.beginPath();
+      [rg.outer, rg.inner].forEach(pts => { if (!pts) return; toQ(pts).forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); });
+      ctx.globalAlpha = front ? 0.95 : 0.4;
+      ctx.fillStyle = rgba(rg.col); ctx.fill("evenodd");
+      if (rg.hatch) { ctx.fillStyle = hatchPattern(); ctx.fill("evenodd"); }
+      ctx.globalAlpha = 1;
+      ctx.setLineDash(front ? [] : [7, 6]);
+      ctx.strokeStyle = rgba(rg.col, 0.6); ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawSolid(role) {
+      const list = lists[role];
+      ctx.globalAlpha = ghost(role) ? 0.2 : 1;
+      list.forEach(fc => { if (!fc.front) return; path(fc.Q); const c = lit(fc, faceCol(fc)); ctx.fillStyle = c; ctx.fill(); ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.stroke(); });
+      ctx.beginPath();
+      list.forEach(fc => {
+        if (!fc.front) return;
+        fc.E.forEach((e, j) => {
+          if (!e || !(e.crease || (e.nb >= 0 && !list[e.nb].front))) return;
+          const a = fc.Q[j], b = fc.Q[(j + 1) % fc.Q.length];
+          ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+        });
+      });
+      ctx.strokeStyle = rgba(COL.edge); ctx.lineWidth = 2.3; ctx.stroke();
+      ctx.globalAlpha = 1;
+      if (!ghost(role)) regions.filter(r => r.role === role).forEach(r => drawRegion(r, true));
+    }
+    order.forEach(drawSolid);
+
+    // See-through: hidden edges dashed, highlighted flat faces at the back shown faintly.
+    order.forEach(role => {
+      if (ghost(role)) return;
+      const list = lists[role];
+      ctx.beginPath();
+      list.forEach(fc => {
+        if (fc.front) return;
+        fc.E.forEach((e, j) => {
+          if (!e || !e.crease || (e.nb >= 0 && list[e.nb].front)) return;
+          const a = fc.Q[j], b = fc.Q[(j + 1) % fc.Q.length];
+          ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+        });
+      });
+      ctx.setLineDash([6, 6]); ctx.strokeStyle = rgba(COL.edge, 1, 0.45); ctx.lineWidth = 1.6; ctx.stroke(); ctx.setLineDash([]);
+      list.forEach(fc => {
+        if (fc.front || (fc.part !== "join" && fc.part !== "cap") || !isHl(fc)) return;
+        path(fc.Q); ctx.fillStyle = rgba(COL.hl, 1, 0.35); ctx.fill();
+        ctx.setLineDash([7, 6]); ctx.strokeStyle = rgba(COL.hl, 0.6); ctx.lineWidth = 2.5; ctx.stroke(); ctx.setLineDash([]);
+      });
+      regions.filter(r => r.role === role).forEach(r => drawRegion(r, false));
+    });
+
+    // ---------- measurements ----------
+    const fs = Math.max(16, Math.min(24, W / 42));
+    const label = (txt, x, y, align = "center", color = ink) => {
+      ctx.font = `700 ${fs}px ${fnum}`; ctx.textAlign = align; ctx.textBaseline = "middle";
+      ctx.lineWidth = 5; ctx.strokeStyle = sheet; ctx.strokeText(txt, x, y);
+      ctx.fillStyle = color; ctx.fillText(txt, x, y);
+    };
+    const seg = (a, b, w = 3, dash = []) => { ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.strokeStyle = ink; ctx.lineWidth = w; ctx.stroke(); ctx.setLineDash([]); };
+    const away = (m, c, dist) => { const dx = m[0] - c[0], dy = m[1] - c[1], l = Math.hypot(dx, dy) || 1; return [m[0] + dx / l * dist, m[1] + dy / l * dist]; };
+    const right = [cY, 0, sY];
+
+    function measures(role) {
+      const sh = shapes[role], d = sh.d, Hs = role === "bot" ? Hb : Ht, P = p => scr(toW(role, p));
+      ctx.globalAlpha = ghost(role) ? 0.3 : 1;
+      const dir = role === "top" ? right : right.map(v => -v);
+      const radius = c => {
+        const a = P(c), b = P([c[0] + dir[0] * d.r, c[1], c[2] + dir[2] * d.r]);
+        seg(a, b); ctx.beginPath(); ctx.arc(a[0], a[1], 4.5, 0, 7); ctx.fillStyle = ink; ctx.fill();
+        label(`r = ${d.r}`, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - fs * 0.8);
+      };
+      const busy = step.over === "slant" && step.role === role;   // the slant triangle carries these labels
+      if (sh.type === "cyl") radius([0, Hs, 0]);
+      if ((sh.type === "cone" && !busy) || sh.type === "hemi") radius([0, 0, 0]);
+      if (sh.type === "sphere") radius([0, d.r, 0]);
+      if (d.h !== undefined && !busy) {
+        const xs = lists[role].flatMap(fc => fc.Q.map(q => q[0])), x = Math.max(...xs) + 22;
+        const y0 = P([0, 0, 0])[1], y1 = P([0, Hs, 0])[1];
+        seg([x, y0], [x, y1], 2.5); seg([x - 7, y0], [x + 7, y0], 2.5); seg([x - 7, y1], [x + 7, y1], 2.5);
+        label(`h = ${d.h}`, x + 12, (y0 + y1) / 2, "left");
+      }
+      const edgeLabel = (pts, y, txt, pick) => {   // label the edge of this face closest to the viewer
+        let best = null;
+        pts.forEach((p, i) => {
+          const q = pts[(i + 1) % pts.length];
+          if (pick && !pick(p, q)) return;
+          const m = toW(role, [(p[0] + q[0]) / 2, y, (p[1] + q[1]) / 2]), z = depth([m[0], m[1] - cy, m[2]]);
+          if (!best || z > best.z) best = { z, p, q };
+        });
+        const m = P([(best.p[0] + best.q[0]) / 2, y, (best.p[1] + best.q[1]) / 2]);
+        label(txt, ...away(m, P([0, y, 0]), fs * 1.3));
+      };
+      const fp = footprint(sh).pts;
+      if (sh.type === "prism") {
+        edgeLabel(fp, Hs, `l = ${d.l}`, (p, q) => p[1] === q[1]);
+        edgeLabel(fp, Hs, `w = ${d.w}`, (p, q) => p[0] === q[0]);
+      }
+      if ((sh.type === "sqpyr" || sh.type === "tripyr") && !busy) edgeLabel(fp, 0, `b = ${d.b}`);
+      ctx.globalAlpha = 1;
+    }
+    measures("bot"); measures("top");
+
+    // Slant height: the right triangle inside the cone or pyramid.
+    if (step.over === "slant") {
+      const role = step.role, sh = shapes[role], d = sh.d, o = derived(sh), Hs = role === "bot" ? Hb : Ht, P = p => scr(toW(role, p));
+      let foot, baseTxt;
+      if (sh.type === "cone") { foot = [right[0] * d.r, 0, right[2] * d.r]; baseTxt = `r = ${d.r}`; }
+      else {
+        const fp = footprint(sh).pts;
+        const mids = fp.map((p, i) => { const q = fp[(i + 1) % fp.length]; return [(p[0] + q[0]) / 2, 0, (p[1] + q[1]) / 2]; });
+        foot = mids.reduce((a, b) => vdot(b, right) > vdot(a, right) ? b : a);
+        baseTxt = sh.type === "sqpyr" ? `b ÷ 2 = ${f(d.b / 2)}` : `t ÷ 3 = ${f(o.in)}`;
+      }
+      const A = P([0, Hs, 0]), O = P([0, 0, 0]), Fo = P(foot);
+      path([A, O, Fo]); ctx.fillStyle = rgba(COL.hl, 1, 0.45); ctx.fill();
+      ctx.strokeStyle = rgba(COL.hl, 0.55); ctx.lineWidth = 3.5; ctx.stroke();
+      const u = vnorm(foot), m = Math.min(0.6, Hs * 0.15, Math.hypot(foot[0], foot[2]) * 0.3);
+      path([O, P([u[0] * m, 0, u[2] * m]), P([u[0] * m, m, u[2] * m]), P([0, m, 0])]); ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.stroke();
+      seg(A, O, 3, [8, 6]);
+      const left = Math.min(A[0], O[0]) - 10, rightX = Math.max(A[0], Fo[0]);
+      label(`h = ${d.h}`, left, (A[1] + O[1]) / 2, "right");
+      label(baseTxt, (O[0] + Fo[0]) / 2, Math.max(O[1], Fo[1]) + fs * 0.9);
+      label(`s = ${f(o.s)}`, (A[0] + Fo[0]) / 2 + Math.max(14, (rightX - (A[0] + Fo[0]) / 2) * 0.5 + 14), (A[1] + Fo[1]) / 2, "left");
+    }
+    // Height of the base triangle (triangular pyramid).
+    if (step.over === "tri") {
+      const role = step.role, o = derived(shapes[role]), fp = footprint(shapes[role]).pts, P = p => scr(toW(role, p));
+      const a = P([fp[0][0], 0, fp[0][1]]), b = P([(fp[1][0] + fp[2][0]) / 2, 0, (fp[1][1] + fp[2][1]) / 2]);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.strokeStyle = rgba(COL.hl, 0.5); ctx.lineWidth = 5; ctx.stroke();
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      label(`t = ${f(o.t)}`, mx - (b[1] - a[1]) / l * fs * 2.2, my + (b[0] - a[0]) / l * fs * 2.2);
+    }
+  }
+
+  function animate() {
+    cancelAnimationFrame(raf);
+    const tick = () => {
+      lift += (liftGoal - lift) * 0.18;
+      if (Math.abs(liftGoal - lift) < 0.01) lift = liftGoal;
+      draw();
+      if (lift !== liftGoal) raf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  // ---------- controls ----------
+  const stepsEl = document.getElementById("steps");
+  function select(i, focus) {
+    sel = Math.max(0, Math.min(STEPS.length - 1, i));
+    stepsEl.querySelectorAll(".step").forEach((b, k) => b.setAttribute("aria-pressed", String(k === sel)));
+    const btn = stepsEl.querySelectorAll(".step")[sel];
+    if (focus) btn.focus();
+    btn.scrollIntoView({ block: "nearest" });
+    liftGoal = STEPS[sel].lift ? Math.max(1.5, (Hb + Ht) * 0.3) : 0;
+    animate();
+  }
+  function dotStyle(s) {
+    if (s.role) return `background:var(--c-${s.role})`;
+    return "background:linear-gradient(var(--c-top) 50%, var(--c-bot) 50%)";
+  }
+  function renderSteps() {
+    stepsEl.innerHTML = "";
+    STEPS.forEach((s, i) => {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button";
+      b.className = "step" + (s.total ? " total" : "") + (s.warn ? " warn" : "");
+      b.innerHTML = `<span class="st-t"><i style="${dotStyle(s)}"></i>${s.title}</span><span class="st-m">${s.math}</span>`;
+      b.addEventListener("click", () => select(i));
+      li.appendChild(b); stepsEl.appendChild(li);
+    });
+  }
+  stepsEl.addEventListener("keydown", ev => {
+    if (ev.key === "ArrowDown" || ev.key === "ArrowRight") { select(sel + 1, true); ev.preventDefault(); }
+    if (ev.key === "ArrowUp" || ev.key === "ArrowLeft") { select(sel - 1, true); ev.preventDefault(); }
+  });
+
+  // A newly picked shape gets a size that sits well on (or under) the other shape.
+  function resize(role) {
+    const me = shapes[role], other = shapes[role === "top" ? "bot" : "top"];
+    if (me.type === "sphere" || other.type === "sphere") return;
+    if (me.type === "prism" && other.type === "prism") { me.d.l = other.d.l; me.d.w = other.d.w; return; }
+    const fo = footprint(other);
+    const sized = k => { const d = { ...me.d }; if (me.type === "prism") { d.l = d.w = k; } else d[me.type === "sqpyr" || me.type === "tripyr" ? "b" : "r"] = k; return { type: me.type, d }; };
+    const ks = role === "top" ? [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    for (const k of ks) {
+      const c = sized(k);
+      if (role === "top" ? inside(footprint(c), fo) : inside(fo, footprint(c))) { me.d = c.d; return; }
+    }
+  }
+  function renderPick(role) {
+    const s = document.getElementById("sel-" + role), host = document.getElementById("dims-" + role), sh = shapes[role];
+    s.value = sh.type;
+    host.innerHTML = "";
+    TYPES[sh.type].dims.forEach(key => {
+      const w = document.createElement("div");
+      w.className = "dim";
+      w.innerHTML = `<span class="dk" title="${DIM_WORD[key]}">${key}</span><button type="button" aria-label="Smaller ${DIM_WORD[key]}">−</button><output aria-label="${DIM_WORD[key]}">${sh.d[key]}</output><button type="button" aria-label="Bigger ${DIM_WORD[key]}">+</button>`;
+      const [minus, plus] = w.querySelectorAll("button");
+      const change = dv => { const v = Math.max(1, Math.min(10, sh.d[key] + dv)); if (v === sh.d[key]) return; sh.d[key] = v; w.querySelector("output").textContent = v; rebuild(); };
+      minus.addEventListener("click", () => change(-1)); plus.addEventListener("click", () => change(1));
+      host.appendChild(w);
+    });
+  }
+  ["top", "bot"].forEach(role => {
+    const s = document.getElementById("sel-" + role);
+    Object.entries(TYPES).forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t.name; s.appendChild(o); });
+    s.addEventListener("change", () => { shapes[role] = { type: s.value, d: { ...TYPES[s.value].def } }; resize(role); renderPick(role); rebuild(); });
+    renderPick(role);
+  });
+  document.querySelectorAll(".master button").forEach(b => b.addEventListener("click", () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll(".master button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    sel = 0; rebuild();
+  }));
+
+  function rebuild() {
+    buildWorld();
+    STEPS = buildSteps();
+    renderSteps();
+    cv.setAttribute("aria-label", `${NAME("top")} on top of a ${NAME("bot").toLowerCase()}. Drag to turn it.`);
+    select(Math.min(sel, STEPS.length - 1));
+  }
+
+  let drag = null;
+  cv.addEventListener("pointerdown", ev => { drag = { x: ev.clientX, y: ev.clientY }; cv.setPointerCapture(ev.pointerId); cv.classList.add("drag"); });
+  cv.addEventListener("pointermove", ev => {
+    if (!drag) return;
+    yaw += (ev.clientX - drag.x) * 0.01;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch + (ev.clientY - drag.y) * 0.01));
+    drag = { x: ev.clientX, y: ev.clientY };
+    draw();
+  });
+  const end = () => { drag = null; cv.classList.remove("drag"); };
+  cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+  new ResizeObserver(draw).observe(cv);
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  rebuild();
+  if (document.fonts) document.fonts.ready.then(draw);
+})();
+</script>
+
+</body>
+</html>

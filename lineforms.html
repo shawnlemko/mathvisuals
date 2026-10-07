@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Forms of a Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+.panel { gap: 12px; }
+.card { padding: 12px 16px; }
+.c-pt { color: var(--pt); }
+.typein { display: flex; gap: 8px; margin-bottom: 4px; }
+.typein input { flex: 1 1 auto; min-width: 0; font-family: var(--font-num); font-size: 1.2rem; padding: 8px 12px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.typein input.bad { border-color: var(--warn); }
+.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-family: var(--font-display); font-size: 1.05rem; padding: 8px 16px; }
+.go:hover { background: var(--sheet); color: var(--pt); }
+.go:disabled { opacity: 0.45; cursor: default; }
+.err { color: var(--warn); font-weight: 700; margin: 2px 0 0; font-size: 0.9rem; }
+.form { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); align-items: center; gap: 4px 12px; padding: 8px 0; border-top: 1px dashed var(--grid-major); }
+.form:first-of-type { border-top: 0; }
+.form .name { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; line-height: 1.2; }
+.form .tmpl { display: block; font-family: var(--font-num); font-weight: 500; font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.form .tmpl b { font-weight: 700; }
+.form.target { background: var(--chip); border-radius: 8px; padding-inline: 8px; }
+.eq { gap: 8px; }
+.eq.big { font-size: 1.55rem; }
+.eq .none { font-family: var(--font-body); font-size: 1rem; color: var(--muted); }
+.frac.sm { font-size: 0.78em; vertical-align: middle; }
+.frac.sm > span:first-child { border-bottom-width: 2px; padding: 0 3px 2px; }
+.frac.sm > span:last-child { padding: 2px 3px 0; }
+.eq .x { font-style: italic; }
+.eq .o { margin: 0 0.28em; }
+.eq > .o { margin: 0; }
+.pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-weight: 700; }
+.pick select { font: inherit; font-weight: 700; font-size: 1rem; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.steps { list-style: none; margin: 10px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.steps li { padding: 6px 10px; border-left: 4px solid var(--grid-major); }
+.steps li.now { border-left-color: var(--pt); background: var(--chip); border-radius: 0 8px 8px 0; }
+.steps .say { margin: 0 0 2px; font-size: 0.95rem; }
+.steps .say b { font-family: var(--font-num); }
+.steps .eq { font-size: 1.35rem; }
+.steps .done { display: inline-block; margin-left: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--green); border: 2px solid currentColor; border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
+.stepbar { display: flex; gap: 10px; align-items: center; }
+.stepbar .go { font-size: 1.15rem; padding: 10px 22px; }
+.ymark { fill: var(--orange); stroke: var(--sheet); stroke-width: 3; }
+.pmark { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Forms of a Line</h1></div>
+    <p>Drag A or B, or type an equation. Pick two forms, then press Next step.</p>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="plane" role="img" aria-label="Coordinate plane with a line through points A and B"></svg>
+    </div>
+
+    <div class="panel">
+      <section class="card" aria-live="polite">
+        <form class="typein" id="typeForm" autocomplete="off">
+          <input id="typed" aria-label="Type an equation in any form" placeholder="Type any form, like y = 2/3x + 1" spellcheck="false">
+          <button type="submit" class="go">Graph it</button>
+        </form>
+        <p class="err" id="err" hidden></p>
+        <div class="form" id="f-sp">
+          <div class="name">Slope-point<span class="tmpl">y − <b class="c-pt">y₁</b> = <b class="c-green">m</b>(x − <b class="c-pt">x₁</b>)</span></div>
+          <div class="eq big" id="eqSP"></div>
+        </div>
+        <div class="form" id="f-si">
+          <div class="name">Slope-intercept<span class="tmpl">y = <b class="c-green">m</b>x + <b class="c-orange">b</b></span></div>
+          <div class="eq big" id="eqSI"></div>
+        </div>
+        <div class="form" id="f-g">
+          <div class="name">General<span class="tmpl">Ax + By + C = 0</span></div>
+          <div class="eq big" id="eqG"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="pick">
+          <label for="from">From</label>
+          <select id="from"><option value="sp">Slope-point</option><option value="si">Slope-intercept</option><option value="g">General</option></select>
+          <label for="to">to</label>
+          <select id="to"><option value="sp">Slope-point</option><option value="si">Slope-intercept</option><option value="g">General</option></select>
+        </div>
+        <ol class="steps" id="steps" aria-live="polite"></ol>
+        <div class="stepbar">
+          <button type="button" class="go" id="next">Next step</button>
+          <button type="button" id="again">Start over</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MathBoard: a coordinate-plane board shared by the concept visuals.
+   Usage:
+     const b = MathBoard.create(svgEl, { min: -10, max: 10 });
+     const A = b.point({ name: "A", x: -3, y: -2, onMove: render });
+     const ln = b.line();            // b.lineThrough(ln, A, B) extends it across the plane
+     const s  = b.segment("green");  // b.setSegment(s, p, q, { arrow: true })
+     const t  = b.label("green");    // t.set("rise = 4", x, y, "start") / t.hide()
+     const f  = b.fill("green");     // b.setPolygon(f, [p, q, r])
+   Points snap to integers and stay inside [min, max]. Helpers: MathBoard.fmt (true minus sign), MathBoard.gcd. */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const set = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  function create(svg, opts = {}) {
+    const min = opts.min ?? -10, max = opts.max ?? 10, unit = opts.unit ?? 30, pad = opts.pad ?? 30;
+    const size = (max - min) * unit + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    const sx = x => pad + (x - min) * unit;
+    const sy = y => pad + (max - y) * unit;
+    const clamp = v => Math.max(min, Math.min(max, v));
+
+    const defs = el("defs", {}, svg);
+    ["green", "orange"].forEach(c => {
+      const m = el("marker", { id: `mb-arr-${c}`, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: `mb-arrow ${c}` }, m);
+    });
+
+    // Layers keep drawing order fixed: grid, fills, lines, labels, points.
+    const layers = {};
+    ["grid", "fills", "lines", "labels", "points"].forEach(n => (layers[n] = el("g", {}, svg)));
+
+    const g = layers.grid;
+    const major = opts.majorEvery ?? 0, tickEvery = opts.tickEvery ?? 1; // grade 8: every line labeled, counting by 1
+    for (let i = min; i <= max; i++) {
+      const cls = i === 0 ? "mb-axis" : major && i % major === 0 ? "mb-major" : "mb-minor";
+      el("line", { x1: sx(i), y1: sy(min), x2: sx(i), y2: sy(max), class: cls }, g);
+      el("line", { x1: sx(min), y1: sy(i), x2: sx(max), y2: sy(i), class: cls }, g);
+    }
+    for (let i = min; i <= max; i++) {
+      if (i === 0 || i % tickEvery) continue;
+      el("text", { x: sx(i), y: sy(0) + 22, class: "mb-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, g).textContent = fmt(i);
+    }
+    el("text", { x: sx(max) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(max) + 16, class: "mb-tick" }, g).textContent = "y";
+
+    function toPlane(evt) {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: clamp(Math.round((p.x - pad) / unit + min)), y: clamp(Math.round(max - (p.y - pad) / unit)) };
+    }
+
+    const show = (e, on) => { e.style.display = on ? "" : "none"; };
+
+    const board = {
+      svg, min, max, sx, sy, clamp, toPlane, layers, show,
+      line(cls = "") { return el("line", { class: `mb-line ${cls}` }, layers.lines); },
+      segment(color) { return el("line", { class: `mb-seg ${color}` }, layers.lines); },
+      fill(color) { return el("path", { class: `mb-fill ${color}` }, layers.fills); },
+
+      // Draw `line` through plane points p and q, extended to the edges of the plane.
+      lineThrough(line, p, q) {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        if (dx === 0 && dy === 0) return show(line, false);
+        show(line, true);
+        if (dx === 0) return set(line, { x1: sx(p.x), y1: sy(min), x2: sx(p.x), y2: sy(max) });
+        const m = dy / dx, pts = [];
+        [min, max].forEach(x => { const y = p.y + m * (x - p.x); if (y >= min - 1e-9 && y <= max + 1e-9) pts.push([x, y]); });
+        if (m !== 0) [min, max].forEach(y => { const x = p.x + (y - p.y) / m; if (x > min && x < max) pts.push([x, y]); });
+        const a = pts[0], b = pts[pts.length - 1];
+        set(line, { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]) });
+      },
+
+      // Segment from p to q in plane units. `arrow` adds an arrowhead at q; `gap` stops short of q (px), e.g. to clear a point.
+      setSegment(seg, p, q, { arrow = false, gap = 0 } = {}) {
+        let x2 = sx(q.x), y2 = sy(q.y);
+        const L = Math.hypot(x2 - sx(p.x), y2 - sy(p.y));
+        if (gap && L > gap) { x2 -= (x2 - sx(p.x)) / L * gap; y2 -= (y2 - sy(p.y)) / L * gap; }
+        set(seg, { x1: sx(p.x), y1: sy(p.y), x2, y2 });
+        const color = seg.classList.contains("green") ? "green" : "orange";
+        arrow ? seg.setAttribute("marker-end", `url(#mb-arr-${color})`) : seg.removeAttribute("marker-end");
+      },
+
+      setPolygon(path, pts) {
+        path.setAttribute("d", pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z");
+      },
+
+      // Text with a backing chip so grid lines never cut through it. x, y are in px.
+      label(color = "") {
+        const bg = el("rect", { class: "mb-lbl-bg", rx: 5 }, layers.labels);
+        const t = el("text", { class: `mb-lbl ${color}` }, layers.labels);
+        return {
+          set(text, x, y, anchor = "middle") {
+            t.textContent = text; set(t, { x, y, "text-anchor": anchor });
+            show(t, true); show(bg, true);
+            const b = t.getBBox();
+            set(bg, { x: b.x - 5, y: b.y - 2, width: b.width + 10, height: b.height + 4 });
+          },
+          hide() { show(t, false); show(bg, false); }
+        };
+      },
+
+      /* Draggable, keyboard-movable point. onMove(point) runs after every move.
+         `allow(x, y)` can veto a position (return false). */
+      point({ name, x, y, onMove, allow, showCoords = true }) {
+        const h = el("g", { class: "mb-handle", tabindex: 0, role: "slider", "aria-label": `Point ${name}. Use arrow keys to move.` }, layers.points);
+        el("circle", { class: "hit", r: 26 }, h);
+        const ring = el("circle", { class: "ring", r: 18 }, h);
+        el("circle", { class: "dot", r: 14 }, h);
+        el("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, h).textContent = name;
+        const coord = el("text", { class: "mb-coord" }, h);
+        const P = {
+          name, x, y, el: h, showCoords,
+          moveTo(nx, ny, silent) {
+            nx = clamp(nx); ny = clamp(ny);
+            if (nx === P.x && ny === P.y) return;
+            if (allow && !allow(nx, ny)) return;
+            P.x = nx; P.y = ny; P.draw();
+            if (!silent && onMove) onMove(P);
+          },
+          // Place the coordinate tag; `away` is a point the tag should face away from.
+          draw(away) {
+            h.setAttribute("transform", `translate(${sx(P.x)},${sy(P.y)})`);
+            h.setAttribute("aria-valuetext", `(${P.x}, ${P.y})`);
+            coord.textContent = `(${fmt(P.x)}, ${fmt(P.y)})`;
+            let dx = away && P.x < away.x ? -1 : 1, dy = away && P.y < away.y ? -1 : 1;
+            if (P.x >= max - 2) dx = -1; if (P.x <= min + 2) dx = 1;
+            if (P.y >= max - 1) dy = -1; if (P.y <= min + 1) dy = 1;
+            set(coord, { x: dx * 20, y: dy > 0 ? -18 : 34, "text-anchor": dx > 0 ? "start" : "end" });
+            show(coord, P.showCoords);
+          }
+        };
+        h.addEventListener("pointerdown", e => { e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); ring.setAttribute("r", 24); h.focus(); });
+        h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = toPlane(e); P.moveTo(p.x, p.y); } });
+        const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); ring.setAttribute("r", 18); };
+        h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+        h.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+          if (!d) return; e.preventDefault(); P.moveTo(P.x + d[0], P.y + d[1]);
+        });
+        P.draw();
+        return P;
+      }
+    };
+    return board;
+  }
+
+  window.MathBoard = { create, fmt, gcd };
+})();
+</script>
+<script>
+(() => {
+  const { fmt, gcd } = MathBoard;
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const lcm = (a, b) => a / gcd(a, b) * b;
+
+  /* ---------- Fractions ---------- */
+  const R = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
+  const add = (a, b) => R(a.n * b.d + b.n * a.d, a.d * b.d);
+  const sub = (a, b) => R(a.n * b.d - b.n * a.d, a.d * b.d);
+  const mul = (a, b) => R(a.n * b.n, a.d * b.d);
+  const div = (a, b) => R(a.n * b.d, a.d * b.n);
+  const neg = a => R(-a.n, a.d);
+  const zero = a => a.n === 0;
+  const val = a => a.n / a.d;
+  const txt = a => fmt(a.n) + (a.d === 1 ? "" : "/" + a.d); // for sentences: 2/3, −4
+
+  /* ---------- Writing equations ---------- */
+  const mag = (r, cls = "") => {
+    const body = r.d === 1 ? String(Math.abs(r.n)) : `<span class="frac sm"><span>${Math.abs(r.n)}</span><span>${r.d}</span></span>`;
+    return cls ? `<span class="${cls}">${body}</span>` : body;
+  };
+  const signed = (r, cls = "") => `<span class="${cls}">${r.n < 0 ? "−" : ""}${mag(r)}</span>`;
+  const raw = (n, d) => `<span class="frac sm"><span>${fmt(n)}</span><span>${fmt(d)}</span></span>`;
+  const V = v => `<span class="x">${v}</span>`;
+  const op = s => `<span class="o">${s}</span>`;
+  // terms: [coef (fraction), variable ("x", "y" or ""), class]; zero terms drop out.
+  function side(terms) {
+    let out = "";
+    terms.filter(t => !zero(t[0])).forEach(([c, v, cls = ""], i) => {
+      const one = v && c.n * c.n === 1 && c.d === 1;
+      const body = (one ? "" : mag(c, cls)) + (v ? V(v) : "");
+      out += i ? `${op(c.n < 0 ? "−" : "+")}${body}` : `${c.n < 0 ? "−" : ""}${body}`;
+    });
+    return out || "0";
+  }
+  const T = (c, v = "", cls = "") => [typeof c === "number" ? R(c) : c, v, cls];
+  const eqn = (l, r) => `<span>${l}</span>${op("=")}<span>${r}</span>`;
+  const signNum = (r, cls) => `${op(r.n < 0 ? "+" : "−")}${mag(r, cls)}`; // writes "− y₁" with y₁'s value
+  const spLeft = P => `${V("y")}${signNum(P.y, "c-pt")}`;
+  const spRight = P => `(${V("x")}${signNum(P.x, "c-pt")})`;
+  const spF = (m, P) => eqn(spLeft(P), signed(m, "c-green") + spRight(P));
+  const siF = (m, b) => eqn(V("y"), side([T(m, "x", "c-green"), T(b, "", "c-orange")]));
+  const gF = (A, B, C) => eqn(side([T(A, "x"), T(B, "y"), T(C)]), "0");
+
+  /* ---------- Reading a typed equation ---------- */
+  function parse(s) {
+    s = s.toLowerCase().replace(/[−–—]/g, "-").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/\s+/g, "");
+    const sides = s.split("=");
+    if (sides.length !== 2 || !sides[0] || !sides[1]) throw "Use one = sign.";
+    const lin = side => {
+      const toks = side.match(/\d+\.?\d*|\.\d+|[xy()+\-*/]/g) || [];
+      if (toks.join("") !== side) throw "Use only numbers, x, y, + − × ÷ and brackets.";
+      let i = 0;
+      const peek = () => toks[i];
+      const K = r => ({ x: R(0), y: R(0), c: r });
+      const isK = l => zero(l.x) && zero(l.y);
+      const times = (a, b) => {
+        if (isK(a)) return { x: mul(a.c, b.x), y: mul(a.c, b.y), c: mul(a.c, b.c) };
+        if (isK(b)) return times(b, a);
+        throw "That isn't a straight line.";
+      };
+      function factor() {
+        const t = toks[i++];
+        if (t === "-") { const f = factor(); return times(K(R(-1)), f); }
+        if (t === "+") return factor();
+        if (t === "x") return { x: R(1), y: R(0), c: R(0) };
+        if (t === "y") return { x: R(0), y: R(1), c: R(0) };
+        if (t === "(") { const e = expr(); if (toks[i++] !== ")") throw "Check your brackets."; return e; }
+        if (t && /[\d.]/.test(t)) { const dec = (t.split(".")[1] || "").length; return K(R(Math.round(parseFloat(t) * 10 ** dec), 10 ** dec)); }
+        throw "Check the equation.";
+      }
+      function term() {
+        let v = factor();
+        for (;;) {
+          const t = peek();
+          if (t === "*") { i++; v = times(v, factor()); }
+          else if (t === "/") { i++; const d = factor(); if (!isK(d) || zero(d.c)) throw "You can only divide by a number that isn't 0."; v = times(v, K(div(R(1), d.c))); }
+          else if (t && /[\dxy(.]/.test(t)) v = times(v, factor());
+          else return v;
+        }
+      }
+      function expr() {
+        let v = term();
+        while (peek() === "+" || peek() === "-") {
+          const s = toks[i++] === "-" ? -1 : 1, w = term();
+          v = { x: add(v.x, mul(R(s), w.x)), y: add(v.y, mul(R(s), w.y)), c: add(v.c, mul(R(s), w.c)) };
+        }
+        return v;
+      }
+      const v = expr();
+      if (i !== toks.length) throw "Check the equation.";
+      return v;
+    };
+    const L = lin(sides[0]), Rt = lin(sides[1]);
+    return general(sub(L.x, Rt.x), sub(L.y, Rt.y), sub(L.c, Rt.c));
+  }
+
+  // Integer A, B, C with no common factor, A positive (or A = 0 and B positive).
+  function general(a, b, c) {
+    if (zero(a) && zero(b)) throw "That equation needs an x or a y.";
+    const L = lcm(lcm(a.d, b.d), c.d);
+    let A = a.n * (L / a.d), B = b.n * (L / b.d), C = c.n * (L / c.d);
+    const g = gcd(gcd(A, B), C) || 1;
+    A /= g; B /= g; C /= g;
+    if (A < 0 || (A === 0 && B < 0)) { A = -A; B = -B; C = -C; }
+    return { A: A || 0, B: B || 0, C: C || 0 };
+  }
+
+  /* ---------- Board ---------- */
+  const b = MathBoard.create($("plane"), { min: -10, max: 10 });
+  const tri = b.fill("green");
+  const ln = b.line();
+  const segRun = b.segment("green"), segRise = b.segment("green");
+  const lblRun = b.label("green"), lblRise = b.label("green");
+  // y-intercept: an orange dot marked b (its value is in the forms, which keeps the board uncluttered)
+  const yDot = document.createElementNS(NS, "g");
+  yDot.innerHTML = `<circle r="13" class="ymark"></circle><text class="mb-name" text-anchor="middle" dy="6" font-style="italic">b</text>`;
+  b.layers.labels.appendChild(yDot);
+  const pDot = document.createElementNS(NS, "circle");
+  pDot.setAttribute("r", 9); pDot.setAttribute("class", "pmark");
+  b.layers.labels.appendChild(pDot);
+
+  let A, B;
+  let typedLine = null; // set when the line came from a typed equation with no two whole-number points to drag
+  const differs = other => (x, y) => !(x === other().x && y === other().y);
+  const moved = () => { typedLine = null; $("typed").value = ""; $("err").hidden = true; render(); };
+  A = b.point({ name: "A", x: 2, y: 2, onMove: moved, allow: differs(() => B) });
+  B = b.point({ name: "B", x: 8, y: 6, onMove: moved, allow: differs(() => A) });
+
+  let line; // { A, B, C, vertical, m, b, P }
+
+  function lineFromPoints() {
+    const rise = B.y - A.y, run = B.x - A.x;
+    return general(R(rise), R(-run), R(run * A.y - rise * A.x));
+  }
+
+  function describe(g, P) {
+    const L = { ...g, vertical: g.B === 0 };
+    if (!L.vertical) {
+      L.m = R(-g.A, g.B); L.b = R(-g.C, g.B);
+      L.P = P || { x: R(0), y: L.b };
+    }
+    return L;
+  }
+
+  function render() {
+    const handles = !typedLine;
+    b.show(A.el, handles); b.show(B.el, handles);
+    line = handles ? describe(lineFromPoints(), { x: R(A.x), y: R(A.y) }) : describe(typedLine.g, typedLine.P);
+
+    // Line on the plane
+    if (handles) { A.draw(B); B.draw(A); b.lineThrough(ln, A, B); }
+    else if (line.vertical) { const k = -line.C / line.A; b.lineThrough(ln, { x: k, y: 0 }, { x: k, y: 1 }); }
+    else b.lineThrough(ln, { x: 0, y: val(line.b) }, { x: 1, y: val(add(line.b, line.m)) });
+
+    // Rise and run between A and B, all in the slope's green.
+    const showTri = handles && !line.vertical;
+    const rise = B.y - A.y, run = B.x - A.x, C = { x: B.x, y: A.y };
+    if (showTri) {
+      b.setSegment(segRun, A, C, { arrow: true, gap: rise === 0 ? 16 : 0 });
+      b.setSegment(segRise, C, B, { arrow: true, gap: 16 });
+      b.setPolygon(tri, [A, C, B]);
+    }
+    b.show(segRun, showTri && run !== 0); b.show(segRise, showTri && rise !== 0); b.show(tri, showTri && rise !== 0);
+    if (showTri && run !== 0) lblRun.set("run = " + fmt(run), (b.sx(A.x) + b.sx(C.x)) / 2, b.sy(A.y) + (rise > 0 ? 32 : -14)); else lblRun.hide();
+    if (showTri && rise !== 0) {
+      const right = run >= 0 ? C.x <= b.max - 4 : C.x < b.min + 4;
+      lblRise.set("rise = " + fmt(rise), b.sx(C.x) + (right ? 12 : -12), (b.sy(C.y) + b.sy(B.y)) / 2 + 8, right ? "start" : "end");
+    } else lblRise.hide();
+
+    // y-intercept in orange
+    const onGrid = !line.vertical && Math.abs(val(line.b)) <= 10;
+    b.show(yDot, onGrid);
+    if (onGrid) {
+      yDot.setAttribute("transform", `translate(${b.sx(0)},${b.sy(val(line.b))})`);
+    }
+    // Keep the coordinate tags of A and B off the b dot.
+    if (handles && onGrid) [[A, B], [B, A]].forEach(([P, Q]) => {
+      const tag = P.el.querySelector(".mb-coord"), hit = () => {
+        const r = tag.getBoundingClientRect(), d = yDot.getBoundingClientRect();
+        return r.width && !(r.right < d.left || r.left > d.right || r.bottom < d.top || r.top > d.bottom);
+      };
+      const tries = [{ x: Q.x, y: 2 * P.y - Q.y }, { x: 2 * P.x - Q.x, y: Q.y }, { x: 2 * P.x - Q.x, y: 2 * P.y - Q.y }];
+      for (const away of tries) { if (!hit()) break; P.draw(away); }
+    });
+    // The point used in slope-point form, when it isn't a draggable point
+    const showP = !handles && !line.vertical && !zero(line.P.x);
+    b.show(pDot, showP);
+    if (showP) { pDot.setAttribute("cx", b.sx(val(line.P.x))); pDot.setAttribute("cy", b.sy(val(line.P.y))); }
+
+    // The three forms
+    const none = `<span class="none">None: a vertical line has no slope.</span>`;
+    $("eqSP").innerHTML = line.vertical ? none : spF(line.m, line.P);
+    $("eqSI").innerHTML = line.vertical ? none : siF(line.m, line.b);
+    $("eqG").innerHTML = gF(line.A, line.B, line.C);
+    resetSteps();
+  }
+
+  /* ---------- Steps ---------- */
+  const NAMES = { sp: "Slope-point form", si: "Slope-intercept form", g: "General form" };
+  const LONG = { sp: "slope-point form", si: "slope-intercept form", g: "general form" };
+
+  // Moves everything to one side and tidies into Ax + By + C = 0.
+  // left = y·ly + lc, right = x·rx + rc, all whole numbers.
+  function toGeneral(steps, ly, lc, rx, rc) {
+    const rightEmpty = rx === 0 && rc === 0;
+    let gx, gy, gc;
+    if (rx > 0) {
+      steps.push({ say: "Move everything on the left to the right side, so the left side is 0. A term changes its sign when it crosses the = sign.",
+        eq: eqn("0", side([T(rx, "x"), T(rc), T(-ly, "y"), T(-lc)])) });
+      gx = rx; gy = -ly; gc = rc - lc;
+    } else {
+      if (!rightEmpty) steps.push({ say: "Move everything on the right to the left side, so the right side is 0. A term changes its sign when it crosses the = sign.",
+        eq: eqn(side([T(ly, "y"), T(lc), T(-rx, "x"), T(-rc)]), "0") });
+      gx = -rx; gy = ly; gc = lc - rc;
+    }
+    const tidy = gF(gx, gy, gc), plain = h => h.replace(/<[^>]*>/g, "");
+    const twoNumbers = rx > 0 ? rc && lc : lc && rc;
+    if (plain(tidy) !== plain(steps[steps.length - 1].eq))
+      steps.push({ say: `${twoNumbers ? "Combine the numbers, then write" : "Write"} it in order: x term, y term, number, then = 0.`, eq: tidy });
+    const g = gcd(gcd(gx, gy), gc);
+    if (g > 1) steps.push({ say: `Every number divides by ${g}, so divide every term by <b>${g}</b>.`, eq: gF(gx / g, gy / g, gc / g) });
+  }
+
+  function findPoint(steps, P, how) {
+    if (zero(P.x)) steps.push({ say: "We need a point. The y-intercept is a point on the line.", eq: `(${V("x")}₁, ${V("y")}₁) = (<span class="c-pt">0</span>, ${signed(P.y, "c-pt")})` });
+    else steps.push(how());
+  }
+
+  function buildSteps(from, to) {
+    const L = line, s = [];
+    if (L.vertical) {
+      const k = R(-L.C, L.A);
+      s.push({ say: `This line is straight up and down (vertical). Its run is 0, so its slope is undefined. It has no slope-point or slope-intercept form, only general form. Its equation is x = ${txt(k)}.`, eq: gF(L.A, L.B, L.C) });
+      return s;
+    }
+    const { m, b: yi, P } = L;
+    const start = { sp: spF(m, P), si: siF(m, yi), g: gF(L.A, L.B, L.C) }[from];
+    s.push({ say: `Start with ${LONG[from]}.`, eq: start });
+
+    if (from === "sp" && to === "si") {
+      const mx1 = mul(m, P.x);
+      if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
+      else if (zero(P.x)) s.push({ say: `x − 0 is just x, so the right side is <b>${txt(m)}</b>x.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green")])) });
+      else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green"), T(neg(mx1))])) });
+      if (!zero(P.y)) {
+        const y1 = P.y;
+        s.push({ say: y1.n > 0 ? `Add <b>${txt(y1)}</b> to both sides, so y is by itself.` : `Subtract <b>${txt(neg(y1))}</b> from both sides, so y is by itself.`,
+          eq: eqn(V("y"), side([T(m, "x", "c-green"), T(neg(mx1)), T(y1)])) });
+        if (!zero(mx1)) s.push({ say: mx1.d > 1 || y1.d > 1 ? "Combine the numbers. Use a common denominator." : "Combine the numbers.", eq: siF(m, yi) });
+      }
+    }
+
+    if (from === "si" && to === "sp") {
+      s.push({ say: "The slope is the number in front of x.", eq: `${V("m")}${op("=")}${signed(m, "c-green")}` });
+      findPoint(s, P, () => ({ say: `We need a point. Put x = ${txt(P.x)} into the equation and work out y.`,
+        eq: `${V("y")}${op("=")}${signed(m)}(${fmt(P.x.n)})${zero(yi) ? "" : op(yi.n < 0 ? "−" : "+") + mag(yi)}${op("=")}${signed(P.y, "c-pt")}` }));
+      s.push({ say: "Put m and the point into y − y₁ = m(x − x₁).", eq: spF(m, P) });
+    }
+
+    if (from === "g" && (to === "si" || to === "sp")) {
+      const { A, B, C } = L;
+      if (to === "si") {
+        if (A !== 0 || C !== 0) s.push({ say: `Move the ${A && C ? "x term and the number" : A ? "x term" : "number"} to the right side, so the y term is alone. ${A && C ? "They change" : "It changes"} sign when crossing the =.`,
+          eq: eqn(side([T(B, "y")]), side([T(-A, "x"), T(-C)])) });
+        if (B !== 1) {
+          const parts = [];
+          if (A) parts.push(raw(-A, B) + V("x"));
+          if (C) parts.push(raw(-C, B));
+          s.push({ say: `Divide every term by <b>${fmt(B)}</b>.`, eq: eqn(V("y"), parts.join(op("+")) || "0") });
+          s.push({ say: "Simplify the fractions.", eq: siF(m, yi) });
+        }
+      } else {
+        s.push({ say: "In general form, the slope is m = −A ÷ B.", eq: `${V("m")}${op("=")}${raw(-A, B)}${op("=")}${signed(m, "c-green")}` });
+        findPoint(s, P, () => ({ say: `We need a point. Put x = ${txt(P.x)} into the equation and solve for y.`,
+          eq: `${(A ? fmt(A) + `(${fmt(P.x.n)})` : "") + (A ? op(B < 0 ? "−" : "+") : B < 0 ? "−" : "") + (Math.abs(B) === 1 ? "" : Math.abs(B)) + V("y")
+            + (C ? op(C < 0 ? "−" : "+") + Math.abs(C) : "")}${op("=")}0<span>,</span>&nbsp;so ${V("y")}${op("=")}${signed(P.y, "c-pt")}` }));
+        s.push({ say: "Put m and the point into y − y₁ = m(x − x₁).", eq: spF(m, P) });
+      }
+    }
+
+    if (from === "sp" && to === "g") {
+      const whole = P.x.d === 1 && P.y.d === 1;
+      if (whole && m.d > 1) {
+        const q = m.d, p = m.n;
+        s.push({ say: `Multiply both sides by <b>${q}</b> to clear the fraction.`, eq: eqn(`${q}(${spLeft(P)})`, `${fmt(p)}${spRight(P)}`) });
+        s.push({ say: "Multiply into the brackets on both sides.", eq: eqn(side([T(q, "y"), T(-q * P.y.n)]), side([T(p, "x"), T(-p * P.x.n)])) });
+        toGeneral(s, q, -q * P.y.n, p, -p * P.x.n);
+      } else {
+        const mx1 = mul(m, P.x);
+        if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
+        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(side([T(1, "y"), T(neg(P.y))]), side([T(m, "x"), T(neg(mx1))])) });
+        const k = lcm(lcm(m.d, P.y.d), mx1.d);
+        const w = r => mul(r, R(k)).n;
+        if (k > 1) s.push({ say: `Multiply every term by <b>${k}</b> to clear the fractions.`, eq: eqn(side([T(k, "y"), T(-w(P.y))]), side([T(w(m), "x"), T(-w(mx1))])) });
+        toGeneral(s, k, -w(P.y), w(m), -w(mx1));
+      }
+    }
+
+    if (from === "si" && to === "g") {
+      const k = lcm(m.d, yi.d), w = r => mul(r, R(k)).n;
+      if (k > 1) s.push({ say: `Multiply every term by <b>${k}</b> to clear the fractions.`, eq: eqn(side([T(k, "y")]), side([T(w(m), "x"), T(w(yi))])) });
+      toGeneral(s, k, 0, w(m), w(yi));
+    }
+    return s;
+  }
+
+  let steps = [], shown = 0;
+  function resetSteps() {
+    const from = $("from").value, to = $("to").value;
+    steps = buildSteps(from, to); shown = 1;
+    ["sp", "si", "g"].forEach(f => $("f-" + f).classList.toggle("target", f === to));
+    drawSteps();
+  }
+  function drawSteps() {
+    const to = $("to").value, last = shown === steps.length;
+    $("steps").innerHTML = steps.slice(0, shown).map((st, i) =>
+      `<li class="${i === shown - 1 ? "now" : ""}"><p class="say">${st.say}${last && i === shown - 1 && !line.vertical ? `<span class="done">${NAMES[to]} ✓</span>` : ""}</p><div class="eq">${st.eq}</div></li>`).join("");
+    $("next").disabled = last;
+    $("next").textContent = last ? "Done" : "Next step";
+    const box = $("steps").lastElementChild;
+    if (box) box.scrollIntoView({ block: "nearest" });
+  }
+  $("next").addEventListener("click", () => { if (shown < steps.length) { shown++; drawSteps(); } });
+  $("again").addEventListener("click", resetSteps);
+  $("from").addEventListener("change", () => {
+    if ($("to").value === $("from").value) $("to").value = $("from").value === "g" ? "si" : "g";
+    resetSteps();
+  });
+  $("to").addEventListener("change", () => {
+    if ($("to").value === $("from").value) $("from").value = $("to").value === "sp" ? "si" : "sp";
+    resetSteps();
+  });
+
+  /* ---------- Typing an equation ---------- */
+  $("typeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const s = $("typed").value.trim();
+    if (!s) return;
+    let g;
+    try { g = parse(s); }
+    catch (msg) { $("err").textContent = typeof msg === "string" ? msg : "Check the equation."; $("err").hidden = false; $("typed").classList.add("bad"); return; }
+    $("err").hidden = true; $("typed").classList.remove("bad");
+    // Whole-number points on the line inside the grid, nearest the middle first.
+    const pts = [];
+    for (let x = -10; x <= 10; x++) for (let y = -10; y <= 10; y++) if (g.A * x + g.B * y + g.C === 0) pts.push({ x, y });
+    pts.sort((p, q) => Math.abs(p.x) + Math.abs(p.y) - Math.abs(q.x) - Math.abs(q.y) || q.x - p.x);
+    if (pts.length >= 2) {
+      const a = pts.find(p => p.x > 0 && p.y > 0) || pts.find(p => p.x !== 0) || pts[0]; // off the y-axis, so slope-point form isn't x − 0
+      // B: the next whole-number point along the line, to the right when possible
+      const others = pts.filter(p => p !== a).sort((p, q) => Math.hypot(p.x - a.x, p.y - a.y) - Math.hypot(q.x - a.x, q.y - a.y) || q.x - p.x);
+      const bb = others.find(p => p.x > a.x || (p.x === a.x && p.y > a.y)) || others[0];
+      typedLine = null;
+      A.x = a.x; A.y = a.y; B.x = bb.x; B.y = bb.y;
+      render();
+    } else {
+      typedLine = { g, P: g.B !== 0 && pts.length ? { x: R(pts[0].x), y: R(pts[0].y) } : null };
+      render();
+    }
+  });
+  $("typed").addEventListener("input", () => { $("typed").classList.remove("bad"); $("err").hidden = true; });
+
+  $("from").value = "sp"; $("to").value = "si";
+  render();
+})();
+</script>
+
+</body>
+</html>

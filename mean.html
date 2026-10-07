@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Mean as a Center of Gravity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+.main { grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+h1 .m { color: var(--pt); }
+.board svg { cursor: crosshair; }
+.stat { display: flex; flex-direction: column; gap: 2px; }
+.stat .big { font-family: var(--font-num); font-weight: 700; font-size: 3rem; line-height: 1.1; }
+.stat.mean .big, .stat.mean .label { color: var(--pt); }
+.stat.median .big, .stat.median .label { color: var(--orange); }
+.count { margin: 0 0 8px; font-family: var(--font-num); font-size: 1.4rem; }
+.count b { font-size: 1.8rem; }
+.hint { margin: 0; font-size: 1rem; }
+#clear { font-size: 1.1rem; padding: 10px 16px; align-self: flex-start; }
+/* Board drawing */
+.beam { fill: var(--muted); }
+.tick { stroke: var(--sheet); stroke-width: 2; }
+.num { font-family: var(--font-num); font-weight: 700; font-size: 28px; fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.dot { fill: var(--green); stroke: var(--sheet); stroke-width: 3; cursor: grab; }
+.dot.drag { cursor: grabbing; }
+.dot.gone { fill: var(--warn); opacity: 0.55; }
+.ghost { fill: none; stroke: var(--green); stroke-width: 3; stroke-dasharray: 6 5; }
+.fulcrum { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; stroke-linejoin: round; }
+.ground { stroke: var(--grid-major); stroke-width: 4; stroke-linecap: round; }
+.mean-lbl { font-family: var(--font-display); font-weight: 800; font-size: 34px; fill: var(--pt); text-anchor: middle; }
+.med-line { stroke: var(--orange); stroke-width: 4; stroke-dasharray: 10 7; }
+.med-lbl { font-family: var(--font-display); font-weight: 800; font-size: 28px; fill: var(--orange); text-anchor: middle; }
+.lbl-bg { fill: var(--sheet); stroke: currentColor; stroke-width: 3; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>The <span class="m">Mean</span> as a Center of Gravity</h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="0 0 1200 600" role="img" aria-label="Seesaw number line from 0 to 20 with dots resting on it and a balance point underneath"></svg>
+    </div>
+    <div class="panel">
+      <div class="card stat mean"><p class="label">Mean (balance point)</p><span class="big" id="meanOut" aria-live="polite">–</span></div>
+      <div class="card stat median"><p class="label">Median (middle dot)</p><span class="big" id="medOut" aria-live="polite">–</span></div>
+      <div class="card"><p class="count"><b id="countOut">0</b> dots</p>
+        <p class="hint">Click the line to drop a dot. Drag a dot off the line to take it away.</p></div>
+      <button type="button" id="clear">Clear all dots</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  const MAX = 20, X0 = 60, X1 = 1140, UNIT = (X1 - X0) / MAX;
+  const BEAM_Y = 400, BEAM_H = 16, R = 24, TRI_H = 90, TRI_W = 104;
+  const GROUND_Y = BEAM_Y + BEAM_H / 2 + TRI_H;
+  const MAX_DOTS = 60;
+  const px = v => X0 + v * UNIT;
+
+  // Start with a small, balanced set so the first drag shows the idea right away.
+  let dots = [3, 4, 5, 5, 8];
+  let drag = null;           // { value: whole number or null (taking it away), x, y }
+  let fCur = 5, angle = 0;   // fulcrum position (in number-line units) and beam tilt (degrees)
+
+  // Layers: ground and fulcrum stay level; the beam group tilts around the fulcrum tip.
+  el("line", { class: "ground", x1: 20, y1: GROUND_Y, x2: 1180, y2: GROUND_Y }, svg);
+  const fulcrum = el("polygon", { class: "fulcrum" }, svg);
+  const meanLbl = el("text", { class: "mean-lbl", y: GROUND_Y + 54 }, svg);
+  const beamG = el("g", {}, svg);
+  el("rect", { class: "beam", x: X0 - 24, y: BEAM_Y - BEAM_H / 2, width: X1 - X0 + 48, height: BEAM_H, rx: 7 }, beamG);
+  for (let v = 0; v <= MAX; v++) {
+    el("line", { class: "tick", x1: px(v), y1: BEAM_Y - BEAM_H / 2, x2: px(v), y2: BEAM_Y + BEAM_H / 2 }, beamG);
+    el("text", { class: "num", x: px(v), y: BEAM_Y + 46 }, beamG).textContent = v;
+  }
+  const medG = el("g", { style: "color: var(--orange)" }, beamG);
+  const medLine = el("line", { class: "med-line", y1: 62, y2: BEAM_Y - BEAM_H / 2 }, medG);
+  const medBg = el("rect", { class: "lbl-bg", y: 14, height: 46, rx: 10 }, medG);
+  const medLbl = el("text", { class: "med-lbl", y: 47 }, medG);
+  const dotsG = el("g", {}, beamG);
+  const ghost = el("circle", { class: "ghost", r: R, visibility: "hidden" }, beamG);
+  const dragDot = el("circle", { class: "dot drag", r: R + 2, visibility: "hidden" }, svg);
+
+  const live = () => dots.concat(drag && drag.value !== null ? [drag.value] : []);
+  const meanOf = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const medianOf = a => {
+    const s = a.slice().sort((p, q) => p - q), n = s.length;
+    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  };
+  const exact = v => Math.abs(v * 10 - Math.round(v * 10)) < 1e-9;
+  const fmt = v => (Math.round(v * 10) / 10).toString();
+  const meanText = v => (exact(v) ? "= " : "≈ ") + fmt(v);
+
+  function drawDots() {
+    dotsG.replaceChildren();
+    const stacks = new Map();
+    dots.forEach((v, i) => { if (!stacks.has(v)) stacks.set(v, []); stacks.get(v).push(i); });
+    const tallest = Math.max(1, ...[...stacks.values()].map(s => s.length));
+    const step = Math.min(2 * R + 2, (BEAM_Y - BEAM_H / 2 - R - 80) / Math.max(1, tallest - 1));
+    for (const [v, idx] of stacks) {
+      idx.forEach((i, k) => {
+        const c = el("circle", { class: "dot", cx: px(v), cy: BEAM_Y - BEAM_H / 2 - R - 1 - k * step, r: R }, dotsG);
+        c.dataset.i = i;
+      });
+    }
+  }
+
+  function drawStats() {
+    const a = live();
+    document.getElementById("countOut").textContent = a.length;
+    if (!a.length) {
+      document.getElementById("meanOut").textContent = "–";
+      document.getElementById("medOut").textContent = "–";
+      medG.setAttribute("visibility", "hidden");
+      return;
+    }
+    const m = meanOf(a), md = medianOf(a);
+    document.getElementById("meanOut").textContent = fmt(m);
+    document.getElementById("medOut").textContent = fmt(md);
+    medG.setAttribute("visibility", "visible");
+    medLine.setAttribute("x1", px(md)); medLine.setAttribute("x2", px(md));
+    medLbl.setAttribute("x", px(md));
+    medLbl.textContent = "Median = " + fmt(md);
+    const w = medLbl.getComputedTextLength() + 28;
+    const cx = Math.min(Math.max(px(md), w / 2 + 4), 1196 - w / 2);
+    medLbl.setAttribute("x", cx);
+    medBg.setAttribute("x", cx - w / 2); medBg.setAttribute("width", w);
+  }
+
+  function update() { drawDots(); drawStats(); }
+
+  // Animation: the fulcrum slides toward the mean; while it is off balance the beam tips toward the heavy side.
+  let last = performance.now();
+  function frame(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    const a = live();
+    if (a.length) {
+      const target = meanOf(a);
+      fCur += (target - fCur) * Math.min(1, dt * 5);
+      if (Math.abs(target - fCur) < 0.001) fCur = target;
+      const torque = a.reduce((s, v) => s + (v - fCur), 0);
+      const want = Math.max(-12, Math.min(12, torque * 1.6));
+      angle += (want - angle) * Math.min(1, dt * 10);
+    } else {
+      angle += (0 - angle) * Math.min(1, dt * 10);
+    }
+    const fx = px(fCur), tipY = BEAM_Y + BEAM_H / 2;
+    beamG.setAttribute("transform", `rotate(${angle.toFixed(3)} ${fx} ${tipY})`);
+    fulcrum.setAttribute("points", `${fx},${tipY} ${fx - TRI_W / 2},${GROUND_Y} ${fx + TRI_W / 2},${GROUND_Y}`);
+    if (a.length) {
+      meanLbl.setAttribute("visibility", "visible");
+      const m = meanOf(a);
+      meanLbl.textContent = "Mean " + meanText(m);
+      meanLbl.setAttribute("x", Math.min(Math.max(fx, 120), 1080));
+    } else meanLbl.setAttribute("visibility", "hidden");
+    requestAnimationFrame(frame);
+  }
+
+  // Pointer handling
+  const toPt = (e, node) => {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(node.getScreenCTM().inverse());
+  };
+  function track(e) {
+    const root = toPt(e, svg), local = toPt(e, beamG);
+    const v = Math.round((local.x - X0) / UNIT);
+    const off = root.y > BEAM_Y + 80 || root.y < 0 || local.x < X0 - UNIT * 0.8 || local.x > X1 + UNIT * 0.8;
+    drag.value = off ? null : Math.max(0, Math.min(MAX, v));
+    dragDot.setAttribute("cx", root.x); dragDot.setAttribute("cy", root.y);
+    dragDot.classList.toggle("gone", off);
+    if (off) ghost.setAttribute("visibility", "hidden");
+    else {
+      const stack = dots.filter(d => d === drag.value).length;
+      ghost.setAttribute("cx", px(drag.value));
+      ghost.setAttribute("cy", BEAM_Y - BEAM_H / 2 - R - 1 - stack * (2 * R + 2));
+      ghost.setAttribute("visibility", "visible");
+    }
+    drawStats();
+  }
+
+  svg.addEventListener("pointerdown", e => {
+    if (drag) return;
+    const hit = e.target.closest("circle.dot");
+    if (hit && hit.dataset.i !== undefined) {
+      dots.splice(+hit.dataset.i, 1);
+    } else {
+      const root = toPt(e, svg);
+      if (root.y > BEAM_Y + 66 || dots.length >= MAX_DOTS) return;
+    }
+    drag = { value: null };
+    svg.setPointerCapture(e.pointerId);
+    dragDot.setAttribute("visibility", "visible");
+    drawDots();
+    track(e);
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => { if (drag) track(e); });
+  const end = () => {
+    if (!drag) return;
+    if (drag.value !== null) dots.push(drag.value);
+    drag = null;
+    dragDot.setAttribute("visibility", "hidden");
+    ghost.setAttribute("visibility", "hidden");
+    update();
+  };
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", end);
+
+  document.getElementById("clear").addEventListener("click", () => { dots = []; update(); });
+
+  update();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

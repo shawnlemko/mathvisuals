@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Law of Large Numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --red: #c8323c; --blue: #2f5fd0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --red: #ff6b74; --blue: #7aa2ff; } }
+:root[data-theme="dark"] { --red: #ff6b74; --blue: #7aa2ff; }
+h1 .r { color: var(--red); } h1 .b { color: var(--blue); }
+.lln { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 860px) { .lln { grid-template-columns: 1fr; } }
+@media (min-width: 861px) and (min-height: 520px) {
+  .wrap > .lln { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+  .side { min-height: 0; overflow: hidden; } .side svg { min-height: 0; }
+}
+.side { display: flex; flex-direction: column; gap: 12px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.side h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.side h2 small { font-family: var(--font-body); font-weight: 400; font-size: 1rem; color: var(--muted); }
+.side svg { display: block; width: 100%; flex: 1 1 auto; min-height: 220px; user-select: none; -webkit-user-select: none; }
+.total { font-family: var(--font-num); font-size: 1.5rem; color: var(--ink); }
+.total b { font-size: 2rem; }
+.slider { grid-template-columns: 70px minmax(0, 1fr) 80px; }
+.slider label.r, .slider output.r { color: var(--red); }
+input[type=range].red { accent-color: var(--red); }
+.spins { display: flex; flex-wrap: wrap; gap: 10px; }
+.spins button { font-family: var(--font-display); font-size: 1.2rem; padding: 10px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.spins button:hover { background: var(--sheet); color: var(--pt); }
+.spins button:disabled { opacity: 0.5; cursor: default; }
+.spins .reset { margin-left: auto; background: var(--chip); color: var(--ink); border-color: var(--grid-major); }
+.pie-pct { font-family: var(--font-num); font-weight: 700; font-size: 34px; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.25); stroke-width: 3px; }
+.needle { fill: var(--ink); stroke: var(--sheet); stroke-width: 3; }
+.cap { fill: var(--ink); stroke: var(--sheet); stroke-width: 3; }
+.ax { stroke: var(--muted); stroke-width: 2; }
+.gl { stroke: var(--grid); stroke-width: 1; }
+.tk { font-family: var(--font-num); font-weight: 700; font-size: 18px; fill: var(--ink); }
+.bar-pct { font-family: var(--font-num); font-weight: 700; font-size: 30px; }
+.bar-name { font-family: var(--font-display); font-weight: 800; font-size: 26px; }
+.bar-count { font-family: var(--font-num); font-weight: 500; font-size: 18px; fill: var(--muted); }
+.theo { stroke: var(--ink); stroke-width: 3; stroke-dasharray: 10 7; }
+.theo-lbl { font-family: var(--font-num); font-weight: 700; font-size: 17px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.legend { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.95rem; margin: 0; }
+.legend i { display: inline-block; width: 36px; border-top: 3px dashed var(--ink); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Law of Large Numbers</h1></div>
+  </header>
+
+  <div class="lln">
+    <section class="side" aria-label="Theoretical probability">
+      <h2>Theoretical <small>what should happen</small></h2>
+      <svg id="pie" viewBox="0 0 400 400" role="img" aria-label="Spinner"></svg>
+      <div class="slider"><label for="pct" class="r">Red</label><input type="range" id="pct" class="red" min="5" max="95" step="5" value="25"><output id="pctOut" class="r"></output></div>
+    </section>
+
+    <section class="side" aria-label="Experimental probability">
+      <h2>Experimental <small>what actually happened</small> <span class="total" aria-live="polite"><b id="total">0</b> spins</span></h2>
+      <svg id="bars" viewBox="0 0 520 400" role="img" aria-label="Bar chart of spin results"></svg>
+      <p class="legend"><i></i> theoretical percent</p>
+      <div class="spins">
+        <button type="button" data-n="1">Spin 1</button>
+        <button type="button" data-n="10">Spin 10</button>
+        <button type="button" data-n="100">Spin 100</button>
+        <button type="button" data-n="10000">Spin 10,000</button>
+        <button type="button" class="reset" id="reset">Reset</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const fmtPct = v => (Math.round(v * 10) / 10).toString() + "%";
+
+  let red = 25;          // theoretical percent red
+  let nRed = 0, nBlue = 0;
+  let needleDeg = 0;      // needle angle, clockwise from the top
+  let busy = false;
+
+  // ---------- Spinner (pie) ----------
+  const pie = $("pie"), C = 200, R = 180;
+  const pt = (deg, r) => { const a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+  const slice = (a0, a1) => {
+    const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
+    return `M${C},${C} L${x0},${y0} A${R},${R} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1},${y1} Z`;
+  };
+  const redPath = el("path", { fill: "var(--red)", stroke: "var(--sheet)", "stroke-width": 3 }, pie);
+  const bluePath = el("path", { fill: "var(--blue)", stroke: "var(--sheet)", "stroke-width": 3 }, pie);
+  const redTxt = el("text", { class: "pie-pct", "text-anchor": "middle" }, pie);
+  const blueTxt = el("text", { class: "pie-pct", "text-anchor": "middle" }, pie);
+  const needle = el("g", {}, pie);
+  el("path", { class: "needle", d: `M${C - 11},${C} L${C},${C - R + 22} L${C + 11},${C} Z` }, needle);
+  el("circle", { class: "cap", cx: C, cy: C, r: 16 }, pie);
+
+  function drawPie() {
+    const a = red * 3.6;
+    redPath.setAttribute("d", slice(0, a));
+    bluePath.setAttribute("d", slice(a, 360));
+    const place = (t, mid, txt) => { const [x, y] = pt(mid, R * 0.62); t.setAttribute("x", x); t.setAttribute("y", y + 12); t.textContent = txt; };
+    place(redTxt, a / 2, red + "%");
+    place(blueTxt, a + (360 - a) / 2, (100 - red) + "%");
+    $("pctOut").textContent = red + "%";
+    pie.setAttribute("aria-label", `Spinner: ${red}% red, ${100 - red}% blue`);
+  }
+  const setNeedle = deg => needle.setAttribute("transform", `rotate(${deg} ${C} ${C})`);
+
+  // ---------- Bar chart ----------
+  const bars = $("bars");
+  const X0 = 70, X1 = 505, Y0 = 340, Y1 = 30; // plot box: y = 0% at Y0, 100% at Y1
+  const yOf = p => Y0 - (Y0 - Y1) * p / 100;
+  for (let p = 0; p <= 100; p += 10) {
+    el("line", { class: "gl", x1: X0, x2: X1, y1: yOf(p), y2: yOf(p) }, bars);
+    if (p % 20 === 0) el("text", { class: "tk", x: X0 - 10, y: yOf(p) + 6, "text-anchor": "end" }, bars).textContent = p + "%";
+  }
+  el("line", { class: "ax", x1: X0, x2: X0, y1: Y1, y2: Y0 }, bars);
+  el("line", { class: "ax", x1: X0, x2: X1, y1: Y0, y2: Y0 }, bars);
+
+  const BW = 130;
+  const mk = (cx, color, name) => {
+    const g = {};
+    g.rect = el("rect", { x: cx - BW / 2, width: BW, y: Y0, height: 0, fill: color, rx: 4 }, bars);
+    g.pct = el("text", { class: "bar-pct", x: cx, "text-anchor": "middle", fill: color }, bars);
+    g.theo = el("line", { class: "theo", x1: cx - BW / 2 - 18, x2: cx + BW / 2 + 18 }, bars);
+    g.theoLbl = el("text", { class: "theo-lbl", x: cx + BW / 2 + 22, "text-anchor": "start" }, bars);
+    el("text", { class: "bar-name", x: cx, y: Y0 + 30, "text-anchor": "middle", fill: color }, bars).textContent = name;
+    g.count = el("text", { class: "bar-count", x: cx, y: Y0 + 54, "text-anchor": "middle" }, bars);
+    g.shown = 0; // percent currently drawn, for the grow animation
+    return g;
+  };
+  const gR = mk(X0 + (X1 - X0) * 0.28, "var(--red)", "Red");
+  const gB = mk(X0 + (X1 - X0) * 0.72, "var(--blue)", "Blue");
+
+  let anim = 0;
+  function drawBars() {
+    const n = nRed + nBlue;
+    const target = [n ? 100 * nRed / n : 0, n ? 100 * nBlue / n : 0];
+    const theo = [red, 100 - red];
+    [gR, gB].forEach((g, i) => {
+      g.theo.setAttribute("y1", yOf(theo[i])); g.theo.setAttribute("y2", yOf(theo[i]));
+      g.theoLbl.setAttribute("y", yOf(theo[i]) + 6); g.theoLbl.textContent = theo[i] + "%";
+      g.count.textContent = (i ? nBlue : nRed).toLocaleString() + " of " + n.toLocaleString();
+    });
+    $("total").textContent = n.toLocaleString();
+    cancelAnimationFrame(anim);
+    const from = [gR.shown, gB.shown], t0 = performance.now(), dur = 350;
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      [gR, gB].forEach((g, i) => {
+        const v = from[i] + (target[i] - from[i]) * e;
+        g.shown = v;
+        g.rect.setAttribute("y", yOf(v)); g.rect.setAttribute("height", Y0 - yOf(v));
+        g.pct.textContent = n ? fmtPct(k === 1 ? target[i] : v) : "";
+        g.pct.setAttribute("y", Math.min(yOf(v) - 10, Y0 - 10));
+      });
+      if (k < 1) anim = requestAnimationFrame(step);
+    };
+    anim = requestAnimationFrame(step);
+    bars.setAttribute("aria-label", n ? `After ${n} spins: red ${fmtPct(target[0])}, blue ${fmtPct(target[1])}` : "No spins yet");
+  }
+
+  // ---------- Spinning ----------
+  const isRed = deg => deg < red * 3.6;
+  const buttons = document.querySelectorAll(".spins button[data-n]");
+  const lock = on => { busy = on; buttons.forEach(b => (b.disabled = on)); $("pct").disabled = on; };
+
+  function spin(n) {
+    if (busy) return;
+    if (n === 1) {
+      // One spin: the needle turns a few times and the color it lands on counts.
+      const land = Math.random() * 360;
+      const start = needleDeg % 360, end = start + 360 * 4 + ((land - start + 360) % 360);
+      const t0 = performance.now(), dur = 1400;
+      lock(true);
+      const step = now => {
+        const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        setNeedle(start + (end - start) * e);
+        if (k < 1) return requestAnimationFrame(step);
+        needleDeg = land;
+        isRed(land) ? nRed++ : nBlue++;
+        lock(false);
+        drawBars();
+      };
+      requestAnimationFrame(step);
+      return;
+    }
+    // Many spins happen at once; the needle shows where the last one landed.
+    let last = 0;
+    for (let i = 0; i < n; i++) {
+      last = Math.random() * 360;
+      isRed(last) ? nRed++ : nBlue++;
+    }
+    needleDeg = last; setNeedle(last);
+    drawBars();
+  }
+
+  buttons.forEach(b => b.addEventListener("click", () => spin(+b.dataset.n)));
+  function reset() { nRed = nBlue = 0; drawBars(); }
+  $("reset").addEventListener("click", () => { if (!busy) reset(); });
+  // A new spinner is a new experiment, so the results start over.
+  $("pct").addEventListener("input", e => { red = +e.target.value; drawPie(); if (!busy) reset(); });
+
+  drawPie(); setNeedle(needleDeg); drawBars();
+})();
+</script>
+
+</body>
+</html>

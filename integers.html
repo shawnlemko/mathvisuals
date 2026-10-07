@@ -155,7 +155,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .nums { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .num { display: inline-flex; align-items: center; gap: 6px; }
 .num input { width: 110px; height: 68px; font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; text-align: center; }
-.num .flip { font-family: var(--font-num); font-size: 1.1rem; min-height: 68px; padding: 6px 10px; }
 .seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .seg button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-num); font-size: 2.2rem; line-height: 1; width: 68px; min-height: 64px; padding: 0; }
 .seg button + button { border-left: 2px solid var(--grid-major); }
@@ -197,15 +196,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .boxt { font-family: var(--font-body); font-weight: 700; font-size: 20px; fill: var(--muted); letter-spacing: 0.06em; }
 .boxc { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--ink); }
 .zone { stroke: var(--grid); stroke-width: 1.5; stroke-dasharray: 4 6; }
-.chip { transition: transform 0.5s ease, opacity 0.5s ease; }
-.chip circle { stroke: var(--chip-ink); stroke-width: 2; }
+.chip { transition: transform 0.8s ease, opacity 0.8s ease; }
+#svg > g { transition: opacity 0.6s; } #svg .off { opacity: 0; }
+.pairbox { fill: none; stroke: var(--orange); stroke-width: 4; stroke-dasharray: 8 6; }
+.chip circle { stroke: var(--chip-ink); stroke-width: 3; }
 .chip.p circle { fill: var(--pos); } .chip.n circle { fill: var(--neg); }
-.chip text { fill: var(--chip-ink); font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; dominant-baseline: central; }
-.chip .ring { fill: none; stroke: var(--orange); stroke-width: 4; opacity: 0; transition: opacity 0.3s; }
+.chip text { fill: var(--chip-ink); font-family: var(--font-num); font-weight: 700; font-size: 50px; text-anchor: middle; dominant-baseline: central; }
+.chip .ring { fill: none; stroke: var(--orange); stroke-width: 6; opacity: 0; transition: opacity 0.3s; }
 .chip.mark .ring { opacity: 1; }
 .chip > g { transform-box: fill-box; transform-origin: center; }
-.chip.pop > g { animation: pop 0.4s ease-out; }
-@keyframes pop { from { transform: scale(0); } 70% { transform: scale(1.2); } to { transform: scale(1); } }
+.chip.pop > g { animation: pop 0.5s ease-out; }
+@keyframes pop { from { transform: scale(0); } 70% { transform: scale(1.25); } to { transform: scale(1); } }
 .chip.gone { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .chip { transition: none; } .chip.pop > g { animation: none; } }
 @media (max-width: 600px) { .num input { width: 88px; height: 56px; font-size: 2rem; } .steps { margin-left: 0; } }
@@ -220,15 +221,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   <section class="card entry-card">
     <div class="entry">
       <div class="nums">
-        <span class="num"><input id="a" type="text" inputmode="numeric" autocomplete="off" aria-label="First integer"><button type="button" class="flip" data-for="a" aria-label="Change the sign of the first integer">+/−</button></span>
+        <span class="num"><input id="a" type="text" inputmode="numeric" autocomplete="off" aria-label="First integer"></span>
         <div class="seg" id="op" role="group" aria-label="Operation">
           <button type="button" data-op="+" aria-pressed="true" aria-label="Add">+</button>
           <button type="button" data-op="-" aria-pressed="false" aria-label="Subtract">−</button>
         </div>
-        <span class="num"><input id="b" type="text" inputmode="numeric" autocomplete="off" aria-label="Second integer"><button type="button" class="flip" data-for="b" aria-label="Change the sign of the second integer">+/−</button></span>
+        <span class="num"><input id="b" type="text" inputmode="numeric" autocomplete="off" aria-label="Second integer"></span>
       </div>
       <div class="steps">
-        <div class="track" id="track"><span>Step 1</span><span>Step 2</span><span>Answer</span></div>
+        <div class="track" id="track"><span>Step 1 Chips</span><span>Step 2 Start</span><span>Step 3 Jump</span><span>Answer</span></div>
         <button type="button" id="next" disabled>Next step ▶</button>
         <button type="button" id="again">Start over</button>
       </div>
@@ -310,9 +311,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const g = layer.head; g.replaceChildren();
     const t = txt("", { class: "expr", x: 24, y: 84 }, g);
     const span = (s, c) => { const e = el("tspan", c ? { class: c } : {}, t); e.textContent = s; };
-    if (!p || p.err) {
+    if (!p) {
       span("? " + (op === "+" ? "+" : "−") + " ?");
-      say(p && p.err ? "" : "Type two integers.", true);
+      say($("err").hidden ? "Type two integers." : "", true);
       return;
     }
     span(fmt(p.a), p.a > 0 ? "p" : p.a < 0 ? "n" : "");
@@ -320,14 +321,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     span(p.b < 0 ? "(" + fmt(p.b) + ")" : fmt(p.b), p.b > 0 ? "p" : p.b < 0 ? "n" : "");
     span(" = "); span(step >= 3 ? fmt(p.r) : "?", step >= 3 ? "ans" : "");
   }
-  function say(s, hint) {
+  function say(s, hint, narrow) {
     const g = layer.head;
     g.querySelectorAll(".say").forEach(n => n.remove());
-    // Wrap at about 36 characters so the sentence stays left of the chip box.
+    // Wrap so the sentence stays left of the chip box when it shows (about 36 characters), wider otherwise.
+    const max = narrow ? 36 : 54;
     const lines = [""];
     for (const w of s.split(" ")) {
       const cur = lines[lines.length - 1];
-      if (cur && (cur + " " + w).length > 36) lines.push(w); else lines[lines.length - 1] = cur ? cur + " " + w : w;
+      if (cur && (cur + " " + w).length > max) lines.push(w); else lines[lines.length - 1] = cur ? cur + " " + w : w;
     }
     lines.forEach((l, i) => txt(l, { class: "say" + (hint ? " hint" : ""), x: 26, y: 160 + i * 46 }, g));
   }
@@ -339,7 +341,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ---- Integer chips ----
-  let chips = [];
+  // Chip steps come first and use the whole board, one action per Next press, slowly (Shawn: the corner animation was missed).
+  // Green rows sit just above the red rows so a positive and the negative under it read as a zero pair.
+  // On the number line steps the same chips shrink into the corner box.
+  let chips = [], small = false;
+  const BR = 32, BS = 76, BX0 = 600 - 4.5 * BS, BGY = 382, BRY = 462, SC = CR / BR;
   function chipBox() {
     const g = layer.box;
     el("rect", { class: "box", x: BX, y: BY, width: BW, height: BH, rx: 14 }, g);
@@ -348,14 +354,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     layer.cap = txt("", { class: "boxc", x: BX + BW / 2, y: BY + BH - 20, "text-anchor": "middle" }, g);
   }
   const caption = s => { layer.cap.textContent = s; };
-  const spot = c => ({ x: CX0 + (c.slot % 10) * CS, y: (c.pos ? GY : RY) + Math.floor(c.slot / 10) * CS });
-  function place(c) { const s = spot(c); c.g.style.transform = `translate(${s.x}px, ${s.y}px)`; }
+  function spot(c) {
+    const col = c.slot % 10, row = Math.floor(c.slot / 10);
+    if (small) return { x: CX0 + col * CS, y: (c.pos ? GY : RY) + row * CS, k: SC };
+    return { x: BX0 + col * BS, y: c.pos ? BGY - row * BS : BRY + row * BS, k: 1 };
+  }
+  function place(c, dy = 0) { const s = spot(c); c.g.style.transform = `translate(${s.x}px, ${s.y + dy}px) scale(${s.k})`; }
   function addChip(pos, slot) {
     const g = el("g", { class: "chip pop " + (pos ? "p" : "n") }, layer.chips);
     const inner = el("g", {}, g);
-    el("circle", { class: "ring", r: CR + 5 }, inner);
-    el("circle", { r: CR }, inner);
-    txt(pos ? "+" : "−", { y: 1 }, inner);
+    el("circle", { class: "ring", r: BR + 7 }, inner);
+    el("circle", { r: BR }, inner);
+    txt(pos ? "+" : "−", { y: 2 }, inner);
     const c = { pos, slot, g };
     g.style.transition = "none"; place(c); g.getBoundingClientRect(); g.style.transition = "";
     chips.push(c);
@@ -363,58 +373,68 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
   const count = pos => chips.filter(c => c.pos === pos).length;
   const nextSlot = pos => chips.filter(c => c.pos === pos).reduce((m, c) => Math.max(m, c.slot + 1), 0);
-  function compact() {
-    for (const pos of [true, false]) chips.filter(c => c.pos === pos).sort((p, q) => p.slot - q.slot).forEach((c, i) => { c.slot = i; place(c); });
+  const of = pos => chips.filter(c => c.pos === pos).sort((x, y) => x.slot - y.slot);
+  const gap = n => Math.min(450, 5000 / Math.max(n, 1));
+  function compact() { for (const pos of [true, false]) of(pos).forEach((c, i) => { c.slot = i; place(c); }); }
+  // An outline around a green chip and the red chip right under it.
+  function pairBox(slot) {
+    if (slot >= 10) return;
+    const x = BX0 + slot * BS;
+    el("rect", { class: "pairbox", x: x - BR - 6, y: BGY - BR - 6, width: 2 * BR + 12, height: BRY - BGY + 2 * BR + 12, rx: BR + 6 }, layer.pairs);
   }
-  async function remove(list, id) {
-    list.forEach(c => c.g.classList.add("mark"));
+  async function takeAway(list, id) {
+    for (const c of list) { c.g.classList.add("mark"); await wait(gap(list.length) * 0.6); if (!live(id)) return; }
+    await wait(900); if (!live(id)) return;
+    for (const c of list) { c.g.classList.add("gone"); place(c, -50); await wait(gap(list.length) * 0.6); if (!live(id)) return; }
     await wait(600); if (!live(id)) return;
-    list.forEach(c => { c.g.classList.add("gone"); const s = spot(c); c.g.style.transform = `translate(${s.x}px, ${s.y - 40}px)`; });
-    await wait(550); if (!live(id)) return;
     list.forEach(c => c.g.remove());
     chips = chips.filter(c => !list.includes(c));
+    layer.pairs.replaceChildren();
     compact();
+    await wait(600);
   }
-  async function addMany(pos, n, id, startSlot) {
-    for (let i = 0; i < n; i++) {
-      addChip(pos, startSlot + i);
-      await wait(Math.min(180, 1600 / n)); if (!live(id)) return;
-    }
-  }
-  function showStart(a) {
-    layer.chips.replaceChildren(); chips = [];
-    for (let i = 0; i < Math.abs(a); i++) addChip(a > 0, i);
-    caption(a === 0 ? "No chips: 0" : `Start with ${fmt(a)}`);
-  }
+  const word = (n, pos) => `${n} ${pos ? "positive" : "negative"} chip${n === 1 ? "" : "s"}`;
 
-  async function chipStep(p, id) {
-    const n = Math.abs(p.b), pos = p.b > 0;
-    if (n === 0) { caption("Nothing changes"); return; }
-    if (op === "+") {
-      caption(`Add ${n} ${pos ? "positive" : "negative"}${n > 1 ? "s" : ""}`);
-      await addMany(pos, n, id, nextSlot(pos)); if (!live(id)) return;
-      const pairs = Math.min(count(true), count(false));
+  // The chip part of the steps for a ± b, each scene one Next press.
+  function chipScenes(p) {
+    const n = Math.abs(p.b), pos = p.b > 0, out = [];
+    out.push({ say: p.a === 0 ? "Start with 0: no chips." : `Start with ${fmt(p.a)}: ${word(Math.abs(p.a), p.a > 0)}.`, run: async id => {
+      for (let i = 0; i < Math.abs(p.a); i++) { addChip(p.a > 0, i); await wait(gap(Math.abs(p.a))); if (!live(id)) return; }
+    } });
+    if (n === 0) {
+      out.push({ say: op === "+" ? "Adding 0: there are no chips to add." : "Taking away 0: no chips are taken away.", run: async () => {} });
+    } else if (op === "+") {
+      out.push({ say: `Add ${word(n, pos)}.`, run: async id => {
+        const at = nextSlot(pos);
+        for (let i = 0; i < n; i++) { addChip(pos, at + i); await wait(gap(n)); if (!live(id)) return; }
+      } });
+      const pairs = Math.min(p.a > 0 ? p.a : -p.a, n) * (p.a !== 0 && (p.a > 0) !== pos ? 1 : 0);
       if (pairs) {
-        await wait(500); if (!live(id)) return;
-        caption(`${pairs} zero pair${pairs > 1 ? "s" : ""} cancel out`);
-        const take = c => chips.filter(k => k.pos === c).sort((x, y) => x.slot - y.slot).slice(0, pairs);
-        await remove([...take(true), ...take(false)], id);
+        out.push({ say: `A positive and a negative make a zero pair. There ${pairs === 1 ? "is 1 zero pair" : `are ${pairs} zero pairs`}.`, run: async id => {
+          for (let i = 0; i < pairs; i++) { pairBox(i); of(true)[i].g.classList.add("mark"); of(false)[i].g.classList.add("mark"); await wait(gap(pairs)); if (!live(id)) return; }
+        } });
+        out.push({ say: "Zero pairs are worth 0. Take them away.", run: async id => {
+          const g = of(true).slice(0, pairs), r = of(false).slice(0, pairs), list = [];
+          g.forEach((c, i) => list.push(c, r[i]));
+          await takeAway(list, id);
+        } });
       }
     } else {
-      const have = count(pos);
-      if (have < n) {
-        const need = n - have, at = Math.max(nextSlot(true), nextSlot(false));
-        caption(`Add ${need} zero pair${need > 1 ? "s" : ""}`);
-        for (let i = 0; i < need; i++) {
-          addChip(true, at + i); addChip(false, at + i);
-          await wait(Math.min(260, 2000 / need)); if (!live(id)) return;
-        }
-        await wait(700); if (!live(id)) return;
+      const have = p.a !== 0 && (p.a > 0) === pos ? Math.abs(p.a) : 0, need = Math.max(0, n - have);
+      if (need) {
+        out.push({ say: `Not enough ${pos ? "positive" : "negative"} chips to take away ${n}. Add ${need} zero pair${need === 1 ? "" : "s"}. They are worth 0.`, run: async id => {
+          const at = Math.max(nextSlot(true), nextSlot(false));
+          for (let i = 0; i < need; i++) { pairBox(at + i); addChip(true, at + i); addChip(false, at + i); await wait(gap(need) * 1.2); if (!live(id)) return; }
+        } });
       }
-      caption(`Take away ${n} ${pos ? "positive" : "negative"}${n > 1 ? "s" : ""}`);
-      const list = chips.filter(c => c.pos === pos).sort((x, y) => y.slot - x.slot).slice(0, n);
-      await remove(list, id);
+      out.push({ say: `Take away ${word(n, pos)}.`, run: async id => {
+        layer.pairs.replaceChildren();
+        await takeAway(of(pos).reverse().slice(0, n), id);
+      } });
     }
+    const left = Math.abs(p.r);
+    out.push({ say: left === 0 ? "No chips are left." : `${word(left, p.r > 0)} ${left === 1 ? "is" : "are"} left.`, run: async () => {} });
+    return out;
   }
 
   // ---- Jumps: one arc per unit, drawn one after another ----
@@ -436,65 +456,67 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     }
   }
 
-  function track() {
-    [...$("track").children].forEach((s, i) => { s.className = i + 1 === step ? "on" : i + 1 < step ? "done" : ""; });
+  // Every step for this problem: the chip steps (Step 1), then the dot (Step 2), the jumps (Step 3) and the answer.
+  let scenes = [], cur = -1, prob = null;
+  function build(p) {
+    const list = chipScenes(p).map(s => ({ ...s, pill: 0 }));
+    list.push({ pill: 1, say: `Start at ${fmt(p.a)}.`, run: async () => {
+      small = true; layer.box.classList.remove("off"); chips.forEach(c => place(c));
+      drawLine(p); dot(p.a, "start"); tag(p.a, "Start " + fmt(p.a), false, 360);
+    } });
+    list.push({ pill: 2, say: sentence(p), run: id => jumps(p, id) });
+    list.push({ pill: 3, say: `You land on ${fmt(p.r)}.`, run: async () => {
+      dot(p.r, "land");
+      const near = Math.abs(X(p.r) - X(p.a)) < 140 && p.r !== p.a;
+      tag(p.r, fmt(p.r), true, near ? 290 : 360);
+      caption(`Chips left: ${fmt(p.r)}`);
+    } });
+    return list;
   }
-
-  async function go(to) {
-    const id = ++run, p = read();
-    const bad = p && p.err;
+  function track(pill) {
+    [...$("track").children].forEach((s, i) => { s.className = i === pill ? "on" : i < pill ? "done" : ""; });
+  }
+  function reset() {
+    run++;
+    for (const k of ["line", "hops", "dots", "chips", "pairs"]) layer[k].replaceChildren();
+    chips = []; small = false; caption(""); layer.box.classList.add("off");
+  }
+  function start() {
+    reset();
+    const p = read(), bad = p && p.err;
     $("err").hidden = !bad; if (bad) $("err").textContent = p.err;
-    const ok = p && !bad;
-    step = ok ? to : 0;
-    $("next").disabled = !ok || step >= 3;
-    track();
-    if (step <= 1) {
-      layer.line.replaceChildren(); layer.hops.replaceChildren(); layer.dots.replaceChildren();
-      drawLine(ok ? p : null);
-      header(p);
-      if (!ok) { layer.chips.replaceChildren(); chips = []; caption(""); return; }
-      dot(p.a, "start"); tag(p.a, "Start " + fmt(p.a), false, 360);
-      say(`Start at ${fmt(p.a)}.`);
-      showStart(p.a);
-      return;
-    }
-    if (step === 2) {
-      header(p); say(sentence(p));
-      $("next").disabled = true;
-      await Promise.all([jumps(p, id), chipStep(p, id)]);
-      if (!live(id)) return;
-      $("next").disabled = false;
-      return;
-    }
-    // Answer: land the dot.
-    header(p);
-    dot(p.r, "land");
-    const near = Math.abs(X(p.r) - X(p.a)) < 140 && p.r !== p.a;
-    tag(p.r, fmt(p.r), true, near ? 290 : 360);
-    say(`You land on ${fmt(p.r)}.`);
-    caption(`Chips left: ${fmt(p.r)}`);
+    prob = p && !bad ? p : null;
+    scenes = prob ? build(prob) : []; cur = -1;
+    step = 0; header(prob);
+    track(-1);
+    if (prob) next(); else $("next").disabled = true;
+  }
+  async function next() {
+    if (cur >= scenes.length - 1) return;
+    const sc = scenes[++cur], id = run;
+    step = cur === scenes.length - 1 ? 3 : 0;
+    header(prob); say(sc.say, false, sc.pill > 0); track(sc.pill);
+    $("next").disabled = true;
+    await sc.run(id);
+    if (!live(id)) return;
+    $("next").disabled = cur >= scenes.length - 1;
   }
 
-  // Build the layers once: header and number line under the hops and dots; chip box on top in its corner.
-  for (const k of ["head", "line", "hops", "dots", "box", "chips"]) layer[k] = el("g", {});
+  // Build the layers once: header and number line under the hops and dots; chip box and chips on top.
+  for (const k of ["head", "line", "hops", "dots", "box", "pairs", "chips"]) layer[k] = el("g", {});
   chipBox();
 
   $("op").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     op = b.dataset.op;
     [...$("op").children].forEach(x => x.setAttribute("aria-pressed", x === b));
-    go(1);
+    start();
   });
-  for (const f of document.querySelectorAll(".flip")) f.addEventListener("click", () => {
-    const i = $(f.dataset.for), v = parse(i.value);
-    i.value = Number.isInteger(v) ? fmt(-v).replace("−", "-") : (i.value.trim().startsWith("-") ? i.value.trim().slice(1) : "-" + i.value.trim());
-    go(1);
-  });
-  $("a").addEventListener("input", () => go(1));
-  $("b").addEventListener("input", () => go(1));
-  $("next").addEventListener("click", () => go(step + 1));
-  $("again").addEventListener("click", () => go(1));
-  go(1);
+  $("a").addEventListener("input", start);
+  $("b").addEventListener("input", start);
+  $("next").addEventListener("click", next);
+  $("again").addEventListener("click", start);
+  start();
 })();
 </script>
 

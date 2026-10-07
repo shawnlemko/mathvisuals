@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The Mystery Bag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --red: #c8323c; --blue: #2f5fd0; --yellow: #f2b705; --yellow-ink: #9a6b00;
+  --bag: #e8d3ae; --bag-line: #8a6a3a; --bag-dark: #5a4220; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --red: #ff6b74; --blue: #7aa2ff; --yellow: #ffd04a; --yellow-ink: #ffd04a;
+  --bag: #3a2f22; --bag-line: #c8a46a; --bag-dark: #0b0805; } }
+:root[data-theme="dark"] { --red: #ff6b74; --blue: #7aa2ff; --yellow: #ffd04a; --yellow-ink: #ffd04a;
+  --bag: #3a2f22; --bag-line: #c8a46a; --bag-dark: #0b0805; }
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 14px; }
+
+/* With / Without replacement switch */
+.switch { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; }
+.switch .side { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; line-height: 1.15; color: var(--muted);
+  background: none; border: 0; padding: 4px; text-align: center; cursor: pointer; }
+.switch .side.on { color: var(--ink); }
+.switch .side:hover { color: var(--pt); }
+.toggle { position: relative; width: 84px; height: 46px; border-radius: 999px; padding: 0; background: var(--pt); border: 0; }
+.toggle::after { content: ""; position: absolute; top: 5px; left: 5px; width: 36px; height: 36px; border-radius: 50%; background: var(--sheet);
+  transition: transform .25s ease; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.toggle[aria-checked="true"] { background: var(--orange); }
+.toggle[aria-checked="true"]::after { transform: translateX(38px); }
+.switch .side.on.without { color: var(--orange); }
+.switch .side.on.with { color: var(--pt); }
+
+/* Marble counts */
+.counts { display: flex; flex-direction: column; gap: 8px; }
+.count { display: grid; grid-template-columns: 30px minmax(0, 1fr) 48px 56px 48px; align-items: center; gap: 8px; }
+.count .dot { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset -4px -4px 0 rgba(0,0,0,.18); }
+.count .name { font-weight: 700; font-size: 1.15rem; }
+.count output { font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; text-align: center; }
+.count button { font-size: 1.5rem; line-height: 1; padding: 6px 0; min-height: 44px; }
+.count button:disabled { opacity: .35; cursor: default; }
+
+.pull { width: 100%; font-family: var(--font-display); font-size: 1.4rem; padding: 14px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.pull:hover { background: var(--sheet); color: var(--pt); }
+.pull:disabled { opacity: .5; cursor: default; background: var(--pt); color: var(--sheet); }
+
+.calc { width: 100%; font-size: 1.1rem; padding: 10px; }
+.runs { font-family: var(--font-num); font-size: 1.3rem; margin: 0; }
+.runs b { font-size: 1.8rem; }
+.tally { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tally li { display: flex; align-items: center; gap: 8px; font-size: 1.05rem; }
+.tally li i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; flex: none; }
+.tally li b { margin-left: auto; font-family: var(--font-num); font-size: 1.25rem; }
+
+/* Board drawing */
+.bag-body { fill: var(--bag); stroke: var(--bag-line); stroke-width: 4; }
+.bag-front { fill: none; stroke: var(--bag-line); stroke-width: 4; }
+.bag-mouth { fill: var(--bag-dark); }
+.bag-tie { fill: var(--bag-line); }
+.hole { fill: none; stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 5 5; }
+.slot { fill: none; stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 8 7; }
+.slot-q { font-family: var(--font-display); font-weight: 800; font-size: 40px; fill: var(--grid-major); }
+.slot-lbl { font-family: var(--font-display); font-weight: 800; font-size: 28px; fill: var(--ink); }
+.note { font-family: var(--font-body); font-weight: 700; font-size: 22px; }
+.note.back { fill: var(--pt); } .note.out { fill: var(--orange); }
+.bag-count { font-family: var(--font-body); font-weight: 700; font-size: 30px; fill: var(--ink); }
+.bag-count tspan.n { font-family: var(--font-num); font-size: 44px; }
+.bag-count.flash tspan.n { fill: var(--orange); }
+.fr { font-family: var(--font-num); font-weight: 700; font-size: 46px; fill: var(--ink); }
+.fr-bar { stroke: var(--ink); stroke-width: 3.5; }
+.op { font-family: var(--font-num); font-weight: 700; font-size: 40px; fill: var(--ink); }
+.ptitle { font-family: var(--font-display); font-weight: 800; font-size: 30px; fill: var(--ink); }
+.arrow { fill: none; stroke: var(--pt); stroke-width: 3; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>The Mystery Bag</h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="stage" viewBox="0 0 960 650" role="img" aria-label="A bag of marbles"></svg>
+    </div>
+
+    <div class="panel">
+      <div class="card switch">
+        <button type="button" class="side with on" id="sideWith">With<br>Replacement</button>
+        <button type="button" class="toggle" id="toggle" role="switch" aria-checked="false" aria-label="Without replacement"></button>
+        <button type="button" class="side without" id="sideWithout">Without<br>Replacement</button>
+      </div>
+
+      <div class="card">
+        <p class="label">Marbles in the bag</p>
+        <div class="counts" id="counts"></div>
+      </div>
+
+      <button type="button" class="pull" id="pull">Pull the 1st marble</button>
+      <button type="button" class="calc" id="calc" aria-pressed="true">Hide calculations</button>
+
+      <div class="card">
+        <p class="runs" aria-live="polite">Runs: <b id="runs">0</b></p>
+        <ul class="tally" id="tally"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  const slow = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0.2 : 1;
+  const wait = ms => new Promise(r => setTimeout(r, ms * slow));
+  const ease = k => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+  const tween = (ms, f) => new Promise(res => {
+    const t0 = performance.now(), dur = Math.max(1, ms * slow);
+    const step = now => { const k = Math.min(1, (now - t0) / dur); f(ease(k)); k < 1 ? requestAnimationFrame(step) : res(); };
+    requestAnimationFrame(step);
+  });
+
+  const COLORS = [
+    { key: "red", fill: "var(--red)", ink: "var(--red)" },
+    { key: "blue", fill: "var(--blue)", ink: "var(--blue)" },
+    { key: "yellow", fill: "var(--yellow)", ink: "var(--yellow-ink)" },
+  ];
+  const C = Object.fromEntries(COLORS.map(c => [c.key, c]));
+  const MAX = 10;
+  const counts = { red: 3, blue: 5, yellow: 0 };
+  let without = false, busy = false, runs = 0;
+  let tally = new Map();
+
+  // ---------- Stage ----------
+  const svg = $("stage");
+  const BX = 240, R = 21, BIG = 36;       // bag center x, marble radius in the bag and pulled out
+  const MOUTH = { x: BX, y: 86 };
+  const SLOT = [{ x: 600, y: 205 }, { x: 830, y: 205 }];
+
+  const bagG = el("g", {}, svg);
+  el("path", { class: "bag-body", d: "M196,136 C110,170 40,270 40,420 C40,560 80,590 240,590 C400,590 440,560 440,420 C440,270 370,170 284,136 Z" }, bagG);
+  const holeL = el("g", {}, bagG);
+  const inL = el("g", {}, bagG);
+  el("path", { class: "bag-body", d: "M192,128 L160,76 Q240,100 320,76 L288,128 Z" }, bagG);
+  el("ellipse", { class: "bag-mouth", cx: BX, cy: 82, rx: 74, ry: 12 }, bagG);
+  el("rect", { class: "bag-tie", x: 186, y: 124, width: 108, height: 16, rx: 8 }, bagG);
+  const bagCount = el("text", { class: "bag-count", x: BX, y: 636, "text-anchor": "middle" }, svg);
+
+  // Slots for the two pulls
+  const slotL = el("g", {}, svg);
+  SLOT.forEach((s, i) => {
+    el("text", { class: "slot-lbl", x: s.x, y: 140, "text-anchor": "middle" }, slotL).textContent = i ? "2nd pull" : "1st pull";
+    el("circle", { class: "slot", cx: s.x, cy: s.y, r: BIG + 6 }, slotL);
+    el("text", { class: "slot-q", x: s.x, y: s.y + 14, "text-anchor": "middle" }, slotL).textContent = "?";
+  });
+  const noteL = el("g", {}, svg);   // put back / kept out
+  const mathL = el("g", {}, svg);   // fractions and the product (Show/Hide calculations)
+  const outL = el("g", {}, svg);    // marbles out of the bag, on top
+
+  // Marble pile: rows fill from the bottom of the bag, each row centered.
+  const ROWS = [{ y: 550, n: 6 }, { y: 504, n: 7 }, { y: 458, n: 8 }, { y: 412, n: 8 }, { y: 366, n: 8 }];
+  function spots(n) {
+    const out = [];
+    for (const row of ROWS) {
+      const k = Math.min(row.n, n - out.length);
+      for (let i = 0; i < k; i++) out.push({ x: BX + (i - (k - 1) / 2) * 46, y: row.y });
+      if (out.length >= n) break;
+    }
+    return out;
+  }
+
+  function marbleEl(color, parent) {
+    const g = el("g", {}, parent);
+    el("circle", { r: R, fill: C[color].fill, stroke: "rgba(0,0,0,.28)", "stroke-width": 1.5 }, g);
+    el("circle", { r: R * 0.32, cx: -R * 0.36, cy: -R * 0.38, fill: "#fff", "fill-opacity": 0.55 }, g);
+    return g;
+  }
+  const place = (g, x, y, s = 1) => g.setAttribute("transform", `translate(${x} ${y}) scale(${s})`);
+
+  let marbles = [];  // { color, x, y, g, hole, inBag }
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  function fillBag() {
+    holeL.replaceChildren(); inL.replaceChildren(); outL.replaceChildren(); mathL.replaceChildren(); noteL.replaceChildren();
+    slotL.querySelectorAll(".slot-q").forEach(q => (q.style.display = ""));
+    const colors = shuffle(COLORS.flatMap(c => Array(counts[c.key]).fill(c.key)));
+    const sp = spots(colors.length);
+    marbles = colors.map((color, i) => {
+      const m = { color, x: sp[i].x, y: sp[i].y, inBag: true };
+      m.g = marbleEl(color, inL); place(m.g, m.x, m.y);
+      return m;
+    });
+    setBagCount(false);
+  }
+
+  const inBag = () => marbles.filter(m => m.inBag);
+  function setBagCount(flash) {
+    const n = inBag().length;
+    bagCount.replaceChildren();
+    const t = el("tspan", { class: "n" }, bagCount); t.textContent = n;
+    el("tspan", {}, bagCount).textContent = n === 1 ? " marble in the bag" : " marbles in the bag";
+    bagCount.classList.toggle("flash", flash);
+    svg.setAttribute("aria-label", `A bag with ${n} marbles`);
+  }
+
+  // Fly a marble along a curve through the bag's mouth.
+  function fly(g, from, to, s0, s1, ms) {
+    const c = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 160 };
+    if (from.x < 460 && to.x < 460) c.x = BX;
+    return tween(ms, k => {
+      const u = 1 - k;
+      place(g, u * u * from.x + 2 * u * k * c.x + k * k * to.x, u * u * from.y + 2 * u * k * c.y + k * k * to.y, s0 + (s1 - s0) * k);
+    });
+  }
+  const shake = () => tween(420, k => bagG.setAttribute("transform", `rotate(${Math.sin(k * Math.PI * 6) * 3 * (1 - k)} ${BX} 590)`));
+
+  // Draw a row of fractions and operators centered at x. items: [n, d, color] arrays or strings.
+  function equation(items, cx, y, parent) {
+    const fs = 46, cw = fs * 0.62;
+    const w = items.map(it => (typeof it === "string" ? cw * it.length + 24 : cw * Math.max(String(it[0]).length, String(it[1]).length) + 18));
+    let x = cx - w.reduce((a, b) => a + b, 0) / 2;
+    items.forEach((it, i) => {
+      const mid = x + w[i] / 2;
+      if (typeof it === "string") {
+        el("text", { class: "op", x: mid, y: y + 14, "text-anchor": "middle" }, parent).textContent = it;
+      } else {
+        const num = el("text", { class: "fr", x: mid, y: y - 12, "text-anchor": "middle" }, parent);
+        num.textContent = it[0];
+        if (it[2]) num.style.fill = C[it[2]].ink;
+        el("line", { class: "fr-bar", x1: x + 4, x2: x + w[i] - 4, y1: y, y2: y }, parent);
+        el("text", { class: "fr", x: mid, y: y + 44, "text-anchor": "middle" }, parent).textContent = it[1];
+      }
+      x += w[i];
+    });
+  }
+
+  // ---------- One run: pull 2 marbles ----------
+  let pulled = [];   // marble objects sitting in the slots
+  async function putBack() {
+    mathL.replaceChildren(); noteL.replaceChildren();
+    const moving = pulled.filter(Boolean);
+    outL.querySelectorAll(".ghost").forEach(g => g.remove());
+    await Promise.all(moving.map(p => fly(p.m.g, p.at, p.m, BIG / R, 1, 450)));
+    moving.forEach(p => { p.m.inBag = true; p.m.g.remove(); p.m.g = marbleEl(p.m.color, inL); place(p.m.g, p.m.x, p.m.y); });
+    holeL.replaceChildren();
+    pulled = [];
+    slotL.querySelectorAll(".slot-q").forEach(q => (q.style.display = ""));
+    setBagCount(false);
+  }
+
+  async function pullOne(i) {
+    const pool = inBag();
+    const m = pool[Math.floor(Math.random() * pool.length)];
+    const same = pool.filter(p => p.color === m.color).length;
+    await shake();
+    m.inBag = false;
+    m.hole = el("circle", { class: "hole", cx: m.x, cy: m.y, r: R }, holeL);
+    m.g.remove(); m.g = marbleEl(m.color, outL); place(m.g, m.x, m.y);
+    slotL.querySelectorAll(".slot-q")[i].style.display = "none";
+    await fly(m.g, m, SLOT[i], 1, BIG / R, 850);
+    equation([[same, pool.length, m.color]], SLOT[i].x, 330, mathL);
+    pulled[i] = { m, at: SLOT[i] };
+    return { m, n: same, d: pool.length };
+  }
+
+  // With replacement the marble drops back in (a faded copy stays in the slot); without, it stays out.
+  async function settle(i, m) {
+    if (!without) {
+      const ghost = marbleEl(m.color, outL); ghost.classList.add("ghost");
+      ghost.setAttribute("opacity", 0.35); place(ghost, SLOT[i].x, SLOT[i].y, BIG / R);
+      await fly(m.g, SLOT[i], m, BIG / R, 1, 750);
+      m.inBag = true; m.hole.remove();
+      m.g.remove(); m.g = marbleEl(m.color, inL); place(m.g, m.x, m.y);
+      pulled[i] = null;
+      el("text", { class: "note back", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, noteL).textContent = "put back";
+      setBagCount(false);
+    } else {
+      el("text", { class: "note out", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, noteL).textContent = "kept out";
+      setBagCount(true);
+    }
+  }
+
+  // Each press does one pull: 1st pull, then 2nd pull, then the next press starts a new run.
+  let first = null;
+  async function run() {
+    if (busy) return;
+    lock(true);
+    if (!first) {
+      if (pulled.length) await putBack();
+      first = await pullOne(0);
+      await wait(650);
+      await settle(0, first.m);
+      setPullLabel();
+      return lock(false);
+    }
+    const a = first;
+    const b = await pullOne(1);
+    await wait(650);
+    await settle(1, b.m);
+    await wait(300);
+
+    const n = a.n * b.n, d = a.d * b.d, g = gcd(n, d);
+    const t = el("text", { class: "ptitle", x: 700, y: 470, "text-anchor": "middle" }, mathL);
+    t.textContent = `P(${a.m.color}, then ${b.m.color})`;
+    const items = [[a.n, a.d, a.m.color], "×", [b.n, b.d, b.m.color], "=", [n, d]];
+    if (g > 1) items.push("=", [n / g, d / g]);
+    equation(items, 700, 560, mathL);
+
+    runs++;
+    const key = a.m.color + "," + b.m.color;
+    tally.set(key, (tally.get(key) || 0) + 1);
+    drawTally();
+    first = null;
+    setPullLabel();
+    lock(false);
+  }
+  const setPullLabel = () => ($("pull").textContent = first ? "Pull the 2nd marble" : "Pull the 1st marble");
+
+  // ---------- Panel ----------
+  function drawTally() {
+    $("runs").textContent = runs;
+    const ul = $("tally"); ul.replaceChildren();
+    [...tally].sort((x, y) => y[1] - x[1]).forEach(([k, v]) => {
+      const [c1, c2] = k.split(",");
+      const li = document.createElement("li");
+      li.innerHTML = `<i style="background:${C[c1].fill}"></i><i style="background:${C[c2].fill}"></i> ${cap(c1)}, then ${c2} <b>${v}</b>`;
+      ul.appendChild(li);
+    });
+  }
+
+  const countsBox = $("counts");
+  COLORS.forEach(c => {
+    const row = document.createElement("div");
+    row.className = "count";
+    row.innerHTML = `<span class="dot" style="background:${c.fill}"></span><span class="name">${cap(c.key)}</span>
+      <button type="button" data-c="${c.key}" data-d="-1" aria-label="One less ${c.key}">−</button>
+      <output id="n-${c.key}"></output>
+      <button type="button" data-c="${c.key}" data-d="1" aria-label="One more ${c.key}">+</button>`;
+    countsBox.appendChild(row);
+  });
+
+  function lock(on) {
+    busy = on;
+    const total = COLORS.reduce((s, c) => s + counts[c.key], 0);
+    $("pull").disabled = on || total < 2;
+    countsBox.querySelectorAll("button").forEach(b => {
+      const v = counts[b.dataset.c] + +b.dataset.d;
+      b.disabled = on || v < 0 || v > MAX;
+    });
+    COLORS.forEach(c => ($("n-" + c.key).textContent = counts[c.key]));
+    [$("toggle"), $("sideWith"), $("sideWithout")].forEach(b => (b.disabled = on));
+  }
+
+  // A new bag or a new rule is a new experiment, so the runs start over.
+  function restart() { pulled = []; first = null; runs = 0; tally = new Map(); fillBag(); drawTally(); setPullLabel(); lock(false); }
+
+  countsBox.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || busy) return;
+    counts[b.dataset.c] = Math.max(0, Math.min(MAX, counts[b.dataset.c] + +b.dataset.d));
+    restart();
+  });
+
+  function setMode(w) {
+    if (busy || w === without) return;
+    without = w;
+    $("toggle").setAttribute("aria-checked", w);
+    $("sideWith").classList.toggle("on", !w);
+    $("sideWithout").classList.toggle("on", w);
+    restart();
+  }
+  $("toggle").addEventListener("click", () => setMode(!without));
+  $("sideWith").addEventListener("click", () => setMode(false));
+  $("sideWithout").addEventListener("click", () => setMode(true));
+  $("pull").addEventListener("click", run);
+  $("calc").addEventListener("click", e => {
+    const show = mathL.style.display === "none";
+    mathL.style.display = show ? "" : "none";
+    e.target.textContent = show ? "Hide calculations" : "Show calculations";
+    e.target.setAttribute("aria-pressed", show);
+  });
+
+  restart();
+})();
+</script>
+
+</body>
+</html>
