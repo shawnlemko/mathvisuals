@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Mutually Exclusive Events</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7b3fc4; --red: #c8323c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b48cff; --red: #ff6b74; } }
+:root[data-theme="dark"] { --purple: #b48cff; --red: #ff6b74; }
+.c-a { color: var(--pt); font-weight: 800; } .c-b { color: var(--orange); font-weight: 800; } .c-both { color: var(--purple); font-weight: 800; }
+
+/* The two definitions, side by side */
+.defs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+@media (max-width: 860px) { .defs { grid-template-columns: 1fr; } }
+.def { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; align-items: center; background: var(--sheet);
+  border: 3px solid var(--grid); border-radius: 12px; padding: 8px 16px; transition: opacity .4s, border-color .4s; }
+.def svg { grid-row: span 3; width: 80px; height: 50px; }
+.def h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; line-height: 1.15; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.def p { margin: 0; font-size: 1.1rem; line-height: 1.3; }
+.def .rule { font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; }
+.def .tag { font-family: var(--font-body); font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--sheet); background: var(--green); border-radius: 999px; padding: 2px 10px; display: none; }
+.def.on { border-color: var(--green); }
+.def.on .tag { display: inline-block; }
+.def.off { opacity: .4; }
+.def .mini circle { fill: none; stroke-width: 3; }
+
+.main { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.board { gap: 6px; }
+.caption { margin: 2px 6px 0; font-size: 1.3rem; line-height: 1.3; min-height: 2.6em; font-weight: 700; text-wrap: balance; }
+.caption .warn { color: var(--warn); }
+
+/* Venn diagram */
+.space { fill: var(--paper); stroke: var(--grid-major); stroke-width: 2; }
+.space-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--muted); }
+.circ { stroke-width: 4; fill-opacity: .07; transition: opacity .5s, fill-opacity .4s; }
+.circ.a { stroke: var(--pt); fill: var(--pt); } .circ.b { stroke: var(--orange); fill: var(--orange); }
+.circ.lit { fill-opacity: .2; }
+.lens { fill: var(--purple); fill-opacity: 0; transition: fill-opacity .4s; }
+.lens.lit { fill-opacity: .35; }
+.c-lbl { font-family: var(--font-display); font-weight: 800; font-size: 28px; transition: opacity .5s; }
+.c-lbl.a { fill: var(--pt); } .c-lbl.b { fill: var(--orange); }
+.gap-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--purple); text-anchor: middle; transition: opacity .4s; }
+.hide { opacity: 0; pointer-events: none; }
+
+.it { transition: transform .9s cubic-bezier(.4, 0, .2, 1), opacity .4s; }
+.it .face { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 2; transition: stroke .3s, fill .3s; }
+.it .pip { fill: var(--ink); }
+.it .rank { font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; }
+.it .suit { font-size: 26px; text-anchor: middle; }
+.it .redsuit { fill: var(--red); } .it .blacksuit { fill: var(--ink); }
+.it.dim { opacity: .3; }
+.it.inA .face { stroke: var(--pt); stroke-width: 4; }
+.it.inB .face { stroke: var(--orange); stroke-width: 4; }
+.it.both .face { stroke: var(--purple); stroke-width: 5; }
+.it .badge { opacity: 0; transition: opacity .3s; }
+.it.twice .badge, .it.once .badge { opacity: 1; }
+.it .badge circle { fill: var(--warn); }
+.it.once .badge circle { fill: var(--purple); }
+.it .badge text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 17px; text-anchor: middle; dominant-baseline: central; }
+
+/* Panel */
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.pick { display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px 10px; align-items: center; }
+.panel { gap: 12px; } .panel .card { padding: 12px 16px; }
+.pick label { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
+.pick select { font: inherit; font-size: 1.05rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; border: 2px solid var(--grid-major); background: var(--sheet); color: var(--ink); min-width: 0; }
+.pick select.a { border-color: var(--pt); } .pick select.b { border-color: var(--orange); }
+.nav { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav .stepno { font-weight: 700; color: var(--muted); margin-right: auto; }
+.nav .next { font-family: var(--font-display); font-size: 1.25rem; padding: 10px 20px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.nav .next:hover { background: var(--sheet); color: var(--pt); }
+.nav button:disabled { opacity: .4; cursor: default; }
+.lines { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.eq { font-size: 1.25rem; gap: 6px; }
+.eq .gap { width: 1.2em; }
+.eq .ev { font-family: var(--font-body); }
+/* Each line: the calculation, then a quick note on what its symbols mean. */
+.eqrow { display: grid; grid-template-columns: minmax(0, 1fr) 8.6em; gap: 12px; align-items: center; }
+.eqrow .eq + .eq { margin-top: 0; }
+.eqrow.rule .eq { font-size: 1.1rem; }
+.eqrow.wait .eq { color: var(--muted); }
+.eq .q { font-weight: 700; color: var(--muted); }
+.eqrow.lit { background: var(--chip); border-radius: 8px; padding: 2px 8px; margin-inline: -8px; }
+.eq .twice-note { color: var(--warn); font-weight: 700; }
+.eqrow.final { border-top: 2px dashed var(--grid-major); padding-top: 10px; }
+.why { font-size: .95rem; line-height: 1.25; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 8px; }
+.why b { color: var(--ink); font-family: var(--font-num); }
+.why .warn { color: var(--warn); font-weight: 700; }
+.verdict-big { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Mutually Exclusive Events</h1></div>
+    <div class="seg-btns" role="group" aria-label="Sample space">
+      <button type="button" data-space="die">One die</button>
+      <button type="button" data-space="cards">Deck of cards</button>
+    </div>
+  </header>
+
+  <section class="defs" aria-label="Definitions">
+    <div class="def" id="defME">
+      <svg class="mini" viewBox="0 0 96 60" aria-hidden="true"><circle cx="24" cy="30" r="21" style="stroke:var(--pt)"/><circle cx="72" cy="30" r="21" style="stroke:var(--orange)"/></svg>
+      <h2>Mutually exclusive <span class="tag">✓ This one</span></h2>
+      <p>The events <b>can't happen at the same time</b>. No overlap.</p>
+      <p class="rule">P(A and B) = 0, so P(A or B) = P(A) + P(B)</p>
+    </div>
+    <div class="def" id="defNot">
+      <svg class="mini" viewBox="0 0 96 60" aria-hidden="true"><circle cx="34" cy="30" r="24" style="stroke:var(--pt)"/><circle cx="62" cy="30" r="24" style="stroke:var(--orange)"/></svg>
+      <h2>Not mutually exclusive <span class="tag">✓ This one</span></h2>
+      <p>The events <b>can happen at the same time</b>. They overlap.</p>
+      <p class="rule">P(A or B) = P(A) + P(B) − P(A and B)</p>
+    </div>
+  </section>
+
+  <div class="main">
+    <div class="board">
+      <p class="caption" id="caption" aria-live="polite"></p>
+      <svg id="venn" viewBox="0 0 1000 640" role="img" aria-label="Venn diagram of the two events"></svg>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <div class="pick">
+          <label for="selA" class="c-a">A</label><select id="selA" class="a"></select>
+          <label for="selB" class="c-b">B</label><select id="selB" class="b"></select>
+        </div>
+        <div class="nav">
+          <span class="stepno" id="stepno"></span>
+          <button type="button" id="back">Back</button>
+          <button type="button" class="next" id="next">Next step</button>
+        </div>
+        <div class="lines" id="lines"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const frac = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+  const simp = (n, d) => { if (n === 0) return "0"; const g = gcd(n, d); return g === d ? String(n / d) : frac(n / g, d / g); };
+  const fullAndSimp = (n, d) => { const g = gcd(n, d); return n === 0 ? `${frac(0, d)} = 0` : g > 1 ? `${frac(n, d)} = ${simp(n, d)}` : frac(n, d); };
+
+  // ---------- Sample spaces and events ----------
+  const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+  const SUITS = [["♥", "red"], ["♦", "red"], ["♣", "black"], ["♠", "black"]];
+  const SPACES = {
+    die: {
+      unit: "roll", total: "6 outcomes",
+      items: [1, 2, 3, 4, 5, 6].map(v => ({ v, label: String(v) })),
+      events: [
+        ["even", "Even", "even", "Even", o => o.v % 2 === 0],
+        ["odd", "Odd", "odd", "Odd", o => o.v % 2 === 1],
+        ["gt4", "Greater than 4", "greater than 4", "&gt; 4", o => o.v > 4],
+        ["lt3", "Less than 3", "less than 3", "&lt; 3", o => o.v < 3],
+        ["six", "Roll a 6", "a 6", "6", o => o.v === 6],
+        ["one", "Roll a 1", "a 1", "1", o => o.v === 1],
+        ["prime", "Prime number", "a prime number", "Prime", o => [2, 3, 5].includes(o.v)],
+        ["mult3", "Multiple of 3", "a multiple of 3", "Mult. of 3", o => o.v % 3 === 0],
+      ],
+      defaults: ["even", "gt4"],
+    },
+    cards: {
+      unit: "card", total: "52 cards",
+      items: SUITS.flatMap(([s, c], si) => RANKS.map((r, ri) => ({ r, ri, s, si, c, label: r + s }))),
+      events: [
+        ["heart", "Heart ♥", "a Heart", "Heart", o => o.s === "♥"],
+        ["spade", "Spade ♠", "a Spade", "Spade", o => o.s === "♠"],
+        ["red", "Red card", "red", "Red", o => o.c === "red"],
+        ["black", "Black card", "black", "Black", o => o.c === "black"],
+        ["king", "King", "a King", "King", o => o.r === "K"],
+        ["ace", "Ace", "an Ace", "Ace", o => o.r === "A"],
+        ["face", "Face card (J, Q, K)", "a face card", "Face", o => o.ri >= 10],
+        ["num", "Number card (2 to 10)", "a number card", "Number", o => o.ri >= 1 && o.ri <= 9],
+      ],
+      defaults: ["heart", "king"],
+    },
+  };
+
+  // ---------- Venn geometry ----------
+  const svg = $("venn");
+  const RX0 = 16, RY0 = 16, RX1 = 984, RY1 = 624;      // sample space rectangle
+  const CY = 352, R = 226;
+  const LAYOUT = { overlap: [392, 608], apart: [262, 738] };
+
+  el("rect", { class: "space", x: RX0, y: RY0, width: RX1 - RX0, height: RY1 - RY0, rx: 14 }, svg);
+  const spaceLbl = el("text", { class: "space-lbl", x: RX0 + 18, y: RY0 + 36 }, svg);
+  const defs = el("defs", {}, svg);
+  const clip = el("clipPath", { id: "clipA" }, defs);
+  const clipC = el("circle", { r: R, cy: CY }, clip);
+  const circA = el("circle", { class: "circ a", r: R, cy: CY }, svg);
+  const circB = el("circle", { class: "circ b", r: R, cy: CY }, svg);
+  const lens = el("circle", { class: "lens", r: R, cy: CY, "clip-path": "url(#clipA)" }, svg);
+  const lblA = el("text", { class: "c-lbl a", "text-anchor": "middle", y: CY - R - 12 }, svg);
+  const lblB = el("text", { class: "c-lbl b", "text-anchor": "middle", y: CY - R - 12 }, svg);
+  const gapLbl = el("text", { class: "gap-lbl", y: CY }, svg);
+  const itemLayer = el("g", {}, svg);
+
+  // Item shapes are drawn at a base size, centred on 0,0, then moved and scaled with CSS transforms.
+  const DIE = 64, CW = 54, CH = 72;
+  const PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+    5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+
+  function makeItem(o, kind) {
+    const g = el("g", { class: "it" }, itemLayer);
+    if (kind === "die") {
+      el("rect", { class: "face", x: -DIE / 2, y: -DIE / 2, width: DIE, height: DIE, rx: 12 }, g);
+      for (const [px, py] of PIPS[o.v]) el("circle", { class: "pip", cx: px * 17, cy: py * 17, r: 6.5 }, g);
+      el("g", { class: "badge", transform: `translate(${DIE / 2 - 6},${-DIE / 2 + 6})` }, g);
+    } else {
+      el("rect", { class: "face", x: -CW / 2, y: -CH / 2, width: CW, height: CH, rx: 7 }, g);
+      const cls = o.c === "red" ? "redsuit" : "blacksuit";
+      el("text", { class: "rank " + cls, x: 0, y: -4, "font-size": o.r === "10" ? 22 : 26 }, g).textContent = o.r;
+      el("text", { class: "suit " + cls, x: 0, y: 26 }, g).textContent = o.s;
+      el("g", { class: "badge", transform: `translate(${CW / 2 - 8},${-CH / 2 + 8})` }, g);
+    }
+    const b = g.querySelector(".badge");
+    el("circle", { r: 14 }, b);
+    o.badgeTxt = el("text", { x: 0, y: 1 }, b);
+    o.g = g;
+  }
+  const place = (o, x, y, s) => { o.g.style.transform = `translate(${x}px, ${y}px) scale(${s})`; };
+
+  // Find the largest item size so each region of the Venn diagram has room for its outcomes.
+  function packVenn(sp, groups, apart) {
+    const [ax, bx] = apart ? LAYOUT.apart : LAYOUT.overlap;
+    const baseW = sp === "die" ? DIE : CW, baseH = sp === "die" ? DIE : CH;
+    // Keep outcomes off the sample space title and the circle names.
+    const lw = t => t.length * 16 + 20;
+    const la = lw(lblA.textContent), lb = lw(lblB.textContent);
+    const avoid = [[RX0, RY0, RX0 + 330, RY0 + 54],
+      apart ? [ax - la / 2, CY - R - 46, ax + la / 2, CY - R + 2] : [480 - la, CY - R - 46, 480, CY - R + 2],
+      apart ? [bx - lb / 2, CY - R - 46, bx + lb / 2, CY - R + 2] : [520, CY - R - 46, 520 + lb, CY - R + 2]];
+    if (apart) avoid.push([420, CY + R * 0.82 - 40, 580, CY + R * 0.82 + 30]);
+    for (let sc = 1.25; sc > 0.3; sc -= 0.03) {
+      const w = baseW * sc, h = baseH * sc, gx = w * 1.14, gy = h * 1.1, m = Math.hypot(w, h) / 2 + 4;
+      const pts = { a: [], b: [], ab: [], n: [] };
+      for (let y = RY0 + 8 + h / 2; y <= RY1 - 8 - h / 2; y += gy) {
+        for (let x = RX0 + 10 + w / 2; x <= RX1 - 10 - w / 2; x += gx) {
+          const da = Math.hypot(x - ax, y - CY), db = Math.hypot(x - bx, y - CY);
+          const inA = da <= R - m, inB = db <= R - m, outA = da >= R + m, outB = db >= R + m;
+          if (inA && inB) pts.ab.push([x, y]);
+          else if (inA && outB) pts.a.push([x, y]);
+          else if (inB && outA) pts.b.push([x, y]);
+          else if (outA && outB && !avoid.some(r => x + w / 2 > r[0] && x - w / 2 < r[2] && y + h / 2 > r[1] && y - h / 2 < r[3])) pts.n.push([x, y]);
+        }
+      }
+      if (Object.keys(groups).every(k => pts[k].length >= groups[k].length)) {
+        // Fill each region from its middle outwards; the outside fills in reading order.
+        const anchor = { a: [ax - (apart ? 0 : R * 0.45), CY], b: [bx + (apart ? 0 : R * 0.45), CY], ab: [(ax + bx) / 2, CY] };
+        for (const k of ["a", "b", "ab"]) pts[k].sort((p, q) => Math.hypot(p[0] - anchor[k][0], p[1] - anchor[k][1]) - Math.hypot(q[0] - anchor[k][0], q[1] - anchor[k][1]));
+        const out = new Map();
+        for (const k of Object.keys(groups)) groups[k].forEach((o, i) => out.set(o, [...pts[k][i], sc]));
+        return out;
+      }
+    }
+    return null;
+  }
+
+  // ---------- State ----------
+  let space = "cards", evA, evB, step = 0;
+  let items = [], groups, apart, vennPos, startPos;
+  const LAST = 6;
+
+  function setupSpace() {
+    const S = SPACES[space];
+    document.querySelectorAll("[data-space]").forEach(b => { b.classList.toggle("on", b.dataset.space === space); b.setAttribute("aria-pressed", b.dataset.space === space); });
+    for (const [sel, def] of [[$("selA"), S.defaults[0]], [$("selB"), S.defaults[1]]]) {
+      sel.innerHTML = S.events.map(e => `<option value="${e[0]}">${e[1]}</option>`).join("");
+      sel.value = def;
+    }
+    itemLayer.textContent = "";
+    items = S.items.map(o => ({ ...o }));
+    items.forEach(o => makeItem(o, space));
+    // Start: the whole sample space laid out neatly, before sorting.
+    startPos = new Map();
+    if (space === "die") items.forEach((o, i) => startPos.set(o, [500 + (i - 2.5) * 130, CY, 1.4]));
+    else items.forEach(o => startPos.set(o, [500 + (o.ri - 6) * 70, CY - 150 + o.si * 100, 1.12]));
+    spaceLbl.textContent = "Sample space: " + S.total;
+    setupEvents();
+  }
+
+  function setupEvents() {
+    const S = SPACES[space];
+    evA = S.events.find(e => e[0] === $("selA").value);
+    evB = S.events.find(e => e[0] === $("selB").value);
+    groups = { a: [], b: [], ab: [], n: [] };
+    for (const o of items) {
+      o.A = evA[4](o); o.B = evB[4](o);
+      groups[o.A && o.B ? "ab" : o.A ? "a" : o.B ? "b" : "n"].push(o);
+    }
+    apart = groups.ab.length === 0;
+    const [ax, bx] = apart ? LAYOUT.apart : LAYOUT.overlap;
+    for (const c of [circA, clipC]) c.setAttribute("cx", ax);
+    for (const c of [circB, lens]) c.setAttribute("cx", bx);
+    // Overlapping circles: names grow outwards from the middle so long ones never collide.
+    lblA.setAttribute("x", apart ? ax : 480); lblA.setAttribute("text-anchor", apart ? "middle" : "end");
+    lblB.setAttribute("x", apart ? bx : 520); lblB.setAttribute("text-anchor", apart ? "middle" : "start");
+    lblA.textContent = "A: " + evA[1]; lblB.textContent = "B: " + evB[1];
+    gapLbl.setAttribute("x", 500);
+    gapLbl.setAttribute("y", CY + R * 0.82);
+    gapLbl.innerHTML = `<tspan x="500" dy="-14">Nothing</tspan><tspan x="500" dy="30">in both</tspan>`;
+    vennPos = packVenn(space, groups, apart);
+    step = 0;
+    render();
+  }
+
+  // ---------- Rendering one step ----------
+  function render() {
+    const S = SPACES[space], N = items.length;
+    const a = items.filter(o => o.A).length, b = items.filter(o => o.B).length, k = groups.ab.length;
+    const union = a + b - k;
+    const sorted = step >= 1;
+    const nA = `<span class="c-a">${evA[2]}</span>`, nB = `<span class="c-b">${evB[2]}</span>`;
+
+    for (const o of items) {
+      const [x, y, s] = sorted ? vennPos.get(o) : startPos.get(o);
+      place(o, x, y, s);
+      const g = o.g;
+      g.classList.remove("dim", "inA", "inB", "both", "twice", "once");
+      if (step === 2) g.classList.add(o.A ? "inA" : "dim");
+      if (step === 3) g.classList.add(o.B ? "inB" : "dim");
+      if (step === 4) g.classList.add(o.A && o.B ? "both" : "dim");
+      if (step >= 5) {
+        if (o.A && o.B) g.classList.add("both");
+        else if (o.A) g.classList.add("inA");
+        else if (o.B) g.classList.add("inB");
+        else g.classList.add("dim");
+      }
+      if (step === 5 && o.A && o.B) { g.classList.add("twice"); o.badgeTxt.textContent = "×2"; }
+      if (step === 6 && o.A && o.B) { g.classList.add("once"); o.badgeTxt.textContent = "×1"; }
+    }
+    for (const e of [circA, circB, lblA, lblB]) e.classList.toggle("hide", !sorted);
+    circA.classList.toggle("lit", step === 2 || step >= 5);
+    circB.classList.toggle("lit", step === 3 || step >= 5);
+    lens.classList.toggle("lit", step === 4 && !apart);
+    gapLbl.classList.toggle("hide", !(apart && sorted && step >= 1));
+
+    $("defME").classList.toggle("on", sorted && apart); $("defME").classList.toggle("off", sorted && !apart);
+    $("defNot").classList.toggle("on", sorted && !apart); $("defNot").classList.toggle("off", sorted && apart);
+
+    // Caption: one plain sentence for each step.
+    const bothList = groups.ab.map(o => o.label).join(", ");
+    const caps = [
+      `Predict: can one ${S.unit} be ${nA} <u>and</u> ${nB} at the same time?`,
+      apart
+        ? `No! No ${S.unit} is in both circles, so the circles don't overlap. These events are <span class="c-both">mutually exclusive</span>.`
+        : `Yes! The ${bothList} ${k === 1 ? "is" : "are"} in both circles, so the circles overlap. These events are <span class="c-both">not mutually exclusive</span>.`,
+      `${a} out of ${N} ${S.unit}s ${a === 1 ? "is" : "are"} ${nA}.`,
+      `${b} out of ${N} ${S.unit}s ${b === 1 ? "is" : "are"} ${nB}.`,
+      apart ? `The overlap is empty. 0 out of ${N} ${S.unit}s are both, so P(A and B) = 0.`
+            : `${k} out of ${N} ${S.unit}s ${k === 1 ? "is" : "are"} both ${nA} and ${nB}.`,
+      apart ? `Add: ${a} + ${b} = ${a + b}. There are ${union} ${S.unit}s in the circles, so nothing was counted twice.`
+            : `Add: ${a} + ${b} = ${a + b}. But there are only ${union} ${S.unit}s in the circles! <span class="warn">The ${bothList} got counted twice.</span>`,
+      apart ? `Nothing to take away. For mutually exclusive events, just add: P(A or B) = P(A) + P(B).`
+            : `Take the overlap away once, so every ${S.unit} is counted once. ${union} out of ${N}.`,
+    ];
+    $("caption").innerHTML = caps[step];
+    $("stepno").textContent = step === 0 ? "Predict first" : `Step ${step} of ${LAST}`;
+    $("back").disabled = step === 0;
+    $("next").textContent = step === 0 ? "Sort into circles" : step === LAST ? "Start over" : "Next step";
+
+    // Math lines: shown with ? until their step comes.
+    // Lines name the real events (P(Heart), not P(A)), coloured to match circles A and B.
+    const A = `<span class="c-a ev">${evA[3]}</span>`, B = `<span class="c-b ev">${evB[3]}</span>`, P = (x) => `<span>P(${x})</span>`;
+    const cnt = n => n === 0 ? `${frac(0, N)} = 0` : frac(n, N);
+    const q = `<span class="q">?</span>`;
+    const lines = [];
+    const row = (on, lit, html, why, cls = "") =>
+      lines.push(`<div class="eqrow${on ? "" : " wait"}${lit ? " lit" : ""} ${cls}"><div class="eq">${html}</div><div class="why">${why}</div></div>`);
+    row(step >= 2, step === 2 || step === 3, `${P(A)} = ${step >= 2 ? cnt(a) : q}<span class="gap"></span>${P(B)} = ${step >= 3 ? cnt(b) : q}`,
+      `<b>P( )</b> means the chance of`);
+    row(step >= 4, step === 4, `${P(`${A} and ${B}`)} = ${step >= 4 ? cnt(k) : q}`, `<b>and</b> means in both circles`);
+    row(step >= 5, step === 5, `${P(A)} + ${P(B)} = ${step >= 5 ? `${frac(a, N)} + ${frac(b, N)} = ${apart ? frac(a + b, N) : `<span class="twice-note">${frac(a + b, N)}</span>`}` : q}`,
+      `<b>+</b> adds both circles` + (step >= 5 && !apart ? `. <span class="warn">The overlap counts twice!</span>` : ""));
+    const orWhy = `<b>or</b> means in A, in B, or in both`;
+    if (step < 6) row(false, false, `${P(`${A} or ${B}`)} = ${q}`, orWhy, "final");
+    else if (apart) {
+      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">0</span>`, `${orWhy}. <b>− 0</b>: no overlap to take away`, "final rule");
+      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
+    } else {
+      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">${P(`${A} and ${B}`)}</span>`, `${orWhy}. <b>−</b> takes the overlap away once`, "final rule");
+      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} − <span class="c-both">${frac(k, N)}</span> = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
+    }
+    $("lines").innerHTML = lines.join("");
+  }
+
+  // ---------- Controls ----------
+  document.querySelectorAll("[data-space]").forEach(btn => btn.addEventListener("click", () => {
+    if (space === btn.dataset.space) return;
+    space = btn.dataset.space; setupSpace();
+  }));
+  $("selA").addEventListener("change", setupEvents);
+  $("selB").addEventListener("change", setupEvents);
+  $("next").addEventListener("click", () => { step = step === LAST ? 0 : step + 1; render(); });
+  $("back").addEventListener("click", () => { if (step > 0) { step--; render(); } });
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "SELECT") return;
+    if (e.key === "ArrowRight") $("next").click();
+    if (e.key === "ArrowLeft") $("back").click();
+  });
+
+  setupSpace();
+})();
+</script>
+
+</body>
+</html>

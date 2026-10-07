@@ -164,9 +164,30 @@ h1 .m { color: var(--pt); }
 .frac > span:first-child { border-bottom-width: 3px; }
 .q { color: var(--muted); }
 .c-purple { color: var(--purple); }
-.trig { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
+.angles { display: grid; grid-template-columns: 1fr 1fr; padding: 0; }
+.angles > div { padding: 8px 14px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.angles > div + div { border-left: 3px dotted var(--grid-major); }
+.av { font-family: var(--font-num); font-weight: 700; font-size: 2rem; line-height: 1.2; white-space: nowrap; }
+.av .frac { font-size: 1.7rem; }
+.sub { margin: 0; font-size: 0.95rem; line-height: 1.3; }
+#ang, #ref { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.trig { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
 .trig > div { display: flex; flex-direction: column; align-items: flex-start; }
 .trig .fn { font-size: 1rem; }
+.trig .tan { grid-column: 1 / -1; padding-top: 6px; border-top: 1px dashed var(--grid-major); }
+.steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 1.25rem; line-height: 1.1; }
+.steps .eqs { font-size: 1.3rem; }
+.steps .frac .frac { font-size: 1.1rem; }
+.steps .frac.big-frac > span:first-child { border-bottom-width: 4px; padding-bottom: 4px; }
+.steps .frac.big-frac > span:last-child { padding-top: 4px; }
+.x { position: relative; }
+.x::after { content: ""; position: absolute; left: -2px; right: -2px; top: 50%; border-top: 3px solid var(--orange); transform: rotate(-20deg); }
+.units { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; flex: none; }
+.units button { font-size: 0.95rem; padding: 7px 6px; border-radius: 0; }
+.units button:first-child { border-radius: 8px 0 0 8px; }
+.units button:last-child { border-radius: 0 8px 8px 0; }
+.units button + button { border-left: 0; }
+.units button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
 .pos { color: var(--pos); } .neg { color: var(--neg); }
 .typed { display: flex; flex: none; gap: 8px; align-items: center; }
 .typed input { flex: 1 1 auto; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; padding: 6px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
@@ -219,18 +240,16 @@ h1 .m { color: var(--pt); }
       <svg id="svg" viewBox="-550 -500 1100 1000" role="img" aria-label="Unit circle with a point P on it that can be dragged around"></svg>
     </div>
     <div class="panel">
-      <div class="card">
-        <p class="label">Angle θ</p>
-        <div class="row"><span class="big c-pt" id="deg">30°</span><span class="eqs">=</span><span class="big c-pt" id="rad"></span></div>
-        <p class="sub" id="angSub"></p>
+      <div class="units" role="group" aria-label="Show angles in">
+        <button type="button" data-units="deg" aria-pressed="false">Degrees</button>
+        <button type="button" data-units="rad" aria-pressed="false">Radians</button>
+        <button type="button" data-units="both" aria-pressed="true">Both</button>
       </div>
-      <div class="card">
-        <p class="label">Reference angle θ<sub>r</sub></p>
-        <div class="row" id="ref"></div>
+      <div class="card angles">
+        <div><p class="label">Angle θ</p><div id="ang"></div></div>
+        <div><p class="label">Reference angle θ<sub>r</sub></p><div id="ref"></div></div>
       </div>
-      <div class="card">
-        <p class="label">Point P(cos θ, sin θ)</p>
-        <div class="row mid" id="pt"></div>
+      <div class="card" id="valCard">
         <div class="trig" id="trig"></div>
       </div>
       <div class="typed">
@@ -272,6 +291,7 @@ h1 .m { color: var(--pt); }
 
   let theta = 30, free = 30;
   const show = { values: true, ref: true, signs: true, special: false };
+  let units = "both";
 
   // Exact values by reference angle. Each is [top, bottom] of a fraction, bottom "" for a whole number.
   const EXACT = {
@@ -379,11 +399,19 @@ h1 .m { color: var(--pt); }
     if (d === 90) { x = 64; y = -R - 52; }
     if (d === 270) { x = 64; y = R + 40; }
     const t = el("text", { class: "sp-lbl", x, y: y - 4 }, specialG);
-    el("tspan", { x, dy: 0 }, t).textContent = d + "°";
-    const rp = radParts(d);
-    el("tspan", { class: "r", x, dy: 26 }, t).textContent = fracText(rp.sign, rp.top, rp.bot);
+    t.dataset.x = x; t.dataset.y = y; t.dataset.d = d;
     return t;
   });
+  function fillSpecialLabels() {
+    spLbls.forEach(t => {
+      const x = t.dataset.x, y = +t.dataset.y, d = +t.dataset.d, rp = radParts(d);
+      t.replaceChildren();
+      const one = units !== "both";
+      t.setAttribute("y", one ? y + 9 : y - 4);
+      if (units !== "rad") el("tspan", { x, dy: 0 }, t).textContent = d + "°";
+      if (units !== "deg") el("tspan", { class: one ? "" : "r", x, dy: one ? 0 : 26 }, t).textContent = fracText(rp.sign, rp.top, rp.bot);
+    });
+  }
 
   const refG = el("g", {}, svg);
   const refWedge = el("path", { class: "ref-wedge" }, refG);
@@ -459,12 +487,12 @@ h1 .m { color: var(--pt); }
     if (q !== 0) {
       const rr = 165;
       refWedge.setAttribute("d", arcPath(rr, base, a));
-      const m = (base + a) / 2, lr = ra < 24 ? rr + 40 : rr - 44;
+      const m = (base + a) / 2, lr = ra < 24 ? rr + 40 : rr + 36;
       refLbl.setAttribute("x", X(lr, m)); refLbl.setAttribute("y", Y(lr, m));
     }
 
     // Legs: cos along the x-axis, sin straight up or down to P.
-    legsG.setAttribute("visibility", show.values ? "visible" : "hidden");
+    legsG.style.display = show.values ? "" : "none";
     cosLeg.setAttribute("x2", px);
     sinLeg.setAttribute("x1", px); sinLeg.setAttribute("y1", 0);
     sinLeg.setAttribute("x2", px); sinLeg.setAttribute("y2", py);
@@ -494,39 +522,68 @@ h1 .m { color: var(--pt); }
   }
 
   /* ---------- Panel ---------- */
+  // An angle in the chosen units: degrees on top, radians under it.
+  function angleLines(d, cls) {
+    const rp = radParts(d), out = [];
+    if (units !== "rad") out.push(`<span class="av ${cls}">${degText(d)}</span>`);
+    if (units !== "deg") out.push(`<span class="av ${cls}">${rp ? fracHTML(rp.sign, rp.top, rp.bot) : num(rad(d), 2)}</span>`);
+    return out.join("");
+  }
+  const unitText = d => {
+    const rp = radParts(d);
+    return units === "rad" && rp ? fracText(rp.sign, rp.top, rp.bot) : degText(d);
+  };
+
+  // tan θ = sin θ / cos θ, with the matching parts crossed out, then the answer.
+  function tanSteps(sn, cs, tn) {
+    const over = (a, b, extra) => `<span class="frac ${extra || ""}"><span>${a}</span><span>${b}</span></span>`;
+    const head = over(`<span class="c-orange">sin θ</span>`, `<span class="c-green">cos θ</span>`);
+    const eq = sn.exact ? "=" : "≈";
+    const x = (t, on) => (on ? `<span class="x">${t}</span>` : t);
+    const bothNeg = sn.sign && cs.sign;
+    const sameBot = sn.exact && sn.bot && sn.bot === cs.bot;
+    const sameTop = sn.exact && sn.top === cs.top && sn.top !== "0";
+    const part = (t, crossTop) => {
+      const sg = x(t.sign, bothNeg), top = x(t.top, crossTop);
+      return t.bot ? sg + over(top, x(t.bot, sameBot)) : sg + top;
+    };
+    let html = `<div class="steps"><span>tan θ</span><span class="eqs">=</span>${head}<span class="eqs">=</span>` +
+      over(part(sn, sameTop), part(cs, sameTop), "big-frac");
+    if (!tn) return html + `<span class="eqs">=</span><span class="q">undefined</span></div>`;
+    const cls = tn.v > 1e-9 ? "pos" : tn.v < -1e-9 ? "neg" : "";
+    if (sn.exact && (sameBot || sameTop || bothNeg)) {
+      // What is left after crossing out.
+      const t = sameTop ? "1" : sn.top, b = sameTop ? "1" : cs.top;
+      const sign = tn.v < 0 ? MINUS : "";
+      const left = b === "1" ? sign + t : sign + over(t, b);
+      const final = valHTML(tn);
+      html += `<span class="eqs">=</span><span class="${cls}">${left}</span>`;
+      if (left !== final) html += `<span class="eqs">=</span><span class="${cls}">${final}</span>`;
+    } else html += `<span class="eqs">${eq}</span><span class="${cls}">${valHTML(tn)}</span>`;
+    return html + `</div>`;
+  }
+
   function drawPanel() {
-    $("deg").textContent = degText(theta);
     const rp = radParts(theta);
-    const rv = rad(theta);
-    $("rad").innerHTML = rp ? fracHTML(rp.sign, rp.top, rp.bot) : num(rv, 2);
-    let sub = (rp && rp.top !== "0" ? "≈ " + num(rv, 2) + " " : "") + "rad";
-    if (theta < 0 || theta >= 360) sub += " · coterminal with " + degText(mod360(theta));
-    $("angSub").textContent = sub;
+    let sub = "";
+    if (units !== "deg" && !(rp && rp.top === "0")) sub += `<p class="sub">≈ ${num(rad(theta), 2)} rad</p>`;
+    if (theta < 0 || theta >= 360) sub += `<p class="sub">coterminal with ${unitText(mod360(theta))}</p>`;
+    $("ang").innerHTML = angleLines(theta, "c-pt") + sub;
 
     const q = quadrant(theta), ra = refAngle(theta);
     const qName = q ? "Quadrant " + ["I", "II", "III", "IV"][q - 1] : "On an axis";
-    if (!show.ref) $("ref").innerHTML = `<span class="mid q">?</span>`;
-    else if (!q) $("ref").innerHTML = `<span class="mid q">${qName}</span>`;
-    else {
-      const rr = radParts(ra);
-      $("ref").innerHTML = `<span class="mid c-purple">${degText(ra)}</span>` +
-        (rr ? `<span class="eqs">=</span><span class="mid c-purple">${fracHTML(rr.sign, rr.top, rr.bot)}</span>` : "") +
-        `<span class="sub" style="margin:0">${qName}</span>`;
-    }
+    if (!show.ref) $("ref").innerHTML = `<span class="av q">?</span>`;
+    else if (!q) $("ref").innerHTML = `<p class="sub">${qName}</p>`;
+    else $("ref").innerHTML = angleLines(ra, "c-purple") + `<p class="sub">${qName}</p>`;
 
+    $("valCard").hidden = !show.values;
+    if (!show.values) return;
     const cs = trigValue("cos", theta), sn = trigValue("sin", theta), tn = trigValue("tan", theta);
-    const approx = cs.exact ? "" : "≈ ";
-    if (!show.values) {
-      $("pt").innerHTML = `<span class="q">(?, ?)</span>`;
-      $("trig").innerHTML = ["sin θ", "cos θ", "tan θ"].map(f => `<div><span class="fn">${f}</span><span class="q">?</span></div>`).join("");
-      return;
-    }
-    $("pt").innerHTML = `${approx}(<span class="c-green">${valHTML(cs)}</span>,&nbsp;<span class="c-orange">${valHTML(sn)}</span>)`;
     const cls = t => (t.v > 1e-9 ? "pos" : t.v < -1e-9 ? "neg" : "");
     const eq = cs.exact ? " =" : " ≈";
-    const cell = (name, c, t) => `<div><span class="fn ${c}">${name}${eq}</span>` +
-      (t ? `<span class="${cls(t)}">${valHTML(t)}</span>` : `<span class="q" style="font-size:1.1rem">undefined</span>`) + `</div>`;
-    $("trig").innerHTML = cell("sin θ", "c-orange", sn) + cell("cos θ", "c-green", cs) + cell("tan θ", "", tn);
+    const cell = (name, c, t) => `<div><span class="fn ${c}">${name}${eq}</span><span class="${cls(t)}">${valHTML(t)}</span></div>`;
+    $("trig").innerHTML = cell("sin θ", "c-orange", sn) + cell("cos θ", "c-green", cs) +
+      `<div class="tan">${tanSteps(sn, cs, tn)}</div>`;
   }
 
   function update() { drawBoard(); drawPanel(); }
@@ -620,6 +677,14 @@ h1 .m { color: var(--pt); }
     update();
   }));
 
+  document.querySelectorAll("[data-units]").forEach(b => b.addEventListener("click", () => {
+    units = b.dataset.units;
+    document.querySelectorAll("[data-units]").forEach(o => o.setAttribute("aria-pressed", o === b));
+    fillSpecialLabels();
+    update();
+  }));
+
+  fillSpecialLabels();
   update();
   if (document.fonts) document.fonts.ready.then(update);
 })();

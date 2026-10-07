@@ -198,6 +198,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .tb:focus-visible .bg { stroke: var(--ink); stroke-width: 5; }
 #split { font-size: 1.5rem; padding: 16px 8px; color: var(--sheet); background: var(--orange); border: 2px solid var(--orange); }
 #split:hover { background: var(--sheet); color: var(--orange); }
+#steps { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--ink); border: 2px solid var(--ink); }
+#steps:hover { background: var(--sheet); color: var(--ink); }
+.stepcard ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; counter-reset: st; }
+.stepcard li { counter-increment: st; display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 2px 8px; color: var(--muted); }
+.stepcard li::before { content: counter(st); grid-row: span 2; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--chip); }
+.stepcard li .say { font-size: 1.05rem; line-height: 1.3; }
+.stepcard li .math { font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.05em; line-height: 1.3; }
+.stepcard li .math sup { font-size: 0.6em; }
+.stepcard li.now { color: var(--ink); animation: stepIn 0.5s ease-out; }
+.stepcard li.now::before { background: var(--pt); color: var(--sheet); }
+.stepcard li.now .math { color: var(--pt); font-size: 1.6rem; }
+@keyframes stepIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .stepcard li.now { animation: none; } }
 #dims { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--green); border: 2px solid var(--green); }
 #dims:hover { background: var(--sheet); color: var(--green); }
 .done { border: 3px solid var(--green); display: flex; flex-direction: column; gap: 8px; font-family: var(--font-num); font-weight: 700; line-height: 1.25; }
@@ -231,6 +244,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <p class="why" id="why" role="alert" hidden></p>
         <button id="make" type="submit">Make tiles</button>
       </form>
+      <button id="steps" type="button">Show steps</button>
+      <div class="card stepcard" id="stepsCard" hidden><ol id="stepList"></ol></div>
       <button id="split" type="button" hidden>Ready to split?</button>
       <button id="dims" type="button" hidden>Show dimensions</button>
       <div class="card done" id="done" hidden></div>
@@ -261,6 +276,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const HMAX = a => a === 1 ? 5 : 3; // largest h in (x + h)² whose area models still fit
   const matSize = h => X + Math.abs(h) * U + 40;
   const MGAP = 76; // room between side-by-side area models for an upright width label
+  const MY = 96; // top of the area models, leaving room above for the length label (Shawn: dimensions on top)
 
   // Tile colours stay the same in dark mode; text stays dark on every fill.
   const KINDS = [
@@ -466,7 +482,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const h = p.b / (2 * p.a), S = matSize(h);
     layout(p.a === 1 ? 1080 : Math.max(1080, p.a * (S + MGAP) + MGAP));
     split = p.a === 1;
-    mats = split ? [makeMat(40, 40, h)] : [];
+    mats = split ? [makeMat(40, MY, h)] : [];
     drawMats();
     splitBtn.hidden = split;
     const list = [];
@@ -479,6 +495,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       if (spot) newTile(k, spot.x, spot.y, turned);
     }
     dimsOn = false;
+    stepNo = 0;
+    stepList.replaceChildren();
+    stepsCard.hidden = true;
+    stepsBtn.textContent = "Show steps";
     refresh();
   }
 
@@ -488,7 +508,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (!target || split || drag) return;
     const a = target.a, h = target.b / (2 * a), S = matSize(h);
     mats = [];
-    for (let i = 0; i < a; i++) mats.push(makeMat(MGAP + i * (S + MGAP), 40, h));
+    for (let i = 0; i < a; i++) mats.push(makeMat(MGAP + i * (S + MGAP), MY, h));
     drawMats();
     split = true;
     splitBtn.hidden = true;
@@ -609,7 +629,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Braces with the length above (or below) and the width left (or right) of the rectangle.
   // Beside several area models the width label stands upright on the left so it fits between them.
   function drawBraces(m, lenLbl, widLbl, upright) {
-    const up = m.y0 >= 64, lt = upright || m.x0 >= 30 + widLbl.length * 21;
+    const up = m.y0 >= 50, lt = upright || m.x0 >= 30 + widLbl.length * 21;
     const by = up ? m.y0 - 12 : m.y1 + 12, bx = lt ? m.x0 - 12 : m.x1 + 12, d = up ? -12 : 12, e = lt ? -12 : 12;
     el("path", { class: "dim-brace", d: `M${m.x0 + 3},${by - d} v${d} H${m.x1 - 3} v${-d}` }, dimLayer);
     el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + d * 2, "text-anchor": "middle" }, dimLayer).textContent = lenLbl;
@@ -764,7 +784,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function overTrash(p) { return inBox(p, TR) || inBox(p, TRAY); }
 
   svg.addEventListener("pointerdown", e => {
-    if (drag) return;
+    if (drag || busy) return;
     e.preventDefault();
     const p = toSvg(e);
     if (e.target.closest(".zp, .tb")) return;
@@ -857,8 +877,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   });
 
   // Put the zero pair in the first clear spot above the button, working up and to the right.
-  function zeroPair() {
-    if (drag) return;
+  function pairSpot() {
     const w = 2 * U, h = U;
     const blocked = r => !inWs(r) || mats.some(m => overlap(r, m)) || overlap(r, BAR) || tiles.some(o => overlap(r, o));
     let spot = null;
@@ -870,6 +889,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const r = { x, y: ZP.y + (ZP.h - h) / 2, w, h };
       if (!blocked(r)) spot = r;
     }
+    return spot;
+  }
+  function zeroPair() {
+    if (drag || busy) return;
+    const spot = pairSpot();
     if (!spot) return;
     clearSel();
     setSel(newTile(kind("1"), spot.x, spot.y), true);
@@ -878,6 +902,113 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
   zp.addEventListener("click", zeroPair);
   zp.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); zeroPair(); } });
+
+  // ---- Show steps (Shawn): each step of completing the square written out, with the tiles moving to match ----
+  const stepsBtn = document.getElementById("steps"), stepsCard = document.getElementById("stepsCard");
+  const stepList = document.getElementById("stepList");
+  let stepNo = 0, busy = false;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Slide tiles to new places (turning any that must lie the other way round first).
+  function animate(moves, ms = 900) {
+    if (!moves.length) return Promise.resolve();
+    busy = true;
+    moves.forEach(m => {
+      if (m.turn) { [m.t.w, m.t.h] = [m.t.h, m.t.w]; drawTile(m.t.g, m.t.k, m.t.w, m.t.h); }
+      m.x0 = m.t.x; m.y0 = m.t.y; wsLayer.appendChild(m.t.g);
+    });
+    return new Promise(res => {
+      const t0 = performance.now(), d = reduce ? 1 : ms;
+      const tick = now => {
+        const k = Math.min(1, (now - t0) / d), e = k < 0.5 ? 2 * k * k : 1 - (2 - 2 * k) ** 2 / 2;
+        moves.forEach(m => { m.t.x = m.x0 + (m.x - m.x0) * e; m.t.y = m.y0 + (m.y - m.y0) * e; place(m.t); });
+        if (k < 1) requestAnimationFrame(tick); else { busy = false; res(); }
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+  const moveTo = (t, c) => ({ t, x: c.x, y: c.y, turn: !near(t.w, c.w) });
+  const inCell = t => cells.some(c => near(c.x, t.x) && near(c.y, t.y));
+  const xs = n => (Math.abs(n) === 1 ? "" : Math.abs(n)) + "x";
+  const sx = n => (n < 0 ? MINUS : "") + xs(n);                       // −3x
+  const tx = n => (n < 0 ? MINUS : "+") + " " + xs(n);                // + 3x / − 3x
+  const tn = n => n ? " " + (n < 0 ? MINUS : "+") + " " + Math.abs(n) : ""; // + 5 / − 5 / nothing
+  const X2 = "x" + sup2;
+
+  // The words and the algebra for step i of the typed expression.
+  function stepText(i) {
+    const { a, b, c } = target, h = b / (2 * a), N = a * h * h, d = c - N, A = a > 1 ? a : "";
+    const have = Math.max(0, c), pairs = Math.max(0, N - have);
+    const inner = (body, group) => a > 1 ? `${a}(${body})` : group ? `(${body})` : body;
+    return [
+      ["Start with the tiles", poly(a, b, c)],
+      a > 1 ? [`Make ${a} area models, one for each x²`, `${inner(`${X2} ${tx(b / a)}`)}${tn(c)}`]
+            : ["Put x² in the corner", poly(a, b, c)],
+      [`Split ${sx(b / a)} in half: ${sx(h)} on top, ${sx(h)} down the side`, `${inner(`${X2} ${tx(h)} ${tx(h)}`)}${tn(c)}`],
+      [`The corner needs ${Math.abs(h)} × ${Math.abs(h)} = ${h * h} ${h * h === 1 ? "one" : "ones"}` + (a > 1 ? ` in each, ${N} in all` : "") +
+        (pairs ? `. Add ${pairs} zero pair${pairs === 1 ? "" : "s"}: green ones in, red ones out` : ""),
+        `${inner(`${X2} ${tx(b / a)} + ${h * h}`, true)}${tn(c)} ${MINUS} ${N}`],
+      ["Read the sides", `${A}${binom(h)}${sup2}${tn(d)}`]
+    ][i];
+  }
+  // Move the tiles for step i.
+  async function stepMoves(i) {
+    const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
+    if (i === 1) {
+      if (!mats.length) {
+        const S = matSize(h);
+        for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
+        drawMats(); split = true; splitBtn.hidden = true;
+      }
+      const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));
+      // Anything else sitting where the area models now are moves out of the way.
+      for (const t of tiles) if (!big.includes(t) && mats.some(m => overlap(t, m))) {
+        const spot = findSpot(t.w, t.h, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD });
+        if (spot) moves.push({ t, x: spot.x, y: spot.y });
+      }
+      return animate(moves);
+    }
+    if (i === 2) {
+      const xt = tiles.filter(t => /^-?x$/.test(t.k.id) && !inCell(t)), slots = [];
+      mats.forEach(m => { for (let k = 1; k < n; k++) slots.push(at(m, 0, k)); });
+      mats.forEach(m => { for (let r = 1; r < n; r++) slots.push(at(m, r, 0)); });
+      return animate(slots.map((c, j) => xt[j] && moveTo(xt[j], c)).filter(Boolean));
+    }
+    if (i === 3) {
+      const slots = [];
+      mats.forEach(m => { for (let r = 1; r < n; r++) for (let k = 1; k < n; k++) slots.push(at(m, r, k)); });
+      const ones = tiles.filter(t => t.k.id === "1" && !inCell(t)), moves = [];
+      slots.forEach((c, j) => {
+        let t = ones[j];
+        if (!t) { // a zero pair: the green one fills the corner, the red one stays outside
+          const spot = pairSpot();
+          if (!spot) return;
+          t = newTile(kind("1"), spot.x, spot.y);
+          newTile(kind("-1"), spot.x + U, spot.y);
+        }
+        moves.push(moveTo(t, c));
+      });
+      return animate(moves, 1100);
+    }
+    if (i === 4) { dimsOn = true; refresh(); }
+  }
+  stepsBtn.addEventListener("click", async () => {
+    if (busy || drag || !target) return;
+    if (!stepNo || stepNo > 4) makeTiles(target);
+    stepsCard.hidden = false;
+    stepsBtn.disabled = true;
+    clearSel();
+    await stepMoves(stepNo);
+    stepList.querySelectorAll("li").forEach(li => li.classList.remove("now"));
+    const [say, math] = stepText(stepNo);
+    const li = document.createElement("li");
+    li.className = "now";
+    li.innerHTML = `<span class="say">${say}</span><span class="math">${math}</span>`;
+    stepList.appendChild(li);
+    stepNo++;
+    stepsBtn.textContent = stepNo > 4 ? "Show steps again" : "Next step";
+    stepsBtn.disabled = false;
+    refresh();
+  });
 
   const input = document.getElementById("expr");
   const why = document.getElementById("why");
