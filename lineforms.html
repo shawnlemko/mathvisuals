@@ -621,6 +621,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (g > 1) steps.push({ say: `Every number divides by ${g}, so divide every term by <b>${g}</b>.`, eq: gF(gx / g, gy / g, gc / g) });
   }
 
+  // Slope-point with a fraction: multiply both sides by k first, then distribute, so no denominators are left.
+  // Pushes those two steps and returns k·y + lc = rx·x + rc (whole numbers).
+  function clearSP(steps, m, P) {
+    const k = lcm(m.d, P.y.d), km = m.n * (k / m.d), ky1 = mul(P.y, R(k)).n;
+    const left = P.y.d === 1 ? `${k}(${spLeft(P)})` : side([T(k, "y"), T(-ky1)]);
+    steps.push({ say: `Multiply both sides by <b>${k}</b>, so there are no fractions.`, eq: eqn(left, `${fmt(km)}${spRight(P)}`) });
+    const rx = km, rc = -km * P.x.n;
+    steps.push({ say: "Multiply into the brackets.", eq: eqn(side([T(k, "y"), T(-ky1)]), side([T(rx, "x"), T(rc)])) });
+    return { k, lc: -ky1, rx, rc };
+  }
+
   function findPoint(steps, P, how) {
     if (zero(P.x)) steps.push({ say: "We need a point. The y-intercept is a point on the line.", eq: `(${V("x")}₁, ${V("y")}₁) = (<span class="c-pt">0</span>, ${signed(P.y, "c-pt")})` });
     else steps.push(how());
@@ -638,15 +649,29 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     s.push({ say: `Start with ${LONG[from]}.`, eq: start });
 
     if (from === "sp" && to === "si") {
-      const mx1 = mul(m, P.x);
-      if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
-      else if (zero(P.x)) s.push({ say: `x − 0 is just x, so the right side is <b>${txt(m)}</b>x.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green")])) });
-      else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green"), T(neg(mx1))])) });
-      if (!zero(P.y)) {
-        const y1 = P.y;
-        s.push({ say: y1.n > 0 ? `Add <b>${txt(y1)}</b> to both sides, so y is by itself.` : `Subtract <b>${txt(neg(y1))}</b> from both sides, so y is by itself.`,
-          eq: eqn(V("y"), side([T(m, "x", "c-green"), T(neg(mx1)), T(y1)])) });
-        if (!zero(mx1)) s.push({ say: mx1.d > 1 || y1.d > 1 ? "Combine the numbers. Use a common denominator." : "Combine the numbers.", eq: siF(m, yi) });
+      if (m.d > 1 || P.y.d > 1) {
+        const { k, lc, rx, rc } = clearSP(s, m, P);
+        if (lc !== 0) {
+          s.push({ say: lc < 0 ? `Add <b>${-lc}</b> to both sides, so the y term is by itself.` : `Subtract <b>${lc}</b> from both sides, so the y term is by itself.`,
+            eq: eqn(side([T(k, "y")]), side([T(rx, "x"), T(rc), T(-lc)])) });
+          if (rc !== 0) s.push({ say: "Combine the numbers.", eq: eqn(side([T(k, "y")]), side([T(rx, "x"), T(rc - lc)])) });
+        }
+        const parts = [];
+        if (rx) parts.push(raw(rx, k) + V("x"));
+        if (rc - lc) parts.push(raw(rc - lc, k));
+        s.push({ say: `Divide every term by <b>${k}</b>, so y is by itself.`, eq: eqn(V("y"), parts.join(op("+")) || "0") });
+        s.push({ say: "Simplify the fractions.", eq: siF(m, yi) });
+      } else {
+        const mx1 = mul(m, P.x);
+        if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
+        else if (zero(P.x)) s.push({ say: `x − 0 is just x, so the right side is <b>${txt(m)}</b>x.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green")])) });
+        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green"), T(neg(mx1))])) });
+        if (!zero(P.y)) {
+          const y1 = P.y;
+          s.push({ say: y1.n > 0 ? `Add <b>${txt(y1)}</b> to both sides, so y is by itself.` : `Subtract <b>${txt(neg(y1))}</b> from both sides, so y is by itself.`,
+            eq: eqn(V("y"), side([T(m, "x", "c-green"), T(neg(mx1)), T(y1)])) });
+          if (!zero(mx1)) s.push({ say: "Combine the numbers.", eq: siF(m, yi) });
+        }
       }
     }
 
@@ -679,20 +704,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     }
 
     if (from === "sp" && to === "g") {
-      const whole = P.x.d === 1 && P.y.d === 1;
-      if (whole && m.d > 1) {
-        const q = m.d, p = m.n;
-        s.push({ say: `Multiply both sides by <b>${q}</b> to clear the fraction.`, eq: eqn(`${q}(${spLeft(P)})`, `${fmt(p)}${spRight(P)}`) });
-        s.push({ say: "Multiply into the brackets on both sides.", eq: eqn(side([T(q, "y"), T(-q * P.y.n)]), side([T(p, "x"), T(-p * P.x.n)])) });
-        toGeneral(s, q, -q * P.y.n, p, -p * P.x.n);
+      if (m.d > 1 || P.y.d > 1) {
+        const { k, lc, rx, rc } = clearSP(s, m, P);
+        toGeneral(s, k, lc, rx, rc);
       } else {
-        const mx1 = mul(m, P.x);
+        const mx1 = mul(m, P.x).n;
         if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
-        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(side([T(1, "y"), T(neg(P.y))]), side([T(m, "x"), T(neg(mx1))])) });
-        const k = lcm(lcm(m.d, P.y.d), mx1.d);
-        const w = r => mul(r, R(k)).n;
-        if (k > 1) s.push({ say: `Multiply every term by <b>${k}</b> to clear the fractions.`, eq: eqn(side([T(k, "y"), T(-w(P.y))]), side([T(w(m), "x"), T(-w(mx1))])) });
-        toGeneral(s, k, -w(P.y), w(m), -w(mx1));
+        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(side([T(1, "y"), T(neg(P.y))]), side([T(m, "x"), T(-mx1)])) });
+        toGeneral(s, 1, -P.y.n, m.n, -mx1);
       }
     }
 
