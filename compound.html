@@ -145,19 +145,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* Compound Shapes: one shape stacked on another. Surface Area / Volume switch at the top; the panel lists
-   every formula step, and the selected step lights up the part of the solid it calculates.
+/* Compound Shapes: one shape stacked on another. Surface Area / Volume switch at the top; the calculation
+   runs across the bottom, and clicking any part of it lights up the part of the solid it calculates.
    Flat faces where the shapes join are hidden (not counted); that step lifts the top shape to show them. */
 :root { --c-bot: #4f7fd9; --c-top: #9a63d6; --hl: #e08a00; --hide: #d23a3a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; } }
 :root[data-theme="dark"] { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; }
 .wrap { max-width: 1500px; }
-.main { grid-template-columns: minmax(0, 1fr) minmax(0, 500px); }
+.main { grid-template-columns: minmax(0, 1fr) minmax(0, 340px); }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
 .board { padding: 0; overflow: hidden; position: relative; }
 #view { display: block; width: 100%; height: min(70vh, 720px); min-height: 360px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 #view.drag { cursor: grabbing; }
-@media (min-width: 861px) and (min-height: 520px) { #view { flex: 1 1 auto; height: 100%; min-height: 0; } .panel { overflow: hidden !important; } }
+@media (min-width: 861px) and (min-height: 520px) { #view { flex: 1 1 auto; height: 100%; min-height: 0; } }
 .turn { position: absolute; left: 14px; bottom: 10px; margin: 0; color: var(--muted); font-size: 0.95rem; pointer-events: none; }
 
 /* Surface Area / Volume switch */
@@ -169,31 +169,36 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .shapes { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
 .pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .pick + .pick { padding-top: 10px; border-top: 1px dashed var(--grid-major); }
-.pick .who { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; min-width: 4.4em; display: inline-flex; align-items: center; gap: 8px; }
+.pick .who { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; min-width: 3.9em; display: inline-flex; align-items: center; gap: 8px; }
 .pick .who i, .step i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex: none; }
-.pick select { flex: 1 1 10em; min-height: 46px; font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 6px 10px; }
-.dims { display: flex; flex-wrap: wrap; gap: 6px 14px; width: 100%; }
+.pick select { flex: 1 1 100%; min-width: 0; min-height: 46px; font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 6px 10px; }
+.dims { display: flex; flex-wrap: wrap; gap: 6px 12px; width: 100%; }
 .dim { display: inline-flex; align-items: center; gap: 4px; }
 .dim .dk { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 1.4rem; min-width: 1em; text-align: center; }
-.dim button { width: 40px; height: 40px; padding: 0; font-size: 1.4rem; line-height: 1; }
+.dim button { width: 36px; height: 36px; padding: 0; font-size: 1.4rem; line-height: 1; }
 .dim output { font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; min-width: 1.6em; text-align: center; }
 
-/* Steps */
-.steps { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px; }
-.steps ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.step { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 0; padding: 5px 10px; border: 2px solid transparent; background: transparent; border-radius: 10px; }
-.step:hover { border-color: var(--grid-major); }
-.step[aria-pressed="true"] { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 14%, var(--sheet)); }
-.st-t { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; font-weight: 700; }
-.st-m { font-family: var(--font-num); font-weight: 500; font-size: 1.12rem; line-height: 1.6; padding-left: 22px; }
-.st-m .nw { white-space: nowrap; }
-.st-m b { font-weight: 700; }
-.st-m s { color: var(--hide); text-decoration-thickness: 3px; }
-.st-m .frac { font-size: 0.75em; vertical-align: middle; line-height: 1.1; }
-.step.total .st-t { font-family: var(--font-display); font-size: 1.2rem; }
-.step.total .st-m { font-size: 1.35rem; }
-.step.total .st-m b { background: var(--chip); border-radius: 8px; padding: 0 10px; font-size: 1.6rem; }
-.step.warn .st-t, .step.warn .st-m { color: var(--warn); }
+/* Calculation: one line per step, one column per face, so every number sits under its formula. */
+.calc { margin-top: 12px; padding: 10px 14px; overflow-x: auto; --fs: 1.3rem; }
+.helpers { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 6px; font-size: calc(var(--fs) * 0.9); }
+.eqn { display: grid; justify-content: start; align-items: center; row-gap: 2px; font-family: var(--font-num); font-size: var(--fs); }
+.c { font: inherit; color: var(--ink); background: none; border: 2px solid transparent; border-radius: 8px; padding: 1px 6px; text-align: center; white-space: nowrap; line-height: 1.5; }
+button.c { cursor: pointer; }
+button.c:hover { border-color: var(--grid-major); }
+button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 22%, var(--sheet)); }
+.c.op { color: var(--muted); padding: 1px 2px; }
+.c.lbl, .c.hdr { font-weight: 700; }
+.c.hdr.top { color: var(--c-top); } .c.hdr.bot { color: var(--c-bot); }
+.c.hdr { border-bottom: 3px solid currentColor; border-radius: 8px 8px 0 0; }
+.c s { color: var(--hide); text-decoration-thickness: 3px; }
+.c .red { color: var(--hide); }
+.c.why { color: var(--hide); font-family: var(--font-body); font-weight: 700; font-size: 0.75em; text-align: left; padding-left: 14px; white-space: normal; max-width: 13em; line-height: 1.2; }
+.c.tot { text-align: left; padding-left: 14px; }
+.c.tot b { background: var(--chip); border-radius: 8px; padding: 0 10px; font-size: 1.2em; }
+.c.warn { color: var(--warn); font-family: var(--font-body); font-weight: 700; text-align: left; white-space: normal; }
+.c.help { display: inline-flex; align-items: center; gap: 8px; border-color: var(--grid); }
+.c.help i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.c .frac { font-size: 0.72em; vertical-align: middle; line-height: 1.05; }
 </style>
 
 <div class="wrap">
@@ -212,9 +217,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <div class="pick"><span class="who"><i style="background:var(--c-top)"></i>Top</span><select id="sel-top" aria-label="Top shape"></select><div class="dims" id="dims-top"></div></div>
         <div class="pick"><span class="who"><i style="background:var(--c-bot)"></i>Bottom</span><select id="sel-bot" aria-label="Bottom shape"></select><div class="dims" id="dims-bot"></div></div>
       </div>
-      <div class="card steps"><ol id="steps" aria-live="polite"></ol></div>
     </div>
   </div>
+  <div class="card calc" id="calc" aria-live="polite"><div class="helpers" id="helpers"></div><div class="eqn" id="eqn"></div></div>
 </div>
 
 <script>
@@ -239,7 +244,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   };
   const DIM_WORD = { r: "radius", h: "height", l: "length", w: "width", b: "base side" };
   const shapes = { top: { type: "cone", d: { r: 3, h: 4 } }, bot: { type: "cyl", d: { r: 3, h: 5 } } };
-  let mode = "sa", sel = 0, STEPS = [];
+  let mode = "sa", sel = -1;
 
   const N = 48;   // strips on curved surfaces
   const circlePts = r => Array.from({ length: N }, (_, k) => { const a = 2 * Math.PI * k / N; return [r * Math.cos(a), r * Math.sin(a)]; });
@@ -351,105 +356,168 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (sh.type === "cone") o.s = r2(Math.sqrt(d.h * d.h + d.r * d.r));
     return o;
   }
-  function flatFace(sh) {
-    const d = sh.d, o = derived(sh);
-    switch (sh.type) {
-      case "cyl": case "cone": case "hemi": return { sym: "πr²", sub: `3.14 × ${sq(d.r)}`, v: r2(PI * d.r * d.r), word: "circle" };
-      case "prism": return { sym: "l × w", sub: `${d.l} × ${d.w}`, v: d.l * d.w, word: "face" };
-      case "sqpyr": return { sym: "b × b", sub: `${d.b} × ${d.b}`, v: d.b * d.b, word: "face" };
-      case "tripyr": return { sym: `${fr(1, 2)} × b × t`, sub: `${fr(1, 2)} × ${d.b} × ${f(o.t)}`, v: r2(d.b * o.t / 2), word: "triangle" };
-    }
-    return null;
-  }
+  // The calculation is written the way it is on the board, in one line per step:
+  //   SA(total) = SA(cone) + SA(cylinder)
+  //             = (πrs + πr²) + (πr² + πr² + 2πrh)      formulas, one column per face
+  //             = (πrs + π̶r̶²) + (π̶r̶² + πr² + 2πrh)      covered faces struck out in red, and why
+  //             = (3.14 × 3 × 5) + (3.14 × 3² + ...)    numbers under each formula
+  //             = (47.1) + (28.26 + 94.2)  = 169.56     values, then the total
+  // Every cell is a button; clicking it lights up the face (or solid) that column calculates.
+  const SHORT = { cyl: "cylinder", cone: "cone", prism: "prism", sqpyr: "pyramid", tripyr: "pyramid", sphere: "sphere", hemi: "hemisphere" };
   const NAME = role => TYPES[shapes[role].type].name;
-  const S = (role, title, math, x) => Object.assign({ role, focus: role, title: `${NAME(role)}: ${title}`, math, hl: [] }, x);
-
-  // Steps that every pyramid / cone needs first: the base triangle height and the slant height.
-  function helperSteps(role, forSA) {
-    const sh = shapes[role], d = sh.d, o = derived(sh), out = [], K = role + ":join";
-    if (sh.type === "tripyr") out.push(S(role, "height of the base triangle", `t = √(b² − (b ÷ 2)²) = √(${sq(d.b)} − ${sq(d.b / 2)}) ${ans(o.t)}`, { hl: [K], over: "tri" }));
-    if (!forSA) return out;
-    if (sh.type === "cone") out.push(S(role, "slant height", `s = √(h² + r²) = √(${sq(d.h)} + ${sq(d.r)}) ${ans(o.s)}`, { over: "slant" }));
-    if (sh.type === "sqpyr") out.push(S(role, "slant height", `s = √(h² + (b ÷ 2)²) = √(${sq(d.h)} + ${sq(d.b / 2)}) ${ans(o.s)}`, { over: "slant" }));
-    if (sh.type === "tripyr") out.push(S(role, "slant height", `s = √(h² + (t ÷ 3)²) = √(${sq(d.h)} + ${sq(o.in)}) ${ans(o.s)}`, { over: "slant" }));
-    return out;
+  function shortName(role) {
+    const same = SHORT[shapes.top.type] === SHORT[shapes.bot.type];
+    return (same ? (role === "top" ? "top " : "bottom ") : "") + SHORT[shapes[role].type];
   }
+  const circle = r => ({ sym: "πr²", sub: `3.14 × ${sq(r)}`, v: r2(PI * r * r) });
 
-  function saShape(role) {
-    const sh = shapes[role], d = sh.d, o = derived(sh), K = p => role + ":" + p, end = role === "bot" ? "bottom" : "top";
-    const out = helperSteps(role, true), add = (title, math, v, hl) => out.push(S(role, title, math + " " + ans(v), { v: r2(v), hl }));
+  // Faces of one shape, in the order they are usually written (top to bottom, curved side last).
+  function saTerms(role) {
+    const sh = shapes[role], d = sh.d, o = derived(sh), T = (part, x) => ({ role, part, ...x });
+    const ends = (j, c) => role === "bot" ? [j, c] : [c, j];   // the join face is the top of the bottom shape
     switch (sh.type) {
-      case "cyl":
-        add(`${end} circle`, `πr² = 3.14 × ${sq(d.r)}`, PI * d.r * d.r, [K("cap")]);
-        add("curved side", `2πrh = 2 × 3.14 × ${d.r} × ${d.h}`, 2 * PI * d.r * d.h, [K("side")]);
-        break;
-      case "prism":
-        add(`${end} face`, `l × w = ${d.l} × ${d.w}`, d.l * d.w, [K("cap")]);
-        add("front and back", `2 × l × h = 2 × ${d.l} × ${d.h}`, 2 * d.l * d.h, [K("fb")]);
-        add("left and right", `2 × w × h = 2 × ${d.w} × ${d.h}`, 2 * d.w * d.h, [K("lr")]);
-        break;
-      case "cone": add("curved side", `πrs = 3.14 × ${d.r} × ${f(o.s)}`, PI * d.r * o.s, [K("side")]); break;
-      case "sqpyr": add("4 triangles", `4 × ${fr(1, 2)} × b × s = 4 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, 2 * d.b * o.s, [K("side")]); break;
-      case "tripyr": add("3 triangles", `3 × ${fr(1, 2)} × b × s = 3 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, 1.5 * d.b * o.s, [K("side")]); break;
-      case "hemi": add("curved dome", `${fr(1, 2)} × 4πr² = 2 × 3.14 × ${sq(d.r)}`, 2 * PI * d.r * d.r, [K("side")]); break;
-      case "sphere": add("whole surface", `4πr² = 4 × 3.14 × ${sq(d.r)}`, 4 * PI * d.r * d.r, [K("side")]); break;
+      case "cyl": return [...ends(T("join", circle(d.r)), T("cap", circle(d.r))),
+        T("side", { sym: "2πrh", sub: `2 × 3.14 × ${d.r} × ${d.h}`, v: r2(2 * PI * d.r * d.h) })];
+      case "prism": { const lw = () => ({ sym: "lw", sub: `${d.l} × ${d.w}`, v: d.l * d.w });
+        return [...ends(T("join", lw()), T("cap", lw())),
+          T("fb", { sym: "2lh", sub: `2 × ${d.l} × ${d.h}`, v: 2 * d.l * d.h }),
+          T("lr", { sym: "2wh", sub: `2 × ${d.w} × ${d.h}`, v: 2 * d.w * d.h })]; }
+      case "cone": return [T("side", { sym: "πrs", sub: `3.14 × ${d.r} × ${f(o.s)}`, v: r2(PI * d.r * o.s) }), T("join", circle(d.r))];
+      case "sqpyr": return [T("side", { sym: `4 × ${fr(1, 2)}bs`, sub: `4 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, v: r2(2 * d.b * o.s) }),
+        T("join", { sym: "b²", sub: sq(d.b), v: d.b * d.b })];
+      case "tripyr": return [T("side", { sym: `3 × ${fr(1, 2)}bs`, sub: `3 × ${fr(1, 2)} × ${d.b} × ${f(o.s)}`, v: r2(1.5 * d.b * o.s) }),
+        T("join", { sym: `${fr(1, 2)}bt`, sub: `${fr(1, 2)} × ${d.b} × ${f(o.t)}`, v: r2(d.b * o.t / 2) })];
+      case "hemi": return [T("side", { sym: "2πr²", sub: `2 × 3.14 × ${sq(d.r)}`, v: r2(2 * PI * d.r * d.r) }), T("join", circle(d.r))];
+      case "sphere": return [T("side", { sym: "4πr²", sub: `4 × 3.14 × ${sq(d.r)}`, v: r2(4 * PI * d.r * d.r) })];
     }
+  }
+  function volTerm(role) {
+    const sh = shapes[role], d = sh.d, o = derived(sh), t = (sym, sub, v) => [{ role, sym, sub, v: r2(v) }];
+    const th = fr(1, 3);
+    switch (sh.type) {
+      case "cyl": return t("πr²h", `3.14 × ${sq(d.r)} × ${d.h}`, PI * d.r * d.r * d.h);
+      case "prism": return t("lwh", `${d.l} × ${d.w} × ${d.h}`, d.l * d.w * d.h);
+      case "cone": return t(`${th}πr²h`, `${th} × 3.14 × ${sq(d.r)} × ${d.h}`, PI * d.r * d.r * d.h / 3);
+      case "sqpyr": return t(`${th}b²h`, `${th} × ${sq(d.b)} × ${d.h}`, d.b * d.b * d.h / 3);
+      case "tripyr": return t(`${th}(${fr(1, 2)}bt)h`, `${th} × ${fr(1, 2)} × ${d.b} × ${f(o.t)} × ${d.h}`, d.b * o.t / 2 * d.h / 3);
+      case "sphere": return t(`${fr(4, 3)}πr³`, `${fr(4, 3)} × 3.14 × ${cu(d.r)}`, 4 / 3 * PI * d.r ** 3);
+      case "hemi": return t(`${fr(2, 3)}πr³`, `${fr(2, 3)} × 3.14 × ${cu(d.r)}`, 2 / 3 * PI * d.r ** 3);
+    }
+  }
+  // Numbers found first: the slant height (cone, pyramids) and the base triangle's height (triangular pyramid).
+  function helpers() {
+    const out = [];
+    ["top", "bot"].forEach(role => {
+      const sh = shapes[role], d = sh.d, o = derived(sh), H = (math, x) => out.push({ role, focus: role, hl: [], math, ...x });
+      if (sh.type === "tripyr") H(`t = √(b² − (b ÷ 2)²) = √(${sq(d.b)} − ${sq(d.b / 2)}) = <b>${f(o.t)}</b>`, { hl: [role + ":join"], over: "tri" });
+      if (mode !== "sa") return;
+      if (sh.type === "cone") H(`s = √(h² + r²) = √(${sq(d.h)} + ${sq(d.r)}) = <b>${f(o.s)}</b>`, { over: "slant" });
+      if (sh.type === "sqpyr") H(`s = √(h² + (b ÷ 2)²) = √(${sq(d.h)} + ${sq(d.b / 2)}) = <b>${f(o.s)}</b>`, { over: "slant" });
+      if (sh.type === "tripyr") H(`s = √(h² + (t ÷ 3)²) = √(${sq(d.h)} + ${sq(o.in)}) = <b>${f(o.s)}</b>`, { over: "slant" });
+    });
     return out;
   }
 
-  // Where the two shapes touch: covered parts are not counted; any part of the bigger face that still shows is.
-  function joinSteps() {
-    const out = [], A = flatFace(shapes.bot), B = flatFace(shapes.top);
-    const botName = () => `top ${A.word}`, topName = () => `bottom ${B.word}`;
-    if (!A || !B) {   // a sphere only touches at one point, so the other flat face is all showing
-      if (A) out.push(S("bot", botName(), `${A.sym} = ${A.sub} ${ans(A.v)}`, { v: A.v, hl: ["bot:join"] }));
-      if (B) out.push(S("top", topName(), `${B.sym} = ${B.sub} ${ans(B.v)}`, { v: B.v, hl: ["top:join"] }));
-      return out;
-    }
+  // Work out what the join covers. Marks terms with cancel = "full" or "part" (part keeps the face minus the covered bit).
+  function applyJoin(groups) {
+    const tb = groups[0].terms.find(t => t.part === "join"), bb = groups[1].terms.find(t => t.part === "join");
+    if (!tb || !bb) return {};
     const fa = footprint(shapes.bot), fb = footprint(shapes.top), topIn = inside(fb, fa), botIn = inside(fa, fb);
-    if (!topIn && !botIn) {
-      out.push({ warn: true, focus: null, title: "The top hangs over the edge", math: "Make the top smaller or the bottom bigger.", hl: [] });
-      return out;
-    }
-    const small = topIn ? "top" : "bot", big = small === "top" ? "bot" : "top", vs = topIn ? B.v : A.v;
-    out.push({ focus: null, lift: true, title: "Where they join: covered, not counted", math: `<s>${f(vs)}</s> + <s>${f(vs)}</s>`, hl: [],
-               hide: [{ role: small }, { role: big, hole: small }] });
-    if (!(topIn && botIn)) {
-      const bigF = big === "bot" ? A : B, smallF = big === "bot" ? B : A, v = r2(bigF.v - smallF.v);
-      out.push(S(big, big === "bot" ? `${botName()} that shows` : `${topName()} that shows`,
-        `${bigF.sub} − ${smallF.sub} = ${f(bigF.v)} − ${f(smallF.v)} ${ans(v)}`, { v, ring: { role: big, hole: small } }));
-    }
-    return out;
+    if (!topIn && !botIn) return { warn: true };
+    const small = topIn ? tb : bb, big = topIn ? bb : tb;
+    small.cancel = "full";
+    if (topIn && botIn) big.cancel = "full";
+    else { big.cancel = "part"; big.minus = small; }
+    const hidden = { focus: null, lift: true, hl: [], hide: [{ role: small.role }, { role: big.role, hole: small.role }] };
+    const ring = big.cancel === "part" ? { role: big.role, focus: big.role, hl: [], ring: { role: big.role, hole: small.role } } : null;
+    return { hidden, ring, why: `covered where the ${shortName("top")} sits on the ${shortName("bot")}` };
   }
 
-  function volShape(role) {
-    const sh = shapes[role], d = sh.d, o = derived(sh), K = p => role + ":" + p, out = helperSteps(role, false);
-    const base = (sym, sub, v, part) => { out.push(S(role, "base area", `${sym} = ${sub} ${ans(v)}`, { hl: [K(part)] })); return r2(v); };
-    const vol = (math, v) => out.push(S(role, "volume", math + " " + ans(v), { v: r2(v), whole: [role] }));
-    switch (sh.type) {
-      case "cyl": { const B = base("πr²", `3.14 × ${sq(d.r)}`, PI * d.r * d.r, "cap"); vol(`base area × h = ${f(B)} × ${d.h}`, B * d.h); break; }
-      case "prism": { const B = base("l × w", `${d.l} × ${d.w}`, d.l * d.w, "cap"); vol(`base area × h = ${f(B)} × ${d.h}`, B * d.h); break; }
-      case "cone": { const B = base("πr²", `3.14 × ${sq(d.r)}`, PI * d.r * d.r, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
-      case "sqpyr": { const B = base("b × b", `${d.b} × ${d.b}`, d.b * d.b, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
-      case "tripyr": { const B = base(`${fr(1, 2)} × b × t`, `${fr(1, 2)} × ${d.b} × ${f(o.t)}`, d.b * o.t / 2, "join"); vol(`${fr(1, 3)} × base area × h = ${fr(1, 3)} × ${f(B)} × ${d.h}`, B * d.h / 3); break; }
-      case "sphere": vol(`${fr(4, 3)} × πr³ = ${fr(4, 3)} × 3.14 × ${cu(d.r)}`, 4 / 3 * PI * d.r ** 3); break;
-      case "hemi": vol(`${fr(1, 2)} × ${fr(4, 3)}πr³ = ${fr(2, 3)} × 3.14 × ${cu(d.r)}`, 2 / 3 * PI * d.r ** 3); break;
-    }
-    return out;
-  }
+  let ITEMS = [];
+  function buildCalc() {
+    ITEMS = [];
+    const item = x => (ITEMS.push(x), ITEMS.length - 1);
+    const sa = mode === "sa", P = sa ? "SA" : "V";
+    const groups = ["top", "bot"].map(role => ({ role, terms: sa ? saTerms(role) : volTerm(role) }));
+    const J = sa ? applyJoin(groups) : {};
+    const counted = t => t.cancel !== "full";
+    const value = t => t.cancel === "part" ? r2(t.v - t.minus.v) : t.v;
 
-  function buildSteps() {
-    let list;
-    if (mode === "sa") list = [...saShape("top"), ...saShape("bot"), ...joinSteps()];
-    else list = [...volShape("top"), ...volShape("bot")];
-    const counted = list.filter(s => s.v !== undefined);
-    const ok = !list.some(s => s.warn);
-    const sum = r2(counted.reduce((m, s) => m + s.v, 0));
-    const total = { total: true, focus: null, title: mode === "sa" ? "Total surface area" : "Total volume",
-      math: ok ? `${counted.map(s => f(s.v)).join(" + ")} <span class="nw">= <b>${f(sum)}</b> ${mode === "sa" ? "units²" : "units³"}</span>` : "?",
-      hl: counted.flatMap(s => s.hl), ring: (counted.find(s => s.ring) || {}).ring, whole: mode === "vol" ? ["bot", "top"] : [] };
-    list.push(total);
-    return list;
+    // Items: what each cell lights up.
+    groups.forEach(g => g.terms.forEach(t => {
+      t.item = item(sa ? { role: t.role, focus: t.role, hl: [t.role + ":" + t.part] } : { role: t.role, focus: t.role, hl: [], whole: [t.role] });
+      t.item2 = t.cancel === "full" ? item(J.hidden) : t.cancel === "part" ? item(J.ring) : t.item;
+    }));
+    const lit = terms => {
+      const ts = terms.filter(counted);
+      return { hl: sa ? ts.filter(t => t.cancel !== "part").map(t => t.role + ":" + t.part) : [], whole: sa ? [] : [...new Set(ts.map(t => t.role))],
+               ring: ts.some(t => t.cancel === "part") ? J.ring.ring : undefined };
+    };
+    groups.forEach(g => { g.item = item({ role: g.role, focus: g.role, ...lit(g.terms) }); });
+    const all = groups.flatMap(g => g.terms);
+    const totalItem = item({ focus: null, ...lit(all) });
+    const total = r2(all.filter(counted).reduce((m, t) => m + value(t), 0));
+
+    // Columns: label | = | ( t + t ) | + | ( t + t + t ) | end
+    let n = 0;
+    const LBL = ++n, EQ = ++n;
+    groups.forEach((g, gi) => {
+      if (gi) g.op = ++n;
+      const paren = g.terms.length > 1;
+      if (paren) g.open = ++n;
+      g.terms.forEach((t, ti) => { if (ti) t.op = ++n; t.col = ++n; });
+      if (paren) g.close = ++n;
+      g.first = g.open || g.terms[0].col; g.last = g.close || g.terms[g.terms.length - 1].col;
+    });
+    const END = ++n;
+
+    const cells = [];
+    let row = 0;
+    const cell = (col, html, x = {}) => cells.push({ row, col, html, ...x });
+    const frame = (show) => {   // "=", brackets and + signs, skipping signs next to blank cells
+      cell(EQ, "=", { cls: "op" });
+      groups.forEach((g, gi) => {
+        if (gi) cell(g.op, "+", { cls: "op" });
+        if (g.open) { cell(g.open, "(", { cls: "op" }); cell(g.close, ")", { cls: "op" }); }
+        let seen = false;
+        g.terms.forEach(t => { if (!show(t)) return; if (seen) cell(t.op, "+", { cls: "op" }); seen = true; });
+      });
+    };
+    const name = g => `${P}(${shortName(g.role)})`;
+
+    // 1. SA(total) = SA(cone) + SA(cylinder)
+    row++;
+    cell(LBL, `${P}(total)`, { item: totalItem, cls: "lbl" });
+    cell(EQ, "=", { cls: "op" });
+    groups.forEach((g, gi) => {
+      if (gi) cell(g.op, "+", { cls: "op" });
+      cell(g.first, name(g), { item: g.item, span: g.last - g.first + 1, cls: "hdr " + g.role });
+    });
+    // 2. formulas
+    row++; frame(() => true);
+    groups.forEach(g => g.terms.forEach(t => cell(t.col, t.sym, { item: t.item, cls: "sym" })));
+    // 3. cancel what is covered
+    if (J.warn) {
+      row++;
+      cell(EQ, "", {}); cell(groups[0].first, "The top hangs over the edge. Make the top smaller or the bottom bigger.", { span: END - groups[0].first + 1, cls: "warn" });
+    } else if (J.hidden) {
+      row++; frame(() => true);
+      groups.forEach(g => g.terms.forEach(t => {
+        const html = t.cancel === "full" ? `<s>${t.sym}</s>` : t.cancel === "part" ? `${t.sym} <span class="red">− ${t.minus.sym}</span>` : t.sym;
+        cell(t.col, html, { item: t.item2, cls: "sym" + (t.cancel ? " cut" : "") });
+      }));
+      cell(END, J.why, { item: item(J.hidden), cls: "why" });
+    }
+    if (!J.warn) {
+      // 4. numbers under each formula
+      row++; frame(counted);
+      groups.forEach(g => g.terms.forEach(t => { if (counted(t)) cell(t.col, t.cancel === "part" ? `${t.sub} − ${t.minus.sub}` : t.sub, { item: t.item2, cls: "num" }); }));
+      // 5. values and the total
+      row++; frame(counted);
+      groups.forEach(g => g.terms.forEach(t => { if (counted(t)) cell(t.col, f(value(t)), { item: t.item2, cls: "val" }); }));
+      cell(END, `= <b>${f(total)}</b> ${sa ? "units²" : "units³"}`, { item: totalItem, cls: "tot" });
+    }
+    return { cells, cols: n, helpers: helpers().map(h => ({ ...h, item: item(h) })) };
   }
 
   // ---------- drawing ----------
@@ -488,7 +556,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     const ink = css("--ink") || "#1b2733", sheet = css("--sheet") || "#fff", fnum = css("--font-num");
-    const step = STEPS[sel] || { hl: [] };
+    const step = ITEMS[sel] || { hl: [] }, active = sel >= 0;
     const cY = Math.cos(yaw), sY = Math.sin(yaw), cP = Math.cos(pitch), sP = Math.sin(pitch);
     const rot = v => { const x1 = v[0] * cY + v[2] * sY, z1 = -v[0] * sY + v[2] * cY; return [x1, v[1] * cP - z1 * sP, v[1] * sP + z1 * cP]; };
     const cy = (Hb + Ht + lift) / 2;
@@ -503,12 +571,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const off = role === "top" ? lift : 0;
       lists[role].forEach(fc => { fc.Q = fc.P.map(p => scr([p[0], p[1] + off, p[2]])); fc.nv = rot(fc.n); fc.front = fc.nv[2] > 1e-6; });
     }
-    const hl = new Set(step.hl), whole = new Set(step.whole || []);
+    const hl = new Set(step.hl || []), whole = new Set(step.whole || []);
     const ghost = role => step.focus && step.focus !== role;
     const lit = (fc, c) => rgba(c, 0.78 + 0.3 * Math.abs(vdot(fc.nv, L)));
     const path = Q => { ctx.beginPath(); Q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); };
     const isHl = fc => whole.has(fc.role) || hl.has(fc.role + ":" + fc.part);
-    const faceCol = fc => isHl(fc) ? COL.hl : mix(COL[fc.role], COL.pale, step.total && mode === "vol" ? 0 : 0.55);
+    const faceCol = fc => isHl(fc) ? COL.hl : mix(COL[fc.role], COL.pale, active ? 0.55 : 0);
     const above = rot([0, 1, 0])[2] > 0;
     const order = above ? ["bot", "top"] : ["top", "bot"];
     ctx.lineJoin = "round"; ctx.lineCap = "round";
@@ -668,35 +736,43 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ---------- controls ----------
-  const stepsEl = document.getElementById("steps");
-  function select(i, focus) {
-    sel = Math.max(0, Math.min(STEPS.length - 1, i));
-    stepsEl.querySelectorAll(".step").forEach((b, k) => b.setAttribute("aria-pressed", String(k === sel)));
-    const btn = stepsEl.querySelectorAll(".step")[sel];
-    if (focus) btn.focus();
-    btn.scrollIntoView({ block: "nearest" });
-    liftGoal = STEPS[sel].lift ? Math.max(1.5, (Hb + Ht) * 0.3) : 0;
+  const calcEl = document.getElementById("calc"), eqEl = document.getElementById("eqn"), helpEl = document.getElementById("helpers");
+  // Click a cell to light up what it calculates; click it again to turn the highlight off.
+  function select(i) {
+    sel = i === sel ? -1 : i;
+    calcEl.querySelectorAll("[data-item]").forEach(b => { const on = +b.dataset.item === sel; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+    liftGoal = sel >= 0 && ITEMS[sel].lift ? Math.max(1.5, (Hb + Ht) * 0.3) : 0;
     animate();
   }
-  function dotStyle(s) {
-    if (s.role) return `background:var(--c-${s.role})`;
-    return "background:linear-gradient(var(--c-top) 50%, var(--c-bot) 50%)";
-  }
-  function renderSteps() {
-    stepsEl.innerHTML = "";
-    STEPS.forEach((s, i) => {
-      const li = document.createElement("li"), b = document.createElement("button");
-      b.type = "button";
-      b.className = "step" + (s.total ? " total" : "") + (s.warn ? " warn" : "");
-      b.innerHTML = `<span class="st-t"><i style="${dotStyle(s)}"></i>${s.title}</span><span class="st-m">${s.math}</span>`;
-      b.addEventListener("click", () => select(i));
-      li.appendChild(b); stepsEl.appendChild(li);
+  function renderCalc() {
+    const C = buildCalc();
+    helpEl.innerHTML = "";
+    helpEl.hidden = !C.helpers.length;
+    C.helpers.forEach(h => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "c help"; b.dataset.item = h.item;
+      b.innerHTML = `<i style="background:var(--c-${h.role})"></i>${h.math}`;
+      helpEl.appendChild(b);
     });
+    eqEl.innerHTML = "";
+    eqEl.style.gridTemplateColumns = `repeat(${C.cols}, auto)`;
+    C.cells.forEach(c => {
+      const e = document.createElement(c.item === undefined ? "span" : "button");
+      if (c.item !== undefined) { e.type = "button"; e.dataset.item = c.item; }
+      e.className = "c " + (c.cls || "");
+      e.style.gridRow = c.row; e.style.gridColumn = `${c.col} / span ${c.span || 1}`;
+      e.innerHTML = c.html;
+      eqEl.appendChild(e);
+    });
+    fitCalc();
   }
-  stepsEl.addEventListener("keydown", ev => {
-    if (ev.key === "ArrowDown" || ev.key === "ArrowRight") { select(sel + 1, true); ev.preventDefault(); }
-    if (ev.key === "ArrowUp" || ev.key === "ArrowLeft") { select(sel - 1, true); ev.preventDefault(); }
-  });
+  // Shrink the writing until the longest line fits across the screen.
+  function fitCalc() {
+    let fs = 1.3;
+    calcEl.style.setProperty("--fs", fs + "rem");
+    while (calcEl.scrollWidth > calcEl.clientWidth + 1 && fs > 0.75) { fs -= 0.05; calcEl.style.setProperty("--fs", fs.toFixed(2) + "rem"); }
+  }
+  calcEl.addEventListener("click", ev => { const b = ev.target.closest("[data-item]"); if (b) select(+b.dataset.item); });
 
   // A newly picked shape gets a size that sits well on (or under) the other shape.
   function resize(role) {
@@ -734,16 +810,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   document.querySelectorAll(".master button").forEach(b => b.addEventListener("click", () => {
     mode = b.dataset.mode;
     document.querySelectorAll(".master button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-    sel = 0; rebuild();
+    rebuild();
   }));
 
   function rebuild() {
     buildWorld();
-    STEPS = buildSteps();
-    renderSteps();
+    sel = -1; liftGoal = 0;
+    renderCalc();
     cv.setAttribute("aria-label", `${NAME("top")} on top of a ${NAME("bot").toLowerCase()}. Drag to turn it.`);
-    select(Math.min(sel, STEPS.length - 1));
+    animate();
   }
+  new ResizeObserver(fitCalc).observe(calcEl);
 
   let drag = null;
   cv.addEventListener("pointerdown", ev => { drag = { x: ev.clientX, y: ev.clientY }; cv.setPointerCapture(ev.pointerId); cv.classList.add("drag"); });
