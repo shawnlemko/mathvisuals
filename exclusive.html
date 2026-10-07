@@ -165,7 +165,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .def.off { opacity: .4; }
 .def .mini circle { fill: none; stroke-width: 3; }
 
-.main { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.main { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
 .board { gap: 6px; }
 .caption { margin: 2px 6px 0; font-size: 1.3rem; line-height: 1.3; min-height: 2.6em; font-weight: 700; text-wrap: balance; }
 .caption .warn { color: var(--warn); }
@@ -209,20 +209,27 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .pick label { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; }
 .pick select { font: inherit; font-size: 1.05rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; border: 2px solid var(--grid-major); background: var(--sheet); color: var(--ink); min-width: 0; }
 .pick select.a { border-color: var(--pt); } .pick select.b { border-color: var(--orange); }
-.nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav { margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .nav .stepno { font-weight: 700; color: var(--muted); margin-right: auto; }
 .nav .next { font-family: var(--font-display); font-size: 1.25rem; padding: 10px 20px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .nav .next:hover { background: var(--sheet); color: var(--pt); }
 .nav button:disabled { opacity: .4; cursor: default; }
 .lines { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-.eq { font-size: 1.3rem; gap: 8px; }
+.eq { font-size: 1.25rem; gap: 6px; }
 .eq .gap { width: 1.2em; }
-.eq.rule { font-size: 1.1rem; }
-.eq.wait { color: var(--muted); }
+.eq .ev { font-family: var(--font-body); }
+/* Each line: the calculation, then a quick note on what its symbols mean. */
+.eqrow { display: grid; grid-template-columns: minmax(0, 1fr) 8.6em; gap: 12px; align-items: center; }
+.eqrow .eq + .eq { margin-top: 0; }
+.eqrow.rule .eq { font-size: 1.1rem; }
+.eqrow.wait .eq { color: var(--muted); }
 .eq .q { font-weight: 700; color: var(--muted); }
-.eq.lit { background: var(--chip); border-radius: 8px; padding: 2px 8px; margin-inline: -8px; }
-.eq .twice-note { font-family: var(--font-body); font-size: 1rem; color: var(--warn); font-weight: 700; }
-.eq.final { border-top: 2px dashed var(--grid-major); padding-top: 10px; }
+.eqrow.lit { background: var(--chip); border-radius: 8px; padding: 2px 8px; margin-inline: -8px; }
+.eq .twice-note { color: var(--warn); font-weight: 700; }
+.eqrow.final { border-top: 2px dashed var(--grid-major); padding-top: 10px; }
+.why { font-size: .95rem; line-height: 1.25; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 8px; }
+.why b { color: var(--ink); font-family: var(--font-num); }
+.why .warn { color: var(--warn); font-weight: 700; }
 .verdict-big { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; margin: 0; }
 </style>
 
@@ -263,8 +270,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           <label for="selA" class="c-a">A</label><select id="selA" class="a"></select>
           <label for="selB" class="c-b">B</label><select id="selB" class="b"></select>
         </div>
-      </div>
-      <div class="card">
         <div class="nav">
           <span class="stepno" id="stepno"></span>
           <button type="button" id="back">Back</button>
@@ -299,14 +304,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       unit: "roll", total: "6 outcomes",
       items: [1, 2, 3, 4, 5, 6].map(v => ({ v, label: String(v) })),
       events: [
-        ["even", "Even", "even", o => o.v % 2 === 0],
-        ["odd", "Odd", "odd", o => o.v % 2 === 1],
-        ["gt4", "Greater than 4", "greater than 4", o => o.v > 4],
-        ["lt3", "Less than 3", "less than 3", o => o.v < 3],
-        ["six", "Roll a 6", "a 6", o => o.v === 6],
-        ["one", "Roll a 1", "a 1", o => o.v === 1],
-        ["prime", "Prime number", "a prime number", o => [2, 3, 5].includes(o.v)],
-        ["mult3", "Multiple of 3", "a multiple of 3", o => o.v % 3 === 0],
+        ["even", "Even", "even", "Even", o => o.v % 2 === 0],
+        ["odd", "Odd", "odd", "Odd", o => o.v % 2 === 1],
+        ["gt4", "Greater than 4", "greater than 4", "&gt; 4", o => o.v > 4],
+        ["lt3", "Less than 3", "less than 3", "&lt; 3", o => o.v < 3],
+        ["six", "Roll a 6", "a 6", "6", o => o.v === 6],
+        ["one", "Roll a 1", "a 1", "1", o => o.v === 1],
+        ["prime", "Prime number", "a prime number", "Prime", o => [2, 3, 5].includes(o.v)],
+        ["mult3", "Multiple of 3", "a multiple of 3", "Mult. of 3", o => o.v % 3 === 0],
       ],
       defaults: ["even", "gt4"],
     },
@@ -314,14 +319,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       unit: "card", total: "52 cards",
       items: SUITS.flatMap(([s, c], si) => RANKS.map((r, ri) => ({ r, ri, s, si, c, label: r + s }))),
       events: [
-        ["heart", "Heart ♥", "a Heart", o => o.s === "♥"],
-        ["spade", "Spade ♠", "a Spade", o => o.s === "♠"],
-        ["red", "Red card", "red", o => o.c === "red"],
-        ["black", "Black card", "black", o => o.c === "black"],
-        ["king", "King", "a King", o => o.r === "K"],
-        ["ace", "Ace", "an Ace", o => o.r === "A"],
-        ["face", "Face card (J, Q, K)", "a face card", o => o.ri >= 10],
-        ["num", "Number card (2 to 10)", "a number card", o => o.ri >= 1 && o.ri <= 9],
+        ["heart", "Heart ♥", "a Heart", "Heart", o => o.s === "♥"],
+        ["spade", "Spade ♠", "a Spade", "Spade", o => o.s === "♠"],
+        ["red", "Red card", "red", "Red", o => o.c === "red"],
+        ["black", "Black card", "black", "Black", o => o.c === "black"],
+        ["king", "King", "a King", "King", o => o.r === "K"],
+        ["ace", "Ace", "an Ace", "Ace", o => o.r === "A"],
+        ["face", "Face card (J, Q, K)", "a face card", "Face", o => o.ri >= 10],
+        ["num", "Number card (2 to 10)", "a number card", "Number", o => o.ri >= 1 && o.ri <= 9],
       ],
       defaults: ["heart", "king"],
     },
@@ -436,7 +441,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     evB = S.events.find(e => e[0] === $("selB").value);
     groups = { a: [], b: [], ab: [], n: [] };
     for (const o of items) {
-      o.A = evA[3](o); o.B = evB[3](o);
+      o.A = evA[4](o); o.B = evB[4](o);
       groups[o.A && o.B ? "ab" : o.A ? "a" : o.B ? "b" : "n"].push(o);
     }
     apart = groups.ab.length === 0;
@@ -511,21 +516,26 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     $("next").textContent = step === 0 ? "Sort into circles" : step === LAST ? "Start over" : "Next step";
 
     // Math lines: shown with ? until their step comes.
-    const A = `<span class="c-a">A</span>`, B = `<span class="c-b">B</span>`, P = (x) => `<span>P(${x})</span>`;
+    // Lines name the real events (P(Heart), not P(A)), coloured to match circles A and B.
+    const A = `<span class="c-a ev">${evA[3]}</span>`, B = `<span class="c-b ev">${evB[3]}</span>`, P = (x) => `<span>P(${x})</span>`;
     const cnt = n => n === 0 ? `${frac(0, N)} = 0` : frac(n, N);
     const q = `<span class="q">?</span>`;
     const lines = [];
-    const row = (on, lit, html, cls = "") => lines.push(`<div class="eq${on ? "" : " wait"}${lit ? " lit" : ""} ${cls}">${html}</div>`);
-    lines.push(`<div class="eq${step >= 2 ? "" : " wait"}${step === 2 || step === 3 ? " lit" : ""}">${P(A)} = ${step >= 2 ? cnt(a) : q}<span class="gap"></span>${P(B)} = ${step >= 3 ? cnt(b) : q}</div>`);
-    row(step >= 4, step === 4, `${P(`${A} and ${B}`)} = ${step >= 4 ? cnt(k) : q}`);
-    row(step >= 5, step === 5, `${P(A)} + ${P(B)} = ${step >= 5 ? `${frac(a, N)} + ${frac(b, N)} = ${frac(a + b, N)}${apart ? "" : ` <span class="twice-note">overlap counted twice!</span>`}` : q}`);
-    if (step < 6) row(false, false, `${P(`${A} or ${B}`)} = ${q}`, "final");
+    const row = (on, lit, html, why, cls = "") =>
+      lines.push(`<div class="eqrow${on ? "" : " wait"}${lit ? " lit" : ""} ${cls}"><div class="eq">${html}</div><div class="why">${why}</div></div>`);
+    row(step >= 2, step === 2 || step === 3, `${P(A)} = ${step >= 2 ? cnt(a) : q}<span class="gap"></span>${P(B)} = ${step >= 3 ? cnt(b) : q}`,
+      `<b>P( )</b> means the chance of`);
+    row(step >= 4, step === 4, `${P(`${A} and ${B}`)} = ${step >= 4 ? cnt(k) : q}`, `<b>and</b> means in both circles`);
+    row(step >= 5, step === 5, `${P(A)} + ${P(B)} = ${step >= 5 ? `${frac(a, N)} + ${frac(b, N)} = ${apart ? frac(a + b, N) : `<span class="twice-note">${frac(a + b, N)}</span>`}` : q}`,
+      `<b>+</b> adds both circles` + (step >= 5 && !apart ? `. <span class="warn">The overlap counts twice!</span>` : ""));
+    const orWhy = `<b>or</b> means in A, in B, or in both`;
+    if (step < 6) row(false, false, `${P(`${A} or ${B}`)} = ${q}`, orWhy, "final");
     else if (apart) {
-      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">0</span>`, "final rule");
-      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} = ${fullAndSimp(union, N)}`);
+      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">0</span>`, `${orWhy}. <b>− 0</b>: no overlap to take away`, "final rule");
+      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
     } else {
-      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">${P(`${A} and ${B}`)}</span>`, "final rule");
-      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} − <span class="c-both">${frac(k, N)}</span> = ${fullAndSimp(union, N)}`);
+      row(true, true, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">${P(`${A} and ${B}`)}</span>`, `${orWhy}. <b>−</b> takes the overlap away once`, "final rule");
+      row(true, true, `= ${frac(a, N)} + ${frac(b, N)} − <span class="c-both">${frac(k, N)}</span> = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
     }
     $("lines").innerHTML = lines.join("");
   }
