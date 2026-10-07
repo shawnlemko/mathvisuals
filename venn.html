@@ -175,6 +175,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .tog::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
 .tog[aria-pressed="true"] { border-color: var(--pt); }
 .tog[aria-pressed="true"]::before { background: var(--pt); border-color: var(--pt); }
+.sets small { font-family: var(--font-body); font-weight: 400; color: var(--muted); font-size: 0.9rem; }
 .sets { margin: 0; font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; line-height: 1.6; }
 .board { padding: 6px; }
 #svg { cursor: pointer; }
@@ -184,7 +185,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .guess { fill: url(#hatch); pointer-events: none; }
 .hatch-line { stroke: var(--ink); stroke-width: 4; opacity: 0.55; }
 .setname { font-family: var(--font-display); font-weight: 800; font-size: 64px; pointer-events: none; }
-.el { font-family: var(--font-num); font-weight: 700; font-size: 34px; text-anchor: middle; dominant-baseline: central; fill: var(--ink); cursor: pointer; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.caption { font-family: var(--font-body); font-weight: 700; font-size: 26px; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
+.el { font-family: var(--font-body); font-weight: 700; font-size: 32px; text-anchor: middle; dominant-baseline: central; fill: var(--ink); cursor: pointer; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
 .el.on { fill: var(--sheet); stroke: none; }
 .el-bg { fill: var(--ink); pointer-events: none; }
 @media (max-width: 860px) { .nota { font-size: 2.4rem; } .words { font-size: 1.2rem; } }
@@ -202,6 +204,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <button type="button" class="tog" id="tWords" aria-pressed="true">Words</button>
       <button type="button" class="tog" id="tShade" aria-pressed="true">Shading</button>
       <button type="button" class="tog" id="tEls" aria-pressed="false">Elements</button>
+      <div class="seg" id="exSeg" hidden role="group" aria-label="Example sets">
+        <button type="button" aria-pressed="true">Numbers</button>
+        <button type="button" aria-pressed="false">Names</button>
+        <button type="button" aria-pressed="false">Months</button>
+      </div>
     </div>
 
   </header>
@@ -240,38 +247,35 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       letters: "AB",
       circles: [{ x: 390, y: 330, r: 215 }, { x: 610, y: 330, r: 215 }],
       names: [{ x: 196, y: 128 }, { x: 804, y: 128 }],
-      // Example sets for Elements: U = {1, ..., 12}, A = even numbers, B = multiples of 3.
-      universe: 12,
-      tests: [n => n % 2 === 0, n => n % 3 === 0],
-      rule: ["even numbers", "multiples of 3"],
-      spots: {
-        "10": [[255, 270], [330, 270], [255, 390], [330, 390]],
-        "01": [[710, 270], [710, 390], [770, 330]],
-        "11": [[500, 280], [500, 380]],
-        "00": [[70, 580], [930, 580], [930, 80], [500, 594]],
-      },
     },
     3: {
       letters: "ABC",
       circles: [{ x: 400, y: 250, r: 178 }, { x: 600, y: 250, r: 178 }, { x: 500, y: 423, r: 178 }],
       names: [{ x: 196, y: 112 }, { x: 804, y: 112 }, { x: 742, y: 570 }],
-      // U = {1, ..., 15}, A = even numbers, B = multiples of 3, C = multiples of 5. A ∩ B ∩ C is empty.
-      universe: 15,
-      tests: [n => n % 2 === 0, n => n % 3 === 0, n => n % 5 === 0],
-      rule: ["even numbers", "multiples of 3", "multiples of 5"],
-      spots: {
-        "100": [[300, 180], [370, 128], [264, 252], [318, 284]],
-        "010": [[700, 180], [630, 128], [736, 252], [682, 284]],
-        "001": [[500, 530], [430, 520], [570, 520]],
-        "110": [[466, 172], [534, 172]],
-        "101": [[402, 388]],
-        "011": [[598, 388]],
-        "111": [[500, 308]],
-        "000": [[70, 590], [930, 590], [930, 60], [250, 590]],
-      },
     },
   };
 
+  // Elements with meaning (Shawn): each example names U and each set in words, and lists the elements.
+  const NUM = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => String(a + k));
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const EXAMPLES = {
+    2: [
+      { name: "Numbers", u: "whole numbers from 1 to 12", items: NUM(1, 12), range: true,
+        sets: [["even numbers", "2 4 6 8 10 12"], ["prime numbers", "2 3 5 7 11"]] },
+      { name: "Names", u: "students in the class", items: ["Ava", "Ben", "Chloe", "Dev", "Emma", "Finn", "Grace", "Hiro", "Isla", "Jack"],
+        sets: [["plays soccer", "Ava Ben Dev Grace Jack"], ["plays an instrument", "Ben Chloe Grace Isla"]] },
+      { name: "Months", u: "months of the year", items: MONTHS,
+        sets: [["has 31 days", "Jan Mar May Jul Aug Oct Dec"], ["starts with J", "Jan Jun Jul"]] },
+    ],
+    3: [
+      { name: "Numbers", u: "whole numbers from 1 to 15", items: NUM(1, 15), range: true,
+        sets: [["even numbers", "2 4 6 8 10 12 14"], ["prime numbers", "2 3 5 7 11 13"], ["multiples of 3", "3 6 9 12 15"]] },
+      { name: "Names", u: "students in the class", items: ["Ava", "Ben", "Chloe", "Dev", "Emma", "Finn", "Grace", "Hiro", "Isla", "Jack", "Kai", "Lena"],
+        sets: [["plays soccer", "Ava Ben Dev Grace Jack Kai"], ["plays an instrument", "Ben Chloe Grace Isla Lena"], ["has a pet", "Chloe Dev Grace Hiro Kai"]] },
+      { name: "Months", u: "months of the year", items: MONTHS,
+        sets: [["has 31 days", "Jan Mar May Jul Aug Oct Dec"], ["starts with J", "Jan Jun Jul"], ["summer months", "Jun Jul Aug"]] },
+    ],
+  };
   // Each notation: what it says out loud, what it means, and the regions it covers.
   const has = (code, i) => code[i] === "1";
   const NOTES = {
@@ -306,12 +310,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     ],
   };
 
-  let n = 2, pick = 3, shade = new Set(), guess = new Set(), showWords = true, showShade = true, showEls = false, el = null;
+  let n = 2, ex = 0, shade = new Set(), guess = new Set(), showWords = true, showShade = true, showEls = false, el = null;
 
   const codes = () => Array.from({ length: 1 << n }, (_, k) => k.toString(2).padStart(n, "0"));
   const regionsOf = i => new Set(codes().filter(NOTES[n][i][3]));
   const same = (a, b) => a.size === b.size && [...a].every(x => b.has(x));
-  const memberCode = v => LAYOUT[n].tests.map(t => (t(v) ? "1" : "0")).join("");
+  const EXm = () => EXAMPLES[n][ex];
+  const members = i => EXm().sets[i][1].split(" ");
+  const memberCode = v => EXm().sets.map(([, list]) => (list.split(" ").includes(v) ? "1" : "0")).join("");
   // Color each set letter to match its circle.
   const ink = s => s.replace(/[ABCU]/g, ch => `<span class="s${ch}">${ch}</span>`);
   const list = vs => (vs.length ? "{" + vs.join(", ") + "}" : "{ } = ∅");
@@ -354,19 +360,64 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     });
 
     if (showEls) {
-      const used = {};
-      for (let v = 1; v <= L.universe; v++) {
-        const code = memberCode(v);
-        const k = (used[code] = (used[code] || 0) + 1) - 1;
-        const [x, y] = L.spots[code][k];
-        if (el === v) mk("circle", { class: "el-bg", cx: x, cy: y, r: 30 });
-        const t = mk("text", { class: "el" + (el === v ? " on" : ""), x, y, tabindex: 0, role: "button", "aria-label": "element " + v });
+      L.circles.forEach((c, i) => {
+        mk("text", { class: "caption", x: L.names[i].x, y: L.names[i].y + 36, fill: `var(--set${L.letters[i]})` }).textContent = EXm().sets[i][0];
+      });
+      for (const { v, x, y, w, fs } of placeEls()) {
+        if (el === v) mk("rect", { class: "el-bg", x: x - w / 2, y: y - fs * 0.62, width: w, height: fs * 1.24, rx: 10 });
+        const t = mk("text", { class: "el" + (el === v ? " on" : ""), x, y, "font-size": fs, tabindex: 0, role: "button", "aria-label": "element " + v });
         t.textContent = v;
         const choose = e => { e.stopPropagation(); el = el === v ? null : v; render(); };
         t.addEventListener("pointerdown", choose);
         t.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(e); } });
       }
     }
+  }
+
+  // Places each element inside its own region, clear of the circle edges, the labels and the other elements.
+  // Candidate centers on a grid are checked box-wide; then the elements spread out greedily. Cached per example.
+  const placed = {};
+  function placeEls() {
+    const key = n + ":" + ex;
+    if (placed[key]) return placed[key];
+    const L = LAYOUT[n], E = EXm();
+    const codeAt = (x, y) => L.circles.map(c => (Math.hypot(x - c.x, y - c.y) <= c.r ? "1" : "0")).join("");
+    const edge = (x, y) => Math.min(x - U.x, U.x + U.w - x, y - U.y, U.y + U.h - y, ...L.circles.map(c => Math.abs(Math.hypot(x - c.x, y - c.y) - c.r)));
+    const fixed = [{ x: 26, y: 20, w: 72, h: 70 }];
+    L.names.forEach((p, i) => {
+      fixed.push({ x: p.x - 34, y: p.y - 58, w: 68, h: 64 });
+      const cw = E.sets[i][0].length * 13.5;
+      fixed.push({ x: p.x - cw / 2, y: p.y + 12, w: cw, h: 32 });
+    });
+    const hit = (a, b, pad) => a.x < b.x + b.w + pad && b.x < a.x + a.w + pad && a.y < b.y + b.h + pad && b.y < a.y + a.h + pad;
+    for (let fs = 32; fs >= 20; fs -= 4) {
+      const out = [], boxes = [];
+      let ok = true;
+      for (const v of E.items) {
+        const code = memberCode(v);
+        const w = v.length * fs * 0.6 + 14, h = fs * 1.2;
+        let best = null, bestScore = -1;
+        for (let y = U.y + 10; y <= U.y + U.h - 10; y += 8) {
+          for (let x = U.x + 10; x <= U.x + U.w - 10; x += 8) {
+            const box = { x: x - w / 2, y: y - h / 2, w, h };
+            let fit = true;
+            for (let i = 0; i <= 4 && fit; i++) for (let j = 0; j <= 2 && fit; j++) {
+              const px = box.x + box.w * i / 4, py = box.y + box.h * j / 2;
+              if (codeAt(px, py) !== code || edge(px, py) < 9) fit = false;
+            }
+            if (!fit || fixed.some(f => hit(box, f, 4)) || boxes.some(b => hit(box, b, 12))) continue;
+            const clear = Math.min(edge(x, y), 120);
+            const near = out.filter(o => o.code === code).map(o => Math.hypot(o.x - x, o.y - y));
+            const score = near.length ? Math.min(...near, 170) + 0.5 * clear : clear;
+            if (score > bestScore) { bestScore = score; best = { v, x, y, w, fs, code, box }; }
+          }
+        }
+        if (!best) { ok = false; break; }
+        out.push(best); boxes.push(best.box);
+      }
+      if (ok) return (placed[key] = out);
+    }
+    return (placed[key] = []);
   }
 
   function readout() {
@@ -397,7 +448,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     let html = "";
     if (showEls && showShade && shade.size) {
       const vs = [];
-      for (let v = 1; v <= L.universe; v++) if (shade.has(memberCode(v))) vs.push(v);
+      for (const v of EXm().items) if (shade.has(memberCode(v))) vs.push(v);
       html += `${shown >= 0 ? ink(NOTES[n][shown][0]) : "Shaded"} = ${list(vs)}`;
       if (!vs.length) html += ` <small>the empty set: no elements</small>`;
     }
@@ -410,14 +461,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     roster.hidden = !html;
     roster.innerHTML = html;
 
-    $("setsCard").hidden = !showEls;
+    $("setsCard").hidden = $("exSeg").hidden = !showEls;
     if (showEls) {
-      const lines = [`${ink("U")} = {1, 2, 3, …, ${L.universe}}`];
-      [...L.letters].forEach((s, i) => {
-        const vs = [];
-        for (let v = 1; v <= L.universe; v++) if (L.tests[i](v)) vs.push(v);
-        lines.push(`${ink(s)} = ${list(vs)}`);
-      });
+      const E = EXm();
+      document.querySelectorAll("#exSeg button").forEach((b, i) => b.setAttribute("aria-pressed", i === ex));
+      const desc = t => ` <small>${t}</small>`;
+      const lines = [`${ink("U")} = ${E.range ? `{${E.items.slice(0, 3).join(", ")}, …, ${E.items[E.items.length - 1]}}` : list(E.items)}${desc(E.u)}`];
+      [...L.letters].forEach((s, i) => lines.push(`${ink(s)} = ${list(members(i))}${desc(E.sets[i][0])}`));
       $("sets").innerHTML = lines.join("<br>");
     }
   }
@@ -446,6 +496,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     target.has(code) ? target.delete(code) : target.add(code);
     render();
   });
+
+  document.querySelectorAll("#exSeg button").forEach((b, i) => b.addEventListener("click", () => { ex = i; el = null; render(); }));
 
   function setCircles(k) {
     n = k;
