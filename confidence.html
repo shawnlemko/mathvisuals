@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>19 Times out of 20</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a4cc2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b49cff; } }
+:root[data-theme="dark"] { --purple: #b49cff; }
+.c-purple { color: var(--purple); font-weight: 700; }
+.c-warn { color: var(--warn); font-weight: 700; }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.hdr-right { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+button.big { font-family: var(--font-display); font-size: 1.15rem; min-height: 48px; padding: 8px 16px; }
+button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+button.go:hover { background: var(--sheet); color: var(--pt); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.truth.on { background: var(--green); border-color: var(--green); color: var(--sheet); }
+.main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+.panel .card p { margin: 0; }
+.panel .card p + p { margin-top: 8px; }
+.q { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; line-height: 1.25; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.tally { font-family: var(--font-num); font-size: 1.35rem; }
+.tally b { font-size: 1.8rem; }
+.say { font-size: 1.1rem; }
+
+/* Board drawing */
+.ax { stroke: var(--muted); stroke-width: 2; }
+.tk { stroke: var(--muted); stroke-width: 1.5; }
+.gl { stroke: var(--grid); stroke-width: 1; }
+.tl { font-family: var(--font-num); font-weight: 700; font-size: 20px; fill: var(--ink); text-anchor: middle; }
+.rowno { font-family: var(--font-num); font-weight: 500; font-size: 16px; fill: var(--muted); text-anchor: end; }
+.ivl { stroke-width: 6; stroke-linecap: round; }
+.cap { stroke-width: 3; }
+.ivl.n, .cap.n { stroke: var(--pt); } .dot.n { fill: var(--pt); } .rtxt.n { fill: var(--pt); }
+.ivl.y, .cap.y { stroke: var(--green); } .dot.y { fill: var(--green); } .rtxt.y { fill: var(--green); }
+.ivl.x, .cap.x { stroke: var(--warn); } .dot.x { fill: var(--warn); } .rtxt.x { fill: var(--warn); }
+.dot { stroke: var(--sheet); stroke-width: 2; }
+.rtxt { font-family: var(--font-num); font-weight: 700; font-size: 18px; }
+.truth-line { stroke: var(--ink); stroke-width: 3; stroke-dasharray: 10 7; }
+.truth-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.hidden-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--muted); }
+.row-in { animation: drop .35s ease-out; }
+@keyframes drop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .row-in { animation: none; } }
+
+/* Read a statement */
+.news { margin: 4px 6px 10px; font-size: 1.55rem; line-height: 1.55; font-family: var(--font-body); }
+.news .tag { display: block; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+.news mark { background: none; color: inherit; border-radius: 6px; padding: 0 4px; transition: background-color .3s, color .3s; }
+.news mark.on.m-res { background: color-mix(in srgb, var(--pt) 18%, transparent); color: var(--pt); font-weight: 700; }
+.news mark.on.m-moe { background: color-mix(in srgb, var(--orange) 18%, transparent); color: var(--orange); font-weight: 700; }
+.news mark.on.m-conf { background: color-mix(in srgb, var(--purple) 18%, transparent); color: var(--purple); font-weight: 700; }
+.part { border-left: 6px solid var(--grid-major); }
+.part.on.p-res { border-color: var(--pt); } .part.on.p-moe { border-color: var(--orange); }
+.part.on.p-ci { border-color: var(--green); } .part.on.p-conf { border-color: var(--purple); }
+.part .val { font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; line-height: 1.3; }
+.part:not(.on) .val { color: var(--muted); }
+.part .why { color: var(--muted); font-size: 0.95rem; }
+.meaning { margin: 6px 6px 4px; padding: 12px 16px; border-radius: 10px; background: var(--chip); font-size: 1.3rem; line-height: 1.4; min-height: 4.4em; }
+#readView .wrap .board > svg, .wrap #readView .board > svg { height: auto; flex: 1 1 0; }
+.meaning:empty { visibility: hidden; }
+.meaning p { margin: 0; } .meaning p + p { margin-top: 6px; font-size: 1.05rem; color: var(--muted); }
+.stepline { font-size: 1.15rem; font-weight: 700; }
+.panel.read { gap: 10px; }
+.panel.read .card { padding: 10px 14px; }
+.nl-res { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+.nl-moe { stroke: var(--orange); stroke-width: 5; fill: none; }
+.nl-moe-h { fill: var(--orange); }
+.nl-ci { fill: var(--green); fill-opacity: 0.18; stroke: var(--green); stroke-width: 4; }
+.nl-lbl { font-family: var(--font-num); font-weight: 700; font-size: 24px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.nl-lbl.res { fill: var(--pt); } .nl-lbl.moe { fill: var(--orange); } .nl-lbl.ci { fill: var(--green); } .nl-lbl.conf { fill: var(--purple); }
+.mini.y { stroke: var(--green); } .mini.x { stroke: var(--warn); }
+.mini { stroke-width: 5; stroke-linecap: round; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>19 Times out of 20</h1></div>
+    <div class="hdr-right">
+      <div class="seg-btns" role="group" aria-label="View">
+        <button type="button" id="vPoll" class="on" aria-pressed="true">Take polls</button>
+        <button type="button" id="vRead" aria-pressed="false">Read a statement</button>
+      </div>
+      <button type="button" class="big truth" id="truthBtn" aria-pressed="false">Show the true %</button>
+    </div>
+  </header>
+
+  <div class="main" id="pollView">
+    <div class="board"><svg id="polls" viewBox="0 0 920 710" role="img" aria-label="Poll results, each drawn as result plus or minus 3"></svg></div>
+    <div class="panel">
+      <div class="card">
+        <p class="label">The poll</p>
+        <p class="q">“Do you want a 4-day school week?”</p>
+        <p>We can't ask every teen in Alberta, so each poll asks <b>1000</b> random teens.</p>
+        <p>Each poll gives a result <span class="c-orange">± 3</span>. That makes a bar from 3 below to 3 above.</p>
+      </div>
+      <div class="card">
+        <div class="btns">
+          <button type="button" class="big go" id="take1">Take 1 poll</button>
+          <button type="button" class="big go" id="takeAll">Take all 20</button>
+        </div>
+        <div class="btns" style="margin-top:10px">
+          <button type="button" id="newSet">New set of 20</button>
+          <button type="button" id="restart">Start over (new true %)</button>
+        </div>
+      </div>
+      <div class="card" aria-live="polite">
+        <p class="label">Did the bar catch the true %?</p>
+        <p class="tally">Polls: <b id="nTaken">0</b> of 20</p>
+        <p class="tally" id="caughtLine"></p>
+        <p class="say" id="sayLine"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="main" id="readView" hidden>
+    <div class="board">
+      <p class="news"><span class="tag">In the news</span>A poll of 1000 Alberta teens found that <mark class="m-res" id="sRes">47%</mark> want a 4-day school week. The results are accurate within <mark class="m-moe">±3 percentage points</mark>, <mark class="m-conf">19 times out of 20</mark>.</p>
+      <svg id="line" viewBox="0 0 1000 330" role="img" aria-label="Number line showing the confidence interval"></svg>
+      <div class="meaning" id="meaning"></div>
+    </div>
+    <div class="panel read">
+      <div class="card"><p class="stepline" id="stepText"></p>
+        <div class="btns" style="margin-top:8px">
+          <button type="button" class="big" id="back">Back</button>
+          <button type="button" class="big go" id="next">Next step</button>
+        </div>
+      </div>
+      <div class="card part p-res"><p class="label">Survey result</p><p class="val" data-v="res"></p><p class="why" data-w="res"></p></div>
+      <div class="card part p-moe"><p class="label">Margin of error</p><p class="val" data-v="moe"></p><p class="why" data-w="moe"></p></div>
+      <div class="card part p-ci"><p class="label">Confidence interval</p><p class="val" data-v="ci"></p><p class="why" data-w="ci"></p></div>
+      <div class="card part p-conf"><p class="label">Confidence level</p><p class="val" data-v="conf"></p><p class="why" data-w="conf"></p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const MOE = 3, ROWS = 20;
+  const randInt = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  // Results are whole percents. This spread makes a ±3 bar catch the true % about 95% of the time.
+  const SD = 1.786;
+  const gauss = () => { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); };
+
+  let truth, lo, polls, shown = false, allTaken = 0, allCaught = 0, newRow = -1;
+
+  function newTruth() {
+    truth = randInt(35, 65);
+    // A 20-point window that holds nearly every bar, shifted so its middle doesn't give the true % away.
+    lo = truth - randInt(8, 12);
+    polls = []; allTaken = 0; allCaught = 0;
+  }
+  const poll = () => Math.round(truth + SD * gauss());
+  const caught = r => Math.abs(r - truth) <= MOE;
+
+  // ---- Poll view ----
+  const svg = $("polls");
+  const X0 = 66, X1 = 720, TOP = 64, ROWH = 29, AXY = TOP + ROWS * ROWH + 12;
+  const X = v => X0 + (Math.min(lo + 20, Math.max(lo, v)) - lo) / 20 * (X1 - X0);
+
+  function drawPolls() {
+    svg.textContent = "";
+    for (let v = lo; v <= lo + 20; v++) {
+      el("line", { x1: X(v), x2: X(v), y1: TOP - 8, y2: AXY, class: "gl" }, svg);
+      el("line", { x1: X(v), x2: X(v), y1: AXY, y2: AXY + 12, class: "tk" }, svg);
+      el("text", { x: X(v), y: AXY + 36, class: "tl" }, svg, v);
+    }
+    el("line", { x1: X0, x2: X1, y1: AXY, y2: AXY, class: "ax" }, svg);
+    el("text", { x: X1 + 22, y: AXY + 36, class: "tl", "text-anchor": "start" }, svg, "%");
+    polls.forEach((r, i) => {
+      const y = TOP + i * ROWH + ROWH / 2;
+      const k = !shown ? "n" : caught(r) ? "y" : "x";
+      const g = el("g", { class: i === newRow ? "row-in" : "" }, svg);
+      el("text", { x: X0 - 14, y: y + 6, class: "rowno" }, g, "#" + (i + 1));
+      el("line", { x1: X(r - MOE), x2: X(r + MOE), y1: y, y2: y, class: "ivl " + k }, g);
+      for (const e of [r - MOE, r + MOE]) if (e >= lo && e <= lo + 20) el("line", { x1: X(e), x2: X(e), y1: y - 9, y2: y + 9, class: "cap " + k }, g);
+      el("circle", { cx: X(r), cy: y, r: 7, class: "dot " + k }, g);
+      el("text", { x: X1 + 20, y: y + 6, class: "rtxt " + k }, g, r + "% ± 3" + (k === "x" ? "  missed" : ""));
+    });
+    newRow = -1;
+    if (shown) {
+      el("line", { x1: X(truth), x2: X(truth), y1: TOP - 14, y2: AXY, class: "truth-line" }, svg);
+      el("text", { x: X(truth), y: TOP - 24, class: "truth-lbl" }, svg, "True % = " + truth + "%");
+    } else {
+      el("text", { x: X0, y: TOP - 24, class: "hidden-lbl" }, svg, "True % for all Alberta teens: ?");
+    }
+    const n = polls.length, c = polls.filter(caught).length;
+    $("nTaken").textContent = n;
+    $("take1").disabled = $("takeAll").disabled = n >= ROWS;
+    $("newSet").disabled = n === 0;
+    let say = "";
+    if (!shown) {
+      $("caughtLine").innerHTML = "Caught: <b>?</b>";
+      say = n === 0 ? "Each bar is one poll. Take a poll to start."
+        : n < ROWS ? "Predict: out of 20 bars, how many will cross the true %?"
+        : "Predict how many bars catch the true %, then show it.";
+    } else {
+      $("caughtLine").innerHTML = `Caught: <b class="c-green">${c}</b> of ${n}` + (n - c ? ` &nbsp;<span class="c-warn">Missed: ${n - c}</span>` : "");
+      if (n === ROWS) {
+        say = c === 19 ? "19 out of 20 bars caught it. That is what “19 times out of 20” means!"
+          : `This time ${c} out of 20 caught it. Try more sets: on average it is about 19 out of 20, or 95%.`;
+      } else if (n) say = "Green bars cross the true %. Red bars missed it.";
+      else say = "Take a poll to start.";
+      const T = allTaken + n, C = allCaught + c;
+      if (allTaken) say += ` All sets so far: ${C} of ${T} = ${Math.round(C / T * 100)}%.`;
+    }
+    $("sayLine").textContent = say;
+  }
+
+  function take(k) {
+    for (let i = 0; i < k && polls.length < ROWS; i++) polls.push(poll());
+    newRow = k === 1 ? polls.length - 1 : -1;
+    drawPolls();
+  }
+  $("take1").onclick = () => take(1);
+  $("takeAll").onclick = () => take(ROWS);
+  $("newSet").onclick = () => {
+    if (shown) { allTaken += polls.length; allCaught += polls.filter(caught).length; }
+    polls = []; drawPolls();
+  };
+  $("restart").onclick = () => { newTruth(); setTruth(false); };
+  function setTruth(on) {
+    shown = on;
+    const b = $("truthBtn");
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+    b.textContent = on ? "Hide the true %" : "Show the true %";
+    drawPolls();
+  }
+  $("truthBtn").onclick = () => setTruth(!shown);
+
+  // ---- Read a statement ----
+  let step = 0, res = 47;
+  const line = $("line");
+  const STEPS = [
+    "Read the statement. Can you find the 4 parts?",
+    "Step 1: What did the poll find?",
+    "Step 2: How far off could the poll be?",
+    "Step 3: Go 3 down and 3 up to make the interval.",
+    "Step 4: How sure are we?",
+    "Step 5: Put it all together."
+  ];
+  function drawRead() {
+    const lo2 = res - 8, hi2 = res + 8;
+    const L = 60, R = 940, AY = 230;
+    const XL = v => L + (v - lo2) / (hi2 - lo2) * (R - L);
+    line.textContent = "";
+    if (step >= 4) {
+      // 20 mini polls: about 19 catch the true %, 1 misses.
+      const miss = 13;
+      el("text", { x: 500, y: 26, class: "nl-lbl conf" }, line, "If we ran this poll 20 times…");
+      for (let i = 0; i < 20; i++) {
+        const x = 70 + i * 45, k = i === miss ? "x" : "y", off = i === miss ? 12 : 0;
+        el("line", { x1: x, x2: x, y1: 50 + off, y2: 92 + off, class: "mini " + k }, line);
+      }
+      el("line", { x1: 50, x2: 950, y1: 71, y2: 71, class: "truth-line", "stroke-width": 2 }, line);
+      el("text", { x: 500, y: 128, class: "nl-lbl conf" }, line, "about 19 would catch the true %  ·  19 ÷ 20 = 95%");
+    }
+    for (let v = lo2; v <= hi2; v++) {
+      el("line", { x1: XL(v), x2: XL(v), y1: AY, y2: AY + 12, class: "tk" }, line);
+      el("text", { x: XL(v), y: AY + 38, class: "tl" }, line, v);
+    }
+    el("line", { x1: L - 20, x2: R + 20, y1: AY, y2: AY, class: "ax" }, line);
+    el("text", { x: R + 22, y: AY + 38, class: "tl", "text-anchor": "start" }, line, "%");
+    if (step >= 3) {
+      el("rect", { x: XL(res - 3), y: AY - 22, width: XL(res + 3) - XL(res - 3), height: 44, rx: 8, class: "nl-ci" }, line);
+      el("text", { x: XL(res - 3), y: AY + 74, class: "nl-lbl ci" }, line, (res - 3) + "%");
+      el("text", { x: XL(res + 3), y: AY + 74, class: "nl-lbl ci" }, line, (res + 3) + "%");
+    }
+    if (step >= 2) {
+      const y = AY - 46;
+      for (const s of [-1, 1]) {
+        const xe = XL(res + 3 * s);
+        el("path", { d: `M${XL(res)},${y} L${xe - s * 12},${y}`, class: "nl-moe" }, line);
+        el("path", { d: `M${xe},${y} l${-s * 16},-9 v18 z`, class: "nl-moe-h" }, line);
+        el("text", { x: (XL(res) + xe) / 2, y: y - 14, class: "nl-lbl moe" }, line, s < 0 ? "− 3" : "+ 3");
+      }
+    }
+    if (step >= 1) {
+      el("circle", { cx: XL(res), cy: AY, r: 11, class: "nl-res" }, line);
+      if (step < 2) el("text", { x: XL(res), y: AY - 26, class: "nl-lbl res" }, line, res + "%");
+    }
+  }
+  function renderRead() {
+    $("sRes").textContent = res + "%";
+    $("stepText").textContent = STEPS[step];
+    const ci = `${res - 3}% to ${res + 3}%`;
+    const parts = {
+      res: ["what the poll found", res + "%"],
+      moe: ["how far off the poll could be, up or down", "± 3 percentage points"],
+      ci: [`${res} − 3 = ${res - 3} and ${res} + 3 = ${res + 3}`, ci],
+      conf: ["19 times out of 20 means 19 ÷ 20", "95%"]
+    };
+    const order = ["res", "moe", "ci", "conf"];
+    order.forEach((k, i) => {
+      const on = step > i;
+      document.querySelector(".p-" + k).classList.toggle("on", on);
+      document.querySelector(`[data-v="${k}"]`).textContent = on ? parts[k][1] : "?";
+      document.querySelector(`[data-w="${k}"]`).textContent = on ? parts[k][0] : "";
+    });
+    document.querySelector(".m-res").classList.toggle("on", step >= 1);
+    document.querySelector(".m-moe").classList.toggle("on", step >= 2);
+    document.querySelector(".m-conf").classList.toggle("on", step >= 4);
+    $("meaning").innerHTML = step < 5 ? "" :
+      `<p><b>What it means:</b> We are <span class="c-purple">95% confident</span> that the true % of <b>all</b> Alberta teens who want a 4-day week is between <span class="c-green">${res - 3}% and ${res + 3}%</span>.</p>` +
+      `<p>It does not mean 95% of teens said yes. It does not promise the true % is inside: about 1 time in 20, the interval misses.</p>`;
+    $("back").disabled = step === 0;
+    $("next").textContent = step === STEPS.length - 1 ? "Start over" : "Next step";
+    drawRead();
+  }
+  $("next").onclick = () => { step = step === STEPS.length - 1 ? 0 : step + 1; renderRead(); };
+  $("back").onclick = () => { if (step) { step--; renderRead(); } };
+
+  function setView(read) {
+    $("pollView").hidden = read; $("readView").hidden = !read;
+    $("vPoll").classList.toggle("on", !read); $("vRead").classList.toggle("on", read);
+    $("vPoll").setAttribute("aria-pressed", !read); $("vRead").setAttribute("aria-pressed", read);
+    $("truthBtn").hidden = read;
+    if (read) {
+      // The statement uses the latest poll, so both views tell the same story.
+      res = polls.length ? polls[polls.length - 1] : poll();
+      step = 0; renderRead();
+    }
+  }
+  $("vPoll").onclick = () => setView(false);
+  $("vRead").onclick = () => setView(true);
+  document.addEventListener("keydown", e => {
+    if ($("readView").hidden || e.target.closest("input, select, textarea")) return;
+    if (e.key === "ArrowRight") $("next").click();
+    if (e.key === "ArrowLeft") $("back").click();
+  });
+
+  newTruth();
+  drawPolls();
+})();
+</script>
+
+</body>
+</html>
