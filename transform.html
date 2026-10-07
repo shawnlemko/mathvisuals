@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Transformation Station</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Transformation Station: draw a polygon (or pick a pentomino) on the -10..10 grid, then translate, reflect or rotate it.
+   The original is blue with letters A, B, C...; the image is orange with A′, B′, C′... and slides, flips or turns into place.
+   Vertices snap to whole numbers. Drag a corner to move it, or drag inside the shape to move the whole shape. */
+:root { --img: var(--orange); --mirror: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mirror: #b88cff; } }
+:root[data-theme="dark"] { --mirror: #b88cff; }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+.panel { gap: 12px; }
+.card { padding: 12px 16px; }
+.label { margin-bottom: 6px; }
+
+.shapes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.shapes button { padding: 4px; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: var(--sheet); }
+.shapes button svg { width: 30px; height: 30px; }
+.shapes button svg path { fill: var(--pt); fill-opacity: 0.35; stroke: var(--pt); stroke-width: 0.12; }
+.shapes button span { font-family: var(--font-display); font-weight: 800; font-size: 0.85rem; line-height: 1; }
+.shapes button.draw { grid-column: span 2; flex-direction: row; gap: 8px; font-size: 1rem; }
+.shapes button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.shapes button[aria-pressed="true"] svg path { fill: var(--sheet); stroke: var(--sheet); }
+.drawhint { margin: 8px 0 0; font-weight: 700; color: var(--pt); font-size: 1.05rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+.tabs button { flex: 1; border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.1rem; padding: 10px 6px; }
+.tabs button + button { border-left: 2px solid var(--grid-major); }
+.tabs button[aria-pressed="true"] { background: var(--img); color: var(--sheet); }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opts button { font-family: var(--font-num); font-size: 1.1rem; padding: 8px 12px; background: var(--sheet); }
+.opts button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.opts + .opts { margin-top: 8px; }
+.step { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-num); font-size: 1.2rem; font-weight: 700; }
+.step button { width: 40px; height: 40px; padding: 0; font-size: 1.4rem; line-height: 1; }
+.step output { min-width: 2.2ch; text-align: center; }
+.slider { grid-template-columns: 96px minmax(0, 1fr) 110px; }
+.slider output { font-size: 1.25rem; }
+.rule { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
+.rule small { display: block; font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); font-weight: 700; }
+.off { color: var(--warn); font-weight: 700; margin: 6px 0 0; font-size: 1rem; }
+
+table.coords { border-collapse: collapse; font-family: var(--font-num); font-size: 1.2rem; font-weight: 700; }
+.coords td { padding: 2px 10px 2px 0; white-space: nowrap; }
+.coords td.o { color: var(--pt); } .coords td.i { color: var(--img); } .coords td.a { color: var(--muted); text-align: center; }
+
+/* Board drawing */
+.shp { fill: var(--pt); fill-opacity: 0.18; stroke: var(--pt); stroke-width: 4; stroke-linejoin: round; cursor: move; }
+.img { fill: var(--img); fill-opacity: 0.2; stroke: var(--img); stroke-width: 4; stroke-linejoin: round; pointer-events: none; }
+.drawing { fill: none; stroke: var(--pt); stroke-width: 4; stroke-dasharray: 8 6; pointer-events: none; }
+.vlbl { font-family: var(--font-display); font-weight: 800; font-size: 22px; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; text-anchor: middle; pointer-events: none; }
+.vlbl.o { fill: var(--pt); } .vlbl.i { fill: var(--img); }
+.vtx { cursor: grab; outline: none; }
+.vtx .hit { fill: transparent; }
+.vtx .dot { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+.vtx.fixed { cursor: move; }
+.vtx:focus-visible .dot, .vtx.drag .dot { fill: var(--sheet); stroke: var(--pt); stroke-width: 4; }
+.idot { fill: var(--img); stroke: var(--sheet); stroke-width: 2; }
+.mirror { stroke: var(--mirror); stroke-width: 5; stroke-dasharray: 14 8; }
+.mlbl { fill: var(--mirror); font-family: var(--font-num); font-weight: 700; font-size: 22px; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; }
+.tvec { stroke: var(--img); stroke-width: 2.5; stroke-dasharray: 6 5; }
+.ctr { cursor: grab; outline: none; }
+.ctr .hit { fill: transparent; }
+.ctr .dot { fill: var(--mirror); stroke: var(--sheet); stroke-width: 3; }
+.ctr:focus-visible .dot, .ctr.drag .dot { fill: var(--sheet); stroke: var(--mirror); stroke-width: 4; }
+.arc { fill: none; stroke: var(--mirror); stroke-width: 3; stroke-dasharray: 6 5; }
+.board svg.adding { cursor: crosshair; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Transformation Station</h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="plane" role="img" aria-label="Coordinate plane with a shape and its image"></svg>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <p class="label">Shape</p>
+        <div class="shapes" id="shapes"></div>
+        <p class="drawhint" id="drawHint" hidden><span id="drawMsg"></span><button type="button" id="doneBtn">Done</button></p>
+      </section>
+
+      <section class="card" aria-live="polite">
+        <p class="label">Transformation</p>
+        <div class="tabs" id="tabs">
+          <button type="button" data-t="translate" aria-pressed="true">Translate</button>
+          <button type="button" data-t="reflect" aria-pressed="false">Reflect</button>
+          <button type="button" data-t="rotate" aria-pressed="false">Rotate</button>
+        </div>
+
+        <div id="p-translate">
+          <div class="slider"><label for="dx">Sideways</label><input type="range" id="dx" class="orange" min="-10" max="10" step="1" value="-7"><output id="dxOut"></output></div>
+          <div class="slider"><label for="dy">Up / down</label><input type="range" id="dy" class="orange" min="-10" max="10" step="1" value="-6"><output id="dyOut"></output></div>
+        </div>
+
+        <div id="p-reflect" hidden>
+          <div class="opts" id="lines">
+            <button type="button" data-l="xaxis" aria-pressed="true">x-axis</button>
+            <button type="button" data-l="yaxis" aria-pressed="false">y-axis</button>
+            <button type="button" data-l="yx" aria-pressed="false">y = x</button>
+            <button type="button" data-l="ynx" aria-pressed="false">y = −x</button>
+          </div>
+          <div class="opts">
+            <button type="button" data-l="xk" aria-pressed="false">x = <span class="kv"></span></button>
+            <button type="button" data-l="yk" aria-pressed="false">y = <span class="kv"></span></button>
+            <span class="step"><button type="button" id="kDown" aria-label="Move the line down or left">−</button><output id="kOut"></output><button type="button" id="kUp" aria-label="Move the line up or right">+</button></span>
+          </div>
+        </div>
+
+        <div id="p-rotate" hidden>
+          <div class="opts" id="angles">
+            <button type="button" data-a="90" aria-pressed="true">90°</button>
+            <button type="button" data-a="180" aria-pressed="false">180°</button>
+            <button type="button" data-a="270" aria-pressed="false">270°</button>
+          </div>
+          <div class="opts" id="dirs">
+            <button type="button" data-d="1" aria-pressed="true">↺ Counterclockwise</button>
+            <button type="button" data-d="-1" aria-pressed="false">↻ Clockwise</button>
+          </div>
+          <div class="opts" style="align-items:center">
+            <span style="font-weight:700">Turn around <span style="color:var(--mirror)" id="ctrTxt"></span></span>
+            <button type="button" id="ctrHome">Origin</button>
+          </div>
+        </div>
+
+        <div class="rule"><small id="ruleName"></small><span id="ruleTxt"></span></div>
+        <p class="off" id="offMsg" hidden>Part of the image is off the grid.</p>
+      </section>
+
+      <section class="card">
+        <p class="label">Coordinates</p>
+        <table class="coords"><tbody id="coords"></tbody></table>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MathBoard: a coordinate-plane board shared by the concept visuals.
+   Usage:
+     const b = MathBoard.create(svgEl, { min: -10, max: 10 });
+     const A = b.point({ name: "A", x: -3, y: -2, onMove: render });
+     const ln = b.line();            // b.lineThrough(ln, A, B) extends it across the plane
+     const s  = b.segment("green");  // b.setSegment(s, p, q, { arrow: true })
+     const t  = b.label("green");    // t.set("rise = 4", x, y, "start") / t.hide()
+     const f  = b.fill("green");     // b.setPolygon(f, [p, q, r])
+   Points snap to integers and stay inside [min, max]. Helpers: MathBoard.fmt (true minus sign), MathBoard.gcd. */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const set = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  function create(svg, opts = {}) {
+    const min = opts.min ?? -10, max = opts.max ?? 10, unit = opts.unit ?? 30, pad = opts.pad ?? 30;
+    const size = (max - min) * unit + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    const sx = x => pad + (x - min) * unit;
+    const sy = y => pad + (max - y) * unit;
+    const clamp = v => Math.max(min, Math.min(max, v));
+
+    const defs = el("defs", {}, svg);
+    ["green", "orange"].forEach(c => {
+      const m = el("marker", { id: `mb-arr-${c}`, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: `mb-arrow ${c}` }, m);
+    });
+
+    // Layers keep drawing order fixed: grid, fills, lines, labels, points.
+    const layers = {};
+    ["grid", "fills", "lines", "labels", "points"].forEach(n => (layers[n] = el("g", {}, svg)));
+
+    const g = layers.grid;
+    const major = opts.majorEvery ?? 0, tickEvery = opts.tickEvery ?? 1; // grade 8: every line labeled, counting by 1
+    for (let i = min; i <= max; i++) {
+      const cls = i === 0 ? "mb-axis" : major && i % major === 0 ? "mb-major" : "mb-minor";
+      el("line", { x1: sx(i), y1: sy(min), x2: sx(i), y2: sy(max), class: cls }, g);
+      el("line", { x1: sx(min), y1: sy(i), x2: sx(max), y2: sy(i), class: cls }, g);
+    }
+    for (let i = min; i <= max; i++) {
+      if (i === 0 || i % tickEvery) continue;
+      el("text", { x: sx(i), y: sy(0) + 22, class: "mb-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, g).textContent = fmt(i);
+    }
+    el("text", { x: sx(max) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(max) + 16, class: "mb-tick" }, g).textContent = "y";
+
+    function toPlane(evt) {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: clamp(Math.round((p.x - pad) / unit + min)), y: clamp(Math.round(max - (p.y - pad) / unit)) };
+    }
+
+    const show = (e, on) => { e.style.display = on ? "" : "none"; };
+
+    const board = {
+      svg, min, max, sx, sy, clamp, toPlane, layers, show,
+      line(cls = "") { return el("line", { class: `mb-line ${cls}` }, layers.lines); },
+      segment(color) { return el("line", { class: `mb-seg ${color}` }, layers.lines); },
+      fill(color) { return el("path", { class: `mb-fill ${color}` }, layers.fills); },
+
+      // Draw `line` through plane points p and q, extended to the edges of the plane.
+      lineThrough(line, p, q) {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        if (dx === 0 && dy === 0) return show(line, false);
+        show(line, true);
+        if (dx === 0) return set(line, { x1: sx(p.x), y1: sy(min), x2: sx(p.x), y2: sy(max) });
+        const m = dy / dx, pts = [];
+        [min, max].forEach(x => { const y = p.y + m * (x - p.x); if (y >= min - 1e-9 && y <= max + 1e-9) pts.push([x, y]); });
+        if (m !== 0) [min, max].forEach(y => { const x = p.x + (y - p.y) / m; if (x > min && x < max) pts.push([x, y]); });
+        const a = pts[0], b = pts[pts.length - 1];
+        set(line, { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]) });
+      },
+
+      // Segment from p to q in plane units. `arrow` adds an arrowhead at q; `gap` stops short of q (px), e.g. to clear a point.
+      setSegment(seg, p, q, { arrow = false, gap = 0 } = {}) {
+        let x2 = sx(q.x), y2 = sy(q.y);
+        const L = Math.hypot(x2 - sx(p.x), y2 - sy(p.y));
+        if (gap && L > gap) { x2 -= (x2 - sx(p.x)) / L * gap; y2 -= (y2 - sy(p.y)) / L * gap; }
+        set(seg, { x1: sx(p.x), y1: sy(p.y), x2, y2 });
+        const color = seg.classList.contains("green") ? "green" : "orange";
+        arrow ? seg.setAttribute("marker-end", `url(#mb-arr-${color})`) : seg.removeAttribute("marker-end");
+      },
+
+      setPolygon(path, pts) {
+        path.setAttribute("d", pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z");
+      },
+
+      // Text with a backing chip so grid lines never cut through it. x, y are in px.
+      label(color = "") {
+        const bg = el("rect", { class: "mb-lbl-bg", rx: 5 }, layers.labels);
+        const t = el("text", { class: `mb-lbl ${color}` }, layers.labels);
+        return {
+          set(text, x, y, anchor = "middle") {
+            t.textContent = text; set(t, { x, y, "text-anchor": anchor });
+            show(t, true); show(bg, true);
+            const b = t.getBBox();
+            set(bg, { x: b.x - 5, y: b.y - 2, width: b.width + 10, height: b.height + 4 });
+          },
+          hide() { show(t, false); show(bg, false); }
+        };
+      },
+
+      /* Draggable, keyboard-movable point. onMove(point) runs after every move.
+         `allow(x, y)` can veto a position (return false). */
+      point({ name, x, y, onMove, allow, showCoords = true }) {
+        const h = el("g", { class: "mb-handle", tabindex: 0, role: "slider", "aria-label": `Point ${name}. Use arrow keys to move.` }, layers.points);
+        el("circle", { class: "hit", r: 26 }, h);
+        const ring = el("circle", { class: "ring", r: 18 }, h);
+        el("circle", { class: "dot", r: 14 }, h);
+        el("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, h).textContent = name;
+        const coord = el("text", { class: "mb-coord" }, h);
+        const P = {
+          name, x, y, el: h, showCoords,
+          moveTo(nx, ny, silent) {
+            nx = clamp(nx); ny = clamp(ny);
+            if (nx === P.x && ny === P.y) return;
+            if (allow && !allow(nx, ny)) return;
+            P.x = nx; P.y = ny; P.draw();
+            if (!silent && onMove) onMove(P);
+          },
+          // Place the coordinate tag; `away` is a point the tag should face away from.
+          draw(away) {
+            h.setAttribute("transform", `translate(${sx(P.x)},${sy(P.y)})`);
+            h.setAttribute("aria-valuetext", `(${P.x}, ${P.y})`);
+            coord.textContent = `(${fmt(P.x)}, ${fmt(P.y)})`;
+            let dx = away && P.x < away.x ? -1 : 1, dy = away && P.y < away.y ? -1 : 1;
+            if (P.x >= max - 2) dx = -1; if (P.x <= min + 2) dx = 1;
+            if (P.y >= max - 1) dy = -1; if (P.y <= min + 1) dy = 1;
+            set(coord, { x: dx * 20, y: dy > 0 ? -18 : 34, "text-anchor": dx > 0 ? "start" : "end" });
+            show(coord, P.showCoords);
+          }
+        };
+        h.addEventListener("pointerdown", e => { e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); ring.setAttribute("r", 24); h.focus(); });
+        h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = toPlane(e); P.moveTo(p.x, p.y); } });
+        const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); ring.setAttribute("r", 18); };
+        h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+        h.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+          if (!d) return; e.preventDefault(); P.moveTo(P.x + d[0], P.y + d[1]);
+        });
+        P.draw();
+        return P;
+      }
+    };
+    return board;
+  }
+
+  window.MathBoard = { create, fmt, gcd };
+})();
+</script>
+<script>
+(() => {
+  const { fmt } = MathBoard;
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const svg = $("plane");
+  const b = MathBoard.create(svg, { min: -10, max: 10 });
+  const { sx, sy, min, max, layers } = b;
+  const LETTERS = "ABCDEFGHIJKL";
+  const MAXV = 10; // corners allowed when drawing your own shape
+
+  // Keep the image inside the plane's square even when part of it runs off the grid.
+  const clip = el("clipPath", { id: "planeClip" }, svg.querySelector("defs"));
+  el("rect", { x: sx(min) - 28, y: sy(max) - 28, width: sx(max) - sx(min) + 56, height: sy(min) - sy(max) + 56 }, clip); // room for letters at the edge
+  const gGuide = el("g", { "clip-path": "url(#planeClip)" }, layers.lines);
+  const gImg = el("g", { "clip-path": "url(#planeClip)" }, layers.fills);
+  const gShape = el("g", {}, layers.fills);
+  const gLbl = el("g", {}, layers.labels);
+  const gImgLbl = el("g", { "clip-path": "url(#planeClip)" }, layers.labels);
+  const gPts = el("g", {}, layers.points);
+
+  /* ---------- Pentominoes: cells (column, row) with row 0 at the bottom ---------- */
+  const PENTOS = {
+    F: [[1,0],[0,1],[1,1],[1,2],[2,2]], I: [[0,0],[0,1],[0,2],[0,3],[0,4]], L: [[0,0],[1,0],[0,1],[0,2],[0,3]],
+    N: [[0,0],[0,1],[1,1],[1,2],[1,3]], P: [[0,0],[0,1],[1,1],[0,2],[1,2]], T: [[1,0],[1,1],[0,2],[1,2],[2,2]],
+    U: [[0,0],[1,0],[2,0],[0,1],[2,1]], V: [[0,0],[1,0],[2,0],[0,1],[0,2]], W: [[0,0],[1,0],[1,1],[2,1],[2,2]],
+    X: [[1,0],[0,1],[1,1],[2,1],[1,2]], Y: [[0,0],[0,1],[0,2],[0,3],[1,2]], Z: [[0,2],[1,2],[1,1],[1,0],[2,0]]
+  };
+  // Outline of a polyomino: keep cell edges that are not shared, chain them counterclockwise, drop straight-through corners.
+  function outline(cells) {
+    const edges = new Map(), key = (x, y) => x + "," + y;
+    cells.forEach(([x, y]) => {
+      [[x, y, x + 1, y], [x + 1, y, x + 1, y + 1], [x + 1, y + 1, x, y + 1], [x, y + 1, x, y]].forEach(([a, c, d, e]) => {
+        const rev = key(d, e) + ">" + key(a, c);
+        if (edges.has(rev)) edges.delete(rev); else edges.set(key(a, c) + ">" + key(d, e), [a, c, d, e]);
+      });
+    });
+    const from = new Map(); edges.forEach(e => from.set(key(e[0], e[1]), e));
+    // Start at the lowest, then leftmost corner so A is always the bottom-left.
+    let start = [...from.values()].sort((p, q) => p[1] - q[1] || p[0] - q[0])[0];
+    const pts = []; let e = start;
+    do { pts.push({ x: e[0], y: e[1] }); e = from.get(key(e[2], e[3])); } while (e !== start);
+    return pts.filter((p, i) => {
+      const a = pts[(i + pts.length - 1) % pts.length], c = pts[(i + 1) % pts.length];
+      return (p.x - a.x) * (c.y - p.y) - (p.y - a.y) * (c.x - p.x) !== 0;
+    });
+  }
+
+  /* ---------- State ---------- */
+  let shape = [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 2, y: 5 }]; // starts as a triangle in the top-right quadrant
+  let kind = "draw";       // "draw" (corners can be dragged) or a pentomino letter (moves as one piece)
+  let drawing = null;      // corners placed so far while drawing a new shape
+  let mode = "translate";
+  const T = { dx: -7, dy: -6, line: "xaxis", k: 2, angle: 90, dir: 1, c: { x: 0, y: 0 } };
+  let anim = 1, animStart = 0;
+
+  /* ---------- The transformation ---------- */
+  function map(p, t = 1) {
+    if (mode === "translate") return { x: p.x + T.dx * t, y: p.y + T.dy * t };
+    if (mode === "reflect") {
+      const f = { xaxis: q => ({ x: q.x, y: -q.y }), yaxis: q => ({ x: -q.x, y: q.y }), yx: q => ({ x: q.y, y: q.x }),
+        ynx: q => ({ x: -q.y, y: -q.x }), xk: q => ({ x: 2 * T.k - q.x, y: q.y }), yk: q => ({ x: q.x, y: 2 * T.k - q.y }) }[T.line](p);
+      // Flip: every point travels straight across the line, so the shape flattens onto the line halfway through.
+      return { x: p.x + (f.x - p.x) * t, y: p.y + (f.y - p.y) * t };
+    }
+    const a = T.dir * T.angle * t * Math.PI / 180, c = T.c, dx = p.x - c.x, dy = p.y - c.y;
+    let x = c.x + dx * Math.cos(a) - dy * Math.sin(a), y = c.y + dx * Math.sin(a) + dy * Math.cos(a);
+    if (t === 1) { x = Math.round(x); y = Math.round(y); }
+    return { x, y };
+  }
+
+  // "−y + 3", "x", "2 − x" style expressions: coefficient ±1 on a variable plus a whole number.
+  function lin(sign, v, n) {
+    let s = (sign < 0 ? "−" : "") + v;
+    if (n > 0) s += " + " + n; else if (n < 0) s += " − " + Math.abs(n);
+    return s;
+  }
+  function rule() {
+    if (mode === "translate") {
+      const h = T.dx === 0 ? "" : T.dx > 0 ? `${T.dx} right` : `${-T.dx} left`;
+      const v = T.dy === 0 ? "" : T.dy > 0 ? `${T.dy} up` : `${-T.dy} down`;
+      return [h || v ? "Slide " + [h, v].filter(Boolean).join(" and ") : "No slide", `(x, y) → (${lin(1, "x", T.dx)}, ${lin(1, "y", T.dy)})`];
+    }
+    if (mode === "reflect") {
+      const k = T.k;
+      return {
+        xaxis: ["Flip over the x-axis", "(x, y) → (x, −y)"], yaxis: ["Flip over the y-axis", "(x, y) → (−x, y)"],
+        yx: ["Flip over the line y = x", "(x, y) → (y, x)"], ynx: ["Flip over the line y = −x", "(x, y) → (−y, −x)"],
+        xk: [`Flip over the line x = ${fmt(k)}`, `(x, y) → (${lin(-1, "x", 2 * k)}, y)`],
+        yk: [`Flip over the line y = ${fmt(k)}`, `(x, y) → (x, ${lin(-1, "y", 2 * k)})`]
+      }[T.line];
+    }
+    const turn = (T.dir * T.angle + 360) % 360, h = T.c.x, k = T.c.y;
+    const name = `Turn ${T.angle}° ${T.dir > 0 ? "counterclockwise" : "clockwise"} around ${h === 0 && k === 0 ? "the origin" : `(${fmt(h)}, ${fmt(k)})`}`;
+    const r = { 90: [lin(-1, "y", h + k), lin(1, "x", k - h)], 180: [lin(-1, "x", 2 * h), lin(-1, "y", 2 * k)], 270: [lin(1, "y", h - k), lin(-1, "x", h + k)] }[turn];
+    return [name, `(x, y) → (${r[0]}, ${r[1]})`];
+  }
+
+  /* ---------- Drawing ---------- */
+  // Letter spot: just outside the corner, along the bisector of its two edges.
+  function labelSpots(pts) {
+    let area = 0; pts.forEach((p, i) => { const q = pts[(i + 1) % pts.length]; area += p.x * q.y - q.x * p.y; });
+    const s = Math.sign(area) || 1;
+    return pts.map((v, i) => {
+      const p = pts[(i + pts.length - 1) % pts.length], n = pts[(i + 1) % pts.length];
+      const u1 = norm(v.x - p.x, v.y - p.y), u2 = norm(v.x - n.x, v.y - n.y);
+      let d = norm(u1.x + u2.x, u1.y + u2.y);
+      if (Math.hypot(u1.x + u2.x, u1.y + u2.y) < 1e-6) d = { x: u1.y * s, y: -u1.x * s }; // straight corner: step out sideways
+      const cross = (v.x - p.x) * (n.y - v.y) - (v.y - p.y) * (n.x - v.x);
+      if (Math.sign(cross) === -s) d = { x: -d.x, y: -d.y }; // corner points inward: put the letter on the other side
+      return { x: sx(v.x) + d.x * 20, y: sy(v.y) - d.y * 20 + 8 };
+    });
+  }
+  function norm(x, y) { const L = Math.hypot(x, y) || 1; return { x: x / L, y: y / L }; }
+  const pathOf = pts => pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z";
+
+  const shapePath = el("path", { class: "shp" }, gShape);
+  const drawPath = el("path", { class: "drawing" }, gShape);
+  const imgPath = el("path", { class: "img" }, gImg);
+  const mirror = el("line", { class: "mirror" }, gGuide);
+  const mirrorLbl = el("text", { class: "mlbl" }, gGuide);
+  const arc = el("path", { class: "arc" }, gGuide);
+  const vecs = el("g", {}, gGuide);
+  let handles = [];
+
+  // Rotation center: purple draggable point, starts at the origin.
+  const ctr = el("g", { class: "ctr", tabindex: 0, role: "slider", "aria-label": "Center of rotation. Use arrow keys to move." }, gPts);
+  el("circle", { class: "hit", r: 24 }, ctr); el("circle", { class: "dot", r: 11 }, ctr);
+  dragger(ctr, p => { T.c = p; anim = 1; render(); }, () => T.c);
+
+  function buildHandles() {
+    gPts.querySelectorAll(".vtx").forEach(h => h.remove());
+    handles = shape.map((v, i) => {
+      const h = el("g", { class: "vtx" + (kind === "draw" ? "" : " fixed"), tabindex: 0, role: "slider", "aria-label": `Corner ${LETTERS[i]}. Use arrow keys to move.` });
+      gPts.insertBefore(h, ctr);
+      el("circle", { class: "hit", r: 20 }, h); el("circle", { class: "dot", r: kind === "draw" ? 8 : 6 }, h);
+      if (kind === "draw") dragger(h, p => { if (!shape.some((q, j) => j !== i && q.x === p.x && q.y === p.y)) { shape[i] = p; anim = 1; render(); } }, () => shape[i]);
+      else wholeDrag(h);
+      return h;
+    });
+  }
+
+  // Drag one point (corner or center) with the mouse, finger or arrow keys.
+  function dragger(h, set, get) {
+    h.addEventListener("pointerdown", e => { if (drawing) return; e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); h.focus(); });
+    h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = b.toPlane(e), q = get(); if (p.x !== q.x || p.y !== q.y) set(p); } });
+    const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); };
+    h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+    h.addEventListener("keydown", e => {
+      const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+      if (!d) return; e.preventDefault(); const q = get();
+      set({ x: b.clamp(q.x + d[0]), y: b.clamp(q.y + d[1]) });
+    });
+  }
+  // Drag the whole shape; it stays on the grid.
+  function wholeDrag(h) {
+    let last = null;
+    h.addEventListener("pointerdown", e => { if (drawing) return; e.preventDefault(); e.stopPropagation(); h.setPointerCapture(e.pointerId); last = b.toPlane(e); });
+    h.addEventListener("pointermove", e => {
+      if (!h.hasPointerCapture(e.pointerId)) return;
+      const p = b.toPlane(e); shift(p.x - last.x, p.y - last.y); last = p;
+    });
+    const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); };
+    h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+    h.addEventListener("keydown", e => {
+      const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+      if (d) { e.preventDefault(); shift(d[0], d[1]); }
+    });
+  }
+  function shift(dx, dy) {
+    const xs = shape.map(p => p.x), ys = shape.map(p => p.y);
+    dx = Math.max(min - Math.min(...xs), Math.min(max - Math.max(...xs), dx));
+    dy = Math.max(min - Math.min(...ys), Math.min(max - Math.max(...ys), dy));
+    if (!dx && !dy) return;
+    shape = shape.map(p => ({ x: p.x + dx, y: p.y + dy })); anim = 1; render();
+  }
+  wholeDrag(shapePath);
+
+  function render() {
+    const pts = drawing || shape;
+    const done = !drawing;
+    b.show(shapePath, done); b.show(drawPath, !done);
+    if (done) shapePath.setAttribute("d", pathOf(shape));
+    else drawPath.setAttribute("d", drawing.length ? pathOf(drawing).replace(/ Z$/, "") : "");
+
+    // Corners and letters of the original
+    gLbl.textContent = "";
+    if (drawing) {
+      gPts.querySelectorAll(".vtx").forEach(h => h.remove());
+      drawing.forEach((p, i) => {
+        const g = el("g", { class: "vtx" }, gPts); g.style.pointerEvents = "none";
+        el("circle", { class: "dot", r: 8, cx: sx(p.x), cy: sy(p.y) }, g);
+        el("text", { class: "vlbl o", x: sx(p.x) + 16, y: sy(p.y) - 12 }, gLbl).textContent = LETTERS[i];
+      });
+    } else {
+      if (handles.length !== shape.length || !handles[0]?.isConnected) buildHandles();
+      handles.forEach((h, i) => h.setAttribute("transform", `translate(${sx(shape[i].x)},${sy(shape[i].y)})`));
+      labelSpots(shape).forEach((s, i) => { el("text", { class: "vlbl o", x: s.x, y: s.y }, gLbl).textContent = LETTERS[i]; });
+    }
+
+    // Image, guides and readout
+    gImgLbl.textContent = ""; vecs.textContent = "";
+    const show = done && shape.length >= 3;
+    b.show(gImg, show); b.show(gImgLbl, show); b.show(gGuide, show);
+    b.show(mirror, mode === "reflect"); b.show(mirrorLbl, mode === "reflect");
+    b.show(arc, mode === "rotate"); b.show(ctr, mode === "rotate" && done);
+    ctr.setAttribute("transform", `translate(${sx(T.c.x)},${sy(T.c.y)})`);
+    $("ctrTxt").textContent = `(${fmt(T.c.x)}, ${fmt(T.c.y)})`;
+
+    if (mode === "reflect") {
+      const L = { xaxis: [min, 0, max, 0], yaxis: [0, min, 0, max], yx: [min, min, max, max], ynx: [min, max, max, min],
+        xk: [T.k, min, T.k, max], yk: [min, T.k, max, T.k] }[T.line];
+      mirror.setAttribute("x1", sx(L[0])); mirror.setAttribute("y1", sy(L[1])); mirror.setAttribute("x2", sx(L[2])); mirror.setAttribute("y2", sy(L[3]));
+      const name = { xaxis: "", yaxis: "", yx: "y = x", ynx: "y = −x", xk: `x = ${fmt(T.k)}`, yk: `y = ${fmt(T.k)}` }[T.line];
+      mirrorLbl.textContent = name;
+      const lx = T.line === "xk" ? sx(T.k) + 8 : T.line === "yk" ? sx(max) - 6 : T.line === "yx" ? sx(max - 3) + 10 : sx(max - 3) + 10;
+      const ly = T.line === "xk" ? sy(min) - 12 : T.line === "yk" ? sy(T.k) - 10 : T.line === "yx" ? sy(max - 3) + 22 : sy(-(max - 3)) - 10;
+      mirrorLbl.setAttribute("x", lx); mirrorLbl.setAttribute("y", ly); mirrorLbl.setAttribute("text-anchor", T.line === "yk" ? "end" : "start");
+    }
+
+    if (show) {
+      const t = ease(anim);
+      const img = shape.map(p => map(p, t));
+      imgPath.setAttribute("d", pathOf(img));
+      if (anim === 1) {
+        labelSpots(img).forEach((s, i) => { el("text", { class: "vlbl i", x: s.x, y: s.y }, gImgLbl).textContent = LETTERS[i] + "′"; });
+        img.forEach(p => el("circle", { class: "idot", r: 6, cx: sx(p.x), cy: sy(p.y) }, gImgLbl));
+      }
+      if (mode === "translate" && (T.dx || T.dy)) {
+        shape.forEach((p, i) => {
+          const q = img[i];
+          const ln = el("line", { class: "tvec", x1: sx(p.x), y1: sy(p.y), x2: sx(q.x), y2: sy(q.y) }, vecs);
+          if (anim === 1) ln.setAttribute("marker-end", "url(#mb-arr-orange)");
+        });
+      }
+      if (mode === "rotate") {
+        // Dashed arc from A around the center to show the turn.
+        const A = shape[0], r = Math.hypot(A.x - T.c.x, A.y - T.c.y) * (sx(1) - sx(0));
+        if (r > 0) {
+          const q = map(A, t), large = T.angle * t > 180 ? 1 : 0, sweep = T.dir > 0 ? 0 : 1;
+          arc.setAttribute("d", `M${sx(A.x)},${sy(A.y)} A${r},${r} 0 ${large} ${sweep} ${sx(q.x)},${sy(q.y)}`);
+        } else arc.setAttribute("d", "");
+      }
+    }
+
+    const [name, txt] = rule();
+    $("ruleName").textContent = name; $("ruleTxt").textContent = txt;
+    const fin = shape.map(p => map(p));
+    $("offMsg").hidden = !show || fin.every(p => p.x >= min && p.x <= max && p.y >= min && p.y <= max);
+    $("coords").innerHTML = show ? shape.map((p, i) =>
+      `<tr><td class="o">${LETTERS[i]} (${fmt(p.x)}, ${fmt(p.y)})</td><td class="a">→</td><td class="i">${LETTERS[i]}′ (${fmt(fin[i].x)}, ${fmt(fin[i].y)})</td></tr>`).join("") : "";
+
+    $("dxOut").textContent = T.dx === 0 ? "0" : T.dx > 0 ? `${T.dx} right` : `${-T.dx} left`;
+    $("dyOut").textContent = T.dy === 0 ? "0" : T.dy > 0 ? `${T.dy} up` : `${-T.dy} down`;
+    $("kOut").textContent = fmt(T.k);
+    document.querySelectorAll(".kv").forEach(s => (s.textContent = fmt(T.k)));
+  }
+
+  /* ---------- Animation: the image slides, flips or turns out of the original ---------- */
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  let raf = 0;
+  function play() {
+    cancelAnimationFrame(raf);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { anim = 1; return render(); }
+    anim = 0; animStart = performance.now();
+    const dur = mode === "rotate" ? 1100 : 900;
+    const tick = now => { anim = Math.min(1, (now - animStart) / dur); render(); if (anim < 1) raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+  }
+
+  /* ---------- Shape picker ---------- */
+  const shapesEl = $("shapes");
+  shapesEl.insertAdjacentHTML("beforeend", `<button type="button" class="draw" data-s="draw" aria-pressed="false"><svg viewBox="-0.2 -0.2 3.4 3.4" aria-hidden="true"><path d="M0.2,2.8 L2.8,2.4 L1.2,0.3 Z" style="fill-opacity:0.15"/></svg><span>Draw your own</span></button>`);
+  Object.entries(PENTOS).forEach(([n, cells]) => {
+    const o = outline(cells), w = Math.max(...o.map(p => p.x)), h = Math.max(...o.map(p => p.y)), s = Math.max(w, h);
+    const d = o.map((p, i) => `${i ? "L" : "M"}${p.x + (s - w) / 2},${s - p.y - (s - h) / 2}`).join(" ") + " Z";
+    shapesEl.insertAdjacentHTML("beforeend", `<button type="button" data-s="${n}" aria-pressed="false" aria-label="${n} pentomino"><svg viewBox="-0.2 -0.2 ${s + 0.4} ${s + 0.4}" aria-hidden="true"><path d="${d}"/></svg><span>${n}</span></button>`);
+  });
+  shapesEl.addEventListener("click", e => {
+    const btn = e.target.closest("button"); if (!btn) return;
+    const s = btn.dataset.s;
+    shapesEl.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
+    cancelAnimationFrame(raf);
+    if (s === "draw") { startDrawing(); return; }
+    finishDrawing(true);
+    kind = s;
+    // Each square of the pentomino is 2 by 2 so the corners and letters have room; it starts in the top-right quadrant.
+    const o = outline(PENTOS[s]).map(p => ({ x: 2 * p.x, y: 2 * p.y })), top = Math.max(...o.map(p => p.y));
+    shape = o.map(p => ({ x: p.x + 2, y: p.y + Math.min(2, max - top) }));
+    buildHandles(); play();
+  });
+
+  function startDrawing() {
+    drawing = []; svg.classList.add("adding");
+    $("drawHint").hidden = false; drawMsg(); render();
+  }
+  function drawMsg() {
+    $("drawMsg").textContent = drawing.length < 3 ? "Click grid points to make the corners." :
+      drawing.length >= MAXV ? "That's 10 corners. Press Done." : "Click A again or press Done to finish.";
+    $("doneBtn").hidden = drawing.length < 3;
+  }
+  function finishDrawing(cancel) {
+    if (!drawing) return;
+    if (!cancel && drawing.length >= 3) { shape = drawing; kind = "draw"; }
+    drawing = null; svg.classList.remove("adding"); $("drawHint").hidden = true;
+    buildHandles();
+    if (!cancel) play();
+  }
+  svg.addEventListener("pointerdown", e => {
+    if (!drawing) return;
+    e.preventDefault();
+    const p = b.toPlane(e);
+    if (drawing.length >= 3 && p.x === drawing[0].x && p.y === drawing[0].y) return finishDrawing();
+    if (drawing.some(q => q.x === p.x && q.y === p.y) || drawing.length >= MAXV) return;
+    drawing.push(p); drawMsg(); render();
+  });
+  $("doneBtn").addEventListener("click", () => finishDrawing());
+
+  /* ---------- Transformation controls ---------- */
+  const press = (box, btn) => box.querySelectorAll("button[aria-pressed]").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
+  $("tabs").addEventListener("click", e => {
+    const btn = e.target.closest("button"); if (!btn) return;
+    press($("tabs"), btn); mode = btn.dataset.t;
+    ["translate", "reflect", "rotate"].forEach(m => ($("p-" + m).hidden = m !== mode));
+    play();
+  });
+  ["dx", "dy"].forEach(id => $(id).addEventListener("input", () => { T[id] = +$(id).value; cancelAnimationFrame(raf); anim = 1; render(); }));
+  ["dx", "dy"].forEach(id => $(id).addEventListener("change", play));
+  $("p-reflect").addEventListener("click", e => {
+    const btn = e.target.closest("button[data-l]"); if (!btn) return;
+    press($("p-reflect"), btn); T.line = btn.dataset.l; play();
+  });
+  const stepK = d => {
+    T.k = Math.max(-9, Math.min(9, T.k + d));
+    if (T.line !== "xk" && T.line !== "yk") { T.line = "xk"; press($("p-reflect"), $("p-reflect").querySelector('[data-l="xk"]')); }
+    play();
+  };
+  $("kDown").addEventListener("click", () => stepK(-1)); $("kUp").addEventListener("click", () => stepK(1));
+  $("angles").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("angles"), btn); T.angle = +btn.dataset.a; play(); });
+  $("dirs").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("dirs"), btn); T.dir = +btn.dataset.d; play(); });
+  $("ctrHome").addEventListener("click", () => { T.c = { x: 0, y: 0 }; play(); });
+
+  buildHandles();
+  play();
+})();
+</script>
+
+</body>
+</html>
