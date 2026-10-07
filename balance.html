@@ -178,6 +178,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 @keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
 .piece.leave > *, .seg.leave { animation: leave 1.2s ease-in forwards; }
 .optag text { font-family: var(--font-num); font-weight: 700; font-size: 44px; fill: var(--green); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; }
+.optag .tagbar { stroke: var(--green); stroke-width: 5; stroke-linecap: round; }
+.cancel { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.fbar { stroke: var(--ink); stroke-width: 3; }
 .optag { animation: optag 1.6s ease-out forwards; }
 @keyframes optag { 0% { opacity: 0; transform: translateY(12px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .piece.leave rect, .piece.leave path, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
@@ -271,7 +274,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const fmtN = v => v < 0 ? "−" + -v : String(v);
 
   // L and R hold the count of x boxes and the ones on each side. Ones are counted in pieces of size 1/D so dividing
-  // can leave fractions (7 ÷ 3 = 7/3) while every number stays a whole number. xv = { p, q } is the hidden x = p/q
+  // can leave fractions (7 split 3 ways = 7/3) while every number stays a whole number. xv = { p, q } is the hidden x = p/q
   // (null while building); x can be any positive fraction (Shawn).
   let S = { L: { x: 0, one: 0 }, R: { x: 0, one: 0 }, D: 1 }, xv = null, history = [], steps = [];
   let angle = 0, target = 0, anim = null;
@@ -293,10 +296,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     return `M${x + w * 0.3},${y + 9} a${w * 0.2},7 0 0 1 ${w * 0.4},0 L${x + w - 2},${y + h} L${x + 2},${y + h} Z M${x + w * 0.38},${y + 9} a${w * 0.12},4 0 0 0 ${w * 0.24},0`;
   };
 
-  const sideStr = s => {
+  const sideStr = (s, D = S.D) => {
     const parts = [];
     if (s.x) parts.push((s.x === 1 ? "" : s.x) + "x");
-    if (s.one || !s.x) parts.push(fracStr(s.one, S.D));
+    if (s.one || !s.x) parts.push(fracStr(s.one, D));
     return parts.join(" + ");
   };
   const weight = s => s.x * xv.p * S.D + s.one * xv.q; // weight times q·D, a whole number
@@ -378,11 +381,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       // Dividing keeps one group: 1/n of the boxes and of the weights; the rest lift off.
       const leave = divN ? { x: s.x - s.x / divN, one: whole - Math.floor(whole / divN) } : fx && fx.leave && fx.leave[side];
       const items = placePieces(s);
-      // The operation (−3, ÷ 3, + x) appears over each pan it is done to while the pieces move.
+      // The operation (−3, + x, or a bar over 3 for dividing) appears over each pan it is done to while the pieces move.
       if (fx && fx.tag && fx.tag[side]) {
         const top = Math.min(-STEM - 10, ...items.map(it => it.y - STEM - 10));
         const tg = el("g", { class: "optag" }, g);
-        txt(fx.tag[side], { x: 0, y: top - 18 }, tg);
+        const t = fx.tag[side];
+        if (typeof t === "number") { // dividing: fraction style, a bar with the number under it (no ÷ sign, per Shawn)
+          el("line", { x1: -34, y1: top - 52, x2: 34, y2: top - 52, class: "tagbar" }, tg);
+          txt(String(t), { x: 0, y: top - 12 }, tg);
+        } else txt(t, { x: 0, y: top - 18 }, tg);
       }
       items.forEach(it => {
         const count = it.t === "x" ? s.x : whole;
@@ -487,12 +494,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function drawSteps() {
     gSteps.innerHTML = "";
     const EQ = SPLIT + 255; // the equals signs line up here; each operation sits under the side it was done to
-    const h = st => st.op ? 50 : 46;
+    const h = st => st.op ? (st.op.div ? 104 : 50) : 46;
     let used = 0, from = steps.length;
     while (from > 0 && used + h(steps[from - 1]) <= 680 - STEP_Y) used += h(steps[--from]);
     let y = STEP_Y;
     steps.slice(from).forEach((st, k) => {
       const last = from + k === steps.length - 2;
+      if (st.op && st.op.div) { // both sides written over the divisor, with the matching numbers crossed out
+        const g = el("g", { class: "st-op" + (last ? " fresh" : "") }, gSteps);
+        fracSide(g, st.op.L, st.op.D, st.op.div, EQ - 28, y + 10, true);
+        txt("=", { x: EQ, y: y + 32, class: "st", "text-anchor": "middle" }, g);
+        fracSide(g, st.op.R, st.op.D, st.op.div, EQ + 28, y + 10, false);
+        el("line", { x1: EQ - 200, y1: y + 72, x2: EQ + 200, y2: y + 72, class: "split" }, g);
+        y += 104; return;
+      }
       if (st.op) {
         const g = el("g", { class: "st-op" + (last ? " fresh" : "") }, gSteps);
         const cls = "st op" + (st.bad ? " bad" : "");
@@ -506,6 +521,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       txt(st.eq.r, { x: EQ + 28, y, class: "st" }, gSteps);
       y += 46;
     });
+  }
+
+  // One side as a fraction over n. A single term like 3x over 3 gets the 3s crossed out to show them cancelling.
+  function fracSide(g, side, D, n, x, y, alignRight) {
+    const num = txt(sideStr(side, D), { x: 0, y, class: "st", "text-anchor": "middle" }, g);
+    const den = txt(String(n), { x: 0, y: y + 46, class: "st", "text-anchor": "middle" }, g);
+    const w = Math.max(num.getComputedTextLength(), den.getComputedTextLength()) + 18;
+    const cx = alignRight ? x - w / 2 : x + w / 2;
+    num.setAttribute("x", cx); den.setAttribute("x", cx);
+    el("line", { x1: cx - w / 2, y1: y + 13, x2: cx + w / 2, y2: y + 13, class: "fbar" }, g);
+    if (side.x === n && !side.one) {
+      const k = String(n).length, a = num.getExtentOfChar(0), b = num.getExtentOfChar(k - 1), d = den.getBBox();
+      el("line", { x1: a.x - 2, y1: a.y + a.height - 4, x2: b.x + b.width + 2, y2: a.y + 6, class: "cancel" }, g);
+      el("line", { x1: d.x - 2, y1: d.y + d.height - 4, x2: d.x + d.width + 2, y2: d.y + 6, class: "cancel" }, g);
+    }
   }
 
   // ---------- Panel ----------
@@ -567,7 +597,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       });
       const g = gcd(gcd(next.D, next.L.one), next.R.one);
       next.D /= g; next.L.one /= g; next.R.one /= g;
-      return commit(next, opOn(sides, `÷ ${n}`), { div, tag: opOn(sides, `÷ ${n}`) });
+      return commit(next, { div: n, L: clone(S.L), R: clone(S.R), D: S.D }, { div, tag: opOn(sides, n) });
     }
     const leave = {}, enter = {};
     for (const s of sides) {
