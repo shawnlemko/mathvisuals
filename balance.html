@@ -158,6 +158,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 .eqn { font-family: var(--font-num); font-weight: 700; font-size: 54px; fill: var(--ink); text-anchor: middle; }
 .eqn .ne { fill: var(--warn); }
+.typed { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100%; }
+.typed input { width: 0; flex: 1 1 0; min-width: 0; height: 74px; font-family: var(--font-num); font-weight: 700; font-size: 44px; text-align: center;
+  color: var(--ink); background: var(--paper); border: 3px solid var(--grid-major); border-radius: 12px; padding: 0 6px; user-select: text; -webkit-user-select: text; }
+.typed input:focus { outline: none; border-color: var(--pt); }
+.typed input.bad { border-color: var(--warn); }
+.typed input:disabled { background: transparent; border-color: transparent; opacity: 1; -webkit-text-fill-color: var(--ink); }
+.typed span { font-family: var(--font-num); font-weight: 700; font-size: 52px; color: var(--ink); }
+.typed span.ne { color: var(--warn); }
 .msg { font-family: var(--font-body); font-weight: 700; font-size: 28px; text-anchor: middle; }
 .msg.bad { fill: var(--warn); } .msg.good { fill: var(--green); } .msg.hint { fill: var(--muted); font-weight: 400; }
 .post { fill: var(--muted); }
@@ -308,9 +316,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     ((S.L.x === 1 && !S.L.one && !S.R.x) || (S.R.x === 1 && !S.R.one && !S.L.x));
 
   // ---------- Drawing ----------
-  let gScale, gBeam, gPan = {}, gBars, gTop, gSteps;
+  let gScale, gBeam, gPan = {}, gBars, gTop, gSteps, inp = {}, eqSign;
   function layout() {
     svg.innerHTML = "";
+    // Typing boxes for each side above the balance (Shawn). Typing builds the pans; dragging rewrites the boxes.
+    const fo = el("foreignObject", { x: 10, y: 14, width: SPLIT - 30, height: 84 });
+    const row = document.createElement("div"); row.className = "typed"; fo.appendChild(row);
+    ["L", "R"].forEach((side, i) => {
+      const t = document.createElement("input");
+      t.type = "text"; t.autocomplete = "off"; t.spellcheck = false;
+      t.setAttribute("aria-label", side === "L" ? "Left side" : "Right side");
+      t.addEventListener("input", () => typed(side));
+      t.addEventListener("focus", () => t.select());
+      t.addEventListener("blur", () => { t.classList.remove("bad"); render(); }); // a box left unreadable goes back to what the pan shows
+      inp[side] = t; row.appendChild(t);
+      if (!i) { eqSign = document.createElement("span"); eqSign.textContent = "="; row.appendChild(eqSign); }
+    });
     gTop = el("g", {});
     el("line", { x1: SPLIT, y1: 20, x2: SPLIT, y2: 680, class: "split" });
     el("line", { x1: SPLIT + 20, y1: STEP_Y - 40, x2: 1180, y2: STEP_Y - 40, class: "split" });
@@ -337,14 +358,40 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function drawTop() {
     gTop.innerHTML = "";
     const empty = !S.L.x && !S.L.one && !S.R.x && !S.R.one;
-    if (empty) { txt("Drag boxes and weights onto both sides", { x: PX, y: 70, class: "msg hint" }, gTop); return; }
-    const t = el("text", { x: PX, y: 66, class: "eqn" }, gTop);
-    const a = el("tspan", {}, t); a.textContent = sideStr(S.L) + " ";
-    const eq = el("tspan", balanced() ? {} : { class: "ne" }, t); eq.textContent = balanced() ? "=" : "≠";
-    const b = el("tspan", {}, t); b.textContent = " " + sideStr(S.R);
-    if (xv === null) return;
-    if (!balanced()) { txt("Not balanced!", { x: PX, y: 112, class: "msg bad" }, gTop); txt("Do the same thing to both sides.", { x: PX, y: 146, class: "msg bad" }, gTop); }
-    else if (solved()) txt(`Balanced! x = ${fracStr(xv.p, xv.q)}`, { x: PX, y: 116, class: "msg good" }, gTop);
+    ["L", "R"].forEach(side => {
+      const t = inp[side];
+      t.disabled = xv !== null; // while solving the boxes just show the equation; changes happen on the scale
+      const sd = S[side];
+      if (document.activeElement !== t) { t.value = sd.x || sd.one ? sideStr(sd) : ""; t.classList.remove("bad"); }
+    });
+    eqSign.textContent = balanced() ? "=" : "≠"; eqSign.className = balanced() ? "" : "ne";
+    if (xv === null) {
+      if (inp.L.classList.contains("bad") || inp.R.classList.contains("bad")) txt("Type it like 2x + 3", { x: PX, y: 132, class: "msg bad" }, gTop);
+      else if (empty) txt("Type, or drag pieces onto both sides", { x: PX, y: 132, class: "msg hint" }, gTop);
+      return;
+    }
+    if (!balanced()) { txt("Not balanced!", { x: PX, y: 132, class: "msg bad" }, gTop); txt("Do the same thing to both sides.", { x: PX, y: 166, class: "msg bad" }, gTop); }
+    else if (solved()) txt(`Balanced! x = ${fracStr(xv.p, xv.q)}`, { x: PX, y: 132, class: "msg good" }, gTop);
+  }
+
+  // Read a typed side like "2x + 3", "x+x+5" or "7". Whole positive numbers only; null if it can't be read.
+  function parseSide(str) {
+    str = str.replace(/\s+/g, "").replace(/X/g, "x");
+    const out = { x: 0, one: 0 };
+    if (!str) return out;
+    for (const term of str.split("+")) {
+      let m;
+      if ((m = term.match(/^(\d*)x$/))) out.x += m[1] === "" ? 1 : +m[1];
+      else if (/^\d+$/.test(term)) out.one += +term;
+      else return null;
+    }
+    return out.x <= MAX_X && out.one <= MAX_ONE ? out : null;
+  }
+  function typed(side) {
+    const t = inp[side], v = parseSide(t.value);
+    t.classList.toggle("bad", !v);
+    if (v) { S[side] = v; $("buildnote").textContent = ""; }
+    render();
   }
 
   // Lay pieces on a plate: boxes first, then weights, wrapping into rows that stack upward.
@@ -644,6 +691,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   let drag = null;
   function startDrag(e, type, from) {
     e.preventDefault();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const gh = document.createElement("div"); gh.className = "ghost";
     const scale = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
     gh.innerHTML = type === "x"
