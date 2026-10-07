@@ -187,8 +187,18 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
   font-family: var(--font-body); font-size: 1.6rem; line-height: 1.35; }
 .how b { font-family: var(--font-display); }
 .how .n { font-family: var(--font-num); font-weight: 700; white-space: nowrap; }
-.how .l { white-space: normal; }
-.how mark { background: color-mix(in srgb, var(--orange) 22%, transparent); color: inherit; border-radius: 4px; padding: 0 3px; }
+.how .row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 14px; margin-bottom: 10px; }
+.how .grp { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border: 3px solid transparent; border-radius: 10px; }
+.how .grp.on { border-color: var(--pt); background: var(--sheet); }
+.how .grp.off { opacity: 0.45; }
+.how .chs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.how .ch { font-family: var(--font-num); font-weight: 700; padding: 2px 10px; border-radius: 6px; background: var(--sheet); border: 2px solid var(--grid-major); }
+.how .ch.mid { background: color-mix(in srgb, var(--orange) 22%, var(--sheet)); border-color: var(--orange); }
+.how .grp.med .ch { color: var(--orange); border-style: dashed; }
+.how .cap { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--muted); }
+.how .grp.on .cap, .how b.lo, .how b.hi { color: var(--pt); }
+.how .grp.med .cap { color: var(--orange); }
+.how .cut { align-self: stretch; width: 0; border-left: 4px dashed var(--orange); margin-block: 4px 28px; }
 .g-empty { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 34px; }
 </style>
 
@@ -276,25 +286,35 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
   }
 
   // Friendly grade 7 explanation for each label, with this data's own numbers.
-  // The set is shown in braces with its middle number(s) highlighted.
+  // Q1 and Q3 show the whole ordered list cut into halves, with the half in use outlined
+  // and its middle number(s) highlighted.
   const N = v => `<span class="n">${num(v)}</span>`;
-  function set(a) {
-    const n = a.length, h = n >> 1, mid = n % 2 ? [h] : [h - 1, h];
-    return `<span class="n l">{${a.map((v, i) => mid.includes(i) ? `<mark>${num(v)}</mark>` : num(v)).join(", ")}}</span>`;
-  }
+  const midIdx = n => n % 2 ? [n >> 1] : [(n >> 1) - 1, n >> 1];
+  const chips = (a, mark = []) => a.map((v, i) => `<span class="ch${mark.includes(i) ? " mid" : ""}">${num(v)}</span>`).join("");
+  const group = (inner, cap, cls = "") => `<span class="grp ${cls}"><span class="chs">${inner}</span><span class="cap">${cap}</span></span>`;
   function middle(a) {
     const n = a.length, h = n >> 1;
     if (n % 2) return `The middle value is ${N(a[h])}.`;
     return `This time the middle is between two values. Let's find the mean: <span class="n">(${num(a[h - 1])} + ${num(a[h])}) ÷ 2 = ${num((a[h - 1] + a[h]) / 2)}</span>`;
   }
-  function explain(key, a) {
+  function halves(a, useLow) {
     const n = a.length, h = n >> 1, lo = a.slice(0, h), hi = a.slice(n % 2 ? h + 1 : h);
+    const use = useLow ? lo : hi;
+    const lowG = group(chips(lo, useLow ? midIdx(lo.length) : []), "lower half", useLow ? "on" : "off");
+    const hiG = group(chips(hi, useLow ? [] : midIdx(hi.length)), "upper half", useLow ? "off" : "on");
+    const medG = n % 2 ? group(chips([a[h]]), "median", "med") : `<span class="cut" aria-hidden="true"></span>`;
+    const q = useLow ? "Q1" : "Q3";
+    return `<span class="row">${lowG}${medG}${hiG}</span>` +
+      `<b>${q}</b> is the middle of the <b class="${useLow ? "lo" : "hi"}">${useLow ? "lower" : "upper"} half</b>. ${middle(use)}`;
+  }
+  function explain(key, a) {
+    const n = a.length;
     switch (key) {
       case "Min": return `The <b>min</b> is the smallest value: ${N(a[0])}`;
       case "Max": return `The <b>max</b> is the largest value: ${N(a[n - 1])}`;
-      case "Median": return `The <b>median</b> is the middle value when the numbers are in order: ${set(a)}<br>${middle(a)}`;
-      case "Q1": return lo.length ? `<b>Q1</b> is the median value of the lower half: ${set(lo)}<br>${middle(lo)}` : `With only one value, <b>Q1</b> is ${N(a[0])}`;
-      case "Q3": return hi.length ? `<b>Q3</b> is the median value of the upper half: ${set(hi)}<br>${middle(hi)}` : `With only one value, <b>Q3</b> is ${N(a[0])}`;
+      case "Median": return `<span class="row">${group(chips(a, midIdx(n)), "in order")}</span>The <b>median</b> is the middle value. ${middle(a)}`;
+      case "Q1": return n > 1 ? halves(a, true) : `With only one value, <b>Q1</b> is ${N(a[0])}`;
+      case "Q3": return n > 1 ? halves(a, false) : `With only one value, <b>Q3</b> is ${N(a[0])}`;
     }
   }
   let picked = null;

@@ -189,10 +189,30 @@ sup { font-size: 0.62em; line-height: 0; }
 .keys { display: flex; gap: 6px; }
 .keys button { min-width: 46px; height: 40px; padding: 0 8px; font-family: var(--font-num); font-size: 1.15rem; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
 .keys .sfrac { font-size: 0.8rem; }
+/* Fraction, root and power keys open a small card with boxes in the shape of the notation. */
+.pop { position: absolute; z-index: 5; left: 50%; top: calc(100% + 10px); transform: translateX(-50%); display: flex; align-items: center; gap: 18px;
+  background: var(--sheet); border: 3px solid var(--pt); border-radius: 12px; padding: 14px 18px; box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 25%, transparent); }
+.pop-body { display: flex; align-items: center; font-family: var(--font-num); font-weight: 700; }
+.pop input { width: 7ch; height: 48px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; text-align: center; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; }
+.pop input:focus { border-color: var(--pt); }
+.pop input.miss { border-color: var(--warn); }
+.pf { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pf .bar { width: 100%; height: 4px; background: var(--ink); border-radius: 2px; }
+.pr { display: flex; align-items: flex-end; }
+.pr .rs { font-size: 3rem; line-height: 1; }
+.pr input { border-top: 4px solid var(--ink); border-radius: 0 0 8px 8px; }
+.pp { display: flex; align-items: flex-start; gap: 4px; }
+.pp input.exp { width: 4ch; height: 36px; font-size: 1.1rem; }
+.pp input.base { margin-top: 18px; }
+.pop-btns { display: flex; flex-direction: column; gap: 8px; }
+#popOk { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-size: 1.1rem; }
+#popOk:hover { background: var(--sheet); color: var(--pt); }
+#ruleShow.stale { opacity: 0.4; }
 .keys sup { font-size: 0.75em; line-height: 1; align-self: flex-start; margin-top: 4px; }
 #ruleShow { display: block; width: 100%; background: none; border: 0; padding: 4px; font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--ink); cursor: text; white-space: nowrap; overflow-x: auto; }
 #ruleShow:hover { background: var(--chip); }
-#rule { width: 100%; height: 64px; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; color: var(--ink); background: var(--paper);
+#rule { width: 100%; height: 52px; margin-top: 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; color: var(--ink); background: var(--paper);
   border: 2px solid var(--pt); border-radius: 10px; text-align: center; }
 .err { margin: 6px 0 0; color: var(--warn); font-weight: 700; font-size: 1.15rem; }
 .window { position: relative; flex: 1 1 auto; min-height: 220px; overflow-y: auto; background: var(--sheet); border: 3px solid var(--ink); border-radius: 12px; padding: 14px 18px; }
@@ -201,10 +221,15 @@ sup { font-size: 0.62em; line-height: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .machine.run .gear { animation: none; } .flier { transition-duration: 0.01s; } }
 /* --fs shrinks when a long rule has many steps, so every step stays in the window. */
-.steps { --fs: 2.4rem; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0; padding-right: 60px; }
+/* Each step is its own band: the step number on the left, the operation in the middle, then the rewritten line under it.
+   --fs shrinks when a long rule has many steps, so every step stays in the window. */
+.steps { --fs: 2.4rem; display: flex; flex-direction: column; gap: calc(var(--fs) * 0.25); margin: 0; padding-right: 60px; }
+.grp + .grp { border-top: 2px dashed var(--grid-major); padding-top: calc(var(--fs) * 0.25); }
+.op { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); align-items: center; font-size: calc(var(--fs) * 0.75); }
+.op .n { font-family: var(--font-body); font-weight: 700; font-size: 0.85em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.calc { justify-self: center; font-family: var(--font-num); font-weight: 700; color: var(--orange); white-space: nowrap;
+  background: color-mix(in srgb, var(--orange) 10%, transparent); border-radius: 8px; padding: 0 14px; }
 .line { font-family: var(--font-num); font-weight: 700; font-size: var(--fs); white-space: nowrap; }
-.calc { font-family: var(--font-num); font-weight: 700; font-size: calc(var(--fs) * 0.7); color: var(--orange); white-space: nowrap; margin: 2px 0 0 1.2em; }
-.calc .n { display: inline-block; font-family: var(--font-body); font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 8px; }
 .line .new { color: var(--orange); background: color-mix(in srgb, var(--orange) 16%, transparent); border-radius: 6px; padding: 0 4px; }
 .line .sub { color: var(--pt); }
 .line.final .new { color: var(--sheet); background: var(--orange); }
@@ -256,11 +281,14 @@ td:last-child { color: var(--orange); }
             <button type="button" data-k="pow" aria-label="Power"><span class="v">x</span><sup>n</sup></button>
             <button type="button" data-k="root" aria-label="Square root"><span class="rad">√<span class="rad-in">&nbsp;&nbsp;</span></span></button>
             <button type="button" data-k="frac" aria-label="Fraction"><span class="sfrac"><span>a</span><span>b</span></span></button>
-            <button type="button" data-k="par" aria-label="Brackets">( )</button>
           </div>
         </div>
+        <div class="pop" id="pop" hidden>
+          <div class="pop-body" id="popBody"></div>
+          <div class="pop-btns"><button type="button" id="popOk">Put in</button><button type="button" id="popX">Cancel</button></div>
+        </div>
         <button type="button" id="ruleShow" aria-label="Rule. Click to change it."></button>
-        <input id="rule" type="text" autocomplete="off" spellcheck="false" value="f(x) = 2x + 3" aria-label="Rule" hidden>
+        <input id="rule" type="text" autocomplete="off" spellcheck="false" value="f(x) = 2x + 3" aria-label="Type the rule" hidden>
         <p class="err" id="ruleErr" hidden></p>
       </div>
       <div class="window" id="win" aria-live="polite">
@@ -523,6 +551,7 @@ td:last-child { color: var(--orange); }
       const r = readRule(text);
       rule = r;
       $("ruleErr").hidden = true;
+      $("ruleShow").classList.remove("stale");
       const lhs = r.fn ? r.fn + "(" + varHtml(r.inVar) + ")" : outName();
       $("ruleShow").innerHTML = lhs + " = " + show(r.tree);
       fitRule();
@@ -535,6 +564,7 @@ td:last-child { color: var(--orange); }
     } catch (e) {
       $("ruleErr").textContent = e.message;
       $("ruleErr").hidden = false;
+      $("ruleShow").classList.add("stale");
       $("start").disabled = true;
       return false;
     }
@@ -550,41 +580,77 @@ td:last-child { color: var(--orange); }
   }
   addEventListener("resize", fitRule);
 
+  // The neat rule always shows on the nameplate; clicking it opens a typing box under it, and the neat rule updates as you type.
   function editRule() {
     if (running) return;
-    $("ruleShow").hidden = true;
     $("rule").hidden = false;
     $("rule").focus();
-    $("rule").select();
   }
   function doneRule() {
     if ($("rule").hidden) return;
-    if (setRule($("rule").value)) { $("rule").hidden = true; $("ruleShow").hidden = false; fitRule(); }
+    if (setRule($("rule").value)) { $("rule").hidden = true; fitRule(); }
   }
   $("ruleShow").addEventListener("click", editRule);
 
-  // Notation keys: put a power, root, fraction or brackets where the cursor is, wrapping any selected text.
-  const KEYS = { sq: ["", "²", ""], pow: ["", "^", ""], root: ["√(", "", ")"], frac: ["(", ")/(", ")"], par: ["(", "", ")"] };
+  // Notation keys. x² goes straight in. Fraction, root and power open a small card with boxes shaped like the notation,
+  // so nobody has to type brackets, / or ^. The card writes the rule text for them.
+  const SUPS = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+  const one = t => /^(−?-?\d+\.?\d*|[A-Za-z])$/.test(t);                 // a single number or letter
+  const term = t => !/[+\-−]/.test(t.replace(/^[-−]/, ""));            // no + or − inside
+  const wrapIf = (t, ok) => ok ? t : "(" + t + ")";
+  const SHAPES = {
+    frac: { html: '<div class="pf"><input id="pa" aria-label="Top"><span class="bar"></span><input id="pb" aria-label="Bottom"></div>',
+            text: (a, b) => wrapIf(a, term(a)) + "/" + wrapIf(b, one(b)) },
+    root: { html: '<div class="pr"><span class="rs">√</span><input id="pa" aria-label="Under the root"></div>',
+            text: a => "√" + wrapIf(a, one(a)) },
+    pow:  { html: '<div class="pp"><input id="pa" class="base" aria-label="Number or letter"><input id="pb" class="exp" aria-label="Power"></div>',
+            text: (a, b) => wrapIf(a, one(a)) + (/^\d+$/.test(b) ? [...b].map(d => SUPS[d]).join("") : "^" + wrapIf(b, one(b))) },
+  };
+  let spot = null, shape = null;
+  function insertRule(text, at) {
+    const box = $("rule");
+    const [a, z] = at || [box.value.length, box.value.length];
+    box.value = box.value.slice(0, a) + text + box.value.slice(z);
+    box.hidden = false;
+    box.focus();
+    box.setSelectionRange(a + text.length, a + text.length);
+    if (!setRule(box.value)) resetRun();
+  }
+  function closePop() { $("pop").hidden = true; shape = null; }
+  function putIn() {
+    const ins = [...$("popBody").querySelectorAll("input")];
+    const vals = ins.map(e => e.value.trim());
+    ins.forEach((e, k) => e.classList.toggle("miss", !vals[k]));
+    if (vals.some(v => !v)) { ins[vals.findIndex(v => !v)].focus(); return; }
+    const text = SHAPES[shape].text(...vals);
+    const at = spot;
+    closePop();
+    insertRule(text, at);
+  }
   for (const b of document.querySelectorAll(".keys button")) {
-    b.addEventListener("mousedown", e => e.preventDefault()); // keep the cursor in the rule box
+    b.addEventListener("mousedown", e => e.preventDefault()); // keep the cursor where it is in the rule box
     b.addEventListener("click", () => {
       if (running) return;
       const box = $("rule");
-      if (box.hidden) { $("ruleShow").hidden = true; box.hidden = false; box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
-      const [pre, mid, post] = KEYS[b.dataset.k];
-      const a = box.selectionStart, z = box.selectionEnd, sel = box.value.slice(a, z);
-      // Fraction with nothing selected: the cursor goes in the top. With a selection, it becomes the top and the cursor goes in the bottom.
-      const text = pre + sel + mid + post;
-      box.setRangeText(text, a, z, "end");
-      let caret = a + pre.length + sel.length;
-      if (b.dataset.k === "frac" && sel) caret += mid.length;
-      else if (b.dataset.k !== "frac") caret += mid.length;
-      box.setSelectionRange(caret, caret);
-      box.focus();
-      setRule(box.value);
+      spot = box.hidden ? null : [box.selectionStart, box.selectionEnd];
+      if (b.dataset.k === "sq") { closePop(); insertRule("²", spot); return; }
+      shape = b.dataset.k;
+      $("popBody").innerHTML = SHAPES[shape].html;
+      $("pop").hidden = false;
+      if (spot && spot[1] > spot[0]) $("pa").value = box.value.slice(spot[0], spot[1]); // selected text goes in the first box
+      $("pa").focus();
     });
   }
+  $("popOk").addEventListener("click", putIn);
+  $("popX").addEventListener("click", closePop);
+  $("pop").addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); putIn(); }
+    if (e.key === "Escape") closePop();
+    if (e.key === "Enter" || e.key === "Escape") return;
+    e.target.classList && e.target.classList.remove("miss");
+  });
   $("rule").addEventListener("input", () => { const ok = setRule($("rule").value); if (!ok) resetRun(); });
+  $("rule").addEventListener("keydown", e => { if (e.key === "Escape") doneRule(); });
   $("rule").addEventListener("blur", doneRule);
   $("rule").addEventListener("keydown", e => { if (e.key === "Enter") { doneRule(); if ($("rule").hidden) $("inp").focus(); } });
 
@@ -593,12 +659,13 @@ td:last-child { color: var(--orange); }
   $("start").addEventListener("click", go);
   $("clear").addEventListener("click", () => { history.length = 0; drawTable(); });
 
-  // Shrinks the step text until every step fits in the window (never below a size that reads from the back).
+  // Shrinks the step text until every step fits in the window. It never goes below a size that reads from the back
+  // of the room; a rule with very many steps scrolls instead, always showing the newest step.
   function fit() {
     const win = $("win"), box = $("steps");
     let fs = 2.4;
     box.style.setProperty("--fs", fs + "rem");
-    while (fs > 1 && (win.scrollHeight > win.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1)) {
+    while (fs > 1.6 && (win.scrollHeight > win.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1)) {
       fs -= 0.05;
       box.style.setProperty("--fs", fs.toFixed(2) + "rem");
     }
@@ -643,20 +710,26 @@ td:last-child { color: var(--orange); }
     const box = $("steps");
     const lead = (rule.fn ? rule.fn + '(<span class="sub">' + fmt(x) + "</span>)" : outName()) + " = ";
     list.forEach((s, i) => { s.lead = i === 0 ? lead : "= "; });
+    // Slow on purpose: the operation shows first, then a pause, then the rewritten line.
     for (let i = 0; i < list.length; i++) {
       const s = list[i];
+      const grp = document.createElement("div");
+      grp.className = "grp";
+      box.append(grp);
       if (i) {
-        const calc = document.createElement("div");
-        calc.className = "calc row-in";
-        calc.innerHTML = '<span class="n">Step ' + i + "</span>" + s.calc;
-        box.append(calc);
+        const op = document.createElement("div");
+        op.className = "op row-in";
+        op.innerHTML = '<span class="n">Step ' + i + '</span><span class="calc">' + s.calc + "</span>";
+        grp.append(op);
+        fit();
+        await wait(1500);
       }
       const line = document.createElement("div");
       line.className = "line row-in" + (i === list.length - 1 && i > 0 ? " final" : "");
       line.innerHTML = s.lead + s.html;
-      box.append(line);
+      grp.append(line);
       fit();
-      await wait(i === 0 ? 900 : 1300);
+      await wait(i === 0 ? 1400 : 2000);
     }
     m.classList.remove("run");
 

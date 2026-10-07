@@ -178,7 +178,30 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .steps li.now { border-left-color: var(--pt); background: var(--chip); border-radius: 0 8px 8px 0; }
 .steps .say { margin: 0 0 2px; font-size: 0.95rem; }
 .steps .say b { font-family: var(--font-num); }
-.steps .eq { font-size: 1.35rem; }
+/* Animated working: purple marks what we do to the equation (×3, +6, ÷3), red crosses out what cancels. */
+:root { --op: #7b3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --op: #c39bff; } }
+:root[data-theme="dark"] { --op: #c39bff; }
+.eqa { position: relative; display: flex; flex-wrap: wrap; align-items: center; font-family: var(--font-num); font-size: 1.4rem; min-height: 2.3em; }
+.steps li.now .eqa { padding-bottom: 26px; }
+.eqa .o { margin: 0 0.28em; }
+.eqa .x { font-style: italic; }
+.tk { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 6px; }
+.tk.opk, .eqa .opk { color: var(--op); font-weight: 700; }
+.tk.hl { background: color-mix(in srgb, var(--op) 18%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--op) 18%, transparent); }
+.tk.new, .tk.flip { animation: flash 1.4s ease-out; }
+@keyframes flash { 0%, 30% { background: color-mix(in srgb, var(--op) 30%, transparent); } 100% { background: transparent; } }
+.cancel { position: relative; }
+.cancel::after { content: ""; position: absolute; left: -4px; right: -4px; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: var(--warn); transform-origin: left center; transform: rotate(-28deg) scaleX(0); animation: strike 0.5s ease-out forwards; }
+@keyframes strike { to { transform: rotate(-28deg) scaleX(1); } }
+.tk.cancel::after { transform: rotate(-10deg) scaleX(0); animation-name: strikeflat; }
+@keyframes strikeflat { to { transform: rotate(-10deg) scaleX(1); } }
+.ghost { position: absolute; pointer-events: none; }
+svg.arcs { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+svg.arcs path { fill: none; stroke: var(--op); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawarc 0.7s ease-out forwards; }
+svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; stroke-dashoffset: 0; animation: fadein 0.2s 0.55s both; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes drawarc { to { stroke-dashoffset: 0; } }
 .steps .done { display: inline-block; margin-left: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--green); border: 2px solid currentColor; border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
 .stepbar { display: flex; gap: 10px; align-items: center; }
 .stepbar .go { font-size: 1.15rem; padding: 10px 22px; }
@@ -229,6 +252,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <ol class="steps" id="steps" aria-live="polite"></ol>
         <div class="stepbar">
           <button type="button" class="go" id="next">Next step</button>
+          <button type="button" id="replay" hidden>Replay step</button>
           <button type="button" id="again">Start over</button>
         </div>
       </section>
@@ -599,147 +623,310 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const NAMES = { sp: "Slope-point form", si: "Slope-intercept form", g: "General form" };
   const LONG = { sp: "slope-point form", si: "slope-intercept form", g: "general form" };
 
-  // Moves everything to one side and tidies into Ax + By + C = 0.
-  // left = y·ly + lc, right = x·rx + rc, all whole numbers.
-  function toGeneral(steps, ly, lc, rx, rc) {
-    const rightEmpty = rx === 0 && rc === 0;
-    let gx, gy, gc;
-    if (rx > 0) {
-      steps.push({ say: "Move everything on the left to the right side, so the left side is 0. A term changes its sign when it crosses the = sign.",
-        eq: eqn("0", side([T(rx, "x"), T(rc), T(-ly, "y"), T(-lc)])) });
-      gx = rx; gy = -ly; gc = rc - lc;
-    } else {
-      if (!rightEmpty) steps.push({ say: "Move everything on the right to the left side, so the right side is 0. A term changes its sign when it crosses the = sign.",
-        eq: eqn(side([T(ly, "y"), T(lc), T(-rx, "x"), T(-rc)]), "0") });
-      gx = -rx; gy = ly; gc = lc - rc;
-    }
-    const tidy = gF(gx, gy, gc), plain = h => h.replace(/<[^>]*>/g, "");
-    const twoNumbers = rx > 0 ? rc && lc : lc && rc;
-    if (plain(tidy) !== plain(steps[steps.length - 1].eq))
-      steps.push({ say: `${twoNumbers ? "Combine the numbers, then write" : "Write"} it in order: x term, y term, number, then = 0.`, eq: tidy });
-    const g = gcd(gcd(gx, gy), gc);
-    if (g > 1) steps.push({ say: `Every number divides by ${g}, so divide every term by <b>${g}</b>.`, eq: gF(gx / g, gy / g, gc / g) });
+  /* Each step is a short animation: a list of frames, each a list of tokens.
+     A token keeps its key from frame to frame, so it slides to its new spot;
+     new tokens pop in, and tokens that leave fade away. */
+  const tk = (h, k, c = "") => ({ h, k, c });
+  const drawT = toks => toks.map(t => `<span class="tk ${t.c}" data-k="${t.k}">${t.h}</span>`).join("");
+  const EQ = () => tk(op("="), "=");
+  const mark = (toks, keys, cls) => toks.map(t => keys.includes(t.k) ? { ...t, c: `${t.c} ${cls}`.trim() } : t);
+  const clean = toks => toks.map(t => ({ ...t, c: t.c.split(" ").filter(c => c === "opk").join(" ") }));
+  const F = (t, ms = 1000, arcs) => ({ t, ms, arcs });
+  const fracH = (n, d, nc = "", dc = "") => `<span class="frac sm"><span class="${nc}">${n}</span><span class="${dc}">${d}</span></span>`;
+  // Coefficient and variable of a term, without its sign. dc marks the denominator (to cross it out).
+  function body(c, v, cls = "", dc = "") {
+    const one = v && c.d === 1 && Math.abs(c.n) === 1;
+    let num = one ? "" : c.d === 1 ? String(Math.abs(c.n)) : fracH(Math.abs(c.n), c.d, "", dc);
+    if (cls && num) num = `<span class="${cls}">${num}</span>`;
+    return num + (v ? V(v) : "");
   }
+  // One side of an equation: [coef, variable, colour class, key, token class, denominator class]
+  function sideT(list, zeroKey = "z") {
+    const items = list.map(([c, v = "", cls = "", k, x = "", dc = ""]) => [typeof c === "number" ? R(c) : c, v, cls, k, x, dc]).filter(t => !zero(t[0]));
+    if (!items.length) return [tk("0", zeroKey)];
+    return items.map(([c, v, cls, k, x, dc], i) => tk((i ? op(c.n < 0 ? "−" : "+") : c.n < 0 ? "−" : "") + body(c, v, cls, dc), k, x));
+  }
+  const mH = (m, dc = "") => `<span class="c-green">${m.n < 0 ? "−" : ""}${m.d === 1 ? Math.abs(m.n) : fracH(Math.abs(m.n), m.d, "", dc)}</span>`;
+  const spT = (m, P, dc) => [tk(V("y"), "y"), tk(signNum(P.y, "c-pt"), "lc"), EQ(), tk(mH(m, dc), "m"), tk("(", "p1"), tk(V("x"), "x"), tk(signNum(P.x, "c-pt"), "c"), tk(")", "p2")];
+  const tmplT = () => [tk(V("y"), "y"), tk(op("−") + `<span class="c-pt">y₁</span>`, "lc"), EQ(), tk(`<span class="c-green">m</span>`, "m"), tk("(", "p1"), tk(V("x"), "x"), tk(op("−") + `<span class="c-pt">x₁</span>`, "c"), tk(")", "p2")];
+  const siT = (m, b) => [tk(V("y"), "y"), EQ(), ...sideT([[m, "x", "c-green", "x"], [b, "", "c-orange", "c"]])];
+  const gT = (A, B, C) => [...sideT([[A, "x", "", "x"], [B, "y", "", "y"], [C, "", "", "c"]], "zz"), EQ(), tk("0", "z")];
+  const plain = h => h.replace(/<[^>]*>/g, "");
+  const same = (a, b) => plain(drawT(a)) === plain(drawT(b));
+
+  // Steps build on `cur`, the tokens of the line before.
+  function stepper() {
+    const s = [];
+    let cur = null;
+    const add = (say, frames) => { s.push({ say, frames }); cur = clean(frames[frames.length - 1].t); };
+    const one = (say, t) => add(say, [F(t)]);
+    return { s, add, one, get cur() { return cur; }, set cur(v) { cur = v; } };
+  }
+  const splitEq = toks => { const i = toks.findIndex(t => t.k === "="); return [toks.slice(0, i), toks.slice(i + 1)]; };
+
+  // Add the same number to both sides; the pair that makes zero is crossed out.
+  function addBoth(S, a, say) {
+    const [L, Rt] = splitEq(S.cur);
+    const h = op(a.n < 0 ? "−" : "+") + mag(a);
+    const f1 = [...L, tk(h, "aL", "opk"), EQ(), ...Rt, tk(h, "aR", "opk")];
+    const f2 = mark(mark(f1, ["lc", "aL"], "cancel"), [], "");
+    const lone = Rt.length === 1 && Rt[0].h === "0" || Rt.length === 1 && Rt[0].h === tk("0").h; // 0 + 5 is just 5
+    const f3 = [...L.filter(t => t.k !== "lc"), EQ(), ...(lone ? [tk((a.n < 0 ? "−" : "") + mag(a), "aR", "opk")] : [...Rt, tk(h, "aR", "opk")])];
+    S.add(say, [F(S.cur, 500), F(f1, 1100), F(f2, 1000), F(f3, 700)]);
+  }
+
+  // Combine the two numbers on the right (keys c and aR) into one.
+  function combineRight(S, left, rightTerms, say) {
+    S.add(say, [F(mark(S.cur, ["c", "aR", "lc"], "hl"), 900), F([...left, EQ(), ...mark(sideT(rightTerms), ["c"], "new")], 700)]);
+  }
+
+  // Divide every term by d. left/right: [coef (whole number), variable, key]
+  function divideAll(S, d, left, right, final) {
+    const termNum = (c, v) => (v && Math.abs(c) === 1 ? (c < 0 ? "−" : "") : fmt(c)) + (v ? V(v) : "");
+    const over = (list, dcls, ncls) => list.map(([c, v, k], i) => tk((i ? op("+") : "") + fracH(ncls ? `<span class="${ncls}">${v && Math.abs(c) === 1 ? (c < 0 ? "−" : "1") : fmt(c)}</span>${V(v)}` : termNum(c, v), fmt(d), "", dcls), k));
+    const r = right.filter(t => t[0] !== 0);
+    const f1 = [...over(left, "opk"), EQ(), ...(r.length ? over(r, "opk") : [tk("0", "z")])];
+    const f2 = [...over(left, "opk cancel", "cancel"), EQ(), ...f1.slice(f1.findIndex(t => t.k === "=") + 1)];
+    S.add(`Divide every term by <b>${fmt(d)}</b>, so y is by itself.`, [F(S.cur, 500), F(f1, 1200), F(f2, 1000), F(final, 700)]);
+  }
+  const rawT = (d, right) => {
+    const r = right.filter(t => t[0] !== 0);
+    return [tk(V("y"), "y", "new"), EQ(), ...(r.length ? r.map(([c, v, k], i) => tk((i ? op("+") : "") + raw(c, d) + (v ? V(v) : ""), k, "new")) : [tk("0", "z")])];
+  };
 
   // Slope-point with a fraction: multiply both sides by k first, then distribute, so no denominators are left.
-  // Pushes those two steps and returns k·y + lc = rx·x + rc (whole numbers).
-  function clearSP(steps, m, P) {
+  function clearSP(S, m, P) {
     const k = lcm(m.d, P.y.d), km = m.n * (k / m.d), ky1 = mul(P.y, R(k)).n;
-    const left = P.y.d === 1 ? `${k}(${spLeft(P)})` : side([T(k, "y"), T(-ky1)]);
-    steps.push({ say: `Multiply both sides by <b>${k}</b>, so there are no fractions.`, eq: eqn(left, `${fmt(km)}${spRight(P)}`) });
-    const rx = km, rc = -km * P.x.n;
-    steps.push({ say: "Multiply into the brackets.", eq: eqn(side([T(k, "y"), T(-ky1)]), side([T(rx, "x"), T(rc)])) });
-    return { k, lc: -ky1, rx, rc };
+    const [L, Rt] = splitEq(S.cur);
+    const kL = [tk(String(k), "kL", "opk"), tk("(", "q1")], kR = tk(`${k}${op("·")}`, "kR", "opk");
+    const f1 = [...kL, ...L, tk(")", "q2"), EQ(), kR, ...Rt];
+    const f2 = [...kL, ...L, tk(")", "q2"), EQ(), tk(`<span class="cancel">${k}</span>${op("·")}`, "kR", "opk"), ...mark(Rt.map(t => t.k === "m" ? tk(mH(m, "cancel"), "m") : t), [], "")];
+    const f3 = [tk(String(k), "kL"), tk("(", "q1"), ...L, tk(")", "q2"), EQ(), tk(fmt(km), "m", "new"), ...Rt.filter(t => t.k !== "m")];
+    S.add(`Multiply both sides by <b>${k}</b>, so there are no fractions.`, [F(S.cur, 500), F(f1, 1100), F(f2, 1100), F(f3, 700)]);
+    const rc = -km * P.x.n;
+    distribute(S, [["kL", "y"], ["m", "x"]], [["kL", "lc"], ["m", "c"]],
+      [...sideT([[k, "y", "", "y", "new"], [-ky1, "", "", "lc", "new"]]), EQ(), ...sideT([[km, "x", "", "x", "new"], [rc, "", "", "c", "new"]])], "Multiply into the brackets.");
+    return { k, lc: -ky1, rx: km, rc };
   }
 
-  function findPoint(steps, P, how) {
-    if (zero(P.x)) steps.push({ say: "We need a point. The y-intercept is a point on the line.", eq: `(${V("x")}₁, ${V("y")}₁) = (<span class="c-pt">0</span>, ${signed(P.y, "c-pt")})` });
-    else steps.push(how());
+  // Arrows from the number in front to each term in the brackets, then the products appear.
+  function distribute(S, first, second, result, say) {
+    S.add(say, [F(S.cur, 500), F(S.cur, 1100, first), F(S.cur, 1100, second), F(result, 700)]);
+  }
+
+  // Moves everything to one side and tidies into Ax + By + C = 0.
+  // The line before is y·ly + lc = x·rx + rc, all whole numbers.
+  function toGeneral(S, ly, lc, rx, rc) {
+    let gx, gy, gc;
+    if (rx > 0) {
+      S.add("Move everything on the left to the right side, so the left side is 0. A term changes its sign when it crosses the = sign.",
+        [F(mark(S.cur, ["y", "lc"], "hl"), 900), F([tk("0", "z", "opk"), EQ(), ...mark(sideT([[rx, "x", "", "x"], [rc, "", "", "c"], [-ly, "y", "", "y"], [-lc, "", "", "lc"]]), ["y", "lc"], "flip")], 900)]);
+      gx = rx; gy = -ly; gc = rc - lc;
+    } else {
+      if (rx !== 0 || rc !== 0) S.add("Move everything on the right to the left side, so the right side is 0. A term changes its sign when it crosses the = sign.",
+        [F(mark(S.cur, ["x", "c"], "hl"), 900), F([...mark(sideT([[ly, "y", "", "y"], [lc, "", "", "lc"], [-rx, "x", "", "x"], [-rc, "", "", "c"]]), ["x", "c"], "flip"), EQ(), tk("0", "z", "opk")], 900)]);
+      gx = -rx; gy = ly; gc = lc - rc;
+    }
+    const tidy = gT(gx, gy, gc);
+    if (!same(tidy, S.cur)) {
+      const twoNumbers = lc !== 0 && rc !== 0;
+      const t = gc !== 0 && lc !== 0 && rc === 0 ? tidy.map(t => t.k === "c" ? { ...t, k: "lc" } : t) : tidy; // the number keeps its own key when it's alone
+      S.add(`${twoNumbers ? "Combine the numbers, then write" : "Write"} it in order: x term, y term, number, then = 0.`,
+        [F(mark(S.cur, twoNumbers ? ["c", "lc"] : [], "hl"), 900), F(twoNumbers ? mark(t, ["c"], "new") : t, 700)]);
+    }
+    const g = gcd(gcd(gx, gy), gc);
+    if (g > 1) S.add(`Every number divides by ${g}, so divide every term by <b>${g}</b>.`, [F(mark(gT(gx / g, gy / g, gc / g), ["x", "y", "c"], "new"))]);
+  }
+
+  // Values drop into y − y₁ = m(x − x₁).
+  function putIn(S, m, P) {
+    S.add("Put m and the point into y − y₁ = m(x − x₁).", [F(tmplT(), 1100), F(mark(spT(m, P), ["lc", "m", "c"], "new"), 700)]);
+  }
+  function pointStep(S, P, how) {
+    if (zero(P.x)) S.one("We need a point. The y-intercept is a point on the line.", [tk(`(${V("x")}₁, ${V("y")}₁) = (<span class="c-pt">0</span>, ${signed(P.y, "c-pt")})`, "pt")]);
+    else S.one(how.say, [tk(how.eq, "pt")]);
   }
 
   function buildSteps(from, to) {
-    const L = line, s = [];
+    const L = line, S = stepper();
     if (L.vertical) {
       const k = R(-L.C, L.A);
-      s.push({ say: `This line is straight up and down (vertical). Its run is 0, so its slope is undefined. It has no slope-point or slope-intercept form, only general form. Its equation is x = ${txt(k)}.`, eq: gF(L.A, L.B, L.C) });
-      return s;
+      S.one(`This line is straight up and down (vertical). Its run is 0, so its slope is undefined. It has no slope-point or slope-intercept form, only general form. Its equation is x = ${txt(k)}.`, gT(L.A, L.B, L.C));
+      return finish(S.s);
     }
     const { m, b: yi, P } = L;
-    const start = { sp: spF(m, P), si: siF(m, yi), g: gF(L.A, L.B, L.C) }[from];
-    s.push({ say: `Start with ${LONG[from]}.`, eq: start });
+    S.one(`Start with ${LONG[from]}.`, { sp: spT(m, P), si: siT(m, yi), g: gT(L.A, L.B, L.C) }[from]);
 
-    if (from === "sp" && to === "si") {
-      if (m.d > 1 || P.y.d > 1) {
-        const { k, lc, rx, rc } = clearSP(s, m, P);
+    if (from === "sp" && (to === "si" || to === "g")) {
+      let k, lc, rx, rc;
+      if (m.d > 1 || P.y.d > 1) ({ k, lc, rx, rc } = clearSP(S, m, P));
+      else {
+        k = 1; lc = -P.y.n; rx = m.n; rc = -m.n * P.x.n;
+        const left = [tk(V("y"), "y"), tk(signNum(P.y, "c-pt"), "lc")];
+        if (zero(m)) S.add("Zero times anything is 0.", [F(mark(S.cur, ["m", "p1", "x", "c", "p2"], "hl"), 900), F([...left, EQ(), tk("0", "m", "new")], 700)]);
+        else if (zero(P.x)) S.add(`x − 0 is just x, so the right side is <b>${txt(m)}</b>x.`, [F(mark(S.cur, ["c"], "cancel"), 1000), F([...left, EQ(), ...sideT([[m, "x", "c-green", "x", "new"]])], 700)]);
+        else distribute(S, [["m", "x"]], [["m", "c"]], [...left, EQ(), ...sideT([[m, "x", "c-green", "x", "new"], [rc, "", "", "c", "new"]])], `Multiply <b>${txt(m)}</b> by each term in the brackets.`);
+      }
+      if (to === "g") toGeneral(S, k, lc, rx, rc);
+      else {
         if (lc !== 0) {
-          s.push({ say: lc < 0 ? `Add <b>${-lc}</b> to both sides, so the y term is by itself.` : `Subtract <b>${lc}</b> from both sides, so the y term is by itself.`,
-            eq: eqn(side([T(k, "y")]), side([T(rx, "x"), T(rc), T(-lc)])) });
-          if (rc !== 0) s.push({ say: "Combine the numbers.", eq: eqn(side([T(k, "y")]), side([T(rx, "x"), T(rc - lc)])) });
+          addBoth(S, R(-lc), (lc < 0 ? `Add <b>${-lc}</b>` : `Subtract <b>${lc}</b>`) + ` ${lc < 0 ? "to" : "from"} both sides, so ${k > 1 ? "the y term" : "y"} is by itself.`);
+          if (rc !== 0) {
+            const leftT = splitEq(S.cur)[0];
+            combineRight(S, leftT, [[rx, "x", k > 1 ? "" : "c-green", "x"], [rc - lc, "", k > 1 ? "" : "c-orange", "c"]], "Combine the numbers.");
+          } else S.cur = S.cur.map(t => t.k === "aR" ? { ...t, k: "c", c: "" } : t);
         }
-        const parts = [];
-        if (rx) parts.push(raw(rx, k) + V("x"));
-        if (rc - lc) parts.push(raw(rc - lc, k));
-        s.push({ say: `Divide every term by <b>${k}</b>, so y is by itself.`, eq: eqn(V("y"), parts.join(op("+")) || "0") });
-        s.push({ say: "Simplify the fractions.", eq: siF(m, yi) });
-      } else {
-        const mx1 = mul(m, P.x);
-        if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
-        else if (zero(P.x)) s.push({ say: `x − 0 is just x, so the right side is <b>${txt(m)}</b>x.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green")])) });
-        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(spLeft(P), side([T(m, "x", "c-green"), T(neg(mx1))])) });
-        if (!zero(P.y)) {
-          const y1 = P.y;
-          s.push({ say: y1.n > 0 ? `Add <b>${txt(y1)}</b> to both sides, so y is by itself.` : `Subtract <b>${txt(neg(y1))}</b> from both sides, so y is by itself.`,
-            eq: eqn(V("y"), side([T(m, "x", "c-green"), T(neg(mx1)), T(y1)])) });
-          if (!zero(mx1)) s.push({ say: "Combine the numbers.", eq: siF(m, yi) });
+        if (k > 1) {
+          const right = [[rx, "x", "x"], [rc - lc, "", "c"]];
+          divideAll(S, k, [[k, "y", "y"]], right, rawT(k, right));
+          S.add("Simplify the fractions.", [F(mark(S.cur, ["x", "c"], "hl"), 900), F(mark(siT(m, yi), ["x", "c"], "new"), 700)]);
         }
       }
     }
 
     if (from === "si" && to === "sp") {
-      s.push({ say: "The slope is the number in front of x.", eq: `${V("m")}${op("=")}${signed(m, "c-green")}` });
-      findPoint(s, P, () => ({ say: `We need a point. Put x = ${txt(P.x)} into the equation and work out y.`,
-        eq: `${V("y")}${op("=")}${signed(m)}(${fmt(P.x.n)})${zero(yi) ? "" : op(yi.n < 0 ? "−" : "+") + mag(yi)}${op("=")}${signed(P.y, "c-pt")}` }));
-      s.push({ say: "Put m and the point into y − y₁ = m(x − x₁).", eq: spF(m, P) });
+      S.one("The slope is the number in front of x.", [tk(V("m"), "mv"), EQ(), tk(signed(m, "c-green"), "m")]);
+      pointStep(S, P, { say: `We need a point. Put x = ${txt(P.x)} into the equation and work out y.`,
+        eq: `${V("y")}${op("=")}${signed(m)}(${fmt(P.x.n)})${zero(yi) ? "" : op(yi.n < 0 ? "−" : "+") + mag(yi)}${op("=")}${signed(P.y, "c-pt")}` });
+      putIn(S, m, P);
     }
 
     if (from === "g" && (to === "si" || to === "sp")) {
       const { A, B, C } = L;
       if (to === "si") {
-        if (A !== 0 || C !== 0) s.push({ say: `Move the ${A && C ? "x term and the number" : A ? "x term" : "number"} to the right side, so the y term is alone. ${A && C ? "They change" : "It changes"} sign when crossing the =.`,
-          eq: eqn(side([T(B, "y")]), side([T(-A, "x"), T(-C)])) });
+        if (A !== 0 || C !== 0) S.add(`Move the ${A && C ? "x term and the number" : A ? "x term" : "number"} to the right side, so the y term is alone. ${A && C ? "They change" : "It changes"} sign when crossing the =.`,
+          [F(mark(S.cur, ["x", "c"], "hl"), 900), F([...sideT([[B, "y", "", "y"]]), EQ(), ...mark(sideT([[-A, "x", "", "x"], [-C, "", "", "c"]]), ["x", "c"], "flip")], 900)]);
         if (B !== 1) {
-          const parts = [];
-          if (A) parts.push(raw(-A, B) + V("x"));
-          if (C) parts.push(raw(-C, B));
-          s.push({ say: `Divide every term by <b>${fmt(B)}</b>.`, eq: eqn(V("y"), parts.join(op("+")) || "0") });
-          s.push({ say: "Simplify the fractions.", eq: siF(m, yi) });
+          const right = [[-A, "x", "x"], [-C, "", "c"]];
+          divideAll(S, B, [[B, "y", "y"]], right, rawT(B, right));
+          S.add("Simplify the fractions.", [F(mark(S.cur, ["x", "c"], "hl"), 900), F(mark(siT(m, yi), ["x", "c"], "new"), 700)]);
         }
       } else {
-        s.push({ say: "In general form, the slope is m = −A ÷ B.", eq: `${V("m")}${op("=")}${raw(-A, B)}${op("=")}${signed(m, "c-green")}` });
-        findPoint(s, P, () => ({ say: `We need a point. Put x = ${txt(P.x)} into the equation and solve for y.`,
+        S.one("In general form, the slope is m = −A ÷ B.", [tk(V("m"), "mv"), EQ(), tk(raw(-A, B), "f"), EQ(), tk(signed(m, "c-green"), "m")].map((t, i) => i === 3 ? { ...t, k: "=2" } : t));
+        pointStep(S, P, { say: `We need a point. Put x = ${txt(P.x)} into the equation and solve for y.`,
           eq: `${(A ? fmt(A) + `(${fmt(P.x.n)})` : "") + (A ? op(B < 0 ? "−" : "+") : B < 0 ? "−" : "") + (Math.abs(B) === 1 ? "" : Math.abs(B)) + V("y")
-            + (C ? op(C < 0 ? "−" : "+") + Math.abs(C) : "")}${op("=")}0<span>,</span>&nbsp;so ${V("y")}${op("=")}${signed(P.y, "c-pt")}` }));
-        s.push({ say: "Put m and the point into y − y₁ = m(x − x₁).", eq: spF(m, P) });
-      }
-    }
-
-    if (from === "sp" && to === "g") {
-      if (m.d > 1 || P.y.d > 1) {
-        const { k, lc, rx, rc } = clearSP(s, m, P);
-        toGeneral(s, k, lc, rx, rc);
-      } else {
-        const mx1 = mul(m, P.x).n;
-        if (zero(m)) s.push({ say: "Zero times anything is 0.", eq: eqn(spLeft(P), "0") });
-        else s.push({ say: `Multiply <b>${txt(m)}</b> by each term in the brackets.`, eq: eqn(side([T(1, "y"), T(neg(P.y))]), side([T(m, "x"), T(-mx1)])) });
-        toGeneral(s, 1, -P.y.n, m.n, -mx1);
+            + (C ? op(C < 0 ? "−" : "+") + Math.abs(C) : "")}${op("=")}0<span>,</span>&nbsp;so ${V("y")}${op("=")}${signed(P.y, "c-pt")}` });
+        putIn(S, m, P);
       }
     }
 
     if (from === "si" && to === "g") {
       const k = lcm(m.d, yi.d), w = r => mul(r, R(k)).n;
-      if (k > 1) s.push({ say: `Multiply every term by <b>${k}</b> to clear the fractions.`, eq: eqn(side([T(k, "y")]), side([T(w(m), "x"), T(w(yi))])) });
-      toGeneral(s, k, 0, w(m), w(yi));
+      if (k > 1) {
+        const [Lt, Rt] = splitEq(S.cur);
+        const kk = key => tk(`${k}${op("·")}`, key, "opk");
+        const signOf = t => t.k === "c" ? [tk(op(yi.n < 0 ? "−" : "+"), "sc"), tk(body(yi, "", "c-orange"), "c")] : [t];
+        const lead = (t, key) => (t.k === "x" ? [kk("kX"), t] : t.k === "c" ? (Rt[0].k === "c" ? [kk("kC"), t] : [signOf(t)[0], kk("kC"), signOf(t)[1]]) : [kk(key), t]);
+        const f1 = [kk("kY"), ...Lt, EQ(), ...Rt.flatMap(t => lead(t))];
+        const strike = f1.map(t => {
+          if ((t.k === "kX" && m.d > 1) || (t.k === "kC" && yi.d > 1)) return { ...t, h: `<span class="cancel">${k}</span>${op("·")}` };
+          if (t.k === "x" && m.d > 1) return { ...t, h: (m.n < 0 ? "−" : "") + body(m, "x", "c-green", "cancel") };
+          if (t.k === "c" && yi.d > 1) return { ...t, h: (Rt[0].k === "c" && yi.n < 0 ? "−" : "") + body(yi, "", "c-orange", "cancel") };
+          return t;
+        });
+        S.add(`Multiply every term by <b>${k}</b> to clear the fractions.`, [F(S.cur, 500), F(f1, 1100), F(strike, 1100),
+          F([...sideT([[k, "y", "", "y", "new"]]), EQ(), ...sideT([[w(m), "x", "", "x", "new"], [w(yi), "", "", "c", "new"]])], 700)]);
+      }
+      toGeneral(S, k, 0, w(m), w(yi));
     }
-    return s;
+    return finish(S.s);
+  }
+  const finish = list => list.map(st => ({ ...st, eq: drawT(clean(st.frames[st.frames.length - 1].t)) }));
+
+  /* ---------- Playing the steps ---------- */
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let steps = [], shown = 0, runId = 0, playing = false;
+
+  // Swap a line's tokens; matching keys slide from their old spot, new ones pop in, old ones fade out.
+  function apply(box, toks) {
+    const bR = box.getBoundingClientRect(), old = new Map();
+    box.querySelectorAll(":scope > .tk").forEach(e => old.set(e.dataset.k, { r: e.getBoundingClientRect(), e }));
+    box.innerHTML = drawT(toks);
+    const nR = box.getBoundingClientRect(), seen = new Set();
+    box.querySelectorAll(":scope > .tk").forEach(e => {
+      const o = old.get(e.dataset.k);
+      if (o) {
+        seen.add(e.dataset.k);
+        const r = e.getBoundingClientRect();
+        const dx = (o.r.left - bR.left) - (r.left - nR.left), dy = (o.r.top - bR.top) - (r.top - nR.top);
+        if (Math.abs(dx) + Math.abs(dy) > 0.5) e.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 700, easing: "cubic-bezier(.3,.7,.2,1)" });
+      } else e.animate([{ opacity: 0, transform: "translateY(-14px) scale(.4)" }, { opacity: 1, transform: "none" }], { duration: 500, easing: "ease-out" });
+    });
+    old.forEach((o, k) => {
+      if (seen.has(k)) return;
+      const g = o.e.cloneNode(true);
+      g.classList.add("ghost");
+      g.style.left = (o.r.left - bR.left) + "px"; g.style.top = (o.r.top - bR.top) + "px";
+      box.appendChild(g);
+      g.animate([{ opacity: 1 }, { opacity: 0, transform: "translateY(10px)" }], { duration: 550, fill: "forwards" }).onfinish = () => g.remove();
+    });
   }
 
-  let steps = [], shown = 0;
+  // Curved arrows under the line, from one token to another (for distributing).
+  function arcs(box, pairs) {
+    const bR = box.getBoundingClientRect(), id = "ah" + Math.random().toString(36).slice(2);
+    const at = k => { const e = box.querySelector(`:scope > .tk[data-k="${k}"]`); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left - bR.left + r.width / 2, y: r.bottom - bR.top + 2 }; };
+    const paths = pairs.map(([a, b]) => { const p = at(a), q = at(b); if (!p || !q) return ""; const dip = 26;
+      return `<path pathLength="1" d="M${p.x},${p.y} C${p.x},${p.y + dip} ${q.x},${q.y + dip} ${q.x},${q.y + 3}" marker-end="url(#${id})"/>`; }).join("");
+    box.insertAdjacentHTML("beforeend", `<svg class="arcs" width="${bR.width}" height="${bR.height}"><defs><marker id="${id}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>${paths}</svg>`);
+  }
+
+  async function play(box, frames) {
+    const run = ++runId;
+    playing = frames.length > 1; setButtons();
+    box.innerHTML = drawT(frames[0].t);
+    if (frames[0].arcs) arcs(box, frames[0].arcs);
+    for (let i = 1; i < frames.length; i++) {
+      await sleep(frames[i - 1].ms);
+      if (run !== runId) return;
+      apply(box, frames[i].t);
+      if (frames[i].arcs) arcs(box, frames[i].arcs);
+    }
+    if (run === runId) { playing = false; setButtons(); }
+  }
+  function finishNow() {
+    runId++; playing = false;
+    const box = $("steps").lastElementChild?.querySelector(".eqa");
+    if (box) box.innerHTML = steps[shown - 1].eq;
+    setButtons();
+  }
+  function setButtons() {
+    const last = shown === steps.length;
+    $("next").disabled = last && !playing;
+    $("next").textContent = playing ? "Skip ahead" : last ? "Done" : "Next step";
+    $("replay").hidden = !(steps[shown - 1] && steps[shown - 1].frames.length > 1) || playing;
+  }
+  function stepLi(i) {
+    const st = steps[i], to = $("to").value, last = i === steps.length - 1;
+    const li = document.createElement("li");
+    li.innerHTML = `<p class="say">${st.say}${last && !line.vertical ? `<span class="done">${NAMES[to]} ✓</span>` : ""}</p><div class="eqa">${st.eq}</div>`;
+    return li;
+  }
+  function showStep(i, animate) {
+    const list = $("steps");
+    [...list.children].forEach(li => li.classList.remove("now"));
+    const li = stepLi(i);
+    li.classList.add("now");
+    list.appendChild(li);
+    li.scrollIntoView({ block: "nearest" });
+    if (animate) play(li.querySelector(".eqa"), steps[i].frames); else setButtons();
+  }
   function resetSteps() {
+    runId++; playing = false;
     const from = $("from").value, to = $("to").value;
     steps = buildSteps(from, to); shown = 1;
     ["sp", "si", "g"].forEach(f => $("f-" + f).classList.toggle("target", f === to));
-    drawSteps();
+    $("steps").innerHTML = "";
+    showStep(0, false);
   }
-  function drawSteps() {
-    const to = $("to").value, last = shown === steps.length;
-    $("steps").innerHTML = steps.slice(0, shown).map((st, i) =>
-      `<li class="${i === shown - 1 ? "now" : ""}"><p class="say">${st.say}${last && i === shown - 1 && !line.vertical ? `<span class="done">${NAMES[to]} ✓</span>` : ""}</p><div class="eq">${st.eq}</div></li>`).join("");
-    $("next").disabled = last;
-    $("next").textContent = last ? "Done" : "Next step";
-    const box = $("steps").lastElementChild;
-    if (box) box.scrollIntoView({ block: "nearest" });
-  }
-  $("next").addEventListener("click", () => { if (shown < steps.length) { shown++; drawSteps(); } });
+  $("next").addEventListener("click", () => {
+    if (playing) return finishNow();
+    if (shown < steps.length) { shown++; showStep(shown - 1, true); }
+  });
+  $("replay").addEventListener("click", () => {
+    const box = $("steps").lastElementChild?.querySelector(".eqa");
+    if (box) play(box, steps[shown - 1].frames);
+  });
   $("again").addEventListener("click", resetSteps);
   $("from").addEventListener("change", () => {
     if ($("to").value === $("from").value) $("to").value = $("from").value === "g" ? "si" : "g";
