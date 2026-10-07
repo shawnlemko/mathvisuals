@@ -183,6 +183,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .pull:hover { background: var(--sheet); color: var(--pt); }
 .pull:disabled { opacity: .5; cursor: default; background: var(--pt); color: var(--sheet); }
 
+.calc { width: 100%; font-size: 1.1rem; padding: 10px; }
 .runs { font-family: var(--font-num); font-size: 1.3rem; margin: 0; }
 .runs b { font-size: 1.8rem; }
 .tally { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -234,7 +235,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <div class="counts" id="counts"></div>
       </div>
 
-      <button type="button" class="pull" id="pull">Pull 2 marbles</button>
+      <button type="button" class="pull" id="pull">Pull the 1st marble</button>
+      <button type="button" class="calc" id="calc" aria-pressed="true">Hide calculations</button>
 
       <div class="card">
         <p class="runs" aria-live="polite">Runs: <b id="runs">0</b></p>
@@ -298,7 +300,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     el("circle", { class: "slot", cx: s.x, cy: s.y, r: BIG + 6 }, slotL);
     el("text", { class: "slot-q", x: s.x, y: s.y + 14, "text-anchor": "middle" }, slotL).textContent = "?";
   });
-  const mathL = el("g", {}, svg);   // fractions and notes
+  const noteL = el("g", {}, svg);   // put back / kept out
+  const mathL = el("g", {}, svg);   // fractions and the product (Show/Hide calculations)
   const outL = el("g", {}, svg);    // marbles out of the bag, on top
 
   // Marble pile: rows fill from the bottom of the bag, each row centered.
@@ -325,7 +328,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   function fillBag() {
-    holeL.replaceChildren(); inL.replaceChildren(); outL.replaceChildren(); mathL.replaceChildren();
+    holeL.replaceChildren(); inL.replaceChildren(); outL.replaceChildren(); mathL.replaceChildren(); noteL.replaceChildren();
     slotL.querySelectorAll(".slot-q").forEach(q => (q.style.display = ""));
     const colors = shuffle(COLORS.flatMap(c => Array(counts[c.key]).fill(c.key)));
     const sp = spots(colors.length);
@@ -381,7 +384,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // ---------- One run: pull 2 marbles ----------
   let pulled = [];   // marble objects sitting in the slots
   async function putBack() {
-    mathL.replaceChildren();
+    mathL.replaceChildren(); noteL.replaceChildren();
     const moving = pulled.filter(Boolean);
     outL.querySelectorAll(".ghost").forEach(g => g.remove());
     await Promise.all(moving.map(p => fly(p.m.g, p.at, p.m, BIG / R, 1, 450)));
@@ -416,24 +419,28 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       m.inBag = true; m.hole.remove();
       m.g.remove(); m.g = marbleEl(m.color, inL); place(m.g, m.x, m.y);
       pulled[i] = null;
-      el("text", { class: "note back", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, mathL).textContent = "put back";
+      el("text", { class: "note back", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, noteL).textContent = "put back";
       setBagCount(false);
     } else {
-      el("text", { class: "note out", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, mathL).textContent = "kept out";
+      el("text", { class: "note out", x: SLOT[i].x, y: 272, "text-anchor": "middle" }, noteL).textContent = "kept out";
       setBagCount(true);
     }
   }
 
+  // Each press does one pull: 1st pull, then 2nd pull, then the next press starts a new run.
+  let first = null;
   async function run() {
     if (busy) return;
     lock(true);
-    if (pulled.length) await putBack();
-
-    const a = await pullOne(0);
-    await wait(650);
-    await settle(0, a.m);
-    await wait(550);
-
+    if (!first) {
+      if (pulled.length) await putBack();
+      first = await pullOne(0);
+      await wait(650);
+      await settle(0, first.m);
+      setPullLabel();
+      return lock(false);
+    }
+    const a = first;
     const b = await pullOne(1);
     await wait(650);
     await settle(1, b.m);
@@ -450,8 +457,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const key = a.m.color + "," + b.m.color;
     tally.set(key, (tally.get(key) || 0) + 1);
     drawTally();
+    first = null;
+    setPullLabel();
     lock(false);
   }
+  const setPullLabel = () => ($("pull").textContent = first ? "Pull the 2nd marble" : "Pull the 1st marble");
 
   // ---------- Panel ----------
   function drawTally() {
@@ -489,7 +499,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // A new bag or a new rule is a new experiment, so the runs start over.
-  function restart() { pulled = []; runs = 0; tally = new Map(); fillBag(); drawTally(); lock(false); }
+  function restart() { pulled = []; first = null; runs = 0; tally = new Map(); fillBag(); drawTally(); setPullLabel(); lock(false); }
 
   countsBox.addEventListener("click", e => {
     const b = e.target.closest("button");
@@ -510,6 +520,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   $("sideWith").addEventListener("click", () => setMode(false));
   $("sideWithout").addEventListener("click", () => setMode(true));
   $("pull").addEventListener("click", run);
+  $("calc").addEventListener("click", e => {
+    const show = mathL.style.display === "none";
+    mathL.style.display = show ? "" : "none";
+    e.target.textContent = show ? "Hide calculations" : "Show calculations";
+    e.target.setAttribute("aria-pressed", show);
+  });
 
   restart();
 })();
