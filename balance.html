@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Balancing Equations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Balancing Equations: drag x boxes and 1 weights onto a pan balance, then press Start solving.
+   The tool finds the whole number x that balances the scale (kept hidden) and from then on the scale tips by real weight:
+   doing an operation to both sides keeps it level, doing it to one side (or dragging a piece on or off) tips it and flashes
+   an error. A bar model under the scale shows the same two sides as bars, with removed pieces fading out in red and
+   division splitting each bar into equal groups. Boxes blue, weights orange, red only for errors. */
+.main { grid-template-columns: minmax(0, 1fr) clamp(300px, 27vw, 420px); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { padding: 8px; }
+.board.err { animation: errflash 0.45s ease-in-out 3; }
+@keyframes errflash { 50% { border-color: var(--warn); box-shadow: 0 0 0 5px var(--warn); } }
+
+.eqn { font-family: var(--font-num); font-weight: 700; font-size: 54px; fill: var(--ink); text-anchor: middle; }
+.eqn .ne { fill: var(--warn); }
+.msg { font-family: var(--font-body); font-weight: 700; font-size: 32px; text-anchor: middle; }
+.msg.bad { fill: var(--warn); } .msg.good { fill: var(--green); } .msg.hint { fill: var(--muted); font-weight: 400; }
+.post { fill: var(--muted); }
+.beam { fill: var(--ink); }
+.beam.tip { fill: var(--warn); }
+.plate { fill: var(--muted); }
+.stem { stroke: var(--muted); stroke-width: 8; stroke-linecap: round; }
+.pivot { fill: var(--sheet); stroke: var(--ink); stroke-width: 4; }
+.ground { stroke: var(--grid-major); stroke-width: 4; stroke-linecap: round; }
+.xbox rect { fill: var(--pt); stroke: var(--ink); stroke-width: 2; }
+.xbox text { fill: #fff; font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; text-anchor: middle; dominant-baseline: central; }
+.wt path { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
+.wt text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 17px; text-anchor: middle; dominant-baseline: central; }
+.piece { cursor: grab; }
+.piece.enter > * { animation: drop 0.4s ease-out; }
+@keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
+.piece.leave > *, .seg.leave { animation: leave 0.75s ease-in forwards; }
+.piece.leave rect, .piece.leave path, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
+@keyframes leave { 0%, 35% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
+
+.side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
+.seg rect { stroke: var(--ink); stroke-width: 2; }
+.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); }
+.seg text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
+.seg.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
+.seg line { stroke: rgba(0,0,0,0.35); stroke-width: 1.5; }
+.mismatch { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 8 6; }
+.divider { stroke: var(--ink); stroke-width: 4; stroke-dasharray: 8 6; }
+.mmlbl { fill: var(--warn); font-family: var(--font-body); font-weight: 700; font-size: 22px; }
+
+.tray { display: flex; gap: 16px; align-items: flex-end; }
+.src { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; background: none; border: 0; padding: 4px; }
+.src:hover { border: 0; }
+.src svg { display: block; }
+.ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -50%); }
+.ops { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg-btns { display: inline-flex; align-self: flex-start; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 46px; padding: 6px 12px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.seg-btns button.xv { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 1.3rem; }
+.amt { display: inline-flex; align-items: center; gap: 6px; }
+.amt button { width: 46px; min-height: 46px; font-size: 1.4rem; padding: 0; }
+.amt output { font-family: var(--font-num); font-weight: 700; font-size: 2rem; min-width: 2ch; text-align: center; }
+.where button { flex: 1 1 auto; min-height: 50px; font-size: 1.05rem; }
+.where button.both { background: var(--green); color: #fff; border-color: var(--green); font-size: 1.15rem; flex-basis: 100%; }
+.big { min-height: 54px; font-size: 1.2rem; padding: 10px 18px; }
+#go { background: var(--green); color: #fff; border-color: var(--green); }
+.note { margin: 0; font-weight: 700; font-size: 1.05rem; }
+.note:empty { display: none; }
+.note.bad { color: var(--warn); } .note.good { color: var(--green); }
+.steps { font-family: var(--font-num); font-size: 1.25rem; margin: 0; padding: 0; list-style: none; }
+.steps li { padding: 2px 0; }
+.steps li.op { font-size: 1rem; color: var(--green); font-weight: 700; padding-left: 1.5ch; }
+.steps li.op.bad { color: var(--warn); }
+.steps li .ne { color: var(--warn); }
+/* The steps list scrolls inside its own card so the pieces and buttons stay in view. */
+@media (min-width: 861px) and (min-height: 520px) { .panel > .card { flex: none; } .panel > #stepcard { flex: 0 1 auto; min-height: 5em; overflow-y: auto; } }
+@media (prefers-reduced-motion: reduce) { .board.err, .piece.enter > *, .piece.leave > *, .seg.leave { animation-duration: 0.01s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Balancing Equations</h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board" id="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Pan balance with a bar model under it"></svg></div>
+    <div class="panel">
+      <section class="card">
+        <p class="label">Drag onto the scale</p>
+        <div class="tray">
+          <div class="src" data-type="x" aria-label="x box"><svg width="64" height="64" viewBox="0 0 64 64"><g class="xbox"><rect x="4" y="4" width="56" height="56" rx="6"/><text x="32" y="32">x</text></g></svg></div>
+          <div class="src" data-type="one" aria-label="weight of 1"><svg width="48" height="52" viewBox="-1 -1 32 34"><g class="wt"><path id="wtpath"/><text x="15" y="20">1</text></g></svg></div>
+        </div>
+      </section>
+      <section class="card" id="build">
+        <div class="row"><button type="button" class="big" id="go">Start solving</button><button type="button" class="big" id="clear">Start over</button></div>
+        <p class="note bad" id="buildnote"></p>
+      </section>
+      <section class="card ops" id="solve" hidden>
+        <div class="seg-btns" id="opk" role="group" aria-label="Operation">
+          <button type="button" data-k="sub" aria-pressed="true">Subtract</button>
+          <button type="button" data-k="add" aria-pressed="false">Add</button>
+          <button type="button" data-k="div" aria-pressed="false">Divide by</button>
+        </div>
+        <div class="row">
+          <span class="amt"><button type="button" id="minus" aria-label="Less">−</button><output id="n">1</output><button type="button" id="plus" aria-label="More">+</button></span>
+          <div class="seg-btns" id="what" role="group" aria-label="What">
+            <button type="button" data-w="one" aria-pressed="true">ones</button>
+            <button type="button" data-w="x" class="xv" aria-pressed="false">x</button>
+          </div>
+        </div>
+        <div class="row where">
+          <button type="button" class="both" data-s="both">Both sides</button>
+          <button type="button" data-s="L">Left side only</button>
+          <button type="button" data-s="R">Right side only</button>
+        </div>
+        <p class="note" id="note"></p>
+        <div class="row"><button type="button" id="undo">Undo</button><button type="button" id="restart">Start over</button></div>
+      </section>
+      <section class="card" id="stepcard" hidden>
+        <p class="label">Steps</p>
+        <ol class="steps" id="steps"></ol>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg"), board = $("board");
+  const PX = 500, PY = 370, ARM = 320, PLATE = 330, STEM = 16;
+  const BOX = 52, WT_W = 30, WT_H = 32, GAP = 4;
+  const BAR_X = 150, BAR_W = 820, BAR_H = 66, BAR_Y = { L: 500, R: 600 };
+  const MAX_X = 6, MAX_ONE = 30, NOMINAL_X = 4;
+  const fmtN = v => v < 0 ? "−" + -v : String(v);
+
+  // L and R hold the count of x boxes and 1 weights on each side. xv is the hidden value of x (null while building).
+  let S = { L: { x: 0, one: 0 }, R: { x: 0, one: 0 } }, xv = null, history = [], steps = [];
+  let angle = 0, target = 0, anim = null;
+  let fx = null; // pending animation: { leave: {L:{x,one},R:{...}}, enter: {...}, div: {L:n,R:n} }
+  let kind = "sub", what = "one", n = 1;
+
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const txt = (s, attrs, parent) => { const t = el("text", attrs, parent); t.textContent = s; return t; };
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const weightPath = (x, y) => { // kettlebell-style weight, top-left at x, y
+    const w = WT_W, h = WT_H;
+    return `M${x + w * 0.3},${y + 9} a${w * 0.2},7 0 0 1 ${w * 0.4},0 L${x + w - 2},${y + h} L${x + 2},${y + h} Z M${x + w * 0.38},${y + 9} a${w * 0.12},4 0 0 0 ${w * 0.24},0`;
+  };
+  $("wtpath").setAttribute("d", weightPath(0, 0));
+
+  const sideStr = s => {
+    const parts = [];
+    if (s.x) parts.push((s.x === 1 ? "" : s.x) + "x");
+    if (s.one || !s.x) parts.push(String(s.one));
+    return parts.join(" + ");
+  };
+  const weight = s => s.x * xv + s.one;
+  const balanced = () => xv === null || weight(S.L) === weight(S.R);
+  const solved = () => xv !== null && balanced() &&
+    ((S.L.x === 1 && !S.L.one && !S.R.x) || (S.R.x === 1 && !S.R.one && !S.L.x));
+
+  // ---------- Drawing ----------
+  let gScale, gBeam, gPan = {}, gBars, gTop;
+  function layout() {
+    svg.innerHTML = "";
+    gTop = el("g", {});
+    el("line", { x1: 330, y1: 455, x2: 670, y2: 455, class: "ground" });
+    el("path", { d: `M${PX},${PY} L${PX - 62},455 L${PX + 62},455 Z`, class: "post" });
+    gScale = el("g", {});
+    gBeam = el("g", {}, gScale);
+    gPan.L = el("g", {}, gScale);
+    gPan.R = el("g", {}, gScale);
+    el("circle", { cx: PX, cy: PY, r: 11, class: "pivot" }, gScale);
+    gBars = el("g", {});
+  }
+
+  function drawTop() {
+    gTop.innerHTML = "";
+    const empty = !S.L.x && !S.L.one && !S.R.x && !S.R.one;
+    if (empty) { txt("Drag boxes and weights onto both sides", { x: PX, y: 70, class: "msg hint" }, gTop); return; }
+    const t = el("text", { x: PX, y: 66, class: "eqn" }, gTop);
+    const a = el("tspan", {}, t); a.textContent = sideStr(S.L) + " ";
+    const eq = el("tspan", balanced() ? {} : { class: "ne" }, t); eq.textContent = balanced() ? "=" : "≠";
+    const b = el("tspan", {}, t); b.textContent = " " + sideStr(S.R);
+    if (xv === null) return;
+    if (!balanced()) txt("Not balanced! Do the same thing to both sides.", { x: PX, y: 116, class: "msg bad" }, gTop);
+    else if (solved()) txt(`Balanced! x = ${xv}`, { x: PX, y: 116, class: "msg good" }, gTop);
+  }
+
+  // Lay pieces on a plate: boxes first, then weights, wrapping into rows that stack upward.
+  function placePieces(s) {
+    const items = [];
+    for (let i = 0; i < s.x; i++) items.push({ t: "x", i, w: BOX, h: BOX });
+    for (let i = 0; i < s.one; i++) items.push({ t: "one", i, w: WT_W, h: WT_H });
+    const rows = []; let row = [], used = 0;
+    const inner = PLATE - 20;
+    items.forEach(it => {
+      if (row.length && used + it.w > inner) { rows.push(row); row = []; used = 0; }
+      row.push(it); used += it.w + GAP;
+    });
+    if (row.length) rows.push(row);
+    let base = 0;
+    rows.forEach(r => {
+      const w = r.reduce((a, it) => a + it.w + GAP, -GAP), h = Math.max(...r.map(it => it.h));
+      let x = -w / 2;
+      r.forEach(it => { it.x = x; it.y = base - it.h; x += it.w + GAP; });
+      base -= h + GAP;
+    });
+    return items;
+  }
+
+  function drawPans() {
+    ["L", "R"].forEach(side => {
+      const g = gPan[side]; g.innerHTML = "";
+      el("line", { x1: 0, y1: 0, x2: 0, y2: -STEM, class: "stem" }, g);
+      el("rect", { x: -PLATE / 2, y: -STEM - 10, width: PLATE, height: 10, rx: 5, class: "plate" }, g);
+      const s = S[side], leave = fx && fx.leave && fx.leave[side], enter = fx && fx.enter && fx.enter[side];
+      placePieces(s).forEach(it => {
+        const count = s[it.t];
+        let cls = "piece";
+        if (leave && it.i >= count - leave[it.t]) cls += " leave";
+        if (enter && it.i >= count - enter[it.t]) cls += " enter";
+        const pg = el("g", { class: cls, "data-side": side, "data-type": it.t, transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
+        if (it.t === "x") {
+          const b = el("g", { class: "xbox" }, pg);
+          el("rect", { x: 0, y: 0, width: BOX, height: BOX, rx: 5 }, b);
+          txt("x", { x: BOX / 2, y: BOX / 2 }, b);
+        } else {
+          const w = el("g", { class: "wt" }, pg);
+          el("path", { d: weightPath(0, 0) }, w);
+          txt("1", { x: WT_W / 2, y: 20 }, w);
+        }
+      });
+    });
+  }
+
+  function placeScale() {
+    const r = angle * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+    // Positive angle: left side down.
+    const L = { x: PX - ARM * c, y: PY + ARM * s }, R = { x: PX + ARM * c, y: PY - ARM * s };
+    gBeam.innerHTML = "";
+    el("rect", { x: PX - ARM - 10, y: PY - 7, width: 2 * ARM + 20, height: 14, rx: 7, class: "beam" + (balanced() ? "" : " tip"), transform: `rotate(${-angle} ${PX} ${PY})` }, gBeam);
+    gPan.L.setAttribute("transform", `translate(${L.x},${L.y - 7})`);
+    gPan.R.setAttribute("transform", `translate(${R.x},${R.y - 7})`);
+  }
+
+  function setTilt() {
+    if (xv === null || balanced()) target = 0;
+    else { const d = weight(S.L) - weight(S.R); target = Math.sign(d) * Math.min(12, 5 + Math.abs(d) * 0.6); }
+    if (anim) return;
+    const stepT = () => {
+      const diff = target - angle;
+      if (Math.abs(diff) < 0.05) { angle = target; placeScale(); anim = null; return; }
+      angle += diff * 0.14; placeScale(); anim = requestAnimationFrame(stepT);
+    };
+    anim = requestAnimationFrame(stepT);
+  }
+
+  // Bar model: each side is a bar of x pieces (length x) and one block of ones (length = count).
+  function drawBars() {
+    gBars.innerHTML = "";
+    const xl = xv === null ? NOMINAL_X : xv;
+    const total = s => s.x * xl + s.one;
+    const span = Math.max(total(S.L), total(S.R), fx && fx.before ? Math.max(total(fx.before.L), total(fx.before.R)) : 0, 1);
+    const u = BAR_W / span;
+    const ends = {};
+    ["L", "R"].forEach(side => {
+      const y = BAR_Y[side], s = fx && fx.before ? fx.before[side] : S[side];
+      txt(side === "L" ? "Left" : "Right", { x: BAR_X - 14, y: y + BAR_H / 2, class: "side" }, gBars);
+      const leave = (fx && fx.leave && fx.leave[side]) || { x: 0, one: 0 };
+      const divN = (fx && fx.div && fx.div[side]) || 0;
+      const segs = [];
+      if (divN) { // equal groups, all but the first fade away
+        for (let gI = 0; gI < divN; gI++) {
+          for (let i = 0; i < s.x / divN; i++) segs.push({ t: "x", len: xl, leave: gI > 0 });
+          if (s.one) segs.push({ t: "one", len: s.one / divN, leave: gI > 0 });
+        }
+      } else {
+        for (let i = 0; i < s.x; i++) segs.push({ t: "x", len: xl, leave: i >= s.x - leave.x });
+        const keep = s.one - leave.one;
+        if (keep) segs.push({ t: "one", len: keep });
+        if (leave.one) segs.push({ t: "one", len: leave.one, leave: true });
+      }
+      let x = BAR_X;
+      segs.forEach(sg => {
+        const w = sg.len * u;
+        const g = el("g", { class: "seg " + sg.t + (sg.leave ? " leave" : "") }, gBars);
+        el("rect", { x, y, width: w, height: BAR_H }, g);
+        if (sg.t === "one" && u >= 7) for (let k = 1; k < sg.len; k++) el("line", { x1: x + k * u, y1: y + BAR_H - 14, x2: x + k * u, y2: y + BAR_H }, g);
+        if (w >= 26) txt(sg.t === "x" ? "x" : String(sg.len), { x: x + w / 2, y: y + BAR_H / 2 - (sg.t === "one" && u >= 7 ? 5 : 0) }, g);
+        x += w;
+      });
+      if (divN) for (let gI = 1; gI < divN; gI++) { // group dividers
+        const gx = BAR_X + gI * (total(s) / divN) * u;
+        el("line", { x1: gx, y1: y - 8, x2: gx, y2: y + BAR_H + 8, class: "divider" }, gBars);
+      }
+      ends[side] = BAR_X + total(S[side]) * u;
+    });
+    if (xv !== null && !balanced() && !fx) {
+      const far = Math.max(ends.L, ends.R);
+      el("line", { x1: far, y1: BAR_Y.L - 10, x2: far, y2: BAR_Y.R + BAR_H + 10, class: "mismatch" }, gBars);
+      const shortSide = ends.L < ends.R ? "L" : "R";
+      el("line", { x1: ends[shortSide], y1: BAR_Y[shortSide] + BAR_H / 2, x2: far, y2: BAR_Y[shortSide] + BAR_H / 2, class: "mismatch" }, gBars);
+    }
+  }
+
+  function render() {
+    drawTop(); drawPans(); drawBars(); placeScale(); setTilt(); panel();
+  }
+
+  // ---------- Panel ----------
+  function panel() {
+    const solving = xv !== null;
+    $("build").hidden = solving; $("solve").hidden = !solving;
+    $("stepcard").hidden = !solving;
+    $("n").textContent = n;
+    $("what").style.visibility = kind === "div" ? "hidden" : "visible";
+    document.querySelectorAll("#opk button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === kind));
+    document.querySelectorAll("#what button").forEach(b => b.setAttribute("aria-pressed", b.dataset.w === what));
+    $("undo").disabled = !history.length;
+    const ol = $("steps"); ol.innerHTML = "";
+    steps.forEach(st => {
+      const li = document.createElement("li");
+      if (st.op) { li.className = "op" + (st.bad ? " bad" : ""); li.textContent = st.op; }
+      else li.innerHTML = st.eq.replace("≠", '<span class="ne">≠</span>');
+      ol.appendChild(li);
+    });
+    const sc = $("stepcard"); sc.scrollTop = sc.scrollHeight;
+  }
+  const eqStr = () => `${sideStr(S.L)} ${balanced() ? "=" : "≠"} ${sideStr(S.R)}`;
+  const note = (t, cls = "bad") => { const p = $("note"); p.textContent = t; p.className = "note " + cls; };
+
+  function flash() { board.classList.remove("err"); void board.offsetWidth; board.classList.add("err"); }
+
+  // Apply a change. `leave`/`enter` say which pieces animate; the state switches once the leaving pieces have faded.
+  let busy = false;
+  function commit(next, label, opts = {}) {
+    if (busy) return;
+    if (xv !== null) history.push({ S: clone(S), steps: clone(steps) });
+    const finish = () => {
+      S = next; fx = opts.enter ? { enter: opts.enter } : null;
+      if (xv !== null && label) {
+        steps.push({ op: label, bad: !balanced() });
+        steps.push({ eq: eqStr() });
+        if (!balanced()) flash();
+      }
+      render(); fx = null; busy = false;
+      if (xv !== null) note("");
+    };
+    if (opts.leave || opts.div) {
+      busy = true; fx = { before: clone(S), leave: opts.leave, div: opts.div };
+      drawPans(); drawBars();
+      setTimeout(finish, 800);
+    } else finish();
+  }
+
+  const cnt = (x, one) => ({ x, one });
+  function operate(where) {
+    note("");
+    const sides = where === "both" ? ["L", "R"] : [where];
+    const next = clone(S), names = { L: "left side", R: "right side" };
+    const wName = what === "x" ? (n === 1 ? "x" : n + "x") : String(n);
+    if (kind === "div") {
+      if (n < 2) return note("Pick a number bigger than 1 to divide by.");
+      for (const s of sides) if (S[s].x % n || S[s].one % n || (!S[s].x && !S[s].one))
+        return note(`The ${names[s]} can't split into ${n} equal groups.`);
+      const div = {};
+      sides.forEach(s => { next[s] = cnt(S[s].x / n, S[s].one / n); div[s] = n; });
+      return commit(next, `÷ ${n} ${where === "both" ? "both sides" : names[where] + " only"}`, { div });
+    }
+    const leave = {}, enter = {};
+    for (const s of sides) {
+      if (kind === "sub" && S[s][what] < n) return note(`There ${n === 1 ? "isn't" : "aren't"} ${wName} on the ${names[s]} to take away.`);
+      if (kind === "add" && S[s][what] + n > (what === "x" ? MAX_X : MAX_ONE)) return note(`The ${names[s]} is too full.`);
+    }
+    sides.forEach(s => {
+      const d = what === "x" ? cnt(n, 0) : cnt(0, n);
+      if (kind === "sub") { next[s] = cnt(S[s].x - d.x, S[s].one - d.one); leave[s] = d; }
+      else { next[s] = cnt(S[s].x + d.x, S[s].one + d.one); enter[s] = d; }
+    });
+    const sign = kind === "sub" ? "−" : "+";
+    commit(next, `${sign} ${wName} ${where === "both" ? "both sides" : names[where] + " only"}`, kind === "sub" ? { leave } : { enter });
+  }
+
+  document.querySelectorAll("#opk button").forEach(b => b.onclick = () => { kind = b.dataset.k; if (kind === "div" && n < 2) n = 2; panel(); });
+  document.querySelectorAll("#what button").forEach(b => b.onclick = () => { what = b.dataset.w; panel(); });
+  $("minus").onclick = () => { n = Math.max(kind === "div" ? 2 : 1, n - 1); panel(); };
+  $("plus").onclick = () => { n = Math.min(30, n + 1); panel(); };
+  document.querySelectorAll(".where button").forEach(b => b.onclick = () => operate(b.dataset.s));
+  $("undo").onclick = () => {
+    if (busy || !history.length) return;
+    const h = history.pop(); S = h.S; steps = h.steps; note(""); render();
+  };
+  const reset = () => { S = { L: cnt(0, 0), R: cnt(0, 0) }; xv = null; history = []; steps = []; $("buildnote").textContent = ""; note(""); render(); };
+  $("clear").onclick = reset; $("restart").onclick = reset;
+
+  $("go").onclick = () => {
+    const a = S.L.x - S.R.x, b = S.R.one - S.L.one, bn = $("buildnote");
+    if (!S.L.x && !S.R.x) return bn.textContent = "Put at least one x box on the scale.";
+    if (!(S.L.x || S.L.one) || !(S.R.x || S.R.one)) return bn.textContent = "Put something on both sides.";
+    if (a === 0) return bn.textContent = b === 0 ? "Both sides are the same. Change one side." : "This scale can never balance. Change one side.";
+    const v = b / a;
+    if (!Number.isInteger(v) || v < 1) return bn.textContent = "x has to be a whole number to balance. Change a weight.";
+    xv = v; bn.textContent = ""; steps = [{ eq: eqStr() }]; history = [];
+    render();
+  };
+
+  // ---------- Dragging ----------
+  let drag = null;
+  function startDrag(e, type, from) {
+    e.preventDefault();
+    const gh = document.createElement("div"); gh.className = "ghost";
+    const scale = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
+    gh.innerHTML = type === "x"
+      ? `<svg width="${BOX * scale}" height="${BOX * scale}" viewBox="0 0 ${BOX} ${BOX}"><g class="xbox"><rect x="1" y="1" width="${BOX - 2}" height="${BOX - 2}" rx="5"/><text x="${BOX / 2}" y="${BOX / 2}">x</text></g></svg>`
+      : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt"><path d="${weightPath(0, 0)}"/><text x="${WT_W / 2}" y="20">1</text></g></svg>`;
+    document.body.appendChild(gh);
+    drag = { type, from, gh, id: e.pointerId };
+    moveGhost(e);
+  }
+  const moveGhost = e => { if (drag) { drag.gh.style.left = e.clientX + "px"; drag.gh.style.top = e.clientY + "px"; } };
+  function dropSide(e) {
+    const r = svg.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return null;
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    if (p.y > 470) return null; // over the bar model
+    return p.x < PX ? "L" : "R";
+  }
+  addEventListener("pointermove", moveGhost);
+  addEventListener("pointerup", e => {
+    if (!drag) return;
+    const { type, from } = drag; drag.gh.remove(); drag = null;
+    const to = dropSide(e);
+    if (to === from || busy) return;
+    const next = clone(S), names = { L: "left side", R: "right side" };
+    if (to && next[to][type] + 1 > (type === "x" ? MAX_X : MAX_ONE)) { if (xv !== null) note(`The ${names[to]} is too full.`); else $("buildnote").textContent = `That side is full.`; return; }
+    const one = type === "x" ? "x" : "1";
+    if (from && to) { // moved across
+      next[from][type]--; next[to][type]++;
+      commit(next, `− ${one} ${names[from]}, + ${one} ${names[to]}`, { enter: { [to]: type === "x" ? cnt(1, 0) : cnt(0, 1) } });
+    } else if (from) {
+      next[from][type]--;
+      commit(next, `− ${one} ${names[from]} only`);
+    } else if (to) {
+      next[to][type]++;
+      commit(next, `+ ${one} ${names[to]} only`, { enter: { [to]: type === "x" ? cnt(1, 0) : cnt(0, 1) } });
+    }
+  });
+  addEventListener("pointercancel", () => { if (drag) { drag.gh.remove(); drag = null; } });
+  document.querySelectorAll(".src").forEach(s => s.addEventListener("pointerdown", e => startDrag(e, s.dataset.type, null)));
+  svg.addEventListener("pointerdown", e => {
+    const p = e.target.closest(".piece");
+    if (p && !busy) startDrag(e, p.dataset.type, p.dataset.side);
+  });
+
+  layout();
+  render();
+})();
+</script>
+
+</body>
+</html>
