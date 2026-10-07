@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Sets and Venn Diagrams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Sets and Venn Diagrams: the universal set U as a rectangle with 2 or 3 circles inside.
+   Every notation is paired with its words. Pick a notation and its region shades; tap regions and the matching notation lights up.
+   With Shading hidden, taps draw a hatched guess so students predict first; turning Shading on reveals the answer over the guess. */
+:root { --setA: var(--pt); --setB: var(--green); --setC: #8a3fc0; --shade: var(--orange); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --setC: #c49bff; } }
+:root[data-theme="dark"] { --setC: #c49bff; }
+.sA { color: var(--setA); } .sB { color: var(--setB); } .sC { color: var(--setC); } .sU { color: var(--ink); }
+.main { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+.read { padding: 14px 18px; }
+.nota { font-family: var(--font-display); font-weight: 800; font-size: 3.2rem; line-height: 1.1; min-height: 1.1em; }
+.nota.none { color: var(--muted); font-size: 1.6rem; font-family: var(--font-body); font-weight: 700; }
+.words { margin: 8px 0 0; font-size: 1.5rem; font-weight: 700; line-height: 1.3; }
+.words .say { font-family: var(--font-display); }
+.words .mean { color: var(--muted); font-weight: 400; }
+.words.off { color: var(--muted); font-style: italic; font-weight: 400; }
+.roster { margin: 10px 0 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.roster small { font-family: var(--font-body); font-weight: 400; color: var(--muted); font-size: 1rem; }
+.picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6em, 1fr)); gap: 8px; }
+.picks button { font-family: var(--font-display); font-weight: 800; font-size: 1.55rem; min-height: 58px; padding: 6px 8px; white-space: nowrap; background: var(--sheet); border: 2px solid var(--grid-major); }
+.picks button[aria-pressed="true"] { background: color-mix(in srgb, var(--shade) 22%, var(--sheet)); border-color: var(--shade); }
+.ctrl { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; min-height: 50px; padding: 6px 14px; font-size: 1.1rem; background: var(--sheet); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.tog { min-height: 50px; padding: 6px 14px; font-size: 1.1rem; display: inline-flex; align-items: center; gap: 8px; background: var(--sheet); border: 2px solid var(--grid-major); }
+.tog::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
+.tog[aria-pressed="true"] { border-color: var(--pt); }
+.tog[aria-pressed="true"]::before { background: var(--pt); border-color: var(--pt); }
+.sets { margin: 0; font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; line-height: 1.6; }
+.board { padding: 6px; }
+#svg { cursor: pointer; }
+.u-rect { fill: none; stroke: var(--ink); stroke-width: 4; }
+.circ { fill: none; stroke-width: 5; pointer-events: none; }
+.region { fill: var(--shade); fill-opacity: 0.5; pointer-events: none; }
+.guess { fill: url(#hatch); pointer-events: none; }
+.hatch-line { stroke: var(--ink); stroke-width: 4; opacity: 0.55; }
+.setname { font-family: var(--font-display); font-weight: 800; font-size: 64px; pointer-events: none; }
+.el { font-family: var(--font-num); font-weight: 700; font-size: 34px; text-anchor: middle; dominant-baseline: central; fill: var(--ink); cursor: pointer; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.el.on { fill: var(--sheet); stroke: none; }
+.el-bg { fill: var(--ink); pointer-events: none; }
+@media (max-width: 860px) { .nota { font-size: 2.4rem; } .words { font-size: 1.2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Sets and Venn Diagrams</h1></div>
+    <div class="ctrl">
+      <div class="seg" role="group" aria-label="Number of circles">
+        <button type="button" id="two" aria-pressed="true">2 circles</button>
+        <button type="button" id="three" aria-pressed="false">3 circles</button>
+      </div>
+      <button type="button" class="tog" id="tWords" aria-pressed="true">Words</button>
+      <button type="button" class="tog" id="tShade" aria-pressed="true">Shading</button>
+      <button type="button" class="tog" id="tEls" aria-pressed="false">Elements</button>
+    </div>
+
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 640" role="img" aria-label="Venn diagram: the universal set U is the rectangle, with sets as circles inside. Tap a region to shade it."></svg></div>
+
+    <div class="panel">
+      <section class="card read" aria-live="polite">
+        <div class="nota" id="nota"></div>
+        <p class="words" id="words"></p>
+        <p class="roster" id="roster" hidden></p>
+      </section>
+
+      <section class="card">
+        <div class="picks" id="picks"></div>
+      </section>
+
+      <section class="card" id="setsCard" hidden>
+        <p class="sets" id="sets"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const U = { x: 16, y: 16, w: 968, h: 608 };
+
+  // Regions are named by membership, one digit per set in order A B (C): "10" is in A and not in B.
+  const LAYOUT = {
+    2: {
+      letters: "AB",
+      circles: [{ x: 390, y: 330, r: 215 }, { x: 610, y: 330, r: 215 }],
+      names: [{ x: 196, y: 128 }, { x: 804, y: 128 }],
+      // Example sets for Elements: U = {1, ..., 12}, A = even numbers, B = multiples of 3.
+      universe: 12,
+      tests: [n => n % 2 === 0, n => n % 3 === 0],
+      rule: ["even numbers", "multiples of 3"],
+      spots: {
+        "10": [[255, 270], [330, 270], [255, 390], [330, 390]],
+        "01": [[710, 270], [710, 390], [770, 330]],
+        "11": [[500, 280], [500, 380]],
+        "00": [[70, 580], [930, 580], [930, 80], [500, 594]],
+      },
+    },
+    3: {
+      letters: "ABC",
+      circles: [{ x: 400, y: 250, r: 178 }, { x: 600, y: 250, r: 178 }, { x: 500, y: 423, r: 178 }],
+      names: [{ x: 196, y: 112 }, { x: 804, y: 112 }, { x: 742, y: 570 }],
+      // U = {1, ..., 15}, A = even numbers, B = multiples of 3, C = multiples of 5. A ∩ B ∩ C is empty.
+      universe: 15,
+      tests: [n => n % 2 === 0, n => n % 3 === 0, n => n % 5 === 0],
+      rule: ["even numbers", "multiples of 3", "multiples of 5"],
+      spots: {
+        "100": [[300, 180], [370, 128], [264, 252], [318, 284]],
+        "010": [[700, 180], [630, 128], [736, 252], [682, 284]],
+        "001": [[500, 530], [430, 520], [570, 520]],
+        "110": [[466, 172], [534, 172]],
+        "101": [[402, 388]],
+        "011": [[598, 388]],
+        "111": [[500, 308]],
+        "000": [[70, 590], [930, 590], [930, 60], [250, 590]],
+      },
+    },
+  };
+
+  // Each notation: what it says out loud, what it means, and the regions it covers.
+  const has = (code, i) => code[i] === "1";
+  const NOTES = {
+    2: [
+      ["U", "U, the universal set", "everything in the rectangle", c => true],
+      ["A", "A", "everything inside circle A", c => has(c, 0)],
+      ["B", "B", "everything inside circle B", c => has(c, 1)],
+      ["A ∪ B", "A union B", "everything in A or B (or both)", c => has(c, 0) || has(c, 1)],
+      ["A ∩ B", "A intersect B", "everything in both A and B", c => has(c, 0) && has(c, 1)],
+      ["A′", "A complement", "everything not in A", c => !has(c, 0)],
+      ["B′", "B complement", "everything not in B", c => !has(c, 1)],
+      ["A ∩ B′", "A intersect B complement", "in A but not in B (A only)", c => has(c, 0) && !has(c, 1)],
+      ["A′ ∩ B", "A complement intersect B", "in B but not in A (B only)", c => !has(c, 0) && has(c, 1)],
+      ["(A ∪ B)′", "the complement of A union B", "everything not in A and not in B", c => !has(c, 0) && !has(c, 1)],
+      ["(A ∩ B)′", "the complement of A intersect B", "everything not in both A and B", c => !(has(c, 0) && has(c, 1))],
+    ],
+    3: [
+      ["U", "U, the universal set", "everything in the rectangle", c => true],
+      ["A", "A", "everything inside circle A", c => has(c, 0)],
+      ["B", "B", "everything inside circle B", c => has(c, 1)],
+      ["C", "C", "everything inside circle C", c => has(c, 2)],
+      ["A ∪ B", "A union B", "everything in A or B", c => has(c, 0) || has(c, 1)],
+      ["A ∩ B", "A intersect B", "everything in both A and B", c => has(c, 0) && has(c, 1)],
+      ["B ∩ C", "B intersect C", "everything in both B and C", c => has(c, 1) && has(c, 2)],
+      ["A ∩ C", "A intersect C", "everything in both A and C", c => has(c, 0) && has(c, 2)],
+      ["A ∪ B ∪ C", "A union B union C", "everything in at least one of A, B or C", c => c.includes("1")],
+      ["A ∩ B ∩ C", "A intersect B intersect C", "everything in all three: A, B and C", c => c === "111"],
+      ["A′", "A complement", "everything not in A", c => !has(c, 0)],
+      ["(A ∪ B ∪ C)′", "the complement of A union B union C", "everything not in any circle", c => c === "000"],
+      ["A ∩ B ∩ C′", "A intersect B intersect C complement", "in A and in B, but not in C", c => c === "110"],
+      ["(A ∪ B) ∩ C", "A union B, then intersect C", "in C, and also in A or B", c => has(c, 2) && (has(c, 0) || has(c, 1))],
+    ],
+  };
+
+  let n = 2, pick = 3, shade = new Set(), guess = new Set(), showWords = true, showShade = true, showEls = false, el = null;
+
+  const codes = () => Array.from({ length: 1 << n }, (_, k) => k.toString(2).padStart(n, "0"));
+  const regionsOf = i => new Set(codes().filter(NOTES[n][i][3]));
+  const same = (a, b) => a.size === b.size && [...a].every(x => b.has(x));
+  const memberCode = v => LAYOUT[n].tests.map(t => (t(v) ? "1" : "0")).join("");
+  // Color each set letter to match its circle.
+  const ink = s => s.replace(/[ABCU]/g, ch => `<span class="s${ch}">${ch}</span>`);
+  const list = vs => (vs.length ? "{" + vs.join(", ") + "}" : "{ } = ∅");
+
+  const mk = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+
+  // One region drawn as the U rectangle clipped into the circles it is in and masked out of the ones it is not.
+  function region(code, cls) {
+    let parent = svg;
+    for (let i = 0; i < n; i++) parent = mk("g", code[i] === "1" ? { "clip-path": `url(#in${i})` } : { mask: `url(#out${i})` }, parent);
+    mk("rect", { class: cls, x: U.x, y: U.y, width: U.w, height: U.h }, parent);
+  }
+
+  function draw() {
+    const L = LAYOUT[n];
+    svg.replaceChildren();
+    const defs = mk("defs", {});
+    L.circles.forEach((c, i) => {
+      mk("circle", { cx: c.x, cy: c.y, r: c.r }, mk("clipPath", { id: "in" + i }, defs));
+      const m = mk("mask", { id: "out" + i, maskUnits: "userSpaceOnUse", x: 0, y: 0, width: 1000, height: 640 }, defs);
+      mk("rect", { x: 0, y: 0, width: 1000, height: 640, fill: "#fff" }, m);
+      mk("circle", { cx: c.x, cy: c.y, r: c.r, fill: "#000" }, m);
+    });
+    const pat = mk("pattern", { id: "hatch", patternUnits: "userSpaceOnUse", width: 22, height: 22, patternTransform: "rotate(45)" }, defs);
+    mk("line", { class: "hatch-line", x1: 0, y1: 0, x2: 0, y2: 22 }, pat);
+
+    if (showShade) shade.forEach(c => region(c, "region"));
+    guess.forEach(c => region(c, "guess"));
+    mk("rect", { class: "u-rect", x: U.x, y: U.y, width: U.w, height: U.h, rx: 6 });
+    mk("text", { class: "setname", x: 40, y: 78, fill: "var(--ink)" }).textContent = "U";
+    L.circles.forEach((c, i) => {
+      const col = `var(--set${L.letters[i]})`;
+      mk("circle", { class: "circ", cx: c.x, cy: c.y, r: c.r, stroke: col });
+      mk("text", { class: "setname", x: L.names[i].x, y: L.names[i].y, fill: col, "text-anchor": "middle" }).textContent = L.letters[i];
+    });
+
+    if (showEls) {
+      const used = {};
+      for (let v = 1; v <= L.universe; v++) {
+        const code = memberCode(v);
+        const k = (used[code] = (used[code] || 0) + 1) - 1;
+        const [x, y] = L.spots[code][k];
+        if (el === v) mk("circle", { class: "el-bg", cx: x, cy: y, r: 30 });
+        const t = mk("text", { class: "el" + (el === v ? " on" : ""), x, y, tabindex: 0, role: "button", "aria-label": "element " + v });
+        t.textContent = v;
+        const choose = e => { e.stopPropagation(); el = el === v ? null : v; render(); };
+        t.addEventListener("pointerdown", choose);
+        t.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(e); } });
+      }
+    }
+  }
+
+  function readout() {
+    const L = LAYOUT[n];
+    const match = NOTES[n].findIndex((_, i) => same(regionsOf(i), shade));
+    const shown = match >= 0 ? match : -1;
+    document.querySelectorAll("#picks button").forEach((b, i) => b.setAttribute("aria-pressed", i === shown));
+    const nota = $("nota"), words = $("words"), roster = $("roster");
+    if (shown >= 0) {
+      const [sym, say, mean] = NOTES[n][shown];
+      nota.className = "nota";
+      nota.innerHTML = ink(sym);
+      if (showWords) {
+        words.className = "words";
+        words.innerHTML = `<span class="say">${ink(say)}</span><span class="mean">: ${mean}</span>`;
+      } else {
+        words.className = "words off";
+        words.textContent = "Say it in words.";
+      }
+    } else {
+      nota.className = "nota none";
+      nota.textContent = shade.size ? "No notation on the list matches this shading." : "Pick a notation, or tap a region.";
+      words.className = "words off";
+      words.textContent = shade.size ? "Tap regions to change it." : "";
+    }
+
+    // Elements: the shaded set in braces, and the clicked element's memberships with ∈ and ∉.
+    let html = "";
+    if (showEls && showShade && shade.size) {
+      const vs = [];
+      for (let v = 1; v <= L.universe; v++) if (shade.has(memberCode(v))) vs.push(v);
+      html += `${shown >= 0 ? ink(NOTES[n][shown][0]) : "Shaded"} = ${list(vs)}`;
+      if (!vs.length) html += ` <small>the empty set: no elements</small>`;
+    }
+    if (showEls && el !== null) {
+      const code = memberCode(el);
+      const parts = [...L.letters].map((s, i) => `${el} ${has(code, i) ? "∈" : "∉"} ${ink(s)}`);
+      const say = [...L.letters].map((s, i) => (has(code, i) ? "is an element of " : "is not an element of ") + ink(s));
+      html += (html ? "<br>" : "") + parts.join(", &nbsp;") + `<br><small>${el} ${say.join(", and ")}</small>`;
+    }
+    roster.hidden = !html;
+    roster.innerHTML = html;
+
+    $("setsCard").hidden = !showEls;
+    if (showEls) {
+      const lines = [`${ink("U")} = {1, 2, 3, …, ${L.universe}}`];
+      [...L.letters].forEach((s, i) => {
+        const vs = [];
+        for (let v = 1; v <= L.universe; v++) if (L.tests[i](v)) vs.push(v);
+        lines.push(`${ink(s)} = ${list(vs)}`);
+      });
+      $("sets").innerHTML = lines.join("<br>");
+    }
+  }
+
+  function render() { draw(); readout(); }
+
+  function buildPicks() {
+    const box = $("picks");
+    box.replaceChildren();
+    NOTES[n].forEach(([sym, say], i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.innerHTML = ink(sym);
+      b.setAttribute("aria-label", say);
+      b.addEventListener("click", () => { shade = regionsOf(i); guess.clear(); render(); });
+      box.appendChild(b);
+    });
+  }
+
+  // Tap a region: with Shading shown it edits the shading; with Shading hidden it marks a hatched guess.
+  svg.addEventListener("pointerdown", e => {
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    if (p.x < U.x || p.x > U.x + U.w || p.y < U.y || p.y > U.y + U.h) return;
+    const code = LAYOUT[n].circles.map(c => (Math.hypot(p.x - c.x, p.y - c.y) <= c.r ? "1" : "0")).join("");
+    const target = showShade ? shade : guess;
+    target.has(code) ? target.delete(code) : target.add(code);
+    render();
+  });
+
+  function setCircles(k) {
+    n = k;
+    $("two").setAttribute("aria-pressed", k === 2);
+    $("three").setAttribute("aria-pressed", k === 3);
+    shade = new Set(); guess.clear(); el = null;
+    buildPicks();
+    render();
+  }
+  $("two").addEventListener("click", () => setCircles(2));
+  $("three").addEventListener("click", () => setCircles(3));
+
+  const toggle = (id, fn) => $(id).addEventListener("click", () => { const on = fn(); $(id).setAttribute("aria-pressed", on); render(); });
+  toggle("tWords", () => (showWords = !showWords));
+  toggle("tShade", () => { showShade = !showShade; if (!showShade) guess.clear(); return showShade; });
+  toggle("tEls", () => { showEls = !showEls; el = null; return showEls; });
+
+  buildPicks();
+  shade = regionsOf(3);
+  render();
+})();
+</script>
+
+</body>
+</html>
