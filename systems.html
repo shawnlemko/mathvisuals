@@ -417,7 +417,7 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   const TAG = ["①", "②"];
 
   /* ---------- Fractions (answers are not always whole numbers) ---------- */
-  const R = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
+  const R = (n, d = 1) => { if (typeof n === "object") return n; if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
   const add = (p, q) => R(p.n * q.d + q.n * p.d, p.d * q.d);
   const sub = (p, q) => add(p, R(-q.n, q.d));
   const mul = (p, q) => R(p.n * q.n, p.d * q.d);
@@ -425,6 +425,7 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   const isZ = p => p.n === 0, isOne = p => p.n === 1 && p.d === 1;
   const abs = p => R(Math.abs(p.n), p.d);
   const val = p => p.n / p.d;
+  const neg = p => R(-R(p).n, R(p).d);
   const numH = r => r.d === 1 ? fmt(r.n) : (r.n < 0 ? "−" : "") + `<span class="fr"><span>${Math.abs(r.n)}</span><span>${r.d}</span></span>`;
   const numT = r => r.d === 1 ? fmt(r.n) : `${fmt(r.n)}/${r.d}`;
 
@@ -449,35 +450,42 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   const co = (q, v) => (v === "x" ? q.a : q.b);
 
   /* ---------- Reading what the teacher types ---------- */
-  // Any linear equation in x and y with whole-number coefficients: 2x + 3y = 12, y = 2x − 1, 3x = 2y + 6, x = 4.
+  // Any linear equation in x and y: 2x + 3y = 12, y = 2x − 1, 3x = 2y + 6, x = 4, (1/2)x + y = 3, y = −3/4x + 1.5.
+  // Fractions and decimals are kept as fractions; a, b, c also get a whole-number copy (times the common denominator) for the graph and elimination.
+  const dec = s => { const [w, f = ""] = s.split("."); return R(+(w + f), 10 ** f.length); };
   function parseSide(s) {
-    const t = { x: 0, y: 0, k: 0, n: 0 };
-    const re = /([+-]?)(\d*)([xy]?)/y;
+    const t = { x: R(0), y: R(0), k: R(0), n: 0 };
+    const re = /([+-])?(?:(\()?(\d+(?:\.\d+)?)(?:\/(\d+(?:\.\d+)?))?(\))?)?([xy])?(?:\/(\d+))?/y;
     let pos = 0;
     while (pos < s.length) {
       re.lastIndex = pos;
       const m = re.exec(s);
-      if (!m || m[0] === "" || (!m[2] && !m[3]) || (pos > 0 && !m[1])) return null;
-      if (m[2].length > 3) return null;
-      const c = (m[1] === "-" ? -1 : 1) * (m[2] ? +m[2] : 1);
-      t[m[3] || "k"] += c; t.n++;
+      if (!m || m[0] === "" || (!m[3] && !m[6]) || (pos > 0 && !m[1]) || !m[2] !== !m[5] || (m[7] && !m[6])) return null;
+      if (m[3] && m[3].length > 5) return null;
+      let c = m[3] ? dec(m[3]) : R(1);
+      if (m[4]) { const d = dec(m[4]); if (isZ(d)) return null; c = div(c, d); }
+      if (m[7]) { if (+m[7] === 0) return null; c = div(c, R(+m[7])); }
+      if (m[1] === "-") c = neg(c);
+      t[m[6] || "k"] = add(t[m[6] || "k"], c); t.n++;
       pos = re.lastIndex;
     }
     return t.n ? t : null;
   }
   function parse(str) {
-    const s = str.replace(/\s+/g, "").replace(/[−–—]/g, "-").replace(/[XY]/g, c => c.toLowerCase());
-    if (/[./]/.test(s)) return { err: "Use whole numbers only." };
+    const s = str.replace(/\s+/g, "").replace(/[−–—]/g, "-").replace(/[XY]/g, c => c.toLowerCase()).replace(/÷/g, "/");
     const parts = s.split("=");
     if (parts.length !== 2) return { err: "Type an equation like 2x + 3y = 12." };
     const L = parseSide(parts[0]), Rt = parseSide(parts[1]);
-    if (!L || !Rt) return { err: "Type an equation like 2x + 3y = 12." };
-    const q = { a: L.x - Rt.x, b: L.y - Rt.y, c: Rt.k - L.k };
-    if (!q.a && !q.b) return { err: "The equation needs an x or a y." };
-    const side = t => [[R(t.x), "x"], [R(t.y), "y"], [R(t.k), ""]];
+    if (!L || !Rt) return { err: "Type an equation like 2x + 3y = 12 or y = 1/2x − 3." };
+    const fr = { a: sub(L.x, Rt.x), b: sub(L.y, Rt.y), c: sub(Rt.k, L.k) };
+    if (isZ(fr.a) && isZ(fr.b)) return { err: "The equation needs an x or a y." };
+    const lcd = [fr.a, fr.b, fr.c].reduce((m, r) => m * r.d / gcd(m, r.d), 1);
+    const q = { a: fr.a.n * lcd / fr.a.d, b: fr.b.n * lcd / fr.b.d, c: fr.c.n * lcd / fr.c.d, fr, lcd };
+    if ([q.a, q.b, q.c].some(n => Math.abs(n) > 9999)) return { err: "Those numbers are too big. Try simpler fractions." };
+    const side = t => [[t.x, "x"], [t.y, "y"], [t.k, ""]];
     q.typed = both(side(L), side(Rt));
-    q.std = !Rt.x && !Rt.y && !L.k;                       // already ax + by = c
-    q.iso = ["x", "y"].find(v => L[v] === 1 && L.n === 1 && !Rt[v]) || null; // typed as y = ... or x = ...
+    q.std = isZ(Rt.x) && isZ(Rt.y) && isZ(L.k);           // already ax + by = c
+    q.iso = ["x", "y"].find(v => isOne(L[v]) && L.n === 1 && isZ(Rt[v])) || null; // typed as y = ... or x = ...
     return q;
   }
 
@@ -492,6 +500,8 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
     const h = sc.help.find(h => h.v === v);
     if (h) { h.val = value; h.text = text; } else sc.help.push({ v, val: value, text });
   };
+  // Dividing by a fraction reads better as multiplying by its flip.
+  const divCap = K => (K.d === 1 ? `Divide both sides by ${numT(K)}.` : `Multiply both sides by ${numT(div(R(1), K))}.`);
   const dirWord = u => (u === "x" ? "straight up-and-down" : "flat");
 
   function solution() {
@@ -512,7 +522,7 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
     if (!isOne(K)) {
       const r = both([[R(1), w]], [[x, ""]]);
       setHelp(w, x, r.t); scene({});
-      push(`Divide both sides by ${numT(K)}.`, rowH(r.h));
+      push(divCap(K), rowH(r.h));
     }
     return x;
   }
@@ -553,10 +563,10 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   // Elimination table: rows in columns x | y | = | number; `gone` strikes the letter that cancels.
   function table(rows) {
     return `<table class="el">${rows.map(r => {
-      const { a, b: bb } = r.q;
-      const xs = a ? ex([[R(a), "x"]], true) : "";
-      const ys = !bb ? "" : a ? (bb < 0 ? "− " : "+ ") + ex([[R(Math.abs(bb)), "y"]], true) : ex([[R(bb), "y"]], true);
-      const zero = r.sum && !r.q.a && !r.q.b;
+      const a = R(r.q.a), bb = R(r.q.b);
+      const xs = isZ(a) ? "" : ex([[a, "x"]], true);
+      const ys = isZ(bb) ? "" : !isZ(a) ? (bb.n < 0 ? "− " : "+ ") + ex([[abs(bb), "y"]], true) : ex([[bb, "y"]], true);
+      const zero = r.sum && isZ(a) && isZ(bb);
       const g = v => (r.gone && r.gone.includes(v) ? ' class="gone"' : "");
       return `<tr class="${r.cls || ""}${r.sum ? " sum" : ""}"><td class="tag">${r.tag || ""}</td><td class="op">${r.op || ""}</td>` +
         `<td${g("x")}>${zero ? "0" : xs}</td><td${g("y")}>${ys}</td><td>=</td><td>${numH(R(r.q.c))}</td></tr>`;
@@ -564,12 +574,21 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   }
 
   function elimination() {
-    let A = E.map(q => ({ a: q.a, b: q.b, c: q.c }));
+    // Flip a rewritten equation so it starts with a positive term.
+    const flip = E.map(q => !q.std && (q.a < 0 || (!q.a && q.b < 0)) ? -1 : 1);
+    let A = E.map((q, i) => ({ a: mul(q.fr.a, R(flip[i])), b: mul(q.fr.b, R(flip[i])), c: mul(q.fr.c, R(flip[i])) }));
     if (!E[0].std || !E[1].std) {
-      A = A.map((q, i) => (E[i].std || q.a > 0 || (!q.a && q.b > 0) ? q : { a: -q.a, b: -q.b, c: -q.c }));
       scene({ lab: A.map(q => stdEq(q).t) });
       push("Line up the x's, the y's and the numbers.", table(A.map((q, i) => ({ q, tag: T(i), cls: "r" + (i + 1) }))));
     }
+    // Fractions: multiply by the common denominator first.
+    A = E.map((q, i) => ({ a: q.a * flip[i], b: q.b * flip[i], c: q.c * flip[i] }));
+    [0, 1].forEach(i => {
+      if (E[i].lcd === 1) return;
+      scene({ hi: i }); sc.lab[i] = stdEq(A[i]).t;
+      push(`Multiply equation ${T(i)} by ${E[i].lcd} to clear the fractions. On the graph it's still the same line!`,
+        table([{ q: A[i], tag: `${T(i)}×${E[i].lcd}`, cls: "r" + (i + 1) }]));
+    });
     const D = A[0].a * A[1].b - A[1].a * A[0].b;
     // One equation already has only one letter: solve it, then put it in the other.
     const lone = D ? [0, 1].find(i => !A[i].a || !A[i].b) : undefined;
@@ -627,31 +646,32 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   }
 
   function substitution() {
-    const D = E[0].a * E[1].b - E[1].a * E[0].b;
+    const F = E.map(q => ({ ...q, a: q.fr.a, b: q.fr.b, c: q.fr.c }));
+    const nv = (q, v) => val(co(q, v));
     // Pick the equation and letter that are easiest to get alone (y = ... ties win: that's slope-intercept form).
     let best = null;
     [0, 1].forEach(i => ["y", "x"].forEach(v => {
-      const k = co(E[i], v), l = co(E[i], other(v)), kj = co(E[1 - i], v);
+      const k = nv(F[i], v), l = nv(F[i], other(v)), kj = nv(F[1 - i], v);
       if (!k) return;
-      const score = (E[i].iso === v ? -1 : !l ? 0 : Math.abs(k) === 1 ? 1 : 2 + Math.abs(k)) + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + (k < 0 ? 0.1 : 0) + i * 0.01;
+      const score = (F[i].iso === v ? -1 : !l ? 0 : Math.abs(k) === 1 ? 1 : 2 + Math.abs(k)) + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + (k < 0 ? 0.1 : 0) + i * 0.01;
       if (!best || score < best.score) best = { i, v, score };
     }));
-    const { i, v } = best, u = other(v), j = 1 - i, q = E[i], Q = E[j];
+    const { i, v } = best, u = other(v), j = 1 - i, q = F[i], Q = F[j];
     const k = R(co(q, v)), l = R(co(q, u)), c = R(q.c);
-    const pp = div(R(-co(q, u)), k), qq = div(c, k);
+    const pp = div(neg(co(q, u)), k), qq = div(c, k);
     const Ex = H => ex([[pp, u], [qq, ""]], H);
     const iso = both([[R(1), v]], [[pp, u], [qq, ""]]);
     if (q.iso !== v) {
       let moved = false;
       if (!isZ(l) || !q.std) {
-        const r = both([[k, v]], [[R(-co(q, u)), u], [c, ""]]);
+        const r = both([[k, v]], [[neg(co(q, u)), u], [c, ""]]);
         scene({ hi: i }); sc.lab[i] = r.t;
         push(`Get ${v} by itself in equation ${T(i)}. ${isZ(l) ? "" : `Move the ${u} term to the other side. `}It's still the same line!`, rowH(r.h));
         moved = true;
       }
       if (!isOne(k)) {
         scene({ hi: i }); sc.lab[i] = iso.t;
-        push(moved ? `Divide both sides by ${numT(k)}.` : `Get ${v} by itself in equation ${T(i)}. Divide both sides by ${numT(k)}.`, rowH(iso.h));
+        push((moved ? "" : `Get ${v} by itself in equation ${T(i)}. `) + divCap(k), rowH(iso.h));
       }
     }
     const s = solution();
