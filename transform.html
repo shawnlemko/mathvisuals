@@ -179,6 +179,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .step output { min-width: 2.2ch; text-align: center; }
 .slider { grid-template-columns: 96px minmax(0, 1fr) 110px; }
 .slider output { font-size: 1.25rem; }
+.go { display: block; width: 100%; margin-top: 12px; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; padding: 12px; background: var(--img); color: var(--sheet); border: 2px solid var(--img); border-radius: 10px; }
+.go:hover { background: var(--sheet); color: var(--img); }
+.go:disabled { background: var(--chip); color: var(--muted); border-color: var(--grid-major); cursor: not-allowed; }
 .rule { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
 .rule small { display: block; font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); font-weight: 700; }
 .off { color: var(--warn); font-weight: 700; margin: 6px 0 0; font-size: 1rem; }
@@ -271,6 +274,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
           </div>
         </div>
 
+        <button type="button" id="goBtn" class="go">Transform</button>
         <div class="rule"><small id="ruleName"></small><span id="ruleTxt"></span></div>
         <p class="off" id="offMsg" hidden>Part of the image is off the grid.</p>
       </section>
@@ -498,6 +502,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
   let mode = "translate";
   const T = { dx: -7, dy: -6, line: "xaxis", k: 2, angle: 90, dir: 1, c: { x: 0, y: 0 } };
   let anim = 1, animStart = 0;
+  let applied = false; // the image waits for the Transform button (Shawn); any change hides it again
 
   /* ---------- The transformation ---------- */
   function map(p, t = 1) {
@@ -571,7 +576,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
   // Rotation center: purple draggable point, starts at the origin.
   const ctr = el("g", { class: "ctr", tabindex: 0, role: "slider", "aria-label": "Center of rotation. Use arrow keys to move." }, gPts);
   el("circle", { class: "hit", r: 24 }, ctr); el("circle", { class: "dot", r: 11 }, ctr);
-  dragger(ctr, p => { T.c = p; anim = 1; render(); }, () => T.c);
+  dragger(ctr, p => { T.c = p; reset(); }, () => T.c);
 
   function buildHandles() {
     gPts.querySelectorAll(".vtx").forEach(h => h.remove());
@@ -579,7 +584,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
       const h = el("g", { class: "vtx" + (kind === "draw" ? "" : " fixed"), tabindex: 0, role: "slider", "aria-label": `Corner ${LETTERS[i]}. Use arrow keys to move.` });
       gPts.insertBefore(h, ctr);
       el("circle", { class: "hit", r: 20 }, h); el("circle", { class: "dot", r: kind === "draw" ? 8 : 6 }, h);
-      if (kind === "draw") dragger(h, p => { if (!shape.some((q, j) => j !== i && q.x === p.x && q.y === p.y)) { shape[i] = p; anim = 1; render(); } }, () => shape[i]);
+      if (kind === "draw") dragger(h, p => { if (!shape.some((q, j) => j !== i && q.x === p.x && q.y === p.y)) { shape[i] = p; reset(); } }, () => shape[i]);
       else wholeDrag(h);
       return h;
     });
@@ -617,7 +622,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     dx = Math.max(min - Math.min(...xs), Math.min(max - Math.max(...xs), dx));
     dy = Math.max(min - Math.min(...ys), Math.min(max - Math.max(...ys), dy));
     if (!dx && !dy) return;
-    shape = shape.map(p => ({ x: p.x + dx, y: p.y + dy })); anim = 1; render();
+    shape = shape.map(p => ({ x: p.x + dx, y: p.y + dy })); reset();
   }
   wholeDrag(shapePath);
 
@@ -646,9 +651,11 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     // Image, guides and readout
     gImgLbl.textContent = ""; vecs.textContent = "";
     const show = done && shape.length >= 3;
-    b.show(gImg, show); b.show(gImgLbl, show); b.show(gGuide, show);
+    const on = show && applied;
+    $("goBtn").disabled = !show;
+    b.show(gImg, on); b.show(gImgLbl, on); b.show(gGuide, show);
     b.show(mirror, mode === "reflect"); b.show(mirrorLbl, mode === "reflect");
-    b.show(arc, mode === "rotate"); b.show(ctr, mode === "rotate" && done);
+    b.show(arc, mode === "rotate" && on); b.show(ctr, mode === "rotate" && done);
     ctr.setAttribute("transform", `translate(${sx(T.c.x)},${sy(T.c.y)})`);
     $("ctrTxt").textContent = `(${fmt(T.c.x)}, ${fmt(T.c.y)})`;
 
@@ -663,7 +670,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
       mirrorLbl.setAttribute("x", lx); mirrorLbl.setAttribute("y", ly); mirrorLbl.setAttribute("text-anchor", T.line === "yk" ? "end" : "start");
     }
 
-    if (show) {
+    if (on) {
       const t = ease(anim);
       const img = shape.map(p => map(p, t));
       imgPath.setAttribute("d", pathOf(img));
@@ -689,11 +696,11 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     }
 
     const [name, txt] = rule();
-    $("ruleName").textContent = name; $("ruleTxt").textContent = txt;
+    $("ruleName").textContent = name; $("ruleTxt").textContent = on ? txt : "(x, y) → ?";
     const fin = shape.map(p => map(p));
-    $("offMsg").hidden = !show || fin.every(p => p.x >= min && p.x <= max && p.y >= min && p.y <= max);
+    $("offMsg").hidden = !on || fin.every(p => p.x >= min && p.x <= max && p.y >= min && p.y <= max);
     $("coords").innerHTML = show ? shape.map((p, i) =>
-      `<tr><td class="o">${LETTERS[i]} (${fmt(p.x)}, ${fmt(p.y)})</td><td class="a">→</td><td class="i">${LETTERS[i]}′ (${fmt(fin[i].x)}, ${fmt(fin[i].y)})</td></tr>`).join("") : "";
+      `<tr><td class="o">${LETTERS[i]} (${fmt(p.x)}, ${fmt(p.y)})</td><td class="a">→</td><td class="i">${LETTERS[i]}′ ${on ? `(${fmt(fin[i].x)}, ${fmt(fin[i].y)})` : "?"}</td></tr>`).join("") : "";
 
     $("dxOut").textContent = T.dx === 0 ? "0" : T.dx > 0 ? `${T.dx} right` : `${-T.dx} left`;
     $("dyOut").textContent = T.dy === 0 ? "0" : T.dy > 0 ? `${T.dy} up` : `${-T.dy} down`;
@@ -704,8 +711,10 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
   /* ---------- Animation: the image slides, flips or turns out of the original ---------- */
   const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   let raf = 0;
+  // Something changed: take the image away until Transform is pressed again.
+  function reset() { cancelAnimationFrame(raf); applied = false; anim = 1; render(); }
   function play() {
-    cancelAnimationFrame(raf);
+    cancelAnimationFrame(raf); applied = true;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) { anim = 1; return render(); }
     anim = 0; animStart = performance.now();
@@ -733,7 +742,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     // Each square of the pentomino is 2 by 2 so the corners and letters have room; it starts in the top-right quadrant.
     const o = outline(PENTOS[s]).map(p => ({ x: 2 * p.x, y: 2 * p.y })), top = Math.max(...o.map(p => p.y));
     shape = o.map(p => ({ x: p.x + 2, y: p.y + Math.min(2, max - top) }));
-    buildHandles(); play();
+    buildHandles(); reset();
   });
 
   function startDrawing() {
@@ -750,7 +759,7 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     if (!cancel && drawing.length >= 3) { shape = drawing; kind = "draw"; }
     drawing = null; svg.classList.remove("adding"); $("drawHint").hidden = true;
     buildHandles();
-    if (!cancel) play();
+    if (!cancel) reset();
   }
   svg.addEventListener("pointerdown", e => {
     if (!drawing) return;
@@ -768,26 +777,26 @@ table.coords { border-collapse: collapse; font-family: var(--font-num); font-siz
     const btn = e.target.closest("button"); if (!btn) return;
     press($("tabs"), btn); mode = btn.dataset.t;
     ["translate", "reflect", "rotate"].forEach(m => ($("p-" + m).hidden = m !== mode));
-    play();
+    reset();
   });
-  ["dx", "dy"].forEach(id => $(id).addEventListener("input", () => { T[id] = +$(id).value; cancelAnimationFrame(raf); anim = 1; render(); }));
-  ["dx", "dy"].forEach(id => $(id).addEventListener("change", play));
+  ["dx", "dy"].forEach(id => $(id).addEventListener("input", () => { T[id] = +$(id).value; reset(); }));
   $("p-reflect").addEventListener("click", e => {
     const btn = e.target.closest("button[data-l]"); if (!btn) return;
-    press($("p-reflect"), btn); T.line = btn.dataset.l; play();
+    press($("p-reflect"), btn); T.line = btn.dataset.l; reset();
   });
   const stepK = d => {
     T.k = Math.max(-9, Math.min(9, T.k + d));
     if (T.line !== "xk" && T.line !== "yk") { T.line = "xk"; press($("p-reflect"), $("p-reflect").querySelector('[data-l="xk"]')); }
-    play();
+    reset();
   };
   $("kDown").addEventListener("click", () => stepK(-1)); $("kUp").addEventListener("click", () => stepK(1));
-  $("angles").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("angles"), btn); T.angle = +btn.dataset.a; play(); });
-  $("dirs").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("dirs"), btn); T.dir = +btn.dataset.d; play(); });
-  $("ctrHome").addEventListener("click", () => { T.c = { x: 0, y: 0 }; play(); });
+  $("angles").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("angles"), btn); T.angle = +btn.dataset.a; reset(); });
+  $("dirs").addEventListener("click", e => { const btn = e.target.closest("button"); if (!btn) return; press($("dirs"), btn); T.dir = +btn.dataset.d; reset(); });
+  $("ctrHome").addEventListener("click", () => { T.c = { x: 0, y: 0 }; reset(); });
 
+  $("goBtn").addEventListener("click", play);
   buildHandles();
-  play();
+  reset();
 })();
 </script>
 
