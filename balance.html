@@ -176,9 +176,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wt.frac text { font-size: 18px; }
 .piece.enter > * { animation: drop 0.4s ease-out; }
 @keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
-.piece.leave > *, .seg.leave { animation: leave 0.75s ease-in forwards; }
+.piece.leave > *, .seg.leave { animation: leave 1.2s ease-in forwards; }
+.optag text { font-family: var(--font-num); font-weight: 700; font-size: 44px; fill: var(--green); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; }
+.optag { animation: optag 1.6s ease-out forwards; }
+@keyframes optag { 0% { opacity: 0; transform: translateY(12px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 .piece.leave rect, .piece.leave path, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
-@keyframes leave { 0%, 35% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
+@keyframes leave { 0%, 40% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
 .seg rect { stroke: var(--ink); stroke-width: 2; }
@@ -370,9 +373,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const g = gPan[side]; g.innerHTML = "";
       el("line", { x1: 0, y1: 0, x2: 0, y2: -STEM, class: "stem" }, g);
       el("rect", { x: -PLATE / 2, y: -STEM - 10, width: PLATE, height: 10, rx: 5, class: "plate" }, g);
-      const s = S[side], leave = fx && fx.leave && fx.leave[side], enter = fx && fx.enter && fx.enter[side];
+      const s = S[side], enter = fx && fx.enter && fx.enter[side], divN = fx && fx.div && fx.div[side];
       const whole = Math.floor(s.one / S.D);
-      placePieces(s).forEach(it => {
+      // Dividing keeps one group: 1/n of the boxes and of the weights; the rest lift off.
+      const leave = divN ? { x: s.x - s.x / divN, one: whole - Math.floor(whole / divN) } : fx && fx.leave && fx.leave[side];
+      const items = placePieces(s);
+      // The operation (−3, ÷ 3, + x) appears over each pan it is done to while the pieces move.
+      if (fx && fx.tag && fx.tag[side]) {
+        const top = Math.min(-STEM - 10, ...items.map(it => it.y - STEM - 10));
+        const tg = el("g", { class: "optag" }, g);
+        txt(fx.tag[side], { x: 0, y: top - 18 }, tg);
+      }
+      items.forEach(it => {
         const count = it.t === "x" ? s.x : whole;
         if (it.t === "frac") { // the part of a weight left after dividing; it can't be dragged
           const fg = el("g", { class: "wt frac", transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
@@ -517,7 +529,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (busy) return;
     if (xv !== null) history.push({ S: clone(S), steps: clone(steps) });
     const finish = () => {
-      S = next; fx = opts.enter ? { enter: opts.enter } : null;
+      S = next; fx = opts.enter ? { enter: opts.enter, tag: opts.tag } : null;
       if (xv !== null && label) {
         steps.push({ op: label, bad: !balanced() });
         steps.push({ eq: eqStr() });
@@ -527,9 +539,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       if (xv !== null) note("");
     };
     if (opts.leave || opts.div) {
-      busy = true; fx = { before: clone(S), leave: opts.leave, div: opts.div };
+      busy = true; fx = { before: clone(S), leave: opts.leave, div: opts.div, tag: opts.tag };
       drawPans(); drawBars();
-      setTimeout(finish, 800);
+      setTimeout(finish, 1300);
     } else finish();
   }
 
@@ -555,7 +567,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       });
       const g = gcd(gcd(next.D, next.L.one), next.R.one);
       next.D /= g; next.L.one /= g; next.R.one /= g;
-      return commit(next, opOn(sides, `÷ ${n}`), { div });
+      return commit(next, opOn(sides, `÷ ${n}`), { div, tag: opOn(sides, `÷ ${n}`) });
     }
     const leave = {}, enter = {};
     for (const s of sides) {
@@ -569,7 +581,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       else { next[s] = cnt(S[s].x + d.x, S[s].one + d.one * S.D); enter[s] = d; }
     });
     const sign = kind === "sub" ? "−" : "+";
-    commit(next, opOn(sides, `${sign} ${wName}`), kind === "sub" ? { leave } : { enter });
+    const tag = opOn(sides, `${sign} ${wName}`);
+    commit(next, tag, kind === "sub" ? { leave, tag } : { enter, tag });
   }
 
   document.querySelectorAll("#opk button").forEach(b => b.onclick = () => { kind = b.dataset.k; if (kind === "div" && n < 2) n = 2; panel(); });
