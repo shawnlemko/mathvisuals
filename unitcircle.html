@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The Unit Circle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; --pos: #1f7a5a; --neg: #c0263c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --pos: #4cc49a; --neg: #ff7d93; } }
+:root[data-theme="dark"] { --purple: #b98cff; --pos: #4cc49a; --neg: #ff7d93; }
+.main { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+h1 .m { color: var(--pt); }
+.board svg { cursor: pointer; }
+.panel { gap: 8px; }
+.card { padding: 8px 14px; }
+.label { margin-bottom: 4px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-family: var(--font-num); font-weight: 700; }
+.big { font-size: 2.15rem; line-height: 1.15; }
+.mid { font-size: 1.55rem; line-height: 1.15; }
+.eqs { color: var(--muted); font-size: 1.7rem; }
+.sub { margin: 2px 0 0; color: var(--muted); font-family: var(--font-num); font-size: 1.05rem; }
+.frac { vertical-align: middle; }
+.frac > span:first-child { border-bottom-width: 3px; }
+.q { color: var(--muted); }
+.c-purple { color: var(--purple); }
+.trig { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 10px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
+.trig > div { display: flex; flex-direction: column; align-items: flex-start; }
+.trig .fn { font-size: 1rem; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.typed { display: flex; flex: none; gap: 8px; align-items: center; }
+.typed input { flex: 1 1 auto; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; padding: 6px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.typed input.bad { border-color: var(--warn); }
+.typed button { font-size: 1.1rem; padding: 10px 14px; }
+.shows { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.shows button { font-size: 0.92rem; padding: 7px 6px; }
+.shows button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+/* Board drawing */
+.axis { stroke: var(--muted); stroke-width: 3; }
+.ax-arrow { fill: var(--muted); }
+.ax-lbl { font-family: var(--font-num); font-weight: 700; font-size: 30px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.circ { fill: none; stroke: var(--ink); stroke-width: 4; }
+.arm { stroke: var(--ink); stroke-width: 5; stroke-linecap: round; }
+.cos-leg { stroke: var(--green); stroke-width: 9; stroke-linecap: round; }
+.sin-leg { stroke: var(--orange); stroke-width: 9; stroke-linecap: round; }
+.leg-lbl { font-family: var(--font-num); font-weight: 700; font-size: 28px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.leg-lbl.green { fill: var(--green); } .leg-lbl.orange { fill: var(--orange); }
+.spiral { fill: none; stroke: var(--pt); stroke-width: 4; }
+.spiral-head { fill: var(--pt); }
+.th-lbl { font-family: var(--font-display); font-weight: 800; font-size: 34px; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.ref-wedge { fill: var(--purple); fill-opacity: 0.18; stroke: var(--purple); stroke-width: 4; }
+.ref-lbl { font-family: var(--font-display); font-weight: 800; font-size: 32px; fill: var(--purple); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.p-dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 4; }
+.p-ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.handle { outline: none; cursor: grab; }
+.handle:focus-visible .p-dot { fill: var(--pt-ring); stroke: var(--pt); stroke-width: 5; }
+.chip-bg { fill: var(--sheet); stroke: var(--pt); stroke-width: 3; }
+.chip { font-family: var(--font-num); font-weight: 700; font-size: 32px; fill: var(--pt); }
+.sp-dot { fill: var(--muted); }
+.sp-lbl { font-family: var(--font-num); font-weight: 700; font-size: 23px; fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.sp-lbl .r { fill: var(--muted); }
+.sp-lbl.on { fill: var(--pt); } .sp-lbl.on .r { fill: var(--pt); }
+.q-box { fill: none; stroke: none; }
+.q-box.on { fill: var(--chip); stroke: var(--pt); stroke-width: 3; }
+.q-big { font-family: var(--font-display); font-weight: 800; font-size: 54px; fill: var(--ink); }
+.q-num { font-family: var(--font-display); font-weight: 800; font-size: 22px; fill: var(--muted); }
+.q-line { font-family: var(--font-num); font-weight: 700; font-size: 25px; fill: var(--ink); }
+.q-line .pos { fill: var(--pos); } .q-line .neg { fill: var(--neg); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>The <span class="m">Unit Circle</span></h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="-550 -500 1100 1000" role="img" aria-label="Unit circle with a point P on it that can be dragged around"></svg>
+    </div>
+    <div class="panel">
+      <div class="card">
+        <p class="label">Angle θ</p>
+        <div class="row"><span class="big c-pt" id="deg">30°</span><span class="eqs">=</span><span class="big c-pt" id="rad"></span></div>
+        <p class="sub" id="angSub"></p>
+      </div>
+      <div class="card">
+        <p class="label">Reference angle θ<sub>r</sub></p>
+        <div class="row" id="ref"></div>
+      </div>
+      <div class="card">
+        <p class="label">Point P(cos θ, sin θ)</p>
+        <div class="row mid" id="pt"></div>
+        <div class="trig" id="trig"></div>
+      </div>
+      <div class="typed">
+        <input id="typed" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="225° or 5π/4" aria-label="Type an angle in degrees or radians">
+        <button type="button" id="go">Go</button>
+      </div>
+      <div class="shows">
+        <button type="button" data-show="values" aria-pressed="true">Hide values</button>
+        <button type="button" data-show="ref" aria-pressed="true">Hide reference angle</button>
+        <button type="button" data-show="signs" aria-pressed="true">Hide signs</button>
+        <button type="button" data-show="special" aria-pressed="false">Show special angles</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const R = 330, LIMIT = 720, SNAP = 4;
+  const rad = d => d * Math.PI / 180;
+  const X = (r, d) => r * Math.cos(rad(d));
+  const Y = (r, d) => -r * Math.sin(rad(d));
+  const mod360 = d => ((d % 360) + 360) % 360;
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  const isWhole = d => near(d, Math.round(d));
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const MINUS = "−";
+  const num = (v, dp) => { const s = (+v.toFixed(dp)).toString(); return s.replace("-", MINUS); };
+  const degText = d => (isWhole(d) ? num(Math.round(d), 0) : num(d, 1)) + "°";
+
+  let theta = 30, free = 30;
+  const show = { values: true, ref: true, signs: true, special: false };
+
+  // Exact values by reference angle. Each is [top, bottom] of a fraction, bottom "" for a whole number.
+  const EXACT = {
+    0: { cos: ["1", ""], sin: ["0", ""], tan: ["0", ""] },
+    30: { cos: ["√3", "2"], sin: ["1", "2"], tan: ["√3", "3"] },
+    45: { cos: ["√2", "2"], sin: ["√2", "2"], tan: ["1", ""] },
+    60: { cos: ["1", "2"], sin: ["√3", "2"], tan: ["√3", ""] },
+    90: { cos: ["0", ""], sin: ["1", ""], tan: null },
+  };
+  const isSpecial = d => isWhole(d) && (Math.round(d) % 30 === 0 || Math.round(d) % 45 === 0);
+
+  // Radians as a multiple of π when the angle is a whole number of degrees.
+  function radParts(d) {
+    if (!isWhole(d)) return null;
+    const n0 = Math.round(d);
+    if (n0 === 0) return { sign: "", top: "0", bot: "" };
+    const g = gcd(Math.abs(n0), 180), n = Math.abs(n0) / g, b = 180 / g;
+    return { sign: n0 < 0 ? MINUS : "", top: (n === 1 ? "" : n) + "π", bot: b === 1 ? "" : String(b) };
+  }
+  const fracHTML = (sign, top, bot) => bot
+    ? `${sign}<span class="frac"><span>${top}</span><span>${bot}</span></span>`
+    : sign + top;
+  const fracText = (sign, top, bot) => sign + top + (bot ? "/" + bot : "");
+
+  function refAngle(d) {
+    const a = mod360(d);
+    if (a <= 90) return a;
+    if (a <= 180) return 180 - a;
+    if (a <= 270) return a - 180;
+    return 360 - a;
+  }
+  function quadrant(d) {
+    const a = mod360(d);
+    if (near(a % 90, 0) || near(a % 90, 90)) return 0;
+    return Math.floor(a / 90) + 1;
+  }
+
+  // Each value as { sign, top, bot } exact for special angles, else a rounded decimal; null when undefined.
+  function trigValue(fn, d) {
+    const a = mod360(d);
+    const c = Math.cos(rad(a)), s = Math.sin(rad(a));
+    if (fn === "tan" && Math.abs(c) < 1e-9) return null;
+    const v = fn === "cos" ? c : fn === "sin" ? s : s / c;
+    if (isSpecial(d)) {
+      const e = EXACT[Math.round(refAngle(d))][fn];
+      const zero = e[0] === "0";
+      return { sign: !zero && v < 0 ? MINUS : "", top: e[0], bot: e[1], v, exact: true };
+    }
+    const r = num(Math.abs(v), 3);
+    return { sign: v < 0 && r !== "0" ? MINUS : "", top: r, bot: "", v, exact: false };
+  }
+  const valHTML = t => fracHTML(t.sign, t.top, t.bot);
+  const valText = t => fracText(t.sign, t.top, t.bot);
+
+  /* ---------- Board ---------- */
+  // Quadrant sign boxes in the corners (CAST).
+  const QUADS = [
+    { q: 1, x: 530, y: -490, anchor: "end", big: "A", s: "+", c: "+", t: "+" },
+    { q: 2, x: -530, y: -490, anchor: "start", big: "S", s: "+", c: MINUS, t: MINUS },
+    { q: 3, x: -530, y: 370, anchor: "start", big: "T", s: MINUS, c: MINUS, t: "+" },
+    { q: 4, x: 530, y: 370, anchor: "end", big: "C", s: MINUS, c: "+", t: MINUS },
+  ];
+  const signsG = el("g", {}, svg);
+  const qBoxes = QUADS.map(Q => {
+    const g = el("g", {}, signsG);
+    // Big CAST letter on the outside corner, the three signs beside it.
+    const w = 160, bx = Q.anchor === "end" ? Q.x - w : Q.x;
+    const box = el("rect", { class: "q-box", x: bx, y: Q.y, width: w, height: 120, rx: 14 }, g);
+    const out = Q.anchor === "end" ? Q.x - 34 : Q.x + 34, side = Q.anchor === "end" ? -1 : 1;
+    const big = el("text", { class: "q-big", x: out, y: Q.y + 62, "text-anchor": "middle" }, g);
+    big.textContent = Q.big;
+    const roman = ["I", "II", "III", "IV"][Q.q - 1];
+    el("text", { class: "q-num", x: out, y: Q.y + 98, "text-anchor": "middle" }, g).textContent = roman;
+    const tx = out + side * 36;
+    [["sin", Q.s], ["cos", Q.c], ["tan", Q.t]].forEach(([fn, sg], i) => {
+      const t = el("text", { class: "q-line", x: tx, y: Q.y + 36 + i * 34, "text-anchor": Q.anchor }, g);
+      t.append(fn + " ");
+      el("tspan", { class: sg === "+" ? "pos" : "neg" }, t).textContent = sg;
+    });
+    return box;
+  });
+
+  // Axes with arrows; 1 and −1 marked.
+  const AX = 470;
+  el("line", { class: "axis", x1: -AX, y1: 0, x2: AX, y2: 0 }, svg);
+  el("line", { class: "axis", x1: 0, y1: AX, x2: 0, y2: -AX }, svg);
+  el("polygon", { class: "ax-arrow", points: `${AX + 16},0 ${AX - 4},-10 ${AX - 4},10` }, svg);
+  el("polygon", { class: "ax-arrow", points: `${-AX - 16},0 ${-AX + 4},-10 ${-AX + 4},10` }, svg);
+  el("polygon", { class: "ax-arrow", points: `0,${-AX - 16} -10,${-AX + 4} 10,${-AX + 4}` }, svg);
+  el("polygon", { class: "ax-arrow", points: `0,${AX + 16} -10,${AX - 4} 10,${AX - 4}` }, svg);
+  const axLbls = el("g", {}, svg);
+  [[R + 8, 34, "start", "1"], [-R - 8, 34, "end", MINUS + "1"], [-12, -R - 10, "end", "1"], [-12, R + 34, "end", MINUS + "1"]]
+    .forEach(([x, y, a, s]) => { el("text", { class: "ax-lbl", x, y, "text-anchor": a }, axLbls).textContent = s; });
+  el("circle", { class: "circ", cx: 0, cy: 0, r: R }, svg);
+
+  // Special angles: dots on the circle and labels outside it.
+  const specialG = el("g", {}, svg);
+  const SPECIALS = [0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330];
+  const spLbls = SPECIALS.map(d => {
+    el("circle", { class: "sp-dot", cx: X(R, d), cy: Y(R, d), r: 7 }, specialG);
+    const lr = d % 90 === 0 ? R + 62 : R + 58;
+    let x = X(lr, d), y = Y(lr, d);
+    if (d === 0) { x = R + 56; y = -44; }
+    if (d === 180) { x = -R - 56; y = -44; }
+    if (d === 90) { x = 64; y = -R - 52; }
+    if (d === 270) { x = 64; y = R + 40; }
+    const t = el("text", { class: "sp-lbl", x, y: y - 4 }, specialG);
+    el("tspan", { x, dy: 0 }, t).textContent = d + "°";
+    const rp = radParts(d);
+    el("tspan", { class: "r", x, dy: 26 }, t).textContent = fracText(rp.sign, rp.top, rp.bot);
+    return t;
+  });
+
+  const refG = el("g", {}, svg);
+  const refWedge = el("path", { class: "ref-wedge" }, refG);
+  const refLbl = el("text", { class: "ref-lbl", "text-anchor": "middle", "dominant-baseline": "middle" }, refG);
+  refLbl.append("θ");
+  el("tspan", { "baseline-shift": "sub", "font-size": "22px" }, refLbl).textContent = "r";
+
+  const spiral = el("path", { class: "spiral" }, svg);
+  const spiralHead = el("polygon", { class: "spiral-head" }, svg);
+  const thLbl = el("text", { class: "th-lbl", "text-anchor": "middle", "dominant-baseline": "middle" }, svg);
+  thLbl.textContent = "θ";
+
+  const legsG = el("g", {}, svg);
+  const cosLeg = el("line", { class: "cos-leg", y1: 0, y2: 0, x1: 0 }, legsG);
+  const sinLeg = el("line", { class: "sin-leg" }, legsG);
+  const cosLbl = el("text", { class: "leg-lbl green", "text-anchor": "middle" }, legsG);
+  cosLbl.textContent = "cos θ";
+  const sinLbl = el("text", { class: "leg-lbl orange", "dominant-baseline": "middle" }, legsG);
+  sinLbl.textContent = "sin θ";
+  const arm = el("line", { class: "arm", x1: 0, y1: 0 }, svg);
+
+  const chipG = el("g", {}, svg);
+  const chipBg = el("rect", { class: "chip-bg", rx: 12, height: 50 }, chipG);
+  const chip = el("text", { class: "chip", "dominant-baseline": "middle" }, chipG);
+
+  const handle = el("g", { class: "handle", tabindex: 0, role: "slider", "aria-label": "Point P on the unit circle" }, svg);
+  el("circle", { class: "p-ring", r: 30 }, handle);
+  el("circle", { class: "p-dot", r: 17 }, handle);
+
+  function arcPath(r, a0, a1) {
+    const large = Math.abs(a1 - a0) > 180 ? 1 : 0, sweep = a1 > a0 ? 0 : 1;
+    return `M0,0 L${X(r, a0)},${Y(r, a0)} A${r},${r} 0 ${large} ${sweep} ${X(r, a1)},${Y(r, a1)} Z`;
+  }
+
+  function drawBoard() {
+    const a = mod360(theta), px = X(R, a), py = Y(R, a);
+    handle.setAttribute("transform", `translate(${px},${py})`);
+    handle.setAttribute("aria-valuenow", theta);
+    handle.setAttribute("aria-valuetext", degText(theta));
+    arm.setAttribute("x2", px); arm.setAttribute("y2", py);
+
+    // θ: a spiral arrow from the positive x-axis, one wider loop per full turn.
+    const T = theta;
+    if (Math.abs(T) < 0.5) {
+      spiral.setAttribute("d", ""); spiralHead.setAttribute("points", ""); thLbl.setAttribute("visibility", "hidden");
+    } else {
+      const rAt = t => 62 + 26 * Math.abs(t) / 360;
+      const n = Math.max(2, Math.ceil(Math.abs(T) / 2));
+      let d = "";
+      const end = Math.abs(T) > 14 ? T - Math.sign(T) * 9 : T;
+      for (let i = 0; i <= n; i++) {
+        const t = end * i / n;
+        d += (i ? "L" : "M") + X(rAt(t), t).toFixed(1) + "," + Y(rAt(t), t).toFixed(1);
+      }
+      spiral.setAttribute("d", d);
+      if (Math.abs(T) > 14) {
+        // Arrowhead tip at T, pointing along the turn.
+        const r = rAt(T), tipX = X(r, T), tipY = Y(r, T);
+        const back = T - Math.sign(T) * 12, bx = X(r, back), by = Y(r, back);
+        const nx = Math.cos(rad(back)) * 11, ny = -Math.sin(rad(back)) * 11;
+        spiralHead.setAttribute("points", `${tipX},${tipY} ${bx + nx},${by + ny} ${bx - nx},${by - ny}`);
+      } else spiralHead.setAttribute("points", "");
+      const mid = Math.abs(T) <= 360 ? T / 2 : T - Math.sign(T) * 30;
+      const lr = rAt(mid) + 30;
+      thLbl.setAttribute("x", X(lr, mid)); thLbl.setAttribute("y", Y(lr, mid));
+      thLbl.setAttribute("visibility", "visible");
+    }
+
+    // Reference angle wedge between the terminal arm and the nearest part of the x-axis.
+    const q = quadrant(theta), ra = refAngle(theta);
+    const base = a <= 90 ? 0 : a <= 270 ? 180 : 360;
+    refG.setAttribute("visibility", show.ref && q !== 0 ? "visible" : "hidden");
+    if (q !== 0) {
+      const rr = 165;
+      refWedge.setAttribute("d", arcPath(rr, base, a));
+      const m = (base + a) / 2, lr = ra < 24 ? rr + 40 : rr - 44;
+      refLbl.setAttribute("x", X(lr, m)); refLbl.setAttribute("y", Y(lr, m));
+    }
+
+    // Legs: cos along the x-axis, sin straight up or down to P.
+    legsG.setAttribute("visibility", show.values ? "visible" : "hidden");
+    cosLeg.setAttribute("x2", px);
+    sinLeg.setAttribute("x1", px); sinLeg.setAttribute("y1", 0);
+    sinLeg.setAttribute("x2", px); sinLeg.setAttribute("y2", py);
+    const c = Math.cos(rad(a)), s = Math.sin(rad(a));
+    cosLbl.setAttribute("x", px / 2); cosLbl.setAttribute("y", s >= 0 ? 38 : -18);
+    cosLbl.setAttribute("visibility", Math.abs(c) > 0.3 ? "visible" : "hidden");
+    sinLbl.setAttribute("x", px + (c >= 0 ? 16 : -16)); sinLbl.setAttribute("y", py / 2);
+    sinLbl.setAttribute("text-anchor", c >= 0 ? "start" : "end");
+    sinLbl.setAttribute("visibility", Math.abs(s) > 0.3 ? "visible" : "hidden");
+
+    // Coordinates chip next to P, outside the circle.
+    chip.textContent = show.values ? `P(${valText(trigValue("cos", theta))}, ${valText(trigValue("sin", theta))})` : "P";
+    const w = chip.getComputedTextLength() + 26;
+    let cx = X(R + 46, a), cy = Y(R + 46, a);
+    let left = c > 0.25 ? cx : c < -0.25 ? cx - w : cx - w / 2;
+    if (Math.abs(c) <= 0.25) left = Math.abs(s) > 0.99 ? 24 : (c >= 0 ? 24 : -24 - w);
+    if (Math.abs(c) <= 0.25 && Math.abs(s) > 0.99) cy = Y(R + 30, a);
+    left = Math.max(-540, Math.min(540 - w, left));
+    cy = Math.max(-470, Math.min(470, cy));
+    chipBg.setAttribute("x", left); chipBg.setAttribute("y", cy - 25); chipBg.setAttribute("width", w);
+    chip.setAttribute("x", left + 13); chip.setAttribute("y", cy + 2);
+
+    signsG.setAttribute("visibility", show.signs ? "visible" : "hidden");
+    qBoxes.forEach((b, i) => b.classList.toggle("on", q === i + 1));
+    specialG.setAttribute("visibility", show.special ? "visible" : "hidden");
+    spLbls.forEach((t, i) => t.classList.toggle("on", isSpecial(theta) && Math.round(a) === SPECIALS[i]));
+  }
+
+  /* ---------- Panel ---------- */
+  function drawPanel() {
+    $("deg").textContent = degText(theta);
+    const rp = radParts(theta);
+    const rv = rad(theta);
+    $("rad").innerHTML = rp ? fracHTML(rp.sign, rp.top, rp.bot) : num(rv, 2);
+    let sub = (rp && rp.top !== "0" ? "≈ " + num(rv, 2) + " " : "") + "rad";
+    if (theta < 0 || theta >= 360) sub += " · coterminal with " + degText(mod360(theta));
+    $("angSub").textContent = sub;
+
+    const q = quadrant(theta), ra = refAngle(theta);
+    const qName = q ? "Quadrant " + ["I", "II", "III", "IV"][q - 1] : "On an axis";
+    if (!show.ref) $("ref").innerHTML = `<span class="mid q">?</span>`;
+    else if (!q) $("ref").innerHTML = `<span class="mid q">${qName}</span>`;
+    else {
+      const rr = radParts(ra);
+      $("ref").innerHTML = `<span class="mid c-purple">${degText(ra)}</span>` +
+        (rr ? `<span class="eqs">=</span><span class="mid c-purple">${fracHTML(rr.sign, rr.top, rr.bot)}</span>` : "") +
+        `<span class="sub" style="margin:0">${qName}</span>`;
+    }
+
+    const cs = trigValue("cos", theta), sn = trigValue("sin", theta), tn = trigValue("tan", theta);
+    const approx = cs.exact ? "" : "≈ ";
+    if (!show.values) {
+      $("pt").innerHTML = `<span class="q">(?, ?)</span>`;
+      $("trig").innerHTML = ["sin θ", "cos θ", "tan θ"].map(f => `<div><span class="fn">${f}</span><span class="q">?</span></div>`).join("");
+      return;
+    }
+    $("pt").innerHTML = `${approx}(<span class="c-green">${valHTML(cs)}</span>,&nbsp;<span class="c-orange">${valHTML(sn)}</span>)`;
+    const cls = t => (t.v > 1e-9 ? "pos" : t.v < -1e-9 ? "neg" : "");
+    const eq = cs.exact ? " =" : " ≈";
+    const cell = (name, c, t) => `<div><span class="fn ${c}">${name}${eq}</span>` +
+      (t ? `<span class="${cls(t)}">${valHTML(t)}</span>` : `<span class="q" style="font-size:1.1rem">undefined</span>`) + `</div>`;
+    $("trig").innerHTML = cell("sin θ", "c-orange", sn) + cell("cos θ", "c-green", cs) + cell("tan θ", "", tn);
+  }
+
+  function update() { drawBoard(); drawPanel(); }
+
+  /* ---------- Dragging ---------- */
+  // free follows the pointer (and counts full turns); theta snaps to special angles nearby, else whole degrees.
+  function snap(f) {
+    const cands = [Math.round(f / 30) * 30, Math.round(f / 45) * 45];
+    for (const s of cands) if (Math.abs(f - s) <= SNAP) return s;
+    return Math.round(f);
+  }
+  function pointerAngle(e) {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX; p.y = e.clientY;
+    const m = p.matrixTransform(svg.getScreenCTM().inverse());
+    return Math.atan2(-m.y, m.x) * 180 / Math.PI;
+  }
+  function follow(e) {
+    const raw = pointerAngle(e);
+    let delta = mod360(raw - free);
+    if (delta > 180) delta -= 360;
+    free = Math.max(-LIMIT, Math.min(LIMIT, free + delta));
+    theta = Math.max(-LIMIT, Math.min(LIMIT, snap(free)));
+    update();
+  }
+  let dragging = false;
+  svg.addEventListener("pointerdown", e => {
+    dragging = true;
+    svg.setPointerCapture(e.pointerId);
+    free = theta;
+    follow(e);
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => { if (dragging) follow(e); });
+  const stop = () => { dragging = false; free = theta; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+
+  handle.addEventListener("keydown", e => {
+    const step = e.shiftKey ? 15 : 1;
+    let d = 0;
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") d = step;
+    else if (e.key === "ArrowDown" || e.key === "ArrowLeft") d = -step;
+    else return;
+    e.preventDefault();
+    theta = Math.max(-LIMIT, Math.min(LIMIT, Math.round(theta) + d));
+    free = theta;
+    update();
+  });
+
+  /* ---------- Typing an angle ---------- */
+  // Degrees: 225, -45°, 495 deg. Radians: 5π/4, 5pi/4, -π/6, 2π, 3/4π, 2.5 rad.
+  function parseAngle(s) {
+    s = s.trim().toLowerCase().replace(/\s+/g, "").replace(/[−–]/g, "-").replace(/pi/g, "π");
+    if (!s) return null;
+    let m;
+    if ((m = s.match(/^(-?)(\d*\.?\d*)π(?:\/(\d*\.?\d+))?$/))) {
+      const a = m[2] === "" ? 1 : parseFloat(m[2]), b = m[3] ? parseFloat(m[3]) : 1;
+      if (isNaN(a) || !b) return null;
+      return (m[1] ? -1 : 1) * a / b * 180;
+    }
+    if ((m = s.match(/^(-?)(\d*\.?\d+)\/(\d*\.?\d+)π$/))) {
+      const a = parseFloat(m[2]), b = parseFloat(m[3]);
+      if (!b) return null;
+      return (m[1] ? -1 : 1) * a / b * 180;
+    }
+    if ((m = s.match(/^(-?\d*\.?\d+)(rad|r)$/))) return parseFloat(m[1]) * 180 / Math.PI;
+    if ((m = s.match(/^(-?\d*\.?\d+)(°|deg|degrees)?$/))) return parseFloat(m[1]);
+    return null;
+  }
+  function typedGo() {
+    const inp = $("typed"), d = parseAngle(inp.value);
+    const ok = d !== null && Math.abs(d) <= LIMIT;
+    inp.classList.toggle("bad", !ok && inp.value.trim() !== "");
+    if (!ok) return;
+    theta = isWhole(d) ? Math.round(d) : Math.round(d * 1000) / 1000;
+    free = theta;
+    update();
+  }
+  $("go").addEventListener("click", typedGo);
+  $("typed").addEventListener("keydown", e => { if (e.key === "Enter") typedGo(); });
+  $("typed").addEventListener("input", () => $("typed").classList.remove("bad"));
+
+  /* ---------- Show / hide ---------- */
+  const NAMES = { values: "values", ref: "reference angle", signs: "signs", special: "special angles" };
+  document.querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.show;
+    show[k] = !show[k];
+    b.setAttribute("aria-pressed", show[k]);
+    b.textContent = (show[k] ? "Hide " : "Show ") + NAMES[k];
+    update();
+  }));
+
+  update();
+  if (document.fonts) document.fonts.ready.then(update);
+})();
+</script>
+
+</body>
+</html>
