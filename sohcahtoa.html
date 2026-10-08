@@ -9,7 +9,7 @@
 <title>SOH CAH TOA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
 <style>
 /* MathBoard: shared look for the concept visuals.
    Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
@@ -30,7 +30,7 @@
   --warn: #a3263c;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -248,6 +248,43 @@ h1 .m { color: var(--pt); }
 .handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.4; }
 .handle.drag { cursor: grabbing; }
 .corner-hit { fill: transparent; cursor: pointer; }
+/* Animated steps */
+.pending { display: none !important; }
+.pop { animation: pop .5s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.sw { display: inline-block; }
+.sw.flip { animation: flip .7s ease-out; }
+@keyframes flip { 0% { transform: scale(0.4); opacity: 0; } 50% { transform: scale(1.5); opacity: 1; } 100% { transform: scale(1); } }
+.opx { color: var(--purple); font-weight: 700; }
+.nw { white-space: nowrap; }
+.st { position: relative; display: inline-block; }
+.st.struck { opacity: 0.55; }
+.st.struck::after { content: ""; position: absolute; left: -4px; right: -4px; top: 50%; border-top: 4px solid var(--warn); transform: rotate(-12deg); }
+.st.struck.draw::after { animation: strike .6s ease-out both; }
+@keyframes strike { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.key.todo { opacity: 0.4; }
+.key.press { animation: press .6s ease-out; }
+@keyframes press { 0% { transform: translateY(0); } 35% { transform: translateY(4px) scale(0.94); box-shadow: none; filter: brightness(1.4); } 100% { transform: none; } }
+.lcd .pop { animation: none; }
+.round { font-size: 1.1rem; }
+.round .num { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; }
+.hd { background: var(--orange); color: var(--sheet); border-radius: 4px; padding: 0 3px; }
+.pick { font-size: 1.25rem; }
+.replay { margin-left: auto; font-size: 0.85rem; padding: 4px 10px; font-family: var(--font-body); }
+.step.old .replay { display: none; }
+.sct > div { position: relative; transition: transform .25s, opacity .2s; }
+.sct > div.scan { opacity: 1; border-color: var(--purple); transform: scale(1.05); }
+.mk { position: absolute; top: 0; right: 8px; font-size: 1.5rem; font-weight: 800; }
+.mk.yes { color: var(--green); } .mk.no { color: var(--warn); }
+.pulse { animation: bpulse 1s ease-in-out 2; transform-box: fill-box; transform-origin: center; }
+@keyframes bpulse { 50% { transform: scale(1.18); } }
+.side.glow { stroke-width: 12; }
+.pop-in { animation: pop .5s ease-out; }
+.guide { stroke-width: 4; stroke-dasharray: 10 7; fill: none; }
+.guide.O { stroke: var(--orange); } .guide.A { stroke: var(--green); } .guide.H { stroke: var(--pt); }
+.guide.fresh { animation: dash 1s ease-out; }
+@keyframes dash { from { stroke-dashoffset: 300; opacity: 0; } to { stroke-dashoffset: 0; opacity: 1; } }
+.ah.O { fill: var(--orange); } .ah.A { fill: var(--green); } .ah.H { fill: var(--pt); }
 </style>
 
 <div class="wrap">
@@ -431,6 +468,12 @@ h1 .m { color: var(--pt); }
 
   function draw() {
     svg.textContent = "";
+    const vs = anim ? step - 1 : step;
+    const defs = el("defs", {}, svg);
+    for (const r of ["O", "A", "H"]) {
+      const mk = el("marker", { id: "ah-" + r, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: "ah " + r }, mk);
+    }
     const S = layout(), I = info();
     const R = S.R, Tv = P.at === 1 ? S.P1 : S.P2, Ov = P.at === 1 ? S.P2 : S.P1;
     const cen = [(S.R[0] + S.P1[0] + S.P2[0]) / 3, (S.R[1] + S.P1[1] + S.P2[1]) / 3];
@@ -457,9 +500,10 @@ h1 .m { color: var(--pt); }
     for (const sd of ["leg1", "leg2", "hyp"]) {
       const [p, q2] = ends[sd], role = roleOf(sd), st = P.state[sd];
       let cls = "side";
-      if (step >= 1) cls += " " + role;
-      if (step >= 2 && I.ready && used.includes(role)) cls += " thick";
-      if (step >= 2 && I.ready && !used.includes(role)) cls += " faded";
+      if (vs >= 1 || fx.roles.has(role)) cls += " " + role;
+      if (fx.pulse.has(role)) cls += " glow";
+      if (vs >= 2 && I.ready && used.includes(role)) cls += " thick";
+      if (vs >= 2 && I.ready && !used.includes(role)) cls += " faded";
       el("line", { class: cls, x1: p[0], y1: p[1], x2: q2[0], y2: q2[1] }, svg);
       // Label chip, pushed outward from the triangle
       const mx = (p[0] + q2[0]) / 2, my = (p[1] + q2[1]) / 2;
@@ -467,14 +511,14 @@ h1 .m { color: var(--pt); }
       if ((mx - cen[0]) * nx + (my - cen[1]) * ny < 0) { nx = -nx; ny = -ny; }
       let val = "";
       if (st === "given") val = fmt(P.shown[sd]);
-      else if (st === "find") val = step >= STEPS && I.ready ? "x ≈ " + I.ans.toFixed(1) : "x";
-      const word = step >= 1 ? NAME[role] : "";
+      else if (st === "find") val = vs >= STEPS && I.ready ? "x ≈ " + I.ans.toFixed(1) : "x";
+      const word = vs >= 1 || fx.roles.has(role) ? NAME[role] : "";
       if (!val && !word) continue;
       const w = Math.max(val.length * 21 + 26, word.length * 13 + 22), h = (val ? 46 : 0) + (word ? 28 : 0) + 6;
       const off = 22 + Math.abs(nx) * w / 2 + Math.abs(ny) * h / 2;
       const cx = mx + nx * off, cy = my + ny * off;
-      const g = el("g", { class: step >= 2 && I.ready && !used.includes(role) ? "faded" : "" }, svg);
-      el("rect", { class: "chip-bg " + (step >= 1 ? role : "n") + (st === "find" ? " find" : ""), x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 10 }, g);
+      const g = el("g", { class: (vs >= 2 && I.ready && !used.includes(role) ? "faded" : "") + (fx.pulse.has(role) ? " pulse" : "") + (fx.fresh === role ? " pop-in" : "") }, svg);
+      el("rect", { class: "chip-bg " + (vs >= 1 || fx.roles.has(role) ? role : "n") + (st === "find" ? " find" : ""), x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 10 }, g);
       let y = cy - h / 2 + 3;
       if (word) { el("text", { class: "chip-role " + role, x: cx, y: y + 15 }, g).textContent = word; y += 28; }
       if (val) el("text", { class: "chip-val", x: cx, y: y + 23 }, g).textContent = val;
@@ -482,11 +526,20 @@ h1 .m { color: var(--pt); }
     // θ chip just outside its corner, so it never sits on a side
     let thText;
     if (mode === "side") thText = "θ = " + fmtDeg(P.theta);
-    else thText = step >= STEPS && I.ready ? "θ ≈ " + I.ans.toFixed(1) + "°" : "θ = ?";
+    else thText = vs >= STEPS && I.ready ? "θ ≈ " + I.ans.toFixed(1) + "°" : "θ = ?";
     const tw = thText.length * 20 + 26, thh = 50, toff = (custom ? 40 : 16) + Math.abs(bis[0]) * tw / 2 + Math.abs(bis[1]) * thh / 2;
     const tx = Math.max(tw / 2 + 4, Math.min(W - tw / 2 - 4, Tv[0] - bis[0] * toff)), ty = Math.max(thh / 2 + 4, Math.min(HT - thh / 2 - 4, Tv[1] - bis[1] * toff));
-    el("rect", { class: "th-bg", x: tx - tw / 2, y: ty - thh / 2, width: tw, height: thh, rx: 10 }, svg);
-    el("text", { class: "th", x: tx, y: ty + 1 }, svg).textContent = thText;
+    const tg = el("g", { class: fx.pulse.has("theta") ? "pulse" : "" }, svg);
+    el("rect", { class: "th-bg", x: tx - tw / 2, y: ty - thh / 2, width: tw, height: thh, rx: 10 }, tg);
+    el("text", { class: "th", x: tx, y: ty + 1 }, tg).textContent = thText;
+    // Step 1 pointers: from the right angle across to the hypotenuse, from θ across to the opposite side, along the adjacent side
+    for (const r of fx.guides) {
+      const sd = sideOf(r), [p, q2] = ends[sd], m = [(p[0] + q2[0]) / 2, (p[1] + q2[1]) / 2];
+      const from = (r === "H" ? R : Tv).slice();
+      const to = r === "A" ? [from[0] + (m[0] - from[0]) * 0.8, from[1] + (m[1] - from[1]) * 0.8] : [from[0] + (m[0] - from[0]) * 0.9, from[1] + (m[1] - from[1]) * 0.9];
+      if (r === "A") { const n = u(m, cen, 18); from[0] += 0; to[0] += n[0]; to[1] += n[1]; }
+      el("line", { class: "guide " + r + (fx.fresh === r ? " fresh" : ""), x1: from[0], y1: from[1], x2: to[0], y2: to[1], "marker-end": `url(#ah-${r})` }, svg);
+    }
 
     if (custom) {
       // Wide invisible lines to tap a side, and corners to drag (or tap to move θ).
@@ -566,82 +619,186 @@ h1 .m { color: var(--pt); }
   }
 
   // ---------- Steps ----------
+  // Each step is written once as HTML whose parts carry a beat number. Played live, the beats come in one at a time
+  // (data-b appears, data-sw swaps a letter for its number, data-st strikes out what cancels, data-pr presses a key);
+  // drawn still, every beat is applied at once.
   const roleSpan = (r, txt) => `<span class="c-${r}">${txt}</span>`;
   const vOf = x => x === undefined ? "" : fmt(x);
+  const Bk = (k, html, tag = "p", cls = "") => `<${tag} class="pending ${cls}" data-b="${k}">${html}</${tag}>`;
+  const EQ = (k, html) => Bk(k, html, "div", "eq");
+  const SW = (k, from, to) => `<span class="sw" data-sw="${k}" data-to="${String(to).replace(/"/g, "&quot;")}">${from}</span>`;
+  const ST = (k, html) => `<span class="st" data-st="${k}">${html}</span>`;
+  const OP = html => `<span class="opx">${html}</span>`;
+  const fx = { roles: new Set(), guides: [], pulse: new Set(), fresh: null };
+  const resetFx = () => { fx.roles = new Set(); fx.guides = []; fx.pulse = new Set(); fx.fresh = null; };
+  const boardFx = f => () => { f(); draw(); };
+  const addRole = r => boardFx(() => { fx.roles.add(r); fx.guides.push(r); fx.fresh = r; });
+  const pulse = (...rs) => boardFx(() => { fx.pulse = new Set(rs); fx.fresh = null; });
+
+  function roundHTML(v, unit) {
+    const s = calcNum(v), dot = s.indexOf(".");
+    if (dot < 0 || s.length <= dot + 2) return `${s}${unit} already has one decimal place: <b>${v.toFixed(1)}${unit}</b>`;
+    const h = s[dot + 2];
+    const shown = s.slice(0, dot + 2) + `<span class="hd">${h}</span>` + s.slice(dot + 3);
+    return `<span class="num">${shown}${unit}</span><br>The next digit is <b>${h}</b>: ${+h >= 5 ? "5 or more, so round <b>up</b>" : "less than 5, so <b>keep</b> it"}.`;
+  }
+
   function stepHTML(n, I) {
-    const fn = I.fn, th = mode === "side" ? fmtDeg(P.theta) : "θ";
+    const fn = I.fn, th = mode === "side" ? fmtDeg(P.theta) : "θ", fth = `${fn} ${th}`;
     if (n === 1) return {
-      t: "Name the sides from θ",
+      t: "Name the sides from θ", beats: 3, ms: { 1: 500, 2: 1800, 3: 1800 },
       short: `<p>${roleSpan("O", "Opposite")}, ${roleSpan("A", "Adjacent")}, ${roleSpan("H", "Hypotenuse")}</p>`,
-      full: `<p>${roleSpan("H", "Hypotenuse")}: across from the right angle (the longest side).</p>
-        <p>${roleSpan("O", "Opposite")}: across from <span class="c-purple">θ</span>.</p>
-        <p>${roleSpan("A", "Adjacent")}: touches <span class="c-purple">θ</span> and is not the hypotenuse.</p>`, fullOnly: true,
+      full: Bk(1, `${roleSpan("H", "Hypotenuse")}: across from the right angle (the longest side).`)
+        + Bk(2, `${roleSpan("O", "Opposite")}: across from <span class="c-purple">θ</span>.`)
+        + Bk(3, `${roleSpan("A", "Adjacent")}: touches <span class="c-purple">θ</span> and is not the hypotenuse.`),
+      fx: { 1: addRole("H"), 2: addRole("O"), 3: addRole("A") },
     };
     if (n === 2) {
-      let know, want, letters;
+      let know, want, p1, p2;
       if (mode === "side") {
         know = `<span class="c-purple">θ = ${th}</span> and the ${roleSpan(I.g.role, NAME[I.g.role] + " = " + vOf(I.g.v))}`;
         want = `the ${roleSpan(I.f, NAME[I.f] + " = x")}`;
-        letters = [I.g.role, I.f];
+        p1 = pulse("theta", I.g.role); p2 = pulse(I.f);
       } else {
         know = `the ${roleSpan(I.top.role, NAME[I.top.role] + " = " + vOf(I.top.v))} and the ${roleSpan(I.bot.role, NAME[I.bot.role] + " = " + vOf(I.bot.v))}`;
         want = `the angle <span class="c-purple">θ</span>`;
-        letters = [I.top.role, I.bot.role];
+        p1 = pulse(I.top.role, I.bot.role); p2 = pulse("theta");
       }
-      const order = FNW[fn].slice(1).split("");
-      const pair = order.map(r => roleSpan(r, r)).join(" and ");
+      const pair = FNW[fn].slice(1).split("").map(r => roleSpan(r, r)).join(" and ");
+      const pick = `${pair} <span aria-hidden="true">→</span> <b>${FNW[fn]}</b> <span aria-hidden="true">→</span> use <b>${fn}</b>`;
       return {
-        t: "Pick SOH, CAH or TOA",
-        short: `<p>${pair} <span aria-hidden="true">→</span> <b>${FNW[fn]}</b> <span aria-hidden="true">→</span> use <b>${fn}</b></p>`,
-        full: `<p>We know ${know}.</p><p>We want ${want}.</p>`, before: true,
+        t: "Pick SOH, CAH or TOA", beats: 4, ms: { 1: 500, 2: 1600, 3: 1600, 4: 2600 },
+        short: `<p>${pick}</p>`,
+        full: Bk(1, `We know ${know}.`) + Bk(2, `We want ${want}.`) + Bk(3, `Which one uses ${pair}?`) + Bk(4, pick, "p", "pick"),
+        fx: { 1: p1, 2: p2, 3: () => { pulse()(); scanTiles(fn); }, 4: () => paintSct(I, true) },
       };
     }
     if (n === 3) {
+      const T = TOP[fn], Bo = BOT[fn];
+      const start = Bk(1, `Start with <b>${FNW[fn]}</b>, then put in what we know.`, "p", "note");
       if (mode === "side") {
-        const top = TOP[fn] === I.f ? "x" : vOf(I.g.v), bot = BOT[fn] === I.f ? "x" : vOf(I.g.v);
-        const eq = `<div class="eq">${fn} ${th} = ${frac(roleSpan(TOP[fn], top), roleSpan(BOT[fn], bot))}</div>`;
-        return { t: "Write the equation", short: eq,
-          full: `<p class="note">${FNW[fn]}: ${fn} θ = ${frac(roleSpan(TOP[fn], TOP[fn]), roleSpan(BOT[fn], BOT[fn]))}. Put in what we know.</p>`, before: true };
+        const top = T === I.f ? "x" : vOf(I.g.v), bot = Bo === I.f ? "x" : vOf(I.g.v);
+        const eq = `${fn} <span class="c-purple">${SW(2, "θ", th)}</span> = ${frac(roleSpan(T, SW(3, T, top)), roleSpan(Bo, SW(4, Bo, bot)))}`;
+        return { t: "Write the equation", beats: 4, ms: { 1: 400, 2: 1500, 3: 1500, 4: 1500 },
+          short: `<div class="eq">${fn} ${th} = ${frac(roleSpan(T, top), roleSpan(Bo, bot))}</div>`,
+          full: start + EQ(1, eq), fx: { 2: pulse("theta"), 3: pulse(T), 4: pulse(Bo) } };
       }
-      const eq = `<div class="eq">${fn} θ = ${frac(roleSpan(TOP[fn], vOf(I.top.v)), roleSpan(BOT[fn], vOf(I.bot.v)))}</div>`;
-      return { t: "Write the equation", short: eq,
-        full: `<p class="note">${frac(vOf(I.top.v), vOf(I.bot.v))} ≈ ${I.ratio.toFixed(3)} is a <b>ratio</b> of two sides, not the angle. We still need θ.</p>` };
+      const a = vOf(I.top.v), b = vOf(I.bot.v);
+      const eq = `${fn} <span class="c-purple">θ</span> = ${frac(roleSpan(T, SW(2, T, a)), roleSpan(Bo, SW(3, Bo, b)))}`;
+      return { t: "Write the equation", beats: 4, ms: { 1: 400, 2: 1500, 3: 1500, 4: 1700 },
+        short: `<div class="eq">${fn} θ = ${frac(roleSpan(T, a), roleSpan(Bo, b))}</div>`,
+        full: start + EQ(1, eq) + Bk(4, `${frac(a, b)} ≈ ${I.ratio.toFixed(3)} is a <b>ratio</b> of two sides, not the angle. We still need θ.`, "p", "note"),
+        fx: { 2: pulse(T), 3: pulse(Bo), 4: pulse() } };
     }
     if (n === 4) {
       if (mode === "side") {
-        const g = vOf(I.g.v);
-        if (I.onTop) return { t: "Get x alone",
-          short: `<div class="eq">x = ${g} × ${fn} ${th}</div>`,
-          full: `<p class="why">x is on top: multiply both sides by ${g}.</p>
-            <p>We <b>know the angle</b>, so we use <b>${fn}</b>, not ${fn}${SUP}.</p>`, before: true };
-        return { t: "Get x alone",
-          short: `<div class="eq">x = ${frac(g, fn + " " + th)}</div>`,
-          full: `<p class="why">x is on the bottom: multiply both sides by x.</p><div class="eq">x × ${fn} ${th} = ${g}</div>
-            <p class="why">Then divide both sides by ${fn} ${th}.</p>
-            <p>We <b>know the angle</b>, so we use <b>${fn}</b>, not ${fn}${SUP}.</p>`, before: true };
+        const g = vOf(I.g.v), knowNote = Bk(9, `We <b>know the angle</b>, so we use <b>${fn}</b>, not ${inv(fn)}.`);
+        if (I.onTop) return { t: "Get x alone", beats: 7, ms: { 1: 500, 2: 1500, 3: 1500, 4: 1600, 5: 1500, 6: 1200, 7: 1500 },
+          short: `<div class="eq">x = ${g} × ${fth}</div>`,
+          full: `<div class="eq">${fth} = ${frac("x", g)}</div>`
+            + Bk(1, `x is on top, divided by ${g}. Multiply both sides by ${g}.`, "p", "why")
+            + EQ(2, `${OP(g + " ×")} ${fth} = ${frac("x", ST(3, g))} ${OP(ST(3, "× " + g))}`)
+            + Bk(3, `${g} ÷ ${g} = 1, so they cancel.`, "p", "note")
+            + EQ(4, `${g} × ${fth} = x`)
+            + Bk(5, "Switch sides so x is on the left.", "p", "why")
+            + EQ(6, `x = ${g} × ${fth}`)
+            + knowNote.replace('data-b="9"', 'data-b="7"') };
+        return { t: "Get x alone", beats: 9, ms: { 1: 500, 2: 1500, 3: 1500, 4: 1600, 5: 1500, 6: 1300, 7: 1500, 8: 1600, 9: 1500 },
+          short: `<div class="eq">x = ${frac(g, fth)}</div>`,
+          full: `<div class="eq">${fth} = ${frac(g, "x")}</div>`
+            + Bk(1, "x is on the bottom. Multiply both sides by x.", "p", "why")
+            + EQ(2, `${OP("x ×")} ${fth} = ${frac(g, ST(3, "x"))} ${OP(ST(3, "× x"))}`)
+            + Bk(3, "x ÷ x = 1, so they cancel.", "p", "note")
+            + EQ(4, `x × ${fth} = ${g}`)
+            + Bk(5, `Divide both sides by ${fth}.`, "p", "why")
+            + EQ(6, `${frac("x × " + ST(7, fth), OP(ST(7, fth)))} = ${frac(g, OP(fth))}`)
+            + Bk(7, `${fth} ÷ ${fth} = 1, so they cancel.`, "p", "note")
+            + EQ(8, `x = ${frac(g, fth)}`)
+            + knowNote };
       }
-      return { t: "Get θ alone",
-        short: `<div class="eq">θ = ${inv(fn)}(${frac(vOf(I.top.v), vOf(I.bot.v))})</div>`,
-        full: `<p class="why">${fn} is stuck to θ. Undo it with ${fn}${SUP} on both sides.</p>
-          <p>We <b>want the angle</b>, so we use <b>${fn}${SUP}</b>: press <span class="key second">2nd</span> then ${fkey(fn, true)}.</p>`, before: true };
+      const a = vOf(I.top.v), b = vOf(I.bot.v);
+      return { t: "Get θ alone", beats: 5, ms: { 1: 500, 2: 1600, 3: 1600, 4: 1600, 5: 1500 },
+        short: `<div class="eq">θ = ${inv(fn)}(${frac(a, b)})</div>`,
+        full: `<div class="eq">${fn} θ = ${frac(a, b)}</div>`
+          + Bk(1, `${fn} is stuck to θ. Undo it with ${inv(fn)} on both sides.`, "p", "why")
+          + EQ(2, `<span class="nw">${OP(ST(3, inv(fn) + "("))}${ST(3, fn)} θ${OP(ST(3, ")"))}</span> = <span class="nw">${OP(inv(fn) + "(")}${frac(a, b)}${OP(")")}</span>`)
+          + Bk(3, `${inv(fn)} undoes ${fn}, so only θ is left.`, "p", "note")
+          + EQ(4, `θ = ${inv(fn)}(${frac(a, b)})`)
+          + Bk(5, `We <b>want the angle</b>, so we use <b>${inv(fn)}</b>: press <span class="key second">2nd</span> then ${fkey(fn, true)}.`) };
     }
-    // n === 5: calculator
-    let keys, l1, out;
+    // n === 5: press the keys one at a time; each key types onto the screen, = shows the answer, then round it.
+    let keys, toks, out, unit;
     if (mode === "side") {
-      const g = vOf(I.g.v), t = fmt(P.theta);
-      keys = [k(g, "num"), k(I.onTop ? "×" : "÷"), fkey(fn, false), k(t, "num"), k(")"), k("=", "second")];
-      l1 = `${g}${I.onTop ? "×" : "÷"}${fn}(${t})`;
-      out = `x ≈ ${I.ans.toFixed(1)}`;
+      const g = vOf(I.g.v), t = fmt(P.theta), op = I.onTop ? "×" : "÷";
+      keys = [k(g, "num"), k(op), fkey(fn, false), k(t, "num"), k(")"), k("=", "second")];
+      toks = [g, op, fn + "(", t, ")"];
+      out = `x ≈ ${I.ans.toFixed(1)}`; unit = "";
     } else {
       const a = vOf(I.top.v), b = vOf(I.bot.v);
       keys = [k("2nd", "second"), fkey(fn, true), k(a, "num"), k("÷"), k(b, "num"), k(")"), k("=", "second")];
-      l1 = `${fn}<sup>−1</sup>(${a}/${b})`;
-      out = `θ ≈ ${I.ans.toFixed(1)}°`;
+      toks = ["", `${fn}<sup>−1</sup>(`, a, "/", b, ")"];
+      out = `θ ≈ ${I.ans.toFixed(1)}°`; unit = "°";
     }
-    return { t: "Use the calculator (DEG mode)",
+    const nk = keys.length, ms = { 1: 600 };
+    for (let i = 2; i <= nk; i++) ms[i] = 900;
+    ms[nk + 1] = 1500; ms[nk + 2] = 2000;
+    const keyHTML = keys.map((h, i) => h.replace('class="key', `data-pr="${i + 1}" class="todo key`)).join("");
+    const lcd = toks.map((t, i) => t ? `<span class="pending" data-b="${i + 1}">${t}</span>` : "").join("");
+    return { t: "Use the calculator (DEG mode)", beats: nk + 2, ms,
       short: `<div class="ans">${out}</div>`,
-      full: `<div class="keys">${keys.join("")}</div>
-        <div class="lcd"><span class="deg">DEG</span><div class="l1">${l1}</div><div class="l2">${calcNum(I.ans)}</div></div>`, before: true };
+      full: `<div class="keys">${keyHTML}</div>
+        <div class="lcd"><span class="deg">DEG</span><div class="l1">${lcd}&nbsp;</div><div class="l2"><span class="pending" data-b="${nk}">${calcNum(I.ans)}</span>&nbsp;</div></div>`
+        + Bk(nk + 1, `Round to one decimal place: ${roundHTML(I.ans, unit)}`, "p", "round")
+        + Bk(nk + 2, out, "div", "ans") };
+  }
+
+  function applyBeat(box, kb, live) {
+    box.querySelectorAll(`[data-b="${kb}"]`).forEach(e => { e.classList.remove("pending"); if (live) e.classList.add("pop"); });
+    box.querySelectorAll(`[data-sw="${kb}"]`).forEach(e => { e.innerHTML = e.dataset.to; if (live) e.classList.add("flip"); });
+    box.querySelectorAll(`[data-st="${kb}"]`).forEach(e => { e.classList.add("struck"); if (live) e.classList.add("draw"); });
+    box.querySelectorAll(`[data-pr="${kb}"]`).forEach(e => { e.classList.remove("todo"); if (live) e.classList.add("press"); });
+  }
+
+  function scanTiles(fn) {
+    const tiles = [...$("sct").querySelectorAll("[data-fn]")];
+    tiles.forEach((d, i) => anim && anim.timers.push(setTimeout(() => {
+      tiles.forEach(x => x.classList.remove("scan"));
+      d.classList.add("scan");
+      d.insertAdjacentHTML("beforeend", `<span class="mk ${d.dataset.fn === fn ? "yes" : "no"}">${d.dataset.fn === fn ? "✓" : "✗"}</span>`);
+    }, i * 750)));
+  }
+  function paintSct(I, picked) {
+    const sct = $("sct");
+    sct.querySelectorAll(".mk").forEach(m => m.remove());
+    sct.querySelectorAll("[data-fn]").forEach(d => { d.classList.remove("scan"); d.classList.toggle("on", I.ready && d.dataset.fn === I.fn); });
+    sct.classList.toggle("pick", !!picked);
+  }
+
+  let anim = null;
+  function stopAnim() {
+    if (!anim) return;
+    anim.timers.forEach(clearTimeout);
+    anim = null; resetFx();
+  }
+  function startAnim() {
+    stopAnim();
+    const I = info();
+    if (!I.ready || !step) return;
+    const s = stepHTML(step, I), box = $("steps").querySelector(".step.now .body");
+    box.innerHTML = s.full;
+    anim = { timers: [] };
+    draw(); paintSct(I, step - 1 >= 2); renderNotation(I); navState(I);
+    let t = 0;
+    for (let kb = 1; kb <= s.beats; kb++) {
+      t += s.ms[kb] || 1400;
+      anim.timers.push(setTimeout(() => {
+        applyBeat(box, kb, true);
+        if (s.fx && s.fx[kb]) s.fx[kb]();
+        const last = box.querySelector(`[data-b="${kb}"]`);
+        if (last) last.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }, t));
+    }
+    anim.timers.push(setTimeout(() => { anim = null; resetFx(); render(); }, t + 1400));
   }
 
   function renderSteps(I) {
@@ -655,17 +812,22 @@ h1 .m { color: var(--pt); }
     let html = "";
     for (let n = 1; n <= step; n++) {
       const s = stepHTML(n, I), now = n === step;
-      const body = now ? (s.fullOnly ? s.full : s.before ? s.full + s.short : s.short + s.full) : s.short;
-      html += `<div class="step${now ? " now" : " old"}"><h3><span class="n">${n}</span>${s.t}</h3>${body}</div>`;
+      html += `<div class="step${now ? " now" : " old"}"><h3><span class="n">${n}</span>${s.t}${now ? '<button type="button" class="replay" title="Play this step again">↻ Replay</button>' : ""}</h3><div class="body">${now ? s.full : s.short}</div></div>`;
     }
     if (!step) html = `<p class="empty">Press <b>Next step</b> to start.</p>`;
     box.innerHTML = html;
     const cur = box.querySelector(".step.now");
-    if (cur) cur.scrollIntoView({ block: "nearest" });
+    if (cur) {
+      const s = stepHTML(step, I), body = cur.querySelector(".body");
+      for (let kb = 1; kb <= s.beats; kb++) applyBeat(body, kb, false);
+      cur.querySelector(".replay").addEventListener("click", startAnim);
+      cur.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function renderNotation(I) {
-    const fn = I.ready && step >= 2 ? I.fn : "sin";
+    const vs = anim ? step - 1 : step;
+    const fn = I.ready && vs >= 2 ? I.fn : "sin";
     document.querySelectorAll("[data-fn='1']").forEach(e => e.textContent = fn);
     document.querySelector("[data-key='f']").innerHTML = fkey(fn, false);
     document.querySelector("[data-key='i']").innerHTML = fkey(fn, true);
@@ -676,7 +838,15 @@ h1 .m { color: var(--pt); }
     $("ntI").classList.toggle("on", mode === "angle");
   }
 
+  function navState(I) {
+    $("back").disabled = step === 0;
+    $("next").disabled = !anim && (!I.ready || step >= STEPS);
+    $("next").textContent = anim ? "Skip ahead" : "Next step";
+    $("all").disabled = !I.ready || (step >= STEPS && !anim);
+  }
+
   function render(dragging) {
+    stopAnim();
     const I = info();
     if (!I.ready) step = 0;
     draw();
@@ -685,12 +855,8 @@ h1 .m { color: var(--pt); }
     renderNotation(I);
     $("q").innerHTML = !I.ready ? "Set up your triangle."
       : mode === "side" ? "Find the length of <b>x</b> to one decimal place." : "Find the angle <b class='c-purple'>θ</b> to one decimal place.";
-    const sct = $("sct");
-    sct.classList.toggle("pick", I.ready && step >= 2);
-    sct.querySelectorAll("[data-fn]").forEach(d => d.classList.toggle("on", I.ready && d.dataset.fn === I.fn));
-    $("back").disabled = step === 0;
-    $("next").disabled = !I.ready || step >= STEPS;
-    $("all").disabled = !I.ready || step >= STEPS;
+    paintSct(I, I.ready && step >= 2);
+    navState(I);
     const hint = $("hint");
     hint.hidden = !custom;
     hint.textContent = mode === "side"
@@ -698,6 +864,10 @@ h1 .m { color: var(--pt); }
       : "Drag a blue corner to change the triangle. Tap a blue corner to move θ there. Tap the two sides you know.";
   }
 
+  function next() {
+    if (anim) { render(); return; }
+    if (step < STEPS && info().ready) { step++; render(); startAnim(); }
+  }
   function setMode(m) {
     mode = m; step = 0;
     document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
@@ -711,12 +881,12 @@ h1 .m { color: var(--pt); }
     if (custom) startCustom(); else generate();
     render();
   });
-  $("next").addEventListener("click", () => { if (step < STEPS) { step++; render(); } });
+  $("next").addEventListener("click", next);
   $("back").addEventListener("click", () => { if (step > 0) { step--; render(); } });
   $("all").addEventListener("click", () => { step = STEPS; render(); });
   document.addEventListener("keydown", e => {
     if (e.target.closest && e.target.closest(".handle, input")) return;
-    if (e.key === "ArrowRight" && !$("next").disabled) { step++; render(); }
+    if (e.key === "ArrowRight") next();
     else if (e.key === "ArrowLeft" && step > 0) { step--; render(); }
   });
 

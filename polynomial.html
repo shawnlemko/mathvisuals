@@ -9,7 +9,7 @@
 <title>Reading Polynomial Graphs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
 <style>
 /* MathBoard: shared look for the concept visuals.
    Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
@@ -30,7 +30,7 @@
   --warn: #a3263c;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -178,8 +178,18 @@ input.ans.wide { width: 100%; flex: 1 1 auto; min-width: 0; }
 input.ans.ok, .mrow.ok input { border-color: var(--ok); background: var(--ok-bg); }
 input.ans.bad { border-color: var(--bad); background: var(--bad-bg); }
 input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
-.same { margin: 0 0 6px; font-size: 0.95rem; color: var(--muted); }
-.same b { color: var(--ink); }
+.same { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); font-weight: 700; }
+.term { padding: 3px 10px; font-size: 0.95rem; border-radius: 999px; border: 2px dashed var(--pt); background: var(--sheet); color: var(--pt); cursor: help; }
+.term:hover, .term[aria-expanded="true"] { background: var(--pt); color: var(--sheet); border-style: solid; }
+.defs { display: none; position: absolute; left: -6px; right: -6px; top: calc(100% + 6px); z-index: 5; background: var(--sheet); border: 2px solid var(--pt); border-radius: 10px; padding: 10px 14px; box-shadow: 0 10px 24px rgba(0,0,0,0.18); color: var(--ink); font-weight: 400; font-size: 1.05rem; line-height: 1.4; }
+.defs.on { display: block; }
+.defs p { margin: 0; }
+.def { display: none; }
+.def.on { display: block; }
+.def .dh { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--pt); }
+.def .dh i { font-style: normal; color: var(--muted); font-size: 1rem; }
+.def .ex { margin-top: 4px; font-family: var(--font-num); font-weight: 700; font-size: 1rem; color: var(--orange); }
+.tie { margin-top: 8px !important; padding-top: 8px; border-top: 1px dashed var(--grid-major); font-size: 0.95rem; color: var(--muted); }
 .zrows { display: flex; flex-direction: column; gap: 6px; }
 .zrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-weight: 700; font-size: 1.15rem; }
 .zrow .x { font-family: var(--font-num); font-style: italic; }
@@ -256,7 +266,18 @@ input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
       </div>
       <div class="card">
         <p class="label" id="zLabel">x-intercepts</p>
-        <p class="same"><b>x-intercepts</b> of the graph = <b>zeros</b> of P(x) = <b>roots</b> of P(x) = 0</p>
+        <div class="same">
+          <span>Same number, three names:</span>
+          <button class="term" data-t="int" aria-expanded="false">x-intercept</button>
+          <button class="term" data-t="zero" aria-expanded="false">zero</button>
+          <button class="term" data-t="root" aria-expanded="false">root</button>
+          <div class="defs" role="note">
+            <div class="def" data-t="int"><p class="dh">x-intercept: <i>on the graph</i></p><p>A <b>point</b> where the graph crosses or touches the x-axis. Its y-value is always 0.</p><p class="ex">Example: the graph hits the x-axis at (2, 0).</p></div>
+            <div class="def" data-t="zero"><p class="dh">zero: <i>of the function</i></p><p>An <b>x-value you put in</b> that makes the function come out to 0.</p><p class="ex">Example: P(2) = 0, so 2 is a zero of P(x).</p></div>
+            <div class="def" data-t="root"><p class="dh">root: <i>of the equation</i></p><p>A <b>solution</b> you get when you solve the equation P(x) = 0.</p><p class="ex">Example: solving P(x) = 0 gives x = 2, so x = 2 is a root.</p></div>
+            <p class="tie">The graph has x-intercepts, the function has zeros, the equation has roots. They all use the same number.</p>
+          </div>
+        </div>
         <div class="zrows" id="zrows"></div>
         <div class="zfoot"><button id="addZero">+ Add another</button><span class="mult-lbl">multiplicity: 1 crosses · 2 touches · 3 flattens</span></div>
       </div>
@@ -618,6 +639,23 @@ input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
     }
     spread();
   }
+
+  /* ---------- What x-intercept, zero and root mean (hover, or tap on a smartboard) ---------- */
+  const defs = document.querySelector(".defs"), terms = document.querySelectorAll(".term");
+  let pinned = null;
+  function showDef(t) {
+    defs.classList.toggle("on", !!t);
+    defs.querySelectorAll(".def").forEach(d => d.classList.toggle("on", d.dataset.t === t));
+    terms.forEach(b => b.setAttribute("aria-expanded", String(b.dataset.t === t)));
+  }
+  terms.forEach(b => {
+    b.addEventListener("mouseenter", () => showDef(b.dataset.t));
+    b.addEventListener("mouseleave", () => showDef(pinned));
+    b.addEventListener("focus", () => showDef(b.dataset.t));
+    b.addEventListener("blur", () => showDef(pinned));
+    b.addEventListener("click", () => { pinned = pinned === b.dataset.t ? null : b.dataset.t; showDef(pinned); });
+  });
+  document.addEventListener("pointerdown", e => { if (pinned && !e.target.closest(".same")) { pinned = null; showDef(null); } });
 
   /* ---------- Answer area ---------- */
   const zrows = $("zrows");

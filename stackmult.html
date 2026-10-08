@@ -9,7 +9,7 @@
 <title>Stacked Multiplication</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
 <style>
 /* MathBoard: shared look for the concept visuals.
    Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
@@ -30,7 +30,7 @@
   --warn: #a3263c;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -249,11 +249,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .dg.sm.w2 { width: calc(var(--cs) * 0.86); }
 .sheet .given.struck { color: var(--muted); text-decoration: line-through; text-decoration-thickness: max(3px, calc(var(--cs) * 0.06)); text-decoration-color: var(--warn); }
 .sheet .lab.times { padding-left: calc(var(--cs) * 0.4); font-family: var(--font-num); font-size: calc(var(--cs) * 0.42); color: var(--c1); }
+.msg .eqn .eq { display: flex; align-items: center; gap: 12px; font-size: 1.6rem; }
+.msg .eqn .eq + .eq { margin-top: 10px; }
+.msg .eqn .frac { font-size: 1.35rem; }
+.msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
 </style>
 <!-- Stacked Multiplication (grades 3 to 7): type a question like 124 × 6 or press New question, work it out in the
      digit boxes, then Check answer finds the first wrong box. Carries get their own small row for each digit of the
      bottom number (blue for the ones digit, purple for the tens digit), with the matching partial product row. The purple
-     carry row appears only once the blue × row is filled in (Shawn: two levels of boxes at once is confusing).
+     carry row appears only once the blue × row is filled in (Shawn: two levels of boxes at once is confusing), and the
+     carry row for adding only once both × rows are filled in.
      Decimals: work as whole numbers, then click where the decimal point goes in the answer. -->
 
 <div class="wrap">
@@ -502,7 +507,7 @@ window.Written = (() => {
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
       if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
-      if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><p class="eqn">${cfg.done(prob)}</p>`; return; }
+      if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
       const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
         : it.point ? "Next, put in the decimal point: click one of the orange dots."
@@ -640,7 +645,7 @@ window.Written = (() => {
       sh.rule(R.part[1], 0, N);
       addc = [];
       for (let p = 1; p <= n + 1; p++) addc[p] = sh.cell(R.addc, col(p), "sm", "Carry box for adding");
-      sh.lab(R.addc, LAB, "carry +");
+      addc.lab = sh.lab(R.addc, LAB, "carry +");
       sum = rowCells(R.sum, F, "", "Answer box");
       sh.lab(R.sum, LAB, "answer");
     }
@@ -653,6 +658,10 @@ window.Written = (() => {
         const ready = firstRow.every(e => e.value !== "") || carry[1].some(e => e && e.value !== "");
         box(1).forEach(e => e.classList.toggle("wait", !ready));
         box(0).forEach(e => e.classList.toggle("done-row", ready));
+        // The carry boxes for adding show only once both × rows are filled in (Shawn).
+        const second = parts[1].slice(0, String(Ai * b[1]).length + 1);
+        const adding = (ready && second.every(e => e.value !== "")) || addc.some(e => e && e.value !== "");
+        [...addc.filter(Boolean), addc.lab].forEach(e => e.classList.toggle("wait", !adding));
       });
     }
     let slots = null;

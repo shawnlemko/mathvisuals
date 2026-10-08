@@ -9,7 +9,7 @@
 <title>Law of Large Numbers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
 <style>
 /* MathBoard: shared look for the concept visuals.
    Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
@@ -30,7 +30,7 @@
   --warn: #a3263c;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -161,9 +161,16 @@ h1 .r { color: var(--red); } h1 .b { color: var(--blue); }
 .side svg { display: block; width: 100%; flex: 1 1 auto; min-height: 220px; user-select: none; -webkit-user-select: none; }
 .total { font-family: var(--font-num); font-size: 1.5rem; color: var(--ink); }
 .total b { font-size: 2rem; }
-.slider { grid-template-columns: 70px minmax(0, 1fr) 80px; }
-.slider label.r, .slider output.r { color: var(--red); }
-input[type=range].red { accent-color: var(--red); }
+/* The spinner slider sits at the top of the panel and is large so the whole room can see it move. */
+.slider.big { grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; background: var(--chip); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px 18px; }
+.slider.big label { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; color: var(--red); }
+.slider.big output { font-size: 2.4rem; color: var(--red); min-width: 3.2ch; }
+input[type=range].big { -webkit-appearance: none; appearance: none; height: 48px; background: transparent; cursor: pointer; --fill: 22%; }
+input[type=range].big::-webkit-slider-runnable-track { height: 16px; border-radius: 8px; background: linear-gradient(to right, var(--red) var(--fill), var(--blue) var(--fill)); }
+input[type=range].big::-moz-range-track { height: 16px; border-radius: 8px; background: linear-gradient(to right, var(--red) var(--fill), var(--blue) var(--fill)); }
+input[type=range].big::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 42px; height: 42px; margin-top: -13px; border-radius: 50%; background: var(--sheet); border: 6px solid var(--red); box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+input[type=range].big::-moz-range-thumb { width: 30px; height: 30px; border-radius: 50%; background: var(--sheet); border: 6px solid var(--red); box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+input[type=range].big:disabled { opacity: 0.6; cursor: default; }
 .spins { display: flex; flex-wrap: wrap; gap: 10px; }
 .spins button { font-family: var(--font-display); font-size: 1.2rem; padding: 10px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .spins button:hover { background: var(--sheet); color: var(--pt); }
@@ -193,8 +200,8 @@ input[type=range].red { accent-color: var(--red); }
   <div class="lln">
     <section class="side" aria-label="Theoretical probability">
       <h2>Theoretical <small>what should happen</small></h2>
+      <div class="slider big"><label for="pct">Red</label><input type="range" id="pct" class="big" min="5" max="95" step="5" value="25"><output id="pctOut"></output></div>
       <svg id="pie" viewBox="0 0 400 400" role="img" aria-label="Spinner"></svg>
-      <div class="slider"><label for="pct" class="r">Red</label><input type="range" id="pct" class="red" min="5" max="95" step="5" value="25"><output id="pctOut" class="r"></output></div>
     </section>
 
     <section class="side" aria-label="Experimental probability">
@@ -252,6 +259,7 @@ input[type=range].red { accent-color: var(--red); }
     place(redTxt, a / 2, red + "%");
     place(blueTxt, a + (360 - a) / 2, (100 - red) + "%");
     $("pctOut").textContent = red + "%";
+    $("pct").style.setProperty("--fill", (red - 5) / 90 * 100 + "%");
     pie.setAttribute("aria-label", `Spinner: ${red}% red, ${100 - red}% blue`);
   }
   const setNeedle = deg => needle.setAttribute("transform", `rotate(${deg} ${C} ${C})`);

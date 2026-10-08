@@ -9,7 +9,7 @@
 <title>Adding and Subtracting Fractions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
 <style>
 /* MathBoard: shared look for the concept visuals.
    Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
@@ -30,7 +30,7 @@
   --warn: #a3263c;
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -126,6 +126,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .q { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 14px; font-family: var(--font-num); font-weight: 700;
   font-size: 2.1rem; padding: 2px 0 10px; border-bottom: 1px dashed var(--grid-major); margin-bottom: 4px; }
 .q .op { color: var(--muted); }
+.easy { margin: 6px 0 0; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; line-height: 1.2; color: var(--ink); }
+.easy:empty { display: none; }
 .mx { display: inline-flex; align-items: center; gap: 6px; }
 .mx .w { font-size: 1.3em; }
 .mx.a { color: var(--green); } .mx.b { color: var(--orange); } .mx.r { color: var(--res); }
@@ -159,6 +161,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .num { font-family: var(--font-num); font-weight: 700; }
 .num.a { fill: var(--green); } .num.b { fill: var(--orange); } .num.r { fill: var(--res); }
 .num.hl { fill: var(--pt); }
+.num.xk { fill: var(--pt); } .num.eqs { fill: var(--muted); }
 .fbar { stroke-width: 3.5; } .fbar.a { stroke: var(--green); } .fbar.b { stroke: var(--orange); } .fbar.r { stroke: var(--res); }
 .sign { font-family: var(--font-num); font-weight: 700; font-size: 50px; fill: var(--muted); }
 .sep { stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 8 6; }
@@ -172,7 +175,13 @@ button:disabled { opacity: 0.4; cursor: default; }
 .kcut { stroke: var(--pt); stroke-width: 2.4; }
 line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
 @keyframes draw { from { stroke-dashoffset: 100; } }
-@media (prefers-reduced-motion: reduce) { line.new { animation: none; } }
+.pc.slowgone { animation: slowgone 1.2s ease-in-out both; }
+@keyframes slowgone { from { fill-opacity: 0.38; } }
+.hatch.slowhatch { animation: slowhatch 1.2s ease-in-out both; }
+@keyframes slowhatch { from { opacity: 0; } }
+.pc.slowfill { animation: slowfill 1s ease-in-out both; }
+@keyframes slowfill { from { fill-opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { line.new, .slowgone, .slowhatch, .slowfill { animation: none; } }
 .edge { fill: none; stroke: var(--ink); stroke-width: 3; }
 .edge.hl { stroke: var(--pt); stroke-width: 6; }
 .cap { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
@@ -234,6 +243,7 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
   <div class="main">
     <div class="board">
       <div class="q" id="q" aria-live="polite"></div>
+      <p class="easy" id="easy"></p>
       <svg id="svg" role="img" aria-label="The two numbers drawn as shapes"></svg>
     </div>
     <div class="panel">
@@ -341,7 +351,7 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     }
   }
   const row = (key, label, units, o = {}) => ({ key, label, units, ...o });
-  const lab = (w, n, d, hl = {}) => ({ w, n, d, hl });
+  const lab = (w, n, d, hl = {}, k = 1) => ({ w, n, d, hl, k });
 
   // ---------- Steps ----------
   function build() {
@@ -375,8 +385,8 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     if (st.strat === "mixed") {
       const mU = (F, k, cls, tilt, isNew) => whole(F.w, cls, tilt).concat(hasFr(F) ? [U(F.d, k, F.n * k, cls, { tilt, newK: isNew && k > 1 })] : []);
       const hlA = { n: kA > 1 && A.n > 0, d: kA > 1 && A.n > 0 }, hlB = { n: kB > 1 && B.n > 0, d: kB > 1 && B.n > 0 };
-      const mA = isNew => row("a", lab(A.w, NA, L, isNew ? hlA : {}), mU(A, kA, "a", false, isNew));
-      const mB = (isNew, o = {}) => row("b", lab(B.w, NB, L, isNew ? hlB : {}), mU(B, kB, "b", tB, isNew), { sign: sgn, ...o });
+      const mA = isNew => row("a", isNew && kA > 1 && A.n ? lab(A.w, A.n, A.d, hlA, kA) : lab(A.w, NA, L, isNew ? hlA : {}), mU(A, kA, "a", false, isNew));
+      const mB = (isNew, o = {}) => row("b", isNew && kB > 1 && B.n ? lab(B.w, B.n, B.d, hlB, kB) : lab(B.w, NB, L, isNew ? hlB : {}), mU(B, kB, "b", tB, isNew), { sign: sgn, ...o });
       const eqM = mx(A.w, NA, L, "a") + O(sgn) + mx(B.w, NB, L, "b");
       S.push({ title: "Make the pieces the same size", rows: [mA(true), mB(true)], text: sameText,
         eq: mx(A.w, NA, L, "a", hlA) + O(sgn) + mx(B.w, NB, L, "b", hlB),
@@ -446,8 +456,8 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
           math: ln(line(A, "a", IA)) + ln(line(B, "b", IB)) });
       }
       const hlA = { n: kA > 1 && IA > 0, d: kA > 1 && IA > 0 }, hlB = { n: kB > 1 && IB > 0, d: kB > 1 && IB > 0 };
-      const iA = (isNew, o = {}) => row("a", lab(0, PA, L, isNew ? hlA : {}), iU(A, kA, "a", false, false, isNew), o);
-      const iB = (isNew, o = {}) => row("b", lab(0, PB, L, isNew ? hlB : {}), iU(B, kB, "b", tB, false, isNew), { sign: sgn, ...o });
+      const iA = (isNew, o = {}) => row("a", isNew && kA > 1 && IA ? lab(0, IA, A.d, hlA, kA) : lab(0, PA, L, isNew ? hlA : {}), iU(A, kA, "a", false, false, isNew), o);
+      const iB = (isNew, o = {}) => row("b", isNew && kB > 1 && IB ? lab(0, IB, B.d, hlB, kB) : lab(0, PB, L, isNew ? hlB : {}), iU(B, kB, "b", tB, false, isNew), { sign: sgn, ...o });
       const eqI = mx(0, PA, L, "a") + O(sgn) + mx(0, PB, L, "b");
       S.push({ title: "Make the pieces the same size", rows: [iA(true), iB(true)], text: sameText,
         eq: mx(0, PA, L, "a", hlA) + O(sgn) + mx(0, PB, L, "b", hlB),
@@ -493,22 +503,53 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
       text: "The same question, now with its answer.",
       eq: eqQ + O("=") + `<span class="ans">${mx(W, r / g, L / g, "r")}</span>`,
       math: ln(`${mx(A.w, A.n, A.d, "a")}${O(sgn)}${mx(B.w, B.n, B.d, "b")}${O("=")}${mx(W, r / g, L / g, "r")}`) });
+    // One short, plain sentence per step, shown in the working area.
+    const EASY = {
+      "The question": add ? `Put green and orange together. Each ${shape} is 1 whole.` : `Start with green. Take away orange. Each ${shape} is 1 whole.`,
+      "Make the pieces the same size": A.d === B.d ? "The pieces are already the same size." : `Cut into ${pl(L)} so all the pieces match.`,
+      "Add the wholes, then add the pieces": "Add the wholes. Then add the pieces.",
+      "Regroup the pieces": `${L} pieces make 1 whole.`,
+      "Regroup: trade 1 whole": `Not enough pieces. Cut 1 whole into ${pl(L)}.`,
+      "Take away": "Cross out the orange amount. The rest is the answer.",
+      "Change to improper fractions": "Cut the wholes into pieces too.",
+      "Add the numerators": "Count all the pieces.",
+      "Change back to a mixed number": `Every ${L} pieces make 1 whole.`,
+      "Simplify": "Join small pieces into bigger pieces.",
+      "The answer": "This is the answer."
+    };
+    S.forEach(x => { x.easy = EASY[x.title] || ""; });
     return S;
   }
   const cap = s => s[0].toUpperCase() + s.slice(1);
 
   // ---------- Drawing ----------
-  function numeral(g, x, cy, { w, n, d, hl = {} }, key) {
-    const T = (t, tx, ty, size, on, anchor = "start") =>
-      el("text", { x: tx, y: ty, class: `num ${key}${on ? " hl" : ""}`, "font-size": size, "text-anchor": anchor }, g, String(t));
+  // With k > 1 the label shows the multiplying: n × k over d × k, then = the new fraction.
+  const numW = ({ w, n, d, k = 1 }) => {
+    let W = (w || !n) ? 31 * String(w).length + 10 : 0;
+    if (n && k > 1) W += 21 * Math.max(String(n).length, String(d).length) + 18 * (String(k).length + 2) + 12 + 44 + 21 * Math.max(String(n * k).length, String(d * k).length) + 12;
+    else if (n) W += 21 * Math.max(String(n).length, String(d).length) + 12;
+    return W;
+  };
+  function numeral(g, x, cy, { w, n, d, hl = {}, k = 1 }, key) {
+    const T = (t, tx, ty, size, on, anchor = "start", cls = "") =>
+      el("text", { x: tx, y: ty, class: `num ${key}${on ? " hl" : ""}${cls}`, "font-size": size, "text-anchor": anchor }, g, String(t));
     let cx = x;
     if (w || !n) { T(w, cx, cy + 17, 50, hl.w); cx += 31 * String(w).length + 10; }
-    if (n) {
-      const fw = 21 * Math.max(String(n).length, String(d).length) + 12, mid = cx + fw / 2;
-      T(n, mid, cy - 9, 34, hl.n, "middle");
+    if (!n) return;
+    const frac = (N, D, on, xk) => {
+      const nw = 21 * Math.max(String(N).length, String(D).length), kw = xk ? 18 * (String(xk).length + 2) : 0, fw = nw + kw + 12;
+      T(N, cx + 6 + nw / 2, cy - 9, 34, on && on.n, "middle");
+      T(D, cx + 6 + nw / 2, cy + 33, 34, on && on.d, "middle");
+      if (xk) { T(`×${xk}`, cx + 6 + nw + 6, cy - 9, 26, false, "start", " xk"); T(`×${xk}`, cx + 6 + nw + 6, cy + 33, 26, false, "start", " xk"); }
       el("line", { x1: cx, x2: cx + fw, y1: cy, y2: cy, class: `fbar ${key}` }, g);
-      T(d, mid, cy + 33, 34, hl.d, "middle");
-    }
+      cx += fw;
+    };
+    if (k > 1) {
+      frac(n, d, null, k);
+      T("=", cx + 22, cy + 12, 34, false, "middle", " eqs");
+      cx += 44;
+      frac(n * k, d * k, hl);
+    } else frac(n, d, hl);
   }
 
   function unit(g, x, y, bw, bh, u, animate) {
@@ -528,8 +569,16 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     };
     for (let i = 0; i < N; i++) {
       const [tag, a] = piece(i), gone = u.cross.has(i);
-      el(tag, { ...a, class: `pc ${u.fill[i] || "off"}${gone ? " gone" : ""}` }, g);
-      if (gone) el(tag, { ...a, class: "hatch" }, g);
+      const p = el(tag, { ...a, class: `pc ${u.fill[i] || "off"}${gone ? " gone" : ""}` }, g);
+      if (gone && seq.cross) {           // take away slowly, one piece after another
+        p.classList.add("slowgone"); p.style.animationDelay = `${seq.cross.i * seq.cross.gap}s`;
+      } else if (u.fill[i] && seq.fill && seq.row === "r") {   // shade the answer slowly, one piece after another
+        p.classList.add("slowfill"); p.style.animationDelay = `${seq.fill.i++ * seq.fill.gap}s`;
+      }
+      if (gone) {
+        const h = el(tag, { ...a, class: "hatch" }, g);
+        if (seq.cross) { h.classList.add("slowhatch"); h.style.animationDelay = `${seq.cross.i++ * seq.cross.gap}s`; }
+      }
     }
     // Cuts: the shape's own pieces in ink (blue while new), the extra same-size cuts in blue.
     const kw = Math.max(1.1, Math.min(2.4, 30 * bw / 150 / N + 0.6));
@@ -554,10 +603,24 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
   }
 
   // Lays out the rows: label numerals on the left, shapes to the right; shapes shrink (and wrap) to fit.
+  // Slow take-away and shading: only when stepping forward and the crossed or answer pieces changed.
+  let seq = {}, prevSig = { cross: "", fill: "" };
   function draw(rows, animate) {
     svg.textContent = "";
+    const nCross = rows.reduce((t, r) => t + r.units.reduce((s, u) => s + u.cross.size, 0), 0);
+    const rRow = rows.find(r => r.key === "r");
+    const nFill = rRow ? rRow.units.reduce((s, u) => s + u.fill.filter(Boolean).length, 0) : 0;
+    const sig = { cross: rows.map(r => r.units.map(u => [...u.cross].join(".")).join("|")).join("/"),
+                  fill: rRow ? `${rRow.units.length}:${nFill}:${rRow.label.w}:${rRow.label.n}/${rRow.label.d}` : "" };
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const crossNew = animate && !reduce && nCross && sig.cross !== prevSig.cross;
+    const fillNew = animate && !reduce && nFill && sig.fill !== prevSig.fill;
+    const cGap = Math.min(0.8, 14 / Math.max(1, nCross)), fGap = Math.min(0.5, 10 / Math.max(1, nFill));
+    // The answer shades in after the take-away finishes.
+    seq = { cross: crossNew ? { i: 0, gap: cGap } : null, fill: fillNew ? { i: crossNew ? (nCross * cGap + 1.2) / fGap : 0, gap: fGap } : null };
+    prevSig = sig;
     const strip = st.model === "strips";
-    const Wd = 1000, LW = 200, GX = 14, GY = 16, CAP = 32, PAD = 18, HMAX = 620;
+    const Wd = 1000, LW = Math.max(200, ...rows.map(r => 44 + numW(r.label) + 24)), GX = 14, GY = 16, CAP = 32, PAD = 18, HMAX = 620;
     const layout = s => {
       const bw = strip ? s * 1.6 : s, bh = strip ? s * 0.6 : s;
       const per = Math.max(1, Math.floor((Wd - LW + GX) / (bw + GX)));
@@ -580,6 +643,7 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
       if (r.sign) el("text", { x: 18, y: cy + 17, class: "sign", "text-anchor": "middle" }, g, r.sign);
       numeral(g, 44, cy, r.label, r.key);
       const units = r.units.length ? r.units : [U(1, 1, 0, "", { cap: "0" })];
+      seq.row = r.key;
       units.forEach((u, i) => unit(g, LW + (i % per) * (bw + GX), top + Math.floor(i / per) * (bh + CAP + GY), bw, bh, u, animate));
       y += hs[ri];
     });
@@ -600,6 +664,7 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     st.step = Math.max(0, Math.min(st.step, S.length - 1));
     const s = S[st.step];
     $("q").innerHTML = s.eq;
+    $("easy").textContent = s.easy;
     draw(s.rows, animate);
     $("count").textContent = `Step ${st.step + 1} of ${S.length}`;
     $("title").textContent = s.title;
