@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Metric Conversions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Metric Conversions: a staircase from kilo down to milli sits over a place-value chart.
+   The number is written in the chart with its decimal point after the unit it is in; each press hops the point one step
+   toward the new unit (× 10 going down the stairs, ÷ 10 going up) and fills in placeholder zeros. Practice mode asks questions. */
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.tools .tl { font-weight: 700; color: var(--muted); }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.2rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns.units button { font-family: var(--font-num); min-width: 3.2em; }
+
+.ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; font-family: var(--font-num); font-weight: 700; font-size: 1.9rem; }
+.ask input, .ask select { font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; height: 64px; }
+.ask input { width: 5.4ch; text-align: center; padding: 0 6px; -moz-appearance: textfield; }
+.ask input::-webkit-inner-spin-button, .ask input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ask select { padding: 0 8px; cursor: pointer; }
+.ask .from { border-color: var(--pt); color: var(--pt); }
+.ask .to { border-color: var(--orange); color: var(--orange); }
+.ask .word { font-family: var(--font-body); font-size: 1.2rem; color: var(--muted); }
+#pAns { width: 7ch; border-color: var(--orange); }
+.err { margin: 10px 0 0; color: var(--warn); font-weight: 700; font-size: 1.1rem; }
+.why { margin: 0; font-size: 1.2rem; }
+.why + .why { margin-top: 6px; }
+.nw { white-space: nowrap; }
+.times { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--green); margin: 4px 0 8px; }
+.result { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.25; overflow-wrap: anywhere; }
+.result .r-from { color: var(--pt); }
+.result .r-to { color: var(--orange); background: color-mix(in srgb, var(--orange) 15%, transparent); border-radius: 10px; padding: 0 10px; }
+.result .wait { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btns button { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.fb { margin: 12px 0 0; font-size: 1.2rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.score { font-size: 1.1rem; color: var(--muted); margin: 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.4rem; }
+
+/* Board drawing */
+#svg { cursor: pointer; }
+.step { fill: var(--chip); stroke: var(--grid-major); stroke-width: 2; }
+.step.from { fill: color-mix(in srgb, var(--pt) 20%, var(--sheet)); stroke: var(--pt); stroke-width: 4; }
+.step.to { fill: color-mix(in srgb, var(--orange) 20%, var(--sheet)); stroke: var(--orange); stroke-width: 4; }
+.st-sym { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
+.st-word { fill: var(--muted); font-family: var(--font-display); font-weight: 800; text-anchor: middle; }
+.st-size { fill: var(--muted); font-family: var(--font-num); font-weight: 500; text-anchor: middle; }
+.from .st-sym, .st-sym.from { fill: var(--pt); }
+.st-sym.to { fill: var(--orange); }
+.tag { font-family: var(--font-display); font-weight: 800; font-size: 17px; text-anchor: middle; fill: var(--sheet); }
+.tag-bg.from { fill: var(--pt); } .tag-bg.to { fill: var(--orange); }
+.hop { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
+.hop.todo { stroke: var(--grid-major); stroke-dasharray: 6 7; stroke-width: 3; }
+.hop-lbl { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 20px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.hop-lbl.todo { fill: var(--muted); }
+.arrowhead { fill: var(--green); }
+.cell { fill: var(--sheet); stroke: var(--ink); stroke-width: 2; }
+.cell.extra { fill: none; stroke: var(--grid-major); stroke-dasharray: 6 6; }
+.dig { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
+.dig.new { fill: var(--warn); }
+.dig.gone { opacity: 0.22; }
+.point { fill: var(--warn); stroke: var(--sheet); stroke-width: 3; }
+.c-hop { fill: none; stroke: var(--warn); stroke-width: 3; stroke-linecap: round; }
+.c-head { fill: var(--warn); }
+.chain { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
+.chain .now { fill: var(--orange); }
+.chain .start { fill: var(--pt); }
+.chain .eqs { fill: var(--muted); }
+@media (max-width: 600px) { .ask { font-size: 1.4rem; } .ask input, .ask select { height: 52px; } .result { font-size: 1.6rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Metric Conversions</h1></div>
+    <div class="tools">
+      <span class="tl">Base unit</span>
+      <div class="seg-btns units" role="group" aria-label="Base unit">
+        <button type="button" data-base="m" class="on">m</button><button type="button" data-base="g">g</button><button type="button" data-base="L">L</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Mode">
+        <button type="button" data-mode="explore" class="on">Explore</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1200 750" role="img" aria-label="Metric staircase from kilo down to milli over a place value chart. Tap a step to change to that unit."></svg></div>
+
+    <div class="panel" id="explore">
+      <section class="card">
+        <p class="label">Change</p>
+        <div class="ask">
+          <input id="num" type="text" inputmode="decimal" autocomplete="off" aria-label="Number" value="3.5">
+          <select id="from" class="from" aria-label="From unit"></select>
+          <span class="word">to</span>
+          <select id="to" class="to" aria-label="To unit"></select>
+        </div>
+        <p class="err" id="err" hidden></p>
+        <p class="hint">Tap a step on the stairs to change to that unit.</p>
+      </section>
+      <section class="card">
+        <p class="label">How to move</p>
+        <div id="how"></div>
+        <div class="result" id="result" aria-live="polite"></div>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="hop">Move 1 place</button>
+        <button type="button" id="all">Show the answer</button>
+        <button type="button" id="again">Start over</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <p class="label" id="qNum">Question 1</p>
+        <div class="ask">
+          <span id="pGiven" class="r-from"></span><span>=</span>
+          <input id="pAns" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer">
+          <span id="pUnit" style="color: var(--orange)"></span>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="check">Check</button>
+        <button type="button" id="showme">Show me</button>
+        <button type="button" id="next">New question</button>
+      </div>
+      <section class="card">
+        <p class="score">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
+        <p class="hint">Down the stairs: × 10 each step, the decimal moves right. Up the stairs: ÷ 10 each step, the decimal moves left.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const PRE = ["k", "h", "da", "", "d", "c", "m"];
+  const WORD = ["kilo", "hecto", "deka", "base unit", "deci", "centi", "milli"];
+  const SIZE = ["1000", "100", "10", "1", "0.1", "0.01", "0.001"];
+  const BASE_U = 3;
+  let base = "m", mode = "explore";
+  const sym = u => PRE[u] + base;
+
+  // The number being moved, kept as digits so nothing is lost to rounding.
+  // digits: no leading or trailing zeros; ones: index in digits of the ones place (can be outside the string).
+  let num = null, uFrom = 0, uTo = BASE_U, cur = 0, pos = 0, busy = false;
+  let practiceShown = false;
+
+  function parse(s) {
+    s = String(s).replace(/[\s,]/g, "");
+    if (!/^\d*\.?\d*$/.test(s) || !/\d/.test(s)) return null;
+    const [i = "", f = ""] = s.split(".");
+    let all = i + f, ones = i.length - 1;
+    const z = all.length - all.replace(/^0+/, "").length;
+    all = all.slice(z); ones -= z;
+    all = all.replace(/0+$/, "");
+    if (!all) return { digits: "", ones: 0, intLen: i.replace(/^0+/, "").length, fracLen: f.replace(/0+$/, "").length };
+    return { digits: all, ones, intLen: i.replace(/^0+/, "").length, fracLen: f.replace(/0+$/, "").length };
+  }
+  // Columns are unit indexes: 0 = kilo ... 6 = milli; extra places sit beyond either end.
+  const firstCol = () => uFrom - num.ones;
+  const lastCol = () => firstCol() + num.digits.length - 1;
+  function digitAt(c) { const j = c - firstCol(); return j >= 0 && j < num.digits.length ? num.digits[j] : null; }
+  // The number read with its decimal point after column k.
+  function readAt(k) {
+    const lo = Math.min(firstCol(), k), hi = Math.max(lastCol(), k);
+    let ip = "", fp = "";
+    for (let c = lo; c <= k; c++) ip += digitAt(c) ?? "0";
+    for (let c = k + 1; c <= hi; c++) fp += digitAt(c) ?? "0";
+    ip = ip.replace(/^0+(?=\d)/, "");
+    return { ip, fp };
+  }
+  const group = ip => ip.length > 4 ? ip.replace(/\B(?=(\d{3})+$)/g, " ") : ip;
+  const show = ({ ip, fp }) => group(ip) + (fp ? "." + fp : "");
+  const plain = ({ ip, fp }) => ip + (fp ? "." + fp : "");
+
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+
+  // ---------- drawing ----------
+  const ST_TOP = 84, ST_DROP = 44, ST_BOT = 500, CELL_Y = 522, CELL_H = 110;
+  let colX, cw;
+  function draw() {
+    svg.replaceChildren();
+    const f = firstCol(), l = lastCol();
+    const cmin = Math.min(0, f, uTo), cmax = Math.max(6, l, uTo);
+    const n = cmax - cmin + 1;
+    cw = Math.min(158, 1170 / n);
+    const x0 = (1200 - n * cw) / 2;
+    colX = c => x0 + (c - cmin) * cw;
+    const step = Math.sign(uTo - uFrom);
+
+    // The stairs: kilo at the top left, milli at the bottom right.
+    const symSize = Math.min(46, cw * 0.44), smSize = Math.min(20, cw * 0.22);
+    for (let u = 0; u <= 6; u++) {
+      const top = ST_TOP + u * ST_DROP, x = colX(u);
+      const cls = u === uFrom ? " from" : u === uTo ? " to" : "";
+      const g = el("g", { class: "stair", "data-u": u });
+      el("rect", { class: "step" + cls, x: x + 2, y: top, width: cw - 4, height: ST_BOT - top, rx: 8 }, g);
+      el("text", { class: "st-sym" + cls, x: x + cw / 2, y: top + 48, "font-size": symSize }, g).textContent = sym(u);
+      el("text", { class: "st-word", x: x + cw / 2, y: top + 76, "font-size": smSize }, g).textContent = WORD[u] === "base unit" ? (cw > 110 ? "base unit" : "base") : WORD[u];
+      el("text", { class: "st-size", x: x + cw / 2, y: top + 102, "font-size": smSize }, g).textContent = SIZE[u] + " " + base;
+      if (u === uFrom || (u === uTo && uTo !== uFrom)) {
+        const isFrom = u === uFrom, w = Math.min(cw - 10, 84), ty = ST_BOT - 24;
+        el("rect", { class: "tag-bg " + (isFrom ? "from" : "to"), x: x + cw / 2 - w / 2, y: ty - 18, width: w, height: 28, rx: 14 }, g);
+        el("text", { class: "tag", x: x + cw / 2, y: ty + 2 }, g).textContent = isFrom ? "from" : "to";
+      }
+    }
+
+    // Hops along the stairs from the starting unit to the new one; the ones already made are solid green.
+    const done = Math.abs(cur - uFrom);
+    for (let i = 0; i < Math.abs(uTo - uFrom); i++) {
+      const a = uFrom + i * step, b = a + step;
+      const ax = colX(a) + cw / 2, bx = colX(b) + cw / 2;
+      const ay = ST_TOP + a * ST_DROP - 6, by = ST_TOP + b * ST_DROP - 6;
+      const cy = Math.min(ay, by) - 52, mx = (ax + bx) / 2;
+      const todo = i >= done ? " todo" : "";
+      el("path", { class: "hop" + todo, d: `M${ax},${ay} Q${mx},${cy} ${bx},${by}` });
+      if (!todo) arrowHead(bx, by, bx - mx, by - cy, "arrowhead");
+      el("text", { class: "hop-lbl" + todo, x: mx, y: cy + 14 }).textContent = (step > 0 ? "× 10" : "÷ 10");
+    }
+
+    // The place-value chart: one box per place, the decimal point after the unit the number is in now.
+    const lo = Math.min(f, cur), hi = Math.max(l, cur);
+    const sLo = Math.min(f, uFrom), sHi = Math.max(l, uFrom);
+    const digSize = Math.min(70, cw * 0.72);
+    for (let c = cmin; c <= cmax; c++) {
+      el("rect", { class: "cell" + (c < 0 || c > 6 ? " extra" : ""), x: colX(c) + 2, y: CELL_Y, width: cw - 4, height: CELL_H, rx: 6 });
+      // Zeros that were typed but are not needed any more (2500 mm read as 0.0025 km) fade out instead of vanishing.
+      const inNow = c >= lo && c <= hi, inStart = c >= sLo && c <= sHi;
+      if (!inNow && !inStart) continue;
+      const d = digitAt(c), isNew = d === null && !inStart;
+      el("text", { class: "dig" + (isNew ? " new" : "") + (inNow ? "" : " gone"), x: colX(c) + cw / 2, y: CELL_Y + CELL_H / 2 + digSize * 0.36, "font-size": digSize }).textContent = d ?? "0";
+    }
+
+    // Loops under the chart for each hop the point has made.
+    for (let i = 0; i < done; i++) {
+      const a = colX(uFrom + i * step) + cw, b = colX(uFrom + (i + 1) * step) + cw;
+      const y = CELL_Y + CELL_H + 6, cy = y + 46;
+      el("path", { class: "c-hop", d: `M${a},${y} Q${(a + b) / 2},${cy} ${b},${y}` });
+      arrowHead(b, y, b - (a + b) / 2, y - cy, "c-head", 9);
+    }
+    el("circle", { class: "point", cx: colX(pos) + cw, cy: CELL_Y + CELL_H - 14, r: Math.min(11, cw * 0.13) + 2 });
+
+    // Along the bottom: each hop gives a new name for the same amount.
+    const terms = [];
+    for (let i = 0; i <= done; i++) { const k = uFrom + i * step; terms.push(show(readAt(k)) + " " + sym(k)); }
+    const hideEnd = mode === "practice" && !practiceShown;
+    const shownTerms = hideEnd ? terms.slice(0, 1) : terms;
+    const chars = shownTerms.join(" = ").length;
+    const size = Math.min(44, 1150 / (chars * 0.62));
+    const t = el("text", { class: "chain", x: 600, y: 722, "font-size": size });
+    shownTerms.forEach((s, i) => {
+      if (i) el("tspan", { class: "eqs" }, t).textContent = " = ";
+      const last = i === shownTerms.length - 1 && cur === uTo && i > 0;
+      el("tspan", { class: i === 0 ? "start" : last ? "now" : "" }, t).textContent = s;
+    });
+  }
+  function arrowHead(x, y, dx, dy, cls, s = 11) {
+    const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const px = -uy, py = ux;
+    el("path", { class: cls, d: `M${x},${y} L${x - ux * s * 1.6 + px * s},${y - uy * s * 1.6 + py * s} L${x - ux * s * 1.6 - px * s},${y - uy * s * 1.6 - py * s}Z` });
+  }
+
+  // ---------- moving the decimal ----------
+  function hopOnce() {
+    return new Promise(res => {
+      if (cur === uTo) return res();
+      busy = true; panel();
+      const from = cur, to = cur + Math.sign(uTo - cur), t0 = performance.now(), dur = 480;
+      const frame = now => {
+        const k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        pos = from + (to - from) * e;
+        if (k === 1) { cur = to; pos = to; busy = false; }
+        draw();
+        if (k < 1) requestAnimationFrame(frame); else { panel(); res(); }
+      };
+      requestAnimationFrame(frame);
+    });
+  }
+  async function hopAll() { while (cur !== uTo) { await hopOnce(); await new Promise(r => setTimeout(r, 160)); } }
+  function restart() { cur = pos = uFrom; draw(); panel(); }
+
+  // ---------- explore panel ----------
+  function fillSelects() {
+    for (const [id, v] of [["from", uFrom], ["to", uTo]]) {
+      $(id).innerHTML = PRE.map((p, u) => `<option value="${u}">${p + base}</option>`).join("");
+      $(id).value = v;
+    }
+  }
+  function howText() {
+    const s = Math.abs(uTo - uFrom), down = uTo > uFrom;
+    if (!s) return `<p class="why">Pick two different units.</p>`;
+    const op = down ? "×" : "÷", factor = group("1" + "0".repeat(s));
+    const chain = Array(s).fill(`<span class="nw">${op} 10</span>`).join(" ") + (s > 1 ? ` <span class="nw">= ${op} ${factor}</span>` : "");
+    return `<p class="why"><span class="c-pt">${sym(uFrom)}</span> to <span class="c-orange">${sym(uTo)}</span> is <b>${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}</b> the stairs.</p>
+      <p class="times">${chain}</p>
+      <p class="why">${down ? "The units get smaller, so you need more of them." : "The units get bigger, so you need fewer of them."}
+      The decimal moves <b>${s} place${s > 1 ? "s" : ""} ${down ? "right" : "left"}</b>.</p>`;
+  }
+  function panel() {
+    if (mode === "explore") {
+      $("how").innerHTML = howText();
+      const there = cur === uTo;
+      $("result").innerHTML = `<span class="r-from">${show(readAt(uFrom))} ${sym(uFrom)}</span> = ` +
+        (there ? `<span class="r-to">${show(readAt(uTo))} ${sym(uTo)}</span>` : `<span class="wait">? ${sym(uTo)}</span>`);
+      const dir = uTo > cur ? "right" : "left";
+      $("hop").textContent = there ? "Move 1 place" : `Move 1 place ${dir}`;
+      $("hop").disabled = $("all").disabled = there || busy;
+    } else {
+      $("showme").disabled = busy || practiceShown;
+      $("check").disabled = busy || practiceShown || q.right;
+    }
+  }
+  function setNum() {
+    const raw = $("num").value, p = parse(raw);
+    let msg = "";
+    if (!p || !p.digits) msg = "Type a number bigger than 0, like 3.5";
+    else if (p.intLen > 6) msg = "Use a number under 1 000 000.";
+    else if (p.fracLen > 4) msg = "Use at most 4 decimal places.";
+    $("err").hidden = !msg; $("err").textContent = msg;
+    if (msg) return;
+    num = p; restart();
+  }
+  $("num").addEventListener("input", setNum);
+  $("from").addEventListener("change", () => { uFrom = +$("from").value; restart(); });
+  $("to").addEventListener("change", () => { uTo = +$("to").value; restart(); });
+  $("hop").addEventListener("click", () => { if (!busy) hopOnce(); });
+  $("all").addEventListener("click", () => { if (!busy) hopAll(); });
+  $("again").addEventListener("click", () => { if (!busy) restart(); });
+
+  // Tap a step: in Explore it becomes the unit to change to.
+  svg.addEventListener("click", e => {
+    if (mode !== "explore" || busy) return;
+    const g = e.target.closest(".stair");
+    let u = g ? +g.dataset.u : null;
+    if (u === null) {
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+      if (p.y > ST_BOT) return;
+      for (let k = 0; k <= 6; k++) if (p.x >= colX(k) && p.x < colX(k) + cw) u = k;
+    }
+    if (u === null || u === uFrom) return;
+    uTo = u; $("to").value = u; restart();
+  });
+
+  // ---------- practice ----------
+  let q = {}, qCount = 0, right = 0, tried = 0;
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  function newQuestion() {
+    const span = pick([1, 1, 2, 2, 3, 3, 3, 4, 5, 6]);
+    let a, b;
+    do { a = rnd(0, 6); b = a + pick([-1, 1]) * span; } while (b < 0 || b > 6);
+    const n = pick([
+      () => String(rnd(2, 20)),
+      () => (rnd(11, 99) / 10).toString(),
+      () => String(rnd(12, 95) * 10),
+      () => "0." + pick(["25", "5", "75", "4", "06", "35", "8"]),
+      () => (rnd(101, 999) / 100).toString(),
+    ])();
+    q = { s: n, a, b, right: false, counted: false };
+    qCount++; practiceShown = false;
+    num = parse(n); uFrom = a; uTo = b; cur = pos = a;
+    $("qNum").textContent = "Question " + qCount;
+    $("pGiven").innerHTML = `<span class="c-pt">${show(readAt(a))} ${sym(a)}</span>`;
+    $("pUnit").textContent = sym(b);
+    $("pAns").value = ""; $("fb").textContent = ""; $("fb").className = "fb";
+    draw(); panel();
+  }
+  function relabelPractice() {
+    $("pGiven").innerHTML = `<span class="c-pt">${show(readAt(uFrom))} ${sym(uFrom)}</span>`;
+    $("pUnit").textContent = sym(uTo);
+  }
+  function tally(ok) {
+    if (q.counted) return;
+    q.counted = true; tried++; if (ok) right++;
+    $("right").textContent = right; $("tried").textContent = tried;
+  }
+  function check() {
+    if (q.right || practiceShown || busy) return;
+    const p = parse($("pAns").value);
+    if (!p || !p.digits) { $("fb").className = "fb no"; $("fb").textContent = "Type a number in the box."; return; }
+    const s = Math.abs(uTo - uFrom), down = uTo > uFrom;
+    const want = plain(readAt(uTo));
+    const got = (() => { const save = [num, uFrom]; num = p; uFrom = 0; const r = plain(readAt(0)); [num, uFrom] = save; return r; })();
+    if (got === want) {
+      q.right = true; tally(true);
+      $("fb").className = "fb ok";
+      $("fb").textContent = `Correct! ${s} step${s > 1 ? "s" : ""} ${down ? "down, × " : "up, ÷ "}${group("1" + "0".repeat(s))}.`;
+      practiceShown = true; hopAll();
+    } else {
+      tally(false);
+      $("fb").className = "fb no";
+      $("fb").textContent = `Not yet. ${sym(uFrom)} to ${sym(uTo)} is ${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}, so the decimal moves ${s} place${s > 1 ? "s" : ""} ${down ? "right" : "left"}. Try again or press Show me.`;
+    }
+    panel();
+  }
+  $("check").addEventListener("click", check);
+  $("pAns").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  $("showme").addEventListener("click", () => {
+    if (busy || practiceShown) return;
+    tally(false); practiceShown = true;
+    $("fb").className = "fb";
+    $("fb").textContent = `Watch the decimal: ${show(readAt(uFrom))} ${sym(uFrom)} = ${show(readAt(uTo))} ${sym(uTo)}`;
+    draw(); panel(); hopAll();
+  });
+  $("next").addEventListener("click", () => { if (!busy) newQuestion(); });
+
+  // ---------- header switches ----------
+  document.querySelectorAll("[data-base]").forEach(b => b.addEventListener("click", () => {
+    if (busy) return;
+    base = b.dataset.base;
+    document.querySelectorAll("[data-base]").forEach(x => x.classList.toggle("on", x === b));
+    if (mode === "explore") { const f = uFrom, t = uTo; fillSelects(); uFrom = f; uTo = t; draw(); panel(); }
+    else { relabelPractice(); draw(); }
+  }));
+  let saved = null;
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+    if (busy || b.dataset.mode === mode) return;
+    mode = b.dataset.mode;
+    document.querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("on", x === b));
+    $("explore").hidden = mode !== "explore";
+    $("practice").hidden = mode !== "practice";
+    svg.style.cursor = mode === "explore" ? "pointer" : "default";
+    if (mode === "practice") { saved = { num, uFrom, uTo }; if (!qCount) newQuestion(); else { num = parse(q.s); uFrom = q.a; uTo = q.b; cur = pos = practiceShown ? uTo : uFrom; relabelPractice(); draw(); panel(); } }
+    else { ({ num, uFrom, uTo } = saved); restart(); }
+  }));
+
+  uFrom = 0; uTo = BASE_U;
+  fillSelects();
+  num = parse($("num").value);
+  restart();
+})();
+</script>
+
+</body>
+</html>

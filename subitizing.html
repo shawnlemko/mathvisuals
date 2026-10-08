@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Subitizing Flash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Subitizing Flash: a card flashes a quantity (ten-frames or dots in planned groups), then hides.
+   The student types how many they saw; the card comes back with the answer and how the parts make it. */
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.opt { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 11px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.board { position: relative; }
+.board svg { aspect-ratio: 1000 / 760; }
+.frame-cell { fill: var(--sheet); stroke: var(--ink); stroke-width: 4; }
+.frame-out { fill: none; stroke: var(--ink); stroke-width: 8; }
+.counter { fill: var(--pt); }
+.counter.b { fill: var(--orange); }
+.dot { fill: var(--pt); }
+.dot.b { fill: var(--orange); }
+.grp { fill: var(--paper); stroke: var(--grid-major); stroke-width: 3; }
+.back { fill: var(--chip); stroke: var(--grid-major); stroke-width: 3; }
+.back-q { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 320px; text-anchor: middle; dominant-baseline: central; opacity: 0.45; }
+.back-msg { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 54px; text-anchor: middle; dominant-baseline: central; }
+.timer { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 8px; border-radius: 4px; background: var(--pt); transform-origin: left; opacity: 0; }
+.timer.run { opacity: 0.6; animation: shrink var(--t, 2s) linear forwards; }
+@keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+.panel .card { display: flex; flex-direction: column; gap: 12px; }
+.ask { font-family: var(--font-display); font-weight: 800; font-size: 2rem; margin: 0; }
+.answer-row { display: flex; gap: 12px; align-items: stretch; }
+#ans { width: 0; flex: 1 1 auto; min-width: 0; height: 96px; font-family: var(--font-num); font-weight: 700; font-size: 4rem; text-align: center;
+  color: var(--ink); background: var(--paper); border: 3px solid var(--pt); border-radius: 12px; }
+#ans:disabled { border-color: var(--grid-major); color: var(--muted); }
+#check { font-size: 1.4rem; padding: 10px 22px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#check:disabled, #again:disabled { opacity: 0.45; cursor: default; }
+#next { font-size: 1.5rem; min-height: 64px; background: var(--green); color: var(--sheet); border-color: var(--green); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row button { flex: 1 1 auto; min-height: 48px; font-size: 1.05rem; }
+.fb { min-height: 3.4rem; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; line-height: 1.2; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.15rem; color: var(--muted); }
+.parts { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; margin: 0; min-height: 2.2rem; }
+.score { display: flex; align-items: baseline; gap: 10px; margin: 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 2rem; }
+.score span { font-family: var(--font-body); font-size: 1.1rem; color: var(--muted); }
+.score .k { font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
+@media (max-width: 600px) { .ask { font-size: 1.5rem; } #ans { height: 80px; font-size: 3rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Subitizing Flash</h1></div>
+    <div class="opts">
+      <span class="opt">Show
+        <span class="seg" id="kind"><button type="button" data-v="frames" aria-pressed="true">Ten-frames</button><button type="button" data-v="dots" aria-pressed="false">Dots</button></span></span>
+      <span class="opt">Up to
+        <span class="seg" id="max"><button type="button" data-v="10" aria-pressed="true">10</button><button type="button" data-v="20" aria-pressed="false">20</button></span></span>
+      <span class="opt">Flash
+        <span class="seg" id="speed"><button type="button" data-v="1000" aria-pressed="false">Fast</button><button type="button" data-v="2000" aria-pressed="true">Medium</button><button type="button" data-v="3000" aria-pressed="false">Slow</button></span></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 760" role="img" aria-label="Flash card"></svg><div class="timer" id="timer"></div></div>
+    <div class="panel">
+      <div class="card">
+        <button type="button" id="next">Start</button>
+        <p class="ask">How many?</p>
+        <div class="answer-row">
+          <input id="ans" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" aria-label="How many did you see?" disabled>
+          <button type="button" id="check" disabled>Check</button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <p class="parts" id="parts"></p>
+        <div class="row">
+          <button type="button" id="again" disabled>Flash again</button>
+          <button type="button" id="reset">Start over</button>
+        </div>
+        <p class="score"><span class="k">Correct</span><b id="score">0 <span>of 0</span></b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const opt = { kind: "frames", max: 10, speed: 2000 };
+  // state: "idle" (before Start), "flash" (card showing), "wait" (card hidden, typing), "shown" (answer revealed)
+  let state = "idle", n = 0, last = 0, layout = null, timer = 0, right = 0, tries = 0;
+
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  // Dot clusters: dice-style spots on a 3 × 3 grid, so each group is seen at a glance.
+  const SPOTS = {
+    1: [[[1, 1]]],
+    2: [[[0, 0], [2, 2]], [[2, 0], [0, 2]], [[0, 1], [2, 1]]],
+    3: [[[0, 0], [1, 1], [2, 2]], [[2, 0], [1, 1], [0, 2]], [[1, 0], [0, 2], [2, 2]]],
+    4: [[[0, 0], [2, 0], [0, 2], [2, 2]]],
+    5: [[[0, 0], [2, 0], [1, 1], [0, 2], [2, 2]]],
+    6: [[[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]], [[0, 0], [1, 0], [2, 0], [0, 2], [1, 2], [2, 2]]],
+    9: [[[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [0, 2], [1, 2], [2, 2]]],
+  };
+  // Planned groupings for each number: one group is a dice pattern, several groups show the parts.
+  const GROUPS = {
+    1: [[1]], 2: [[2]], 3: [[3]], 4: [[4]], 5: [[5]], 6: [[6], [3, 3]],
+    7: [[5, 2], [4, 3], [6, 1]], 8: [[4, 4], [5, 3], [6, 2]], 9: [[9], [5, 4], [3, 3, 3]], 10: [[5, 5], [6, 4], [4, 4, 2]],
+    11: [[5, 5, 1], [6, 5]], 12: [[6, 6], [4, 4, 4], [5, 5, 2]], 13: [[5, 5, 3], [6, 6, 1], [5, 4, 4]],
+    14: [[5, 5, 4], [6, 6, 2]], 15: [[5, 5, 5], [6, 6, 3]], 16: [[4, 4, 4, 4], [6, 6, 4], [5, 5, 5, 1]],
+    17: [[5, 5, 5, 2], [6, 6, 5]], 18: [[6, 6, 6], [5, 5, 4, 4]], 19: [[5, 5, 5, 4], [6, 6, 6, 1]], 20: [[5, 5, 5, 5], [6, 6, 4, 4]],
+  };
+
+  function newLayout() {
+    if (opt.kind === "frames") {
+      return { kind: "frames", two: opt.max === 20, parts: n > 10 ? [10, n - 10] : [n] };
+    }
+    const groups = pick(GROUPS[n]).slice().sort(() => Math.random() - 0.5);
+    return { kind: "dots", parts: groups, shapes: groups.map(g => ({ spots: pick(SPOTS[g]), turn: Math.random() < 0.5 })) };
+  }
+
+  function drawFrames() {
+    // One ten-frame for up to 10; two stacked ten-frames for up to 20 (the top one fills first).
+    const frames = layout.two ? 2 : 1;
+    const c = frames === 1 ? 180 : 168, gap = 50;
+    const w = c * 5, h = c * 2, total = frames * h + (frames - 1) * gap;
+    const x0 = (1000 - w) / 2, y0 = (760 - total) / 2;
+    for (let f = 0; f < frames; f++) {
+      const fy = y0 + f * (h + gap);
+      for (let r = 0; r < 2; r++) for (let k = 0; k < 5; k++) {
+        const i = f * 10 + r * 5 + k;
+        el("rect", { class: "frame-cell", x: x0 + k * c, y: fy + r * c, width: c, height: c });
+        if (i < n) el("circle", { class: "counter" + (f === 1 ? " b" : ""), cx: x0 + k * c + c / 2, cy: fy + r * c + c / 2, r: c * 0.36 });
+      }
+      el("rect", { class: "frame-out", x: x0, y: fy, width: w, height: h, rx: 4 });
+    }
+  }
+
+  function drawDots() {
+    // Each group gets its own square region with space between, so the parts read as separate.
+    const g = layout.parts.length;
+    const box = g === 1 ? 480 : g === 2 ? 420 : g === 3 ? 270 : 330;
+    const cells = g === 4 ? [[0, 0], [1, 0], [0, 1], [1, 1]] : layout.parts.map((_, i) => [i, 0]);
+    const cols = g === 4 ? 2 : g, rows = g === 4 ? 2 : 1;
+    const gapX = g === 4 ? 140 : g === 3 ? 60 : 100, gapY = 50;
+    const x0 = (1000 - (cols * box + (cols - 1) * gapX)) / 2, y0 = (760 - (rows * box + (rows - 1) * gapY)) / 2;
+    layout.shapes.forEach((s, i) => {
+      const bx = x0 + cells[i][0] * (box + gapX), by = y0 + cells[i][1] * (box + gapY);
+      const step = box / 3, r = step * 0.34, pad = g === 1 ? 0 : 14;
+      const tone = (cells[i][0] + cells[i][1]) % 2 ? " b" : "";
+      if (g > 1) el("rect", { class: "grp", x: bx - pad, y: by - pad, width: box + 2 * pad, height: box + 2 * pad, rx: 24 });
+      for (const [a, b] of s.spots) {
+        const [col, row] = s.turn ? [b, a] : [a, b];
+        el("circle", { class: "dot" + tone, cx: bx + step * (col + 0.5), cy: by + step * (row + 0.5), r });
+      }
+    });
+  }
+
+  function draw(face) {
+    svg.replaceChildren();
+    if (face === "card") {
+      layout.kind === "frames" ? drawFrames() : drawDots();
+      svg.setAttribute("aria-label", state === "shown" ? `Card showing ${n}` : "Flash card showing a quantity");
+      return;
+    }
+    el("rect", { class: "back", x: 20, y: 20, width: 960, height: 720, rx: 28 });
+    if (face === "idle") el("text", { class: "back-msg", x: 500, y: 380 }).textContent = "Press Start to flash a card";
+    else el("text", { class: "back-q", x: 500, y: 380 }).textContent = "?";
+    svg.setAttribute("aria-label", "Card hidden");
+  }
+
+  function flash() {
+    clearTimeout(timer);
+    state = "flash";
+    draw("card");
+    const t = $("timer");
+    t.style.setProperty("--t", opt.speed + "ms");
+    t.classList.remove("run"); void t.offsetWidth; t.classList.add("run");
+    timer = setTimeout(() => { if (state === "flash") { state = "wait"; draw("back"); } t.classList.remove("run"); }, opt.speed);
+    $("ans").disabled = false; $("check").disabled = false; $("again").disabled = false;
+    $("ans").focus();
+  }
+
+  function next() {
+    do n = 1 + Math.floor(Math.random() * opt.max); while (n === last && opt.max > 1);
+    last = n;
+    layout = newLayout();
+    $("ans").value = ""; $("fb").textContent = ""; $("fb").className = "fb"; $("parts").textContent = "";
+    $("next").textContent = "Next card";
+    flash();
+  }
+
+  function check() {
+    if (state !== "flash" && state !== "wait") return;
+    const v = $("ans").value.trim();
+    if (!/^\d+$/.test(v)) { $("ans").focus(); return; }
+    clearTimeout(timer); $("timer").classList.remove("run");
+    tries++;
+    const ok = +v === n;
+    if (ok) right++;
+    state = "shown";
+    draw("card");
+    $("fb").className = "fb " + (ok ? "ok" : "no");
+    $("fb").innerHTML = ok ? `Yes! ${n}` : `It was ${n}<small>You said ${v}</small>`;
+    $("parts").textContent = layout.parts.length > 1 ? `${layout.parts.join(" + ")} = ${n}` : "";
+    $("score").innerHTML = `${right} <span>of ${tries}</span>`;
+    $("ans").disabled = true; $("check").disabled = true; $("again").disabled = true;
+    $("next").focus();
+  }
+
+  function reset() {
+    clearTimeout(timer); $("timer").classList.remove("run");
+    state = "idle"; right = tries = 0; last = 0;
+    $("score").innerHTML = `0 <span>of 0</span>`;
+    $("ans").value = ""; $("ans").disabled = true; $("check").disabled = true; $("again").disabled = true;
+    $("fb").textContent = ""; $("parts").textContent = "";
+    $("next").textContent = "Start";
+    draw("idle");
+  }
+
+  // Header switches: changing the picture or the range starts a fresh card set; speed applies to the next flash.
+  for (const id of ["kind", "max", "speed"]) {
+    $(id).addEventListener("click", e => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      for (const x of $(id).children) x.setAttribute("aria-pressed", x === b);
+      opt[id] = id === "kind" ? b.dataset.v : +b.dataset.v;
+      if (id !== "speed") reset();
+    });
+  }
+  $("next").addEventListener("click", next);
+  $("check").addEventListener("click", check);
+  $("again").addEventListener("click", () => { if (state === "wait" || state === "flash") flash(); });
+  $("reset").addEventListener("click", reset);
+  $("ans").addEventListener("input", () => { $("ans").value = $("ans").value.replace(/\D/g, ""); });
+  $("ans").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+  reset();
+})();
+</script>
+
+</body>
+</html>

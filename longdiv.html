@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Long Division</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Written: shared look for Stacked Multiplication (stackmult.html) and Long Division (longdiv.html).
+   A grid of digit boxes fills the board; written.js sizes it with --cs (one cell) so the digits stay as big as the window allows. */
+:root { --c1: var(--pt); --c2: #7a3fc0; --bd: #0f7f8c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c2: #b58cff; --bd: #4fd0dc; } }
+:root[data-theme="dark"] { --c2: #b58cff; --bd: #4fd0dc; }
+
+.tabs { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.tabs button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; min-height: 52px; padding: 8px 20px; }
+.tabs button + button { border-left: 2px solid var(--grid-major); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+
+.main.wr { grid-template-columns: minmax(0, 1fr) minmax(300px, 21rem); }
+@media (max-width: 860px) { .main.wr { grid-template-columns: 1fr; } }
+.wr .board { position: relative; display: flex; align-items: center; justify-content: center; padding: 12px; min-height: 260px; overflow: hidden; }
+.wr .panel { gap: 12px; }
+.wr .panel .card { padding: 12px 14px; }
+@media (min-width: 861px) and (min-height: 520px) {
+  .wrap .wr .panel { overflow: hidden; }
+  .wr .panel .msg { flex: 1 1 auto; min-height: 90px; overflow-y: auto; }
+}
+
+/* Empty board: what to do first. */
+.empty { text-align: center; max-width: 26ch; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 2.6vw, 2.6rem); line-height: 1.2; color: var(--muted); }
+.empty b { color: var(--pt); }
+
+/* The question boxes in the panel. */
+.q { display: flex; align-items: center; gap: 10px; }
+.q input { width: 100%; min-width: 0; height: 64px; font-family: var(--font-num); font-weight: 700; font-size: 2rem; color: var(--ink); background: var(--paper); border: 3px dashed var(--grid-major); border-radius: 10px; text-align: center; }
+.q input:not(:placeholder-shown) { border-style: solid; }
+.q input::placeholder { color: var(--muted); font-family: var(--font-body); font-size: 1rem; font-weight: 400; }
+.q .op { font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; flex: none; }
+.make { display: flex; gap: 8px; margin-top: 8px; }
+.make select { flex: 1 1 auto; min-width: 0; min-height: 48px; font: inherit; font-weight: 700; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 6px 8px; }
+.make button { flex: none; min-height: 48px; }
+.wr .hint { margin: 8px 0 0; }
+.err { margin: 8px 0 0; color: var(--warn); font-weight: 700; }
+#check { width: 100%; min-height: 60px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); }
+#check:hover { background: var(--sheet); color: var(--pt); }
+.under { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.under label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; font-weight: 700; }
+.under input { width: 22px; height: 22px; accent-color: var(--pt); }
+
+/* Result and explanation. */
+.msg p { margin: 0; }
+.msg p + p { margin-top: 8px; }
+.msg .lead { color: var(--muted); font-size: 1.05rem; }
+.msg .res { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.2; }
+.msg .res.good { color: var(--green); font-size: 1.8rem; }
+.msg .res.bad { color: var(--warn); }
+.msg .res.next { color: var(--orange); }
+.msg .why { font-size: 1.2rem; line-height: 1.45; }
+.msg .why .m, .msg .eqn { font-family: var(--font-num); font-weight: 700; }
+.msg .eqn { font-size: 1.6rem; }
+.tag { display: inline-block; font-size: 0.85rem; font-weight: 700; border: 2px solid currentColor; border-radius: 999px; padding: 0 8px; margin-right: 4px; }
+.tag.c1, .lab.c1 { color: var(--c1); } .tag.c2, .lab.c2 { color: var(--c2); }
+
+/* The work grid. */
+.sheet { --cs: 60px; display: grid; position: relative; }
+.sheet .given { display: flex; align-items: center; justify-content: center; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--cs) * 0.66); line-height: 1; color: var(--ink); }
+.sheet .given.c1 { color: var(--c1); } .sheet .given.c2 { color: var(--c2); }
+.sheet .given.add { color: var(--muted); }
+.sheet .given.sign { font-family: var(--font-body); font-size: calc(var(--cs) * 0.8); }
+.sheet .lab { align-self: center; padding-left: calc(var(--cs) * 0.15); font-family: var(--font-body); font-weight: 700; font-size: calc(var(--cs) * 0.3); line-height: 1.1; color: var(--muted); white-space: nowrap; }
+.sheet .rule { align-self: end; border-bottom: max(3px, calc(var(--cs) * 0.06)) solid var(--ink); pointer-events: none; }
+.sheet .rule.top { align-self: start; border-bottom: 0; border-top: max(3px, calc(var(--cs) * 0.06)) solid var(--ink); }
+.sheet .bracket { display: block; width: 100%; height: 100%; color: var(--ink); }
+.sheet .pt { justify-self: end; align-self: end; width: calc(var(--cs) * 0.17); height: calc(var(--cs) * 0.17); margin-bottom: calc(var(--cs) * 0.17); border-radius: 50%; background: var(--ink); transform: translateX(50%); pointer-events: none; z-index: 2; }
+.sheet .pt.add { background: var(--muted); }
+
+.dg { place-self: center; width: calc(var(--cs) * 0.9); height: calc(var(--cs) * 0.9); padding: 0; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--cs) * 0.62); line-height: 1; text-align: center; color: var(--ink); caret-color: transparent;
+  background: var(--paper); border: max(2px, calc(var(--cs) * 0.03)) dashed var(--grid-major); border-radius: calc(var(--cs) * 0.12); }
+.dg.sm { width: calc(var(--cs) * 0.56); height: calc(var(--cs) * 0.56); font-size: calc(var(--cs) * 0.4); border-radius: calc(var(--cs) * 0.1); }
+.dg.c1 { color: var(--c1); border-color: color-mix(in srgb, var(--c1) 50%, var(--sheet)); }
+.dg.c2 { color: var(--c2); border-color: color-mix(in srgb, var(--c2) 50%, var(--sheet)); }
+.dg.bd { border-color: color-mix(in srgb, var(--bd) 55%, var(--sheet)); }
+.dg:focus { outline: 3px solid var(--pt); outline-offset: 2px; border-style: solid; background: var(--sheet); }
+.dg:not(:placeholder-shown) { border-style: solid; }
+.dg.ok { border-style: solid; border-color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--sheet)); }
+.dg.bad, .dg.next { border-style: solid; border-width: max(4px, calc(var(--cs) * 0.07)); animation: ping 1s ease-out 2; }
+.dg.bad { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--sheet)); color: var(--warn); }
+.dg.next { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 16%, var(--sheet)); }
+
+/* Decimal point spots between answer boxes: click one to put the point there. */
+.slot { justify-self: end; align-self: end; z-index: 3; width: calc(var(--cs) * 0.36); height: calc(var(--cs) * 0.36); margin-bottom: calc(var(--cs) * 0.07); padding: 0; transform: translateX(50%);
+  border-radius: 50%; border: max(2px, calc(var(--cs) * 0.03)) dashed var(--muted); background: var(--sheet); display: grid; place-items: center; cursor: pointer; opacity: 0.75; }
+.slot.on, .slot.bad, .slot.next, .slot:hover { opacity: 1; }
+.slot::after { content: ""; width: 40%; height: 40%; border-radius: 50%; background: transparent; }
+.slot:hover { border-color: var(--pt); }
+.slot.on { border-color: transparent; background: transparent; }
+.slot.on::after { width: 55%; height: 55%; background: var(--ink); }
+.slot.ok.on::after { background: var(--green); }
+.slot.bad { border: max(3px, calc(var(--cs) * 0.05)) solid var(--warn); }
+.slot.bad::after { background: var(--warn); }
+.slot.next { border: max(3px, calc(var(--cs) * 0.05)) solid var(--orange); background: color-mix(in srgb, var(--orange) 18%, var(--sheet)); }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 0%, transparent); transform: scale(1); } 30% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .dg.bad, .dg.next { animation: none; } }
+</style>
+<!-- Long Division (grades 3 to 7): type a question like 126 ÷ 4 or press New question, work it out in the digit boxes,
+     then Check answer finds the first wrong box. The answer goes above the bracket (blue); each step has a row to
+     multiply (with −) and a row to subtract into, and the next digit is brought down beside it (teal boxes).
+     When a step goes 0 times, write 0 in the answer and bring the next digit down into the same row.
+     Remainders: the answer ends with R and the remainder. Decimals: the number may have a decimal point, and zeros
+     are added after the point (grey) until it divides evenly, up to 3 decimal places; the student clicks where the
+     point goes in the answer. A decimal divisor is turned away with how to make it whole. -->
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Long Division</h1></div>
+    <div class="tabs" id="tabs" role="group" aria-label="Kind of answer">
+      <button type="button" data-m="rem" aria-pressed="true">Remainders</button>
+      <button type="button" data-m="dec" aria-pressed="false">Decimals</button>
+    </div>
+  </header>
+
+  <div class="main wr">
+    <div class="board" id="board"><p class="empty" id="empty">Type a question in the <b>Question</b> boxes, or press <b>New question</b>.</p></div>
+    <div class="panel">
+      <section class="card">
+        <p class="label">Question</p>
+        <div class="q">
+          <input id="qa" type="text" inputmode="decimal" autocomplete="off" placeholder="number to share" aria-label="Number being divided">
+          <span class="op" aria-hidden="true">÷</span>
+          <input id="qb" type="text" inputmode="numeric" autocomplete="off" placeholder="divide by" aria-label="Number to divide by">
+        </div>
+        <p class="hint">Type your own question, or make one:</p>
+        <div class="make">
+          <select id="level" aria-label="Size of the question">
+            <option value="2/1">2 digits ÷ 1 digit</option>
+            <option value="3/1" selected>3 digits ÷ 1 digit</option>
+            <option value="4/1">4 digits ÷ 1 digit</option>
+            <option value="3/2">3 digits ÷ 2 digits</option>
+            <option value="4/2">4 digits ÷ 2 digits</option>
+          </select>
+          <button type="button" id="newq">New question</button>
+        </div>
+        <p class="err" id="err" hidden></p>
+      </section>
+      <section class="card">
+        <button type="button" id="check">Check answer</button>
+        <div class="under">
+          <label><input type="checkbox" id="explain" checked> Show explanation</label>
+          <button type="button" id="clear">Clear my work</button>
+        </div>
+      </section>
+      <section class="card msg" aria-live="polite"><div id="msg"></div></section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Written: shared work grid and checker for Stacked Multiplication (stackmult.html) and Long Division (longdiv.html).
+
+   Written.page(cfg) wires the page: the question boxes (#qa, #qb), the #tabs switch, #level and #newq, #check,
+   #explain, #clear, the #msg card and the #board with its #empty note.
+   cfg = {
+     mode,                         first tab's data-m
+     parse(a, b, mode)             -> { key, mode, ... } or { error }
+     generate(level, mode)         -> [a, b] strings
+     build(sheet, problem)         -> items, in the order a student fills the boxes in
+     done(problem)                 -> HTML for the finished equation
+   }
+   An item is { el, ok(v), why } for a box (v is its digit or ""), or { point: true, get(), ok(v), why, target(v) }
+   for a decimal point. why is HTML, or a function of what the student wrote.
+   Check answer walks the items and stops at the first one that is wrong (red) or still empty (orange);
+   the boxes before it that hold a digit turn green.
+
+   The sheet: reset(colUnits, rowUnits) lays out a grid measured in cells (1 = one digit box), then
+   given(r, c, text, cls), cell(r, c, cls, label), lab(r, c, text, cls), rule(r, c0, c1, cls), dot(r, c, cls)
+   (a printed decimal point on the right edge of column c) and slot(r, c) (a clickable decimal point spot).
+   want(el, digit, kind, why) builds a box item: kind "req" needs that digit; "opt" also accepts an empty box
+   (carries, and leading places that hold 0). */
+window.Written = (() => {
+  const FIT = "(min-width: 861px) and (min-height: 520px)";
+
+  function Sheet(host, hooks) {
+    const grid = document.createElement("div");
+    grid.className = "sheet";
+    host.appendChild(grid);
+    let cols = [], rows = [];
+    const cells = [], slots = [];
+    const sum = a => a.reduce((s, u) => s + u, 0);
+
+    function fit() {
+      if (!cols.length) return;
+      const fill = matchMedia(FIT).matches;
+      let cs = (host.clientWidth - 32) / sum(cols);
+      if (fill) cs = Math.min(cs, (host.clientHeight - 32) / sum(rows));
+      cs = Math.floor(Math.max(20, Math.min(fill ? 124 : 72, cs)));
+      grid.style.setProperty("--cs", cs + "px");
+      grid.style.gridTemplateColumns = cols.map(u => u * cs + "px").join(" ");
+      grid.style.gridTemplateRows = rows.map(u => u * cs + "px").join(" ");
+    }
+    new ResizeObserver(fit).observe(host);
+
+    function place(el, r, c, span = 1) {
+      el.style.gridRow = String(r + 1);
+      el.style.gridColumn = `${c + 1} / span ${span}`;
+      grid.appendChild(el);
+      return el;
+    }
+    const div = (cls, text = "") => { const e = document.createElement("div"); e.className = cls; e.textContent = text; return e; };
+
+    // Arrow keys: left and right stay in the row, up and down go to the nearest box in the next row that has one.
+    function near(from, dr, dc) {
+      let best = null, bd = Infinity;
+      for (const k of cells) {
+        if (k === from) continue;
+        const r = k.r - from.r, c = k.c - from.c;
+        let d;
+        if (dc) { if (r !== 0 || Math.sign(c) !== dc) continue; d = Math.abs(c); }
+        else { if (Math.sign(r) !== dr) continue; d = Math.abs(r) * 100 + Math.abs(c); }
+        if (d < bd) { bd = d; best = k; }
+      }
+      return best;
+    }
+
+    return {
+      reset(c, r) { grid.replaceChildren(); cells.length = 0; slots.length = 0; cols = c; rows = r; fit(); },
+      clear() { grid.replaceChildren(); cells.length = 0; slots.length = 0; cols = []; rows = []; },
+      given(r, c, text, cls = "") { return place(div("given " + cls, text), r, c); },
+      lab(r, c, text, cls = "") { return place(div("lab " + cls, text), r, c); },
+      rule(r, c0, c1, cls = "") { return place(div("rule " + cls), r, c0, c1 - c0 + 1); },
+      dot(r, c, cls = "") { return place(div("pt " + cls), r, c); },
+      bracket(r, c) {
+        const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        s.setAttribute("viewBox", "0 0 20 100");
+        s.setAttribute("preserveAspectRatio", "none");
+        s.setAttribute("class", "bracket");
+        s.innerHTML = '<path d="M4 2 Q 22 50 4 98" fill="none" stroke="currentColor" stroke-width="4" vector-effect="non-scaling-stroke" stroke-linecap="round"/>';
+        s.style.gridRow = String(r + 1); s.style.gridColumn = String(c + 1);
+        grid.appendChild(s);
+        return s;
+      },
+      cell(r, c, cls = "", label = "Digit box") {
+        const el = document.createElement("input");
+        el.type = "text"; el.inputMode = "numeric"; el.autocomplete = "off"; el.spellcheck = false;
+        el.maxLength = 2; el.placeholder = " "; el.className = "dg " + cls;
+        el.setAttribute("aria-label", label);
+        const rec = { el, r, c };
+        cells.push(rec);
+        el.addEventListener("focus", () => el.select());
+        el.addEventListener("keydown", e => {
+          const k = e.key;
+          if (/^[0-9]$/.test(k)) { e.preventDefault(); el.value = k; hooks.edit(); return; }
+          if (k === "Backspace" || k === "Delete") { e.preventDefault(); if (el.value) { el.value = ""; hooks.edit(); } return; }
+          const dir = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[k];
+          if (dir) { e.preventDefault(); const t = near(rec, dir[0], dir[1]); if (t) t.el.focus(); return; }
+          if (k === "Enter") { e.preventDefault(); hooks.enter(); return; }
+          if (k.length === 1 && !e.ctrlKey && !e.metaKey) e.preventDefault();
+        });
+        // Touch keyboards may skip keydown: keep only the last digit typed.
+        el.addEventListener("input", () => { const m = el.value.match(/\d/g); el.value = m ? m[m.length - 1] : ""; hooks.edit(); });
+        return place(el, r, c);
+      },
+      slot(r, c) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "slot";
+        b.setAttribute("aria-label", "Put the decimal point here");
+        b.setAttribute("aria-pressed", "false");
+        b.addEventListener("click", () => {
+          const on = !b.classList.contains("on");
+          slots.forEach(s => { s.classList.remove("on"); s.setAttribute("aria-pressed", "false"); });
+          if (on) { b.classList.add("on"); b.setAttribute("aria-pressed", "true"); }
+          hooks.edit();
+        });
+        slots.push(b);
+        return place(b, r, c);
+      },
+      blank() { cells.forEach(k => { k.el.value = ""; }); slots.forEach(s => { s.classList.remove("on"); s.setAttribute("aria-pressed", "false"); }); },
+      unmark() { grid.querySelectorAll(".ok, .bad, .next").forEach(e => e.classList.remove("ok", "bad", "next")); },
+      first() { return cells.length ? cells[0].el : null; },
+    };
+  }
+
+  function want(el, d, kind, why) {
+    return { el, why, ok: v => v === String(d) || (kind === "opt" && v === "") };
+  }
+
+  // A decimal point item over a row of slots; slots[p - 1] sits p places from the right. p = 0 means no point.
+  function pointItem(slots, p, why) {
+    const get = () => { const i = slots.findIndex(s => s.classList.contains("on")); return i < 0 ? "" : String(i + 1); };
+    return {
+      point: true, why, get,
+      ok: v => v === (p ? String(p) : ""),
+      empty: v => v === "",
+      target: v => v ? [slots[+v - 1]] : slots,
+    };
+  }
+
+  function run(items) {
+    let okCount = 0;
+    for (const it of items) {
+      const v = it.get ? it.get() : it.el.value;
+      if (it.ok(v)) {
+        if (v !== "") { (it.target ? it.target(v) : [it.el]).forEach(e => e.classList.add("ok")); okCount++; }
+        continue;
+      }
+      const empty = v === "";
+      (it.target ? it.target(v) : [it.el]).forEach(e => e.classList.add(empty ? "next" : "bad"));
+      return { item: it, v, empty, okCount };
+    }
+    return { done: true };
+  }
+
+  function page(cfg) {
+    const $ = id => document.getElementById(id);
+    const board = $("board"), empty = $("empty"), qa = $("qa"), qb = $("qb"), err = $("err"), msg = $("msg"), explain = $("explain");
+    const startNote = empty.innerHTML;
+    let mode = cfg.mode, prob = null, items = [], result = null;
+    const sh = Sheet(board, { edit() { sh.unmark(); result = null; show(); }, enter: check });
+
+    const tabs = [...document.querySelectorAll("#tabs button")];
+    const setMode = m => { mode = m; tabs.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m))); };
+    tabs.forEach(b => b.addEventListener("click", () => { setMode(b.dataset.m); load(); }));
+
+    function load() {
+      const a = qa.value.trim(), b = qb.value.trim();
+      const p = a && b ? cfg.parse(a, b, mode) : null;
+      err.textContent = p && p.error ? p.error : "";
+      err.hidden = !(p && p.error);
+      if (p && !p.error) {
+        if (p.mode !== mode) setMode(p.mode);
+        if (prob && prob.key === p.key) return;
+        prob = p; result = null; empty.hidden = true;
+        items = cfg.build(sh, p);
+      } else {
+        prob = null; items = []; result = null;
+        sh.clear(); empty.hidden = false;
+        empty.innerHTML = (a || b) && !(p && p.error) ? "Now type the other number." : startNote;
+      }
+      show();
+    }
+
+    function show() {
+      if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
+      if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
+      if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><p class="eqn">${cfg.done(prob)}</p>`; return; }
+      const it = result.item;
+      const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
+        : it.point ? "Next, put in the decimal point: click one of the orange dots."
+        : result.okCount ? "So far, so good! Next, fill in the orange box." : "Start with the orange box.";
+      const why = typeof it.why === "function" ? it.why(result.v) : it.why;
+      msg.innerHTML = `<p class="res ${result.empty ? "next" : "bad"}">${head}</p>` +
+        (explain.checked ? `<p class="why">${why}</p>` : `<p class="lead">Tick <b>Show explanation</b> for help with this one.</p>`);
+    }
+
+    function check() {
+      if (!prob) { msg.innerHTML = `<p class="res next">Type a question first, or press New question.</p>`; return; }
+      sh.unmark();
+      result = run(items);
+      show();
+    }
+
+    qa.addEventListener("input", load);
+    qb.addEventListener("input", load);
+    qa.addEventListener("keydown", e => { if (e.key === "Enter") qb.focus(); });
+    qb.addEventListener("keydown", e => { if (e.key === "Enter") { const f = sh.first(); if (f) f.focus(); } });
+    $("newq").addEventListener("click", () => {
+      const [a, b] = cfg.generate($("level").value, mode);
+      qa.value = a; qb.value = b; prob = null;
+      load();
+    });
+    $("check").addEventListener("click", check);
+    $("clear").addEventListener("click", () => { sh.blank(); sh.unmark(); result = null; show(); });
+    explain.addEventListener("change", show);
+    load();
+  }
+
+  // Shared number helpers. norm("007.50") -> "7.50", ".5" -> "0.5", "5." -> "5"; null if it is not a number.
+  function norm(s) {
+    s = s.replace(/\s+/g, "").replace(",", ".");
+    if (!/^\d*\.?\d*$/.test(s) || !/\d/.test(s)) return null;
+    let [i, f = ""] = s.split(".");
+    i = i.replace(/^0+/, "") || "0";
+    return f ? i + "." + f : i;
+  }
+  // { S: "0.25", dp: 2, all: "025" (the digits as written), work: "25" (without leading zeros) }
+  function num(s) {
+    const S = norm(s);
+    if (S === null) return null;
+    const dp = S.includes(".") ? S.split(".")[1].length : 0;
+    const all = S.replace(".", "");
+    return { S, dp, all, work: all.replace(/^0+/, "") || "0" };
+  }
+  // Digits of a whole number (a string) with a decimal point dp places from the right: (75, 2) -> "0.75".
+  function withPoint(digits, dp) {
+    let s = String(digits);
+    if (!dp) return s.replace(/^0+(?=\d)/, "");
+    s = s.padStart(dp + 1, "0");
+    return (s.slice(0, -dp).replace(/^0+(?=\d)/, "") || "0") + "." + s.slice(-dp);
+  }
+  const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const s = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+  return { page, want, pointItem, num, norm, withPoint, rnd, s };
+})();
+</script>
+<script>
+(() => {
+  const { want, pointItem, num, withPoint, rnd, s } = Written;
+  const m = x => `<span class="m">${x}</span>`;
+  const MAXCOLS = 7, MAXDP = 3;
+
+  function parse(a, b, mode) {
+    const A = num(a);
+    if (!A) return { error: "Use only digits and one decimal point." };
+    if (/[.,]/.test(b)) return { error: "Divide by a whole number. Move both decimal points the same number of places first: 1.2 ÷ 0.4 is the same as 12 ÷ 4." };
+    if (!/^\d+$/.test(b)) return { error: "Use only digits." };
+    const d = +b;
+    if (d === 0) return { error: "We can't divide by 0. Try another number." };
+    if (d > 99) return { error: "Divide by a number with 1 or 2 digits." };
+    if (A.work === "0") return { error: "Type a number bigger than 0 to divide." };
+    if (A.all.length > 4) return { error: "The number being divided can have up to 4 digits." };
+    const md = A.dp ? "dec" : mode;
+    return { A, d, mode: md, key: `${A.S}÷${d}:${md}` };
+  }
+
+  // Columns after the given digits that a decimal answer needs (added zeros), and whether it ever ends.
+  function extend(digs, dp, d) {
+    const left = ds => ds.reduce((r, x) => (r * 10 + x) % d, 0);
+    const out = digs.slice();
+    let added = 0;
+    while (left(out) !== 0 && dp + added < MAXDP && out.length < MAXCOLS) { out.push(0); added++; }
+    return { digs: out, added, endless: left(out) !== 0 };
+  }
+
+  function generate(level, mode) {
+    const [k, n] = level.split("/").map(Number);
+    const lo = 10 ** (k - 1), hi = 10 ** k - 1;
+    const divisor = () => n === 1 ? rnd(2, 9) : (() => { let d; do d = rnd(11, 39); while (d % 10 === 0); return d; })();
+    for (let t = 0; t < 2000; t++) {
+      const d = divisor();
+      if (mode === "rem") {
+        const q = rnd(Math.ceil(lo / d), Math.floor(hi / d));
+        const N = q * d + (Math.random() < 0.2 ? 0 : rnd(1, d - 1));
+        if (N >= lo && N <= hi && q >= 2) return [String(N), String(d)];
+      } else if (Math.random() < 0.5) {
+        // A decimal that divides evenly: 12.6 ÷ 3.
+        const X = rnd(Math.ceil(lo / d), Math.floor(hi / d)) * d;
+        if (X < lo || X > hi || X % 10 === 0) continue;
+        return [withPoint(X, k === 2 ? 1 : rnd(1, 2)), String(d)];
+      } else {
+        // A whole number that needs zeros after the point: 7 ÷ 4 = 1.75.
+        const N = rnd(Math.max(lo, d), hi);
+        if (N % d === 0) continue;
+        const e = extend([...String(N)].map(Number), 0, d);
+        if (!e.endless) return [String(N), String(d)];
+      }
+    }
+    return ["126", "4"];
+  }
+
+  function build(sh, P) {
+    const { A, d } = P, rem = P.mode === "rem";
+    const intLen = A.all.length - A.dp;
+    const e = rem ? { digs: [...A.all].map(Number), added: 0, endless: false } : extend([...A.all].map(Number), A.dp, d);
+    const digs = e.digs, N = digs.length, fdp = A.dp + e.added;
+
+    // Work out every step first, so the rows are known.
+    const cols = [];
+    let cur = 0, started = false;
+    for (let i = 0; i < N; i++) {
+      cur = cur * 10 + digs[i];
+      const q = Math.floor(cur / d), c = { i, cur, q, started };
+      if (q > 0) { c.pv = q * d; c.r = cur - c.pv; c.start = i - String(cur).length + 1; started = true; cur = c.r; }
+      cols.push(c);
+    }
+    const R = cur;
+    const steps = cols.filter(c => c.pv !== undefined);
+    const Q = cols.map(c => c.q).join("");
+    const firstQ = Q.search(/[1-9]/);
+
+    // Grid: divisor, bracket, the number's columns, then R and the remainder.
+    const dl = String(d).length, rl = String(d - 1).length;
+    const X = i => dl + 1 + i;
+    const colUnits = [...Array(dl).fill(0.62), 0.6, ...Array(N).fill(1)];   // the divisor's digits sit close so 23 reads as one number
+    if (rem) colUnits.push(0.35, 0.8, ...Array(rl).fill(1));
+    const rowUnits = [1, 1];
+    steps.forEach(() => rowUnits.push(1, 0.14, 1));
+    sh.reset(colUnits, rowUnits);
+
+    [...String(d)].forEach((ch, k) => sh.given(1, k, ch));
+    sh.bracket(1, dl);
+    sh.rule(1, dl, X(N - 1), "top");
+    digs.forEach((x, i) => sh.given(1, X(i), String(x), i >= A.all.length ? "add" : ""));
+    if (fdp) sh.dot(1, X(intLen - 1), A.dp ? "" : "add");
+
+    const qCells = digs.map((_, i) => sh.cell(0, X(i), "c1", `Answer box ${i + 1}`));
+    let slots = null;
+    if (!rem) { slots = []; for (let p = 1; p < N; p++) slots.push(sh.slot(0, X(N - 1 - p))); }
+    let rCells = null;
+    if (rem) {
+      sh.given(0, X(N) + 1, "R", "c1");
+      rCells = []; for (let k = 0; k < rl; k++) rCells.push(sh.cell(0, X(N) + 2 + k, "c1", "Remainder box"));
+    }
+
+    let row = 2;
+    steps.forEach(c => {
+      c.prow = row; c.drow = row + 2; row += 3;
+      sh.given(c.prow, X(c.start) - 1, "−", "sign");
+      sh.rule(c.prow, X(c.start) - 1, X(c.i));
+      c.pc = []; c.dc = [];
+      for (let i = c.start; i <= c.i; i++) {
+        c.pc[i] = sh.cell(c.prow, X(i), "", "Multiply box");
+        c.dc[i] = sh.cell(c.drow, X(i), "", "Subtract box");
+      }
+    });
+
+    // Boxes in order: for each column, bring the digit down, write the answer digit, multiply, subtract.
+    const items = [];
+    const digitAt = (v, i, end) => Math.floor(v / 10 ** (end - i)) % 10;
+    let open = null;                      // the step whose bottom row takes the next digit
+    const pointWhy = fdp
+      ? `The decimal point in the answer goes straight up from the decimal point in ${m(withPoint(digs.join(""), fdp))}. Click the dot right above it.`
+      : `${m(`${A.S} ÷ ${d}`)} comes out to a whole number, so the answer has no decimal point. Click the dot again to take it away.`;
+    cols.forEach(c => {
+      const i = c.i;
+      if (open) {
+        const add = i >= A.all.length;
+        const now = c.cur;
+        const cell = sh.cell(open.drow, X(i), "bd", "Bring down box");
+        open.dc[i] = cell;
+        items.push(want(cell, digs[i], "req", add
+          ? `Bring down one of the added zeros, so now you have ${m(now)}. (After the decimal point we can add zeros and keep dividing.)`
+          : `Bring down the next digit from the top, the ${m(digs[i])}, so now you have ${m(now)}.`));
+      }
+      if (slots && fdp && i === intLen) items.push(pointItem(slots, fdp, pointWhy));
+      const lead = c.q === 0 && i < firstQ && i < intLen && !(firstQ < 0 && i === intLen - 1);
+      let why;
+      if (c.q > 0) {
+        why = v => {
+          const g = +v, base = `How many ${d}s fit in ${m(c.cur)}? ${m(`${d} × ${c.q} = ${c.pv}`)}, and ${m(`${d} × ${c.q + 1} = ${(c.q + 1) * d}`)} is too much. Write ${m(c.q)} here.`;
+          if (v !== "" && g > c.q) return `${m(`${d} × ${g} = ${g * d}`)} is more than ${m(c.cur)}, so ${g} is too big. ` + base;
+          if (v !== "" && g < c.q) return `${m(`${d} × ${g} = ${g * d}`)} leaves ${m(c.cur - g * d)}, and that is still enough for another ${d}, so ${g} is too small. ` + base;
+          return base;
+        };
+      } else if (lead) {
+        why = `${m(d)} does not fit into ${m(c.cur)}, so nothing goes here yet. Leave it empty (or write 0) and use the next digit too.`;
+      } else {
+        why = `How many ${d}s fit in ${m(c.cur)}? None, because ${m(c.cur)} is less than ${m(d)}. Write ${m(0)} here${i < N - 1 ? ", then bring down the next digit" : ""}.`;
+      }
+      items.push(want(qCells[i], c.q, lead ? "opt" : "req", why));
+      if (c.pv !== undefined) {
+        const pl = String(c.pv).length, rl2 = String(c.r).length, last = i === N - 1;
+        for (let k = i; k >= c.start; k--) {
+          const inP = i - k < pl;
+          items.push(want(c.pc[k], inP ? digitAt(c.pv, k, i) : 0, inP ? "req" : "opt", inP
+            ? `Multiply the ${m(c.q)} you just wrote by ${m(d)}: ${m(`${c.q} × ${d} = ${c.pv}`)}. Write ${m(c.pv)} under ${m(c.cur)}, lined up on the right.`
+            : `${m(`${c.q} × ${d} = ${c.pv}`)} has ${s(pl, "digit")}, so this box stays empty.`));
+        }
+        for (let k = i; k >= c.start; k--) {
+          const inR = i - k < rl2, need = inR && (c.r > 0 || last);
+          items.push(want(c.dc[k], inR ? digitAt(c.r, k, i) : 0, need ? "req" : "opt", need
+            ? `Subtract: ${m(`${c.cur} − ${c.pv} = ${c.r}`)}. Write ${m(c.r)} here, lined up on the right.`
+            : `Subtract: ${m(`${c.cur} − ${c.pv} = ${c.r}`)}. Nothing else goes in this box. Leave it empty (or write 0).`));
+        }
+        open = c;
+      }
+    });
+    if (slots && !fdp) items.push(pointItem(slots, 0, pointWhy));
+    if (rem) {
+      for (let k = rl - 1; k >= 0; k--) {
+        const p = rl - 1 - k, inR = p < String(R).length;
+        items.push(want(rCells[k], inR ? Math.floor(R / 10 ** p) % 10 : 0, inR && R > 0 ? "req" : "opt", R
+          ? `The number left at the bottom is ${m(R)}. It is smaller than ${m(d)}, so it is the remainder: ${m("R " + R)}.` + (inR ? "" : " This box stays empty.")
+          : `Nothing is left over, so the remainder is 0. Leave this box empty or write 0.`));
+      }
+    }
+    P.ans = { Q, R, fdp, endless: e.endless };
+    return items;
+  }
+
+  function done(P) {
+    const { Q, R, fdp, endless } = P.ans;
+    const q = withPoint(Q, fdp);
+    if (P.mode === "rem") return `${P.A.S} ÷ ${P.d} = ${q}${R ? ` R ${R}` : ""}`;
+    return endless
+      ? `${P.A.S} ÷ ${P.d} ≈ ${q}… <span class="lead">The digits keep going forever, so we stopped after ${s(fdp, "decimal place")}.</span>`
+      : `${P.A.S} ÷ ${P.d} = ${q}`;
+  }
+
+  Written.page({ mode: "rem", parse, generate, build, done,
+    start: "Type the number to share and the number to divide by in the boxes above, or press <b>New question</b>." });
+})();
+</script>
+
+</body>
+</html>

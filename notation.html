@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Geometry Notation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Geometry Notation (grade 7): lines, rays, segments, angles, triangles, perpendicular and parallel lines.
+   Explore: tap a picture to see its notation and words, or tap a notation to light up its picture.
+   Notation and Words can be hidden so students predict first, then tap to reveal.
+   Match: shuffled notation cards with new letters each round; tap a card, then the picture it names. */
+.main { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.board { padding: 6px; }
+/* Notation: letters with a line, arrow or bar drawn over them. */
+.nt { font-family: var(--font-body), "Cambria Math", "STIX Two Math", serif; font-weight: 800; display: inline-flex; flex-wrap: wrap; align-items: last baseline; gap: 0 0.18em; line-height: 1.05; }
+.nt .sym { margin-right: -0.08em; font-family: "Cambria Math", "STIX Two Math", "Segoe UI Symbol", serif; font-weight: 700; }
+.ov { display: inline-flex; flex-direction: column; align-items: stretch; line-height: 1; }
+.ov .mk { position: relative; height: 0.34em; margin: 0 0.03em 0.05em; }
+.ov .mk::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 0.075em; background: currentColor; transform: translateY(-50%); border-radius: 1px; }
+.ov .mk i { position: absolute; top: 50%; width: 0.2em; height: 0.2em; border: solid currentColor; border-width: 0.075em 0.075em 0 0; }
+.ov .mk .hr { right: 0.01em; transform: translateY(-50%) rotate(45deg); }
+.ov .mk .hl { left: 0.01em; transform: translateY(-50%) rotate(-135deg); }
+.ov.ray .hl, .ov.sg i { display: none; }
+.read { padding: 14px 20px; display: flex; flex-direction: column; gap: 6px; }
+.kind { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0; min-height: 1.5em; }
+.big { font-size: 3.6rem; color: var(--orange); min-height: 1.2em; }
+.reveal { align-self: flex-start; font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; min-width: 4em; min-height: 1.6em; color: var(--muted); background: var(--sheet); border: 3px dashed var(--grid-major); border-radius: 12px; padding: 4px 18px; }
+.reveal small { display: block; font-family: var(--font-body); font-size: 1rem; font-weight: 700; }
+.words { margin: 0; font-size: 1.5rem; line-height: 1.3; }
+.words b { font-family: var(--font-display); }
+.words .mean { display: block; color: var(--ink); font-size: 1.3rem; margin-top: 4px; }
+.words.off { color: var(--muted); font-style: italic; }
+.other { margin: 4px 0 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-size: 1.2rem; color: var(--muted); }
+.other .nt { font-size: 2rem; color: var(--ink); margin-right: 0.5em; }
+.picks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.picks button, .cards button { font-size: 1.9rem; min-height: 64px; padding: 6px 8px; background: var(--sheet); border: 2px solid var(--grid-major); display: flex; align-items: center; justify-content: center; }
+.picks button[aria-pressed="true"] { background: color-mix(in srgb, var(--orange) 18%, var(--sheet)); border-color: var(--orange); color: var(--orange); }
+.icon { width: 1.6em; height: 1.1em; }
+.icon * { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; min-height: 50px; padding: 6px 16px; font-size: 1.1rem; background: var(--sheet); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.tog { min-height: 50px; padding: 6px 14px; font-size: 1.1rem; display: inline-flex; align-items: center; gap: 8px; background: var(--sheet); border: 2px solid var(--grid-major); }
+.tog::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
+.tog[aria-pressed="true"] { border-color: var(--pt); }
+.tog[aria-pressed="true"]::before { background: var(--pt); border-color: var(--pt); }
+/* Match mode */
+.howto { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.score { margin: 0; color: var(--muted); font-size: 1.1rem; }
+.fb { margin: 0; font-size: 1.3rem; min-height: 3.2em; line-height: 1.35; }
+.fb.good { color: var(--green); font-weight: 700; }
+.fb.bad { color: var(--warn); font-weight: 700; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cards button { font-size: 2rem; }
+.cards button[aria-pressed="true"] { border-color: var(--orange); border-width: 3px; background: color-mix(in srgb, var(--orange) 16%, var(--sheet)); }
+.cards button.done { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--sheet)); cursor: default; opacity: 0.55; }
+.newround { min-height: 52px; font-size: 1.15rem; padding: 8px 18px; background: var(--orange); color: #fff; border-color: var(--orange); align-self: flex-start; }
+/* Board */
+.tile { cursor: pointer; outline: none; }
+.tile-bg { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 2; }
+.tile:hover .tile-bg, .tile:focus-visible .tile-bg { stroke: var(--pt); stroke-width: 3; }
+.tile.sel .tile-bg { stroke: var(--orange); stroke-width: 6; fill: color-mix(in srgb, var(--orange) 7%, var(--sheet)); }
+.tile.marksel .tile-bg { stroke: var(--orange); stroke-width: 4; stroke-dasharray: 12 8; }
+.tile.pick .tile-bg { stroke: var(--orange); stroke-width: 6; stroke-dasharray: 14 8; }
+.tile.done .tile-bg { stroke: var(--green); stroke-width: 5; fill: color-mix(in srgb, var(--green) 9%, var(--sheet)); }
+.tile.bad .tile-bg { stroke: var(--warn); stroke-width: 6; fill: color-mix(in srgb, var(--warn) 12%, var(--sheet)); }
+.obj { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; fill: none; }
+.objf { fill: var(--ink); }
+.dot { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+.mark { stroke: var(--ink); stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.arc { stroke: var(--muted); stroke-width: 3; fill: none; }
+.tile.sel .obj { stroke: var(--orange); stroke-width: 6; }
+.tile.sel .objf { fill: var(--orange); }
+.tile.sel .arc { stroke: var(--orange); stroke-width: 4; }
+.tile.sel .mark, .tile.marksel .mark.on { stroke: var(--orange); stroke-width: 5; }
+.ptname { font-family: var(--font-body); font-weight: 800; font-size: 34px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; pointer-events: none; }
+.lcname { font-family: var(--font-display); font-weight: 800; font-style: italic; font-size: 34px; fill: var(--muted); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; pointer-events: none; }
+.hit-mark { fill: transparent; cursor: pointer; }
+.chip { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 40px; color: var(--green); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } .big { font-size: 2.6rem; } .words { font-size: 1.2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Geometry Notation</h1></div>
+    <div class="ctrl">
+      <div class="seg" role="group" aria-label="Mode">
+        <button type="button" id="mExplore" aria-pressed="true">Explore</button>
+        <button type="button" id="mMatch" aria-pressed="false">Match</button>
+      </div>
+      <button type="button" class="tog" id="tNota" aria-pressed="true">Notation</button>
+      <button type="button" class="tog" id="tWords" aria-pressed="true">Words</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 840" role="group" aria-label="Pictures of geometric objects. Tap one."></svg></div>
+
+    <div class="panel" id="explore">
+      <section class="card read" aria-live="polite">
+        <p class="kind" id="kind"></p>
+        <div id="notaBox"></div>
+        <p class="words" id="words"></p>
+        <p class="other" id="other"></p>
+      </section>
+      <section class="card" id="picksCard">
+        <div class="picks" id="picks"></div>
+      </section>
+    </div>
+
+    <div class="panel" id="match" hidden>
+      <section class="card read" aria-live="polite">
+        <p class="howto">Tap a notation, then tap the picture it names.</p>
+        <p class="score" id="score"></p>
+        <p class="fb" id="fb"></p>
+      </section>
+      <section class="card">
+        <div class="cards" id="cards"></div>
+      </section>
+      <button type="button" class="newround" id="newRound">New round</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  // Notation pieces as HTML.
+  const ov = (s, k) => `<span class="ov ${k}"><span class="mk"><i class="hl"></i><i class="hr"></i></span><span>${s}</span></span>`;
+  const sym = s => `<span class="sym">${s}</span>`;
+  const nt = (...parts) => `<span class="nt">${parts.join("")}</span>`;
+  const ICON = {
+    square: `<svg class="icon" viewBox="0 0 48 34" aria-hidden="true"><path d="M8 30 H44 M14 30 V2"/><path d="M14 20 H24 V30"/></svg>`,
+    marks: `<svg class="icon" viewBox="0 0 48 34" aria-hidden="true"><path d="M2 8 H46 M2 26 H46 M20 3 L27 8 L20 13 M20 21 L27 26 L20 31"/></svg>`,
+  };
+
+  const KINDS = ["line", "ray", "seg", "angle", "tri", "perp", "par"];
+  const NEED = { line: 2, ray: 2, seg: 2, angle: 3, tri: 3, perp: 4, par: 4 };
+  // Explore letters: every picture has its own letters so a notation names only one thing on the board.
+  const FIXED = {
+    line: { L: "CD", low: "m" }, ray: { L: "ST" }, seg: { L: "MN" }, angle: { L: "XYZ" },
+    tri: { L: "PQR" }, perp: { L: "ABEF" }, par: { L: "GHJK" },
+  };
+
+  // What to show for each object: name, notation, how to say it, what it means, other ways to write it.
+  function info(kind, f) {
+    const L = f.L;
+    switch (kind) {
+      case "line": return { name: "Line", nota: nt(ov(L, "line")), say: `line ${L}`,
+        mean: "A straight path that goes on forever in both directions.",
+        other: `${nt(ov(L[1] + L[0], "line"))}${nt("line " + f.low)} the same line, named a different way` };
+      case "ray": return { name: "Ray", nota: nt(ov(L, "ray")), say: `ray ${L}`,
+        mean: `Starts at endpoint ${L[0]} and goes on forever in one direction, through ${L[1]}.`,
+        other: `The endpoint ${L[0]} always comes first. The arrow on top always points right.` };
+      case "seg": return { name: "Line segment", nota: nt(ov(L, "sg")), say: `segment ${L}`,
+        mean: `The part of a line between two endpoints, ${L[0]} and ${L[1]}. It stops at both ends.`,
+        other: `${nt(ov(L[1] + L[0], "sg"))}${nt(L)} ${L} with no bar means the length of the segment` };
+      case "angle": return { name: "Angle", nota: nt(sym("∠"), L), say: `angle ${L}`,
+        mean: `Two rays that share an endpoint, called the vertex. The vertex here is ${L[1]}.`,
+        other: `${nt(sym("∠"), L[2] + L[1] + L[0])}${nt(sym("∠"), L[1])} the vertex letter goes in the middle` };
+      case "tri": return { name: "Triangle", nota: nt(sym("△"), L), say: `triangle ${L}`,
+        mean: `A polygon with three sides: segments ${L[0] + L[1]}, ${L[1] + L[2]} and ${L[2] + L[0]}.`,
+        other: `${nt(sym("△"), L[1] + L[2] + L[0])}${nt(sym("△"), L[2] + L[1] + L[0])} go around the triangle in any order` };
+      case "perp": return { name: "Perpendicular lines", nota: nt(ov(L.slice(0, 2), "line"), sym("⊥"), ov(L.slice(2), "line")),
+        say: `line ${L.slice(0, 2)} is perpendicular to line ${L.slice(2)}`,
+        mean: "The lines cross to make a right angle (90°).",
+        other: `${ICON.square} The small square shows the right angle.` };
+      case "par": return { name: "Parallel lines", nota: nt(ov(L.slice(0, 2), "line"), sym("∥"), ov(L.slice(2), "line")),
+        say: `line ${L.slice(0, 2)} is parallel to line ${L.slice(2)}`,
+        mean: "The lines go in the same direction and never meet.",
+        other: `${ICON.marks} The matching arrow marks show the lines are parallel.` };
+      case "rightmark": return { name: "Right angle mark", nota: `<span class="nt">${ICON.square}</span>`, say: "a right angle mark",
+        mean: "A small square where two lines meet means they are perpendicular: the angle is exactly 90°.", other: "" };
+      case "parmarks": return { name: "Parallel marks", nota: `<span class="nt">${ICON.marks}</span>`, say: "arrow marks",
+        mean: "The same number of arrow marks on two lines means the lines are parallel.", other: "" };
+    }
+  }
+
+  // Match cards use any correct way of writing it, so students read the symbols, not just the letters.
+  function cardFor(kind, f) {
+    const L = f.L, two = s => (Math.random() < 0.5 ? s : s[1] + s[0]);
+    // Each card is its notation and how to say it, with the letters in the card's order.
+    switch (kind) {
+      case "line": {
+        if (Math.random() < 0.3) return { html: nt("line " + f.low), say: "line " + f.low };
+        const a = two(L);
+        return { html: nt(ov(a, "line")), say: "line " + a };
+      }
+      case "ray": return { html: nt(ov(L, "ray")), say: "ray " + L };
+      case "seg": { const a = two(L); return { html: nt(ov(a, "sg")), say: "segment " + a }; }
+      case "angle": { const a = pick([L, L[2] + L[1] + L[0], L[1]]); return { html: nt(sym("∠"), a), say: "angle " + a }; }
+      case "tri": { const a = pick([L, L[1] + L[2] + L[0], L[2] + L[0] + L[1], L[2] + L[1] + L[0]]); return { html: nt(sym("△"), a), say: "triangle " + a }; }
+      case "perp": case "par": {
+        let a = two(L.slice(0, 2)), b = two(L.slice(2));
+        if (Math.random() < 0.5) [a, b] = [b, a];
+        return { html: nt(ov(a, "line"), sym(kind === "perp" ? "⊥" : "∥"), ov(b, "line")),
+          say: `line ${a} is ${kind === "perp" ? "perpendicular" : "parallel"} to line ${b}` };
+      }
+    }
+  }
+  // Hint for a wrong match: what the card's notation needs to see in a picture.
+  const HINT = {
+    line: "A line has arrows on both ends. It keeps going both ways.",
+    ray: "A ray has one endpoint and one arrow. The first letter is the endpoint.",
+    seg: "A line segment stops at both ends: two endpoints, no arrows.",
+    angle: "∠ means angle: two rays that share a vertex.",
+    tri: "△ means triangle: three segments that make a closed shape.",
+    perp: "⊥ means perpendicular: lines that meet at a right angle. Look for the small square.",
+    par: "∥ means parallel: lines that never meet. Look for matching arrow marks.",
+  };
+
+  let mode = "explore", showNota = true, showWords = true, sel = "line", revealed = false;
+  let round = null, chosenCard = null, chosenTile = null;
+
+  const mk = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+
+  // Draw one picture inside its tile. Points are given on a 0..1 grid of the drawing area.
+  function drawFigure(g, kind, f, box) {
+    const pad = 34;
+    const P = (u, v) => [box.x + pad + (f.flip ? 1 - u : u) * (box.w - 2 * pad), box.y + pad + v * (box.h - 2 * pad)];
+    const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    const unit = (a, b) => { const d = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / d, (b[1] - a[1]) / d]; };
+    const seg = (a, b, cls = "obj") => mk("line", { class: cls, x1: a[0], y1: a[1], x2: b[0], y2: b[1] }, g);
+    const head = (tip, dir) => {
+      const [dx, dy] = dir, len = 24, w = 11, bx = tip[0] - dx * len, by = tip[1] - dy * len;
+      mk("polygon", { class: "objf", points: `${tip[0]},${tip[1]} ${bx - dy * w},${by + dx * w} ${bx + dy * w},${by - dx * w}` }, g);
+    };
+    // A path with arrows: stroke stops short of the tip so the arrowhead stays sharp.
+    const arrowed = (a, b, atA, atB) => {
+      const d = unit(a, b);
+      seg(atA ? [a[0] + d[0] * 14, a[1] + d[1] * 14] : a, atB ? [b[0] - d[0] * 14, b[1] - d[1] * 14] : b);
+      if (atA) head(a, [-d[0], -d[1]]);
+      if (atB) head(b, d);
+    };
+    // Label a point, pushed off the line along the given side.
+    const point = (p, name, off) => {
+      mk("circle", { class: "dot", cx: p[0], cy: p[1], r: 8 }, g);
+      const ox = f.flip ? -off[0] : off[0];
+      mk("text", { class: "ptname", x: p[0] + ox, y: p[1] + off[1] }, g).textContent = name;
+    };
+    const L = f.L;
+    switch (kind) {
+      case "line": {
+        const a = P(0, 0.78), b = P(1, 0.22);
+        arrowed(a, b, true, true);
+        point(lerp(a, b, 0.28), L[0], [-6, 34]); point(lerp(a, b, 0.68), L[1], [-6, 34]);
+        const m = lerp(a, b, 0.9);
+        mk("text", { class: "lcname", x: m[0] + (f.flip ? 22 : -22), y: m[1] - 34 }, g).textContent = f.low;
+        break;
+      }
+      case "ray": {
+        const a = P(0.04, 0.8), b = P(1, 0.18);
+        arrowed(a, b, false, true);
+        point(a, L[0], [0, 36]); point(lerp(a, b, 0.62), L[1], [-4, 36]);
+        break;
+      }
+      case "seg": {
+        const a = P(0.04, 0.74), b = P(0.96, 0.26);
+        seg(a, b);
+        point(a, L[0], [0, 36]); point(b, L[1], [0, -36]);
+        break;
+      }
+      case "angle": {
+        const v = P(0.06, 0.86), a = P(1, 0.86), b = P(0.86, 0.0);
+        arrowed(v, a, false, true); arrowed(v, b, false, true);
+        const da = unit(v, a), db = unit(v, b), r = 46;
+        const sweep = (da[0] * db[1] - da[1] * db[0]) > 0 ? 1 : 0;
+        mk("path", { class: "arc", d: `M${v[0] + da[0] * r},${v[1] + da[1] * r} A${r},${r} 0 0 ${sweep} ${v[0] + db[0] * r},${v[1] + db[1] * r}` }, g);
+        point(lerp(v, b, 0.62), L[0], [-30, 4]); point(v, L[1], [0, 34]); point(lerp(v, a, 0.66), L[2], [0, 34]);
+        break;
+      }
+      case "tri": {
+        const a = P(0.02, 0.92), b = P(0.98, 0.92), c = P(0.42, 0.04);
+        seg(a, b); seg(b, c); seg(c, a);
+        point(a, L[0], [-10, 32]); point(b, L[1], [10, 32]); point(c, L[2], [0, -34]);
+        break;
+      }
+      case "perp": case "par": {
+        // Two lines through the drawing, turned a little so "perpendicular" never just means up and across.
+        const cx = box.x + box.w / 2, cy = box.y + box.h / 2, R = Math.min(box.w, box.h) / 2 - 22;
+        const t = (f.flip ? 1 : -1) * 0.38, d1 = [Math.cos(t), Math.sin(t)];
+        const d2 = kind === "perp" ? [-d1[1], d1[0]] : d1;
+        const n = [-d1[1], d1[0]], gap = kind === "par" ? Math.min(box.h * 0.2, 62) : 0;
+        const len1 = kind === "perp" ? Math.min(box.w / 2 - 26, R / Math.abs(d1[0]) * 0.98) : (box.w / 2 - 40) / Math.abs(d1[0]);
+        const len2 = kind === "perp" ? R : len1;
+        const o1 = [cx - n[0] * gap, cy - n[1] * gap], o2 = [cx + n[0] * gap, cy + n[1] * gap];
+        const A = [o1[0] - d1[0] * len1, o1[1] - d1[1] * len1], B = [o1[0] + d1[0] * len1, o1[1] + d1[1] * len1];
+        const E = [o2[0] - d2[0] * len2, o2[1] - d2[1] * len2], F = [o2[0] + d2[0] * len2, o2[1] + d2[1] * len2];
+        arrowed(A, B, true, true); arrowed(E, F, true, true);
+        const below = [n[0] * 34, n[1] * 34], above = [-n[0] * 34, -n[1] * 34];
+        if (kind === "perp") {
+          const s = 26, u = d1, w = [-d2[0], -d2[1]];
+          const sq = mk("path", { class: "mark on", d: `M${cx + u[0] * s},${cy + u[1] * s} L${cx + u[0] * s + w[0] * s},${cy + u[1] * s + w[1] * s} L${cx + w[0] * s},${cy + w[1] * s}` }, g);
+          point(lerp(A, B, 0.2), L[0], below); point(lerp(A, B, 0.8), L[1], below);
+          const side = [d1[0] * 32, d1[1] * 32];
+          point(lerp(E, F, 0.2), L[2], f.flip ? [-side[0], side[1]] : side); point(lerp(E, F, 0.8), L[3], f.flip ? [-side[0], side[1]] : side);
+          mk("circle", { class: "hit-mark", "data-item": "rightmark", cx: cx + (u[0] + w[0]) * s / 2, cy: cy + (u[1] + w[1]) * s / 2, r: 24 }, g);
+        } else {
+          [o1, o2].forEach(o => {
+            const c = [o[0] + d1[0] * 7, o[1] + d1[1] * 7], k = 16;
+            mk("path", { class: "mark on", d: `M${c[0] - d1[0] * k + n[0] * k},${c[1] - d1[1] * k + n[1] * k} L${c[0]},${c[1]} L${c[0] - d1[0] * k - n[0] * k},${c[1] - d1[1] * k - n[1] * k}` }, g);
+            mk("circle", { class: "hit-mark", "data-item": "parmarks", cx: o[0], cy: o[1], r: 24 }, g);
+          });
+          point(lerp(A, B, 0.2), L[0], above); point(lerp(A, B, 0.8), L[1], above);
+          point(lerp(E, F, 0.2), L[2], below); point(lerp(E, F, 0.8), L[3], below);
+        }
+        break;
+      }
+    }
+  }
+
+  // Tile layout: 4 narrower tiles on top, 3 wider ones below.
+  function slots() {
+    const s = [], gap = 16, h = (840 - gap) / 2;
+    const top = (1000 - 3 * gap) / 4, bot = (1000 - 2 * gap) / 3;
+    for (let i = 0; i < 4; i++) s.push({ x: i * (top + gap), y: 0, w: top, h });
+    for (let i = 0; i < 3; i++) s.push({ x: i * (bot + gap), y: h + gap, w: bot, h });
+    return s;
+  }
+
+  function draw() {
+    svg.replaceChildren();
+    const order = mode === "match" ? round.order : KINDS;
+    const S = slots();
+    order.forEach((kind, i) => {
+      const s = S[i], f = mode === "match" ? round.f[kind] : FIXED[kind];
+      const g = mk("g", { class: "tile", tabindex: 0, role: "button", "data-kind": kind });
+      const it = mode === "explore" ? info(kind, f) : null;
+      g.setAttribute("aria-label", mode === "explore" ? it.name : "picture " + (i + 1));
+      if (mode === "explore") {
+        if (sel === kind) g.classList.add("sel");
+        if ((sel === "rightmark" && kind === "perp") || (sel === "parmarks" && kind === "par")) g.classList.add("marksel");
+      } else {
+        if (round.done.has(kind)) g.classList.add("done");
+        if (chosenTile === kind) g.classList.add("pick");
+      }
+      mk("rect", { class: "tile-bg", x: s.x + 3, y: s.y + 3, width: s.w - 6, height: s.h - 6, rx: 14 }, g);
+      const chipH = mode === "match" ? 64 : 0;
+      drawFigure(g, kind, f, { x: s.x, y: s.y, w: s.w, h: s.h - chipH });
+      if (mode === "match" && round.done.has(kind)) {
+        const fo = mk("foreignObject", { x: s.x + 6, y: s.y + s.h - chipH - 8, width: s.w - 12, height: chipH }, g);
+        const div = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+        div.className = "chip";
+        div.innerHTML = round.card[kind].html;
+        fo.appendChild(div);
+      }
+      const act = e => {
+        const m = e.target.closest && e.target.closest(".hit-mark");
+        if (mode === "explore" && m) choose(m.dataset.item); else tapTile(kind);
+      };
+      g.addEventListener("click", act);
+      g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapTile(kind); } });
+    });
+  }
+
+  // ---------- Explore ----------
+  const PICKS = [...KINDS, "rightmark", "parmarks"];
+  function choose(item) { sel = item; revealed = false; render(); }
+
+  function readout() {
+    const it = info(sel, sel === "rightmark" || sel === "parmarks" ? {} : FIXED[sel]);
+    $("kind").textContent = showWords ? it.name : "";
+    const box = $("notaBox");
+    if (showNota || revealed) {
+      box.innerHTML = `<div class="big">${it.nota}</div>`;
+    } else {
+      box.innerHTML = `<button type="button" class="reveal" id="reveal">?<small>Write it, then tap to check</small></button>`;
+      $("reveal").addEventListener("click", () => { revealed = true; render(); });
+    }
+    const w = $("words");
+    if (showWords) {
+      w.className = "words";
+      w.innerHTML = `Say: <b>${it.say}</b><span class="mean">${it.mean}</span>`;
+    } else {
+      w.className = "words off";
+      w.textContent = "Say it in words.";
+    }
+    const o = $("other");
+    const showOther = it.other && (showNota || revealed) && showWords;
+    o.hidden = !showOther;
+    o.innerHTML = showOther ? it.other : "";
+    $("picksCard").hidden = !showNota;
+    document.querySelectorAll("#picks button").forEach(b => b.setAttribute("aria-pressed", b.dataset.item === sel));
+  }
+
+  function buildPicks() {
+    const box = $("picks");
+    PICKS.forEach(item => {
+      const it = info(item, FIXED[item] || {});
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.item = item;
+      b.innerHTML = it.nota;
+      b.setAttribute("aria-label", it.say);
+      b.addEventListener("click", () => choose(item));
+      box.appendChild(b);
+    });
+  }
+
+  // ---------- Match ----------
+  function newRound() {
+    const pool = shuffle([..."ABCDEFGHJKLMNPQRSTUVWXYZ"]);
+    const f = {};
+    let k = 0;
+    KINDS.forEach(kind => {
+      f[kind] = { L: pool.slice(k, k + NEED[kind]).join(""), flip: Math.random() < 0.5, low: pick(["m", "n", "k", "p", "t"]) };
+      k += NEED[kind];
+    });
+    const card = {};
+    KINDS.forEach(kind => (card[kind] = cardFor(kind, f[kind])));
+    // Shuffle within each row: the two-line pictures need the wider bottom tiles.
+    round = { f, card, order: [...shuffle(KINDS.slice(0, 4)), ...shuffle(KINDS.slice(4))], cards: shuffle(KINDS), done: new Set(), tries: 0 };
+    chosenCard = chosenTile = null;
+    setFeedback("", "");
+    buildCards();
+    render();
+  }
+
+  function setFeedback(html, cls) { const fb = $("fb"); fb.innerHTML = html; fb.className = "fb " + cls; }
+
+  function buildCards() {
+    const box = $("cards");
+    box.replaceChildren();
+    round.cards.forEach(kind => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.kind = kind;
+      b.innerHTML = round.card[kind].html;
+      b.addEventListener("click", () => {
+        if (round.done.has(kind)) return;
+        chosenCard = chosenCard === kind ? null : kind;
+        if (chosenCard && chosenTile) tryMatch();
+        render();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function tryMatch() {
+    const card = chosenCard, tile = chosenTile;
+    chosenCard = chosenTile = null;
+    if (card === tile) {
+      round.done.add(card);
+      const all = round.done.size === KINDS.length;
+      setFeedback(showWords ? `Yes! ${round.card[card].html} is <b>${round.card[card].say}</b>.${all ? "<br>All 7 matched! Tap New round for new letters." : ""}`
+        : `Yes! Say it out loud.${all ? "<br>All 7 matched!" : ""}`, "good");
+    } else {
+      setFeedback(`Not quite. ${HINT[card]}`, "bad");
+      // Flash the tapped picture red once the board has redrawn.
+      setTimeout(() => {
+        const t = svg.querySelector(`.tile[data-kind="${tile}"]`);
+        if (t) { t.classList.add("bad"); setTimeout(() => t.classList.remove("bad"), 700); }
+      }, 0);
+    }
+  }
+
+  function tapTile(kind) {
+    if (mode === "explore") { choose(kind); return; }
+    if (round.done.has(kind)) return;
+    chosenTile = chosenTile === kind ? null : kind;
+    if (chosenCard && chosenTile) tryMatch();
+    render();
+  }
+
+  function matchPanel() {
+    $("score").textContent = `${round.done.size} of ${KINDS.length} matched`;
+    document.querySelectorAll("#cards button").forEach(b => {
+      const k = b.dataset.kind;
+      b.classList.toggle("done", round.done.has(k));
+      b.setAttribute("aria-pressed", chosenCard === k);
+      b.disabled = round.done.has(k);
+    });
+    if (!$("fb").textContent && !chosenCard) setFeedback("", "");
+  }
+
+  function render() {
+    draw();
+    if (mode === "explore") readout(); else matchPanel();
+  }
+
+  function setMode(m) {
+    mode = m;
+    $("mExplore").setAttribute("aria-pressed", m === "explore");
+    $("mMatch").setAttribute("aria-pressed", m === "match");
+    $("explore").hidden = m !== "explore";
+    $("match").hidden = m !== "match";
+    $("tNota").hidden = m !== "explore";
+    if (m === "match") newRound(); else render();
+  }
+  $("mExplore").addEventListener("click", () => setMode("explore"));
+  $("mMatch").addEventListener("click", () => setMode("match"));
+  $("newRound").addEventListener("click", newRound);
+  $("tNota").addEventListener("click", () => { showNota = !showNota; revealed = false; $("tNota").setAttribute("aria-pressed", showNota); render(); });
+  $("tWords").addEventListener("click", () => { showWords = !showWords; $("tWords").setAttribute("aria-pressed", showWords); render(); });
+
+  buildPicks();
+  render();
+})();
+</script>
+
+</body>
+</html>
