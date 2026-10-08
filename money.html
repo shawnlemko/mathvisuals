@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Counting Canadian Coins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --bag: #e8d3ae; --bag-line: #8a6a3a; --bag-tie: #a5804a; --good: #1f7a5a; --good-bg: #e3f4ec; --nope-bg: #fbeee6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bag: #3a2f22; --bag-line: #c8a46a; --bag-tie: #6e5636; --good: #4cc49a; --good-bg: #16352a; --nope-bg: #3a2416; } }
+:root[data-theme="dark"] { --bag: #3a2f22; --bag-line: #c8a46a; --bag-tie: #6e5636; --good: #4cc49a; --good-bg: #16352a; --nope-bg: #3a2416; }
+
+.main { grid-template-columns: minmax(0, 2.1fr) minmax(300px, 1fr); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 12px; }
+.card { padding: 14px 16px; }
+
+/* Game switch in the header */
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+
+/* Board */
+.coin { cursor: grab; transition: transform .2s ease; }
+.coin.drag { cursor: grabbing; transition: none; }
+.coin .val { font-family: var(--font-display); font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.pile-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 1.5; stroke-dasharray: 6 5; cursor: grab; }
+.pile-tab rect { fill: var(--pt); cursor: grab; }
+.pile-tab text { fill: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 20px; dominant-baseline: central; pointer-events: none; }
+.tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 1.5; }
+.tray-lbl { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+.bag-body { fill: var(--bag); stroke: var(--bag-line); stroke-width: 4; stroke-linejoin: round; }
+.bag-tie { fill: var(--bag-tie); stroke: var(--bag-line); stroke-width: 3; }
+.bag.hot .bag-body { stroke: var(--pt); stroke-width: 6; }
+.bag-lbl { fill: var(--bag-line); font-family: var(--font-display); font-weight: 800; font-size: 26px; text-anchor: middle; }
+.tray-bg.hot { fill: var(--nope-bg); stroke: var(--orange); stroke-width: 3; }
+
+/* Panel */
+.task { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.2; margin: 0 0 4px; }
+.big-amt { font-family: var(--font-num); font-weight: 700; font-size: 3.4rem; line-height: 1.1; color: var(--pt); margin: 2px 0 6px; }
+.howto { margin: 0; color: var(--muted); font-size: 1rem; }
+.answer-row { display: flex; gap: 8px; align-items: stretch; margin-top: 10px; }
+.answer-row input { flex: 1 1 auto; min-width: 0; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; padding: 4px 12px;
+  border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; padding: 8px 18px; min-height: 52px; }
+button.go:hover { background: var(--sheet); color: var(--pt); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.btn-row button { font-size: 1.05rem; min-height: 44px; }
+.feedback { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
+.feedback:empty { display: none; }
+.feedback.good { background: var(--good-bg); color: var(--good); }
+.feedback.nope { background: var(--nope-bg); color: var(--orange); }
+.feedback .amt { font-family: var(--font-num); white-space: nowrap; }
+.total-amt { font-family: var(--font-num); font-weight: 700; font-size: 3.4rem; line-height: 1.1; color: var(--green); }
+.total-amt.hidden { color: var(--muted); }
+.coin-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.coin-picks button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; background: var(--sheet); font-size: 0.85rem; line-height: 1.1; }
+.coin-picks button svg { width: 100%; max-width: 46px; height: auto; }
+.coin-picks button[aria-pressed="false"] { opacity: .4; background: var(--chip); }
+.coin-picks button[aria-pressed="false"] svg { filter: grayscale(1); }
+.coin-picks button[aria-pressed="true"] { border: 2px solid var(--pt); }
+.max-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.max-picks button { font-family: var(--font-num); font-size: 1.05rem; min-height: 40px; }
+.max-picks button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.card .label + .max-picks, .card .label + .coin-picks { margin-bottom: 10px; }
+.toggles { margin-top: 4px; font-size: 1.05rem; }
+[data-show]:not(.on) { display: none !important; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Counting Coins</h1></div>
+    <div class="seg-btns" role="group" aria-label="Game">
+      <button type="button" data-mode="sort" aria-pressed="false">Sort coins</button>
+      <button type="button" data-mode="much" aria-pressed="true" class="on">How much?</button>
+      <button type="button" data-mode="make" aria-pressed="false">Make the amount</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="stage" viewBox="0 0 1000 640" role="img" aria-label="Canadian coins to drag and sort"></svg>
+    </div>
+
+    <div class="panel">
+      <!-- Sort coins -->
+      <div class="card" data-show="sort">
+        <p class="task">Sort the coins</p>
+        <p class="howto">Drag coins up from the bottom. Drop a coin on another coin to make a pile. Drag the blue tab to move a pile.</p>
+      </div>
+      <div class="card" data-show="sort">
+        <p class="label">Total</p>
+        <div class="total-amt" id="total" aria-live="polite">0¢</div>
+        <div class="btn-row">
+          <button type="button" id="hideTotal" aria-pressed="false">Hide total</button>
+          <button type="button" id="clearSort">Clear</button>
+        </div>
+      </div>
+
+      <!-- How much? -->
+      <div class="card" data-show="much">
+        <p class="task">How much money is there?</p>
+        <p class="howto">Sort the coins into piles. Count them up.</p>
+        <form class="answer-row" id="muchForm" autocomplete="off">
+          <input id="muchIn" type="text" inputmode="decimal" aria-label="How much money" placeholder="?">
+          <button type="submit" class="go">Check</button>
+        </form>
+        <p class="feedback" id="muchFb" aria-live="polite"></p>
+        <div class="btn-row">
+          <button type="button" id="muchNew">New coins</button>
+          <button type="button" id="muchShow">Show answer</button>
+        </div>
+      </div>
+
+      <!-- Make the amount -->
+      <div class="card" data-show="make">
+        <p class="task">Put this much in the bag:</p>
+        <div class="big-amt" id="target">85¢</div>
+        <p class="howto">Drag coins from the bottom into the bag.</p>
+        <div class="btn-row">
+          <button type="button" class="go" id="makeCheck">Check</button>
+        </div>
+        <p class="feedback" id="makeFb" aria-live="polite"></p>
+        <div class="btn-row">
+          <button type="button" id="makeNew">New amount</button>
+          <button type="button" id="makeEmpty">Empty the bag</button>
+        </div>
+      </div>
+
+      <div class="card" data-show="much make">
+        <p class="label">Coins to use</p>
+        <div class="coin-picks" id="coinPicks"></div>
+        <p class="label">How much money</p>
+        <div class="max-picks" id="maxPicks"></div>
+      </div>
+
+      <div class="card">
+        <div class="toggles"><label><input type="checkbox" id="nums" checked> Show numbers on coins</label></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  // ---------- Coins ----------
+  // Real diameters in mm, drawn at 3.6 units per mm so the sizes compare like the real coins.
+  const KINDS = {
+    nickel:  { v: 5,   mm: 21.2,  name: "Nickel",  label: "5¢",  metal: "silver", art: "beaver" },
+    dime:    { v: 10,  mm: 18.03, name: "Dime",    label: "10¢", metal: "silver", art: "ship" },
+    quarter: { v: 25,  mm: 23.88, name: "Quarter", label: "25¢", metal: "silver", art: "caribou" },
+    loonie:  { v: 100, mm: 26.5,  name: "Loonie",  label: "$1",  metal: "gold",   art: "loon" },
+    toonie:  { v: 200, mm: 28,    name: "Toonie",  label: "$2",  metal: "two",    art: "bear" },
+  };
+  const ORDER = ["nickel", "dime", "quarter", "loonie", "toonie"];
+  for (const k of ORDER) KINDS[k].r = KINDS[k].mm * 1.8;
+  const SILVER = { rim: "#9ba2aa", face: "#d6dadf", art: "#79818a", text: "#363e46", edge: "#6c747c" };
+  const GOLD = { rim: "#b5841d", face: "#e4b43c", art: "#8f600c", text: "#4f3404", edge: "#8a6212" };
+
+  // Simple line drawings of each coin's animal or ship, in a 100 x 100 box around 0,0.
+  const ART = {
+    beaver: `<path d="M-46 25H46" fill="none" stroke-width="7" stroke-linecap="round"/>
+      <ellipse cx="2" cy="5" rx="26" ry="15"/><circle cx="-24" cy="-3" r="10"/><circle cx="-21" cy="-13" r="3.5"/>
+      <ellipse cx="36" cy="12" rx="15" ry="6" transform="rotate(-15 36 12)"/>`,
+    ship: `<path d="M-42 14H42L32 28H-34Z"/><path d="M-8 10V-38L-34 10Z M4 10V-42L34 10Z"/>
+      <path d="M-6 12V-44 M6 12V-48" fill="none" stroke-width="3"/>
+      <path d="M-46 38q8 -6 16 0t16 0t16 0t16 0t16 0t16 0" fill="none" stroke-width="3"/>`,
+    caribou: `<path d="M-9 -8Q0 -14 9 -8L6 26Q0 34 -6 26Z"/><path d="M-9 -6L-23 -12L-10 1Z M9 -6L23 -12L10 1Z"/>
+      <path d="M-5 -12Q-14 -30 -30 -44 M-11 -24L-27 -25 M-18 -34L-15 -47 M5 -12Q14 -30 30 -44 M11 -24L27 -25 M18 -34L15 -47"
+        fill="none" stroke-width="4.5" stroke-linecap="round"/>`,
+    loon: `<path d="M-40 10Q-14 -8 22 -2Q34 2 32 12Q0 22 -40 10Z"/>
+      <path d="M18 2Q20 -14 28 -16Q36 -17 37 -10L49 -7L36 -4Q31 -3 30 6Z"/>
+      <path d="M-46 26q8 -5 16 0t16 0t16 0t16 0t16 0t16 0" fill="none" stroke-width="3"/>`,
+    bear: `<path d="M-40 12Q-40 -10 -12 -12Q14 -14 26 -6Q32 -4 40 -2Q46 2 40 6L30 6Q30 16 26 22H19L19 12Q0 14 -18 12L-20 22H-27Q-34 18 -40 12Z"/>
+      <circle cx="26" cy="-9" r="3.5"/><path d="M-46 28H46" fill="none" stroke-width="3"/>`,
+  };
+
+  const poly = (n, r, rot = -Math.PI / 2) => Array.from({ length: n }, (_, i) => {
+    const a = rot + i * 2 * Math.PI / n;
+    return `${(r * Math.cos(a)).toFixed(2)},${(r * Math.sin(a)).toFixed(2)}`;
+  }).join(" ");
+
+  function coinMarkup(kind, nums) {
+    const k = KINDS[kind], r = k.r;
+    const c = k.metal === "gold" ? GOLD : SILVER;
+    let s = `<ellipse cx="2" cy="4" rx="${r}" ry="${r}" fill="#000" opacity=".2"/>`;
+    let artC = c, artR = r, textR = r, textY = 0.44 * r, textF = 0.64 * r, artY = -0.32 * r, artK = 0.0085 * r, artK0 = 0.0145 * r;
+    if (k.metal === "gold") {
+      s += `<polygon points="${poly(11, r)}" fill="${c.rim}" stroke="${c.edge}" stroke-width="1.5"/>`;
+      s += `<polygon points="${poly(11, r * 0.88)}" fill="${c.face}"/>`;
+      s += `<circle r="${r * 0.79}" fill="none" stroke="${c.rim}" stroke-width="1.6" stroke-dasharray="1.5 3.2"/>`;
+    } else {
+      s += `<circle r="${r}" fill="${c.rim}" stroke="${c.edge}" stroke-width="1.5"/>`;
+      s += `<circle r="${r * 0.9}" fill="${c.face}"/>`;
+      if (k.metal === "two") {
+        s += `<circle r="${r * 0.6}" fill="${GOLD.face}" stroke="${GOLD.rim}" stroke-width="3"/>`;
+        artC = GOLD; artY = -0.25 * r; artK = 0.0055 * r; artK0 = 0.009 * r; textY = 0.27 * r; textF = 0.46 * r;
+      } else {
+        s += `<circle r="${r * 0.8}" fill="none" stroke="${c.rim}" stroke-width="1.6" stroke-dasharray="1.5 3.2"/>`;
+      }
+    }
+    const art = `<g fill="${artC.art}" stroke="${artC.art}" stroke-width="0" transform="translate(0 ${nums ? artY : 0}) scale(${nums ? artK : artK0})">${ART[k.art]}</g>`;
+    s += art;
+    if (nums) s += `<text class="val" y="${textY}" font-size="${textF}" fill="${artC.text}">${k.label}</text>`;
+    return s;
+  }
+
+  // ---------- Money words ----------
+  const fmt = c => c < 100 ? `${c}¢` : `$${(c / 100).toFixed(2)}`;
+  const both = c => c < 100 ? `${c}¢ (that's $${(c / 100).toFixed(2)})` : `$${(c / 100).toFixed(2)} (that's ${c}¢)`;
+  // Accepts 85, 85¢, 85c, 85 cents, $0.85, 0.85, $1.35, 1.35, 135¢, $3, 3 dollars.
+  function readMoney(str) {
+    let s = str.toLowerCase().replace(/\s+/g, "").replace(/,/g, "");
+    const cents = /(¢|c|cents?)$/.test(s);
+    const dollars = /\$|dollars?|\./.test(s);
+    s = s.replace(/[^0-9.]/g, "");
+    if (!s || !/^\d*\.?\d*$/.test(s) || s === ".") return [];
+    const n = parseFloat(s);
+    if (cents && !s.includes(".")) return [Math.round(n)];
+    if (dollars) return [Math.round(n * 100)];
+    return [Math.round(n), Math.round(n * 100)];
+  }
+
+  // ---------- Board ----------
+  const svg = $("stage");
+  const W = 1000, H = 640, TRAY_Y = 516;
+  const BAG = { x: 690, y: 30, w: 296, h: 482, cx: 838 };
+  const layers = {};
+  for (const n of ["back", "piles", "coins", "front"]) layers[n] = el("g", {}, svg);
+
+  let mode = "much", nums = true, hideTotal = false;
+  const settings = { kinds: new Set(ORDER), max: 200 };
+  const MAXES = [100, 200, 500, 1000];
+  let nextId = 1;
+  const newState = () => ({ coins: new Map(), piles: new Map() });
+  const S = { sort: newState(), much: newState(), make: newState() };
+  const st = () => S[mode];
+  const games = { much: { answer: 0 }, make: { target: 0 } };
+
+  const area = () => mode === "much" ? { x0: 0, y0: 0, x1: W, y1: H }
+    : mode === "sort" ? { x0: 0, y0: 0, x1: W, y1: TRAY_Y } : { x0: 0, y0: 0, x1: 672, y1: TRAY_Y };
+  const R = c => KINDS[c.kind].r * (c.s || 1);
+  const boardCoins = () => [...st().coins.values()].filter(c => !c.inBag);
+
+  function addCoin(kind, x, y) {
+    const c = { id: nextId++, kind, x, y, s: 1, pile: null, inBag: false };
+    st().coins.set(c.id, c);
+    return c;
+  }
+
+  // Piles: coins snap into neat rows of 5 so they are easy to count.
+  function layoutPile(p, clamp = true) {
+    const cs = p.ids.map(id => st().coins.get(id));
+    const cell = Math.max(...cs.map(c => 2 * KINDS[c.kind].r)) + 6;
+    const cols = Math.min(5, cs.length), rows = Math.ceil(cs.length / 5);
+    p.cell = cell; p.cols = cols; p.rows = rows;
+    if (clamp) {
+      const a = area();
+      p.x = Math.min(Math.max(p.x, a.x0 + cell / 2 + 8), a.x1 - cols * cell + cell / 2 - 8);
+      p.y = Math.min(Math.max(p.y, a.y0 + cell / 2 + 44), a.y1 - rows * cell + cell / 2 - 8);
+    }
+    cs.forEach((c, i) => { c.x = p.x + (i % 5) * cell; c.y = p.y + Math.floor(i / 5) * cell; c.pile = p.id; });
+  }
+  function clampCoin(c) {
+    const a = area(), r = R(c) + 4;
+    c.x = Math.min(Math.max(c.x, a.x0 + r), a.x1 - r);
+    c.y = Math.min(Math.max(c.y, a.y0 + r), a.y1 - r);
+  }
+  function takeFromPile(c) {
+    if (c.pile == null) return;
+    const p = st().piles.get(c.pile);
+    c.pile = null;
+    if (!p) return;
+    p.ids = p.ids.filter(id => id !== c.id);
+    if (p.ids.length <= 1) {
+      p.ids.forEach(id => { st().coins.get(id).pile = null; });
+      st().piles.delete(p.id);
+    } else layoutPile(p);
+  }
+  function nearestCoin(x, y, r, skip) {
+    let best = null, bd = Infinity;
+    for (const o of boardCoins()) {
+      if (skip(o)) continue;
+      const d = Math.hypot(o.x - x, o.y - y);
+      if (d < r + R(o) + 24 && d < bd) { best = o; bd = d; }
+    }
+    return best;
+  }
+  function joinPile(target, ids) {
+    let p = target.pile != null ? st().piles.get(target.pile) : null;
+    if (!p) { p = { id: nextId++, x: target.x, y: target.y, ids: [target.id] }; st().piles.set(p.id, p); }
+    p.ids.push(...ids);
+    layoutPile(p);
+  }
+
+  // The bag: coins inside settle in rows from the bottom, shrinking if there are many.
+  function layoutBag() {
+    const inBag = [...st().coins.values()].filter(c => c.inBag).sort((a, b) => KINDS[b.kind].v - KINDS[a.kind].v);
+    const n = inBag.length;
+    let cell = 106, cols = 2, rows = 1;
+    for (; cell > 26; cell -= 2) { cols = Math.floor(250 / cell); rows = Math.ceil(n / cols); if (rows * cell <= 330) break; }
+    const s = Math.min(1, (cell - 4) / (2 * KINDS.toonie.r));
+    inBag.forEach((c, i) => {
+      const row = Math.floor(i / cols), inRow = Math.min(cols, n - row * cols), col = i % cols;
+      c.s = s;
+      c.x = BAG.cx - inRow * cell / 2 + cell / 2 + col * cell;
+      c.y = 504 - cell / 2 - row * cell;
+    });
+  }
+  const inBagZone = (x, y) => mode === "make" && x > BAG.x + 10 && x < BAG.x + BAG.w - 10 && y > BAG.y + 30 && y < BAG.y + BAG.h;
+  const inTray = (x, y) => mode !== "much" && y > TRAY_Y + 8;
+
+  // ---------- Drawing ----------
+  const coinEls = new Map();
+  function coinEl(c) {
+    let g = coinEls.get(c.id);
+    if (!g) {
+      g = el("g", { class: "coin", "data-id": c.id });
+      g.innerHTML = coinMarkup(c.kind, nums);
+      g.style.transition = "none";
+      g.style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`;
+      layers.coins.appendChild(g);
+      requestAnimationFrame(() => requestAnimationFrame(() => { g.style.transition = ""; }));
+      g.addEventListener("pointerdown", e => startCoinDrag(e, c.id));
+      coinEls.set(c.id, g);
+    }
+    return g;
+  }
+  function placeCoin(c) { coinEl(c).style.transform = `translate(${c.x}px, ${c.y}px) scale(${c.s})`; }
+
+  function drawPiles() {
+    layers.piles.innerHTML = "";
+    for (const p of st().piles.values()) {
+      const x = p.x - p.cell / 2 - 4, y = p.y - p.cell / 2 - 4, w = p.cols * p.cell + 8, h = p.rows * p.cell + 8;
+      const bg = el("rect", { class: "pile-bg", x, y, width: w, height: h, rx: 14 }, layers.piles);
+      const tab = el("g", { class: "pile-tab" }, layers.piles);
+      const sum = p.ids.reduce((t, id) => t + KINDS[st().coins.get(id).kind].v, 0);
+      const txt = mode === "sort" && !hideTotal ? `⠿ ${fmt(sum)}` : `⠿ ${p.ids.length} coins`;
+      const tw = Math.max(110, txt.length * 12 + 24);
+      el("rect", { x, y: y - 36, width: tw, height: 34, rx: 10 }, tab);
+      el("text", { x: x + 12, y: y - 19 }, tab).textContent = txt;
+      for (const t of [bg, tab]) t.addEventListener("pointerdown", e => startPileDrag(e, p.id));
+    }
+  }
+
+  function drawBack() {
+    layers.back.innerHTML = "";
+    layers.front.innerHTML = "";
+    if (mode === "make") {
+      const bag = el("g", { class: "bag", id: "bag" }, layers.back);
+      el("path", { class: "bag-body", d: "M776 112C700 160 690 270 690 400C690 494 744 512 838 512C932 512 986 494 986 400C986 270 976 160 900 112Z" }, bag);
+      el("path", { class: "bag-body", d: "M780 112L756 46Q800 72 818 40Q838 70 858 40Q878 72 920 46L896 112Z" }, bag);
+      el("rect", { class: "bag-tie", x: 770, y: 100, width: 136, height: 20, rx: 10 }, bag);
+      el("text", { class: "bag-lbl", x: BAG.cx, y: 160 }, bag).textContent = "BAG";
+    }
+    if (mode !== "much") {
+      el("rect", { class: "tray-bg", id: "tray", x: 4, y: TRAY_Y, width: W - 8, height: H - TRAY_Y - 4, rx: 12 }, layers.back);
+      const kinds = mode === "make" ? ORDER.filter(k => settings.kinds.has(k)) : ORDER;
+      const step = (W - 40) / kinds.length;
+      kinds.forEach((k, i) => {
+        const x = 20 + step * (i + 0.5), y = TRAY_Y + (H - TRAY_Y) / 2;
+        const g = el("g", { class: "coin", transform: `translate(${x} ${y})`, "aria-label": KINDS[k].name }, layers.back);
+        g.innerHTML = coinMarkup(k, nums);
+          g.addEventListener("pointerdown", e => startTrayDrag(e, k));
+      });
+    }
+  }
+
+  function render() {
+    const coins = st().coins;
+    for (const [id, g] of coinEls) if (!coins.has(id)) { g.remove(); coinEls.delete(id); }
+    for (const c of coins.values()) placeCoin(c);
+    drawPiles();
+    updateTotal();
+  }
+  function rebuild() {
+    for (const g of coinEls.values()) g.remove();
+    coinEls.clear();
+    drawBack();
+    render();
+  }
+
+  // ---------- Dragging ----------
+  const toSvg = e => {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  };
+  let drag = null;
+  function hot(x, y) {
+    const bag = $("bag"), tray = $("tray");
+    if (bag) bag.classList.toggle("hot", inBagZone(x, y));
+    if (tray) tray.classList.toggle("hot", inTray(x, y));
+  }
+
+  function startCoinDrag(e, id) {
+    e.preventDefault();
+    const c = st().coins.get(id);
+    if (!c) return;
+    const p = toSvg(e);
+    if (c.inBag) { c.inBag = false; c.s = 1; layoutBag(); }
+    takeFromPile(c);
+    drag = { type: "coin", id, dx: c.x - p.x, dy: c.y - p.y };
+    const g = coinEl(c);
+    g.classList.add("drag");
+    layers.coins.appendChild(g);
+    svg.setPointerCapture(e.pointerId);
+    render();
+  }
+  function startTrayDrag(e, kind) {
+    e.preventDefault();
+    const p = toSvg(e);
+    const c = addCoin(kind, p.x, p.y);
+    drag = { type: "coin", id: c.id, dx: 0, dy: 0 };
+    coinEl(c).classList.add("drag");
+    svg.setPointerCapture(e.pointerId);
+    render();
+  }
+  function startPileDrag(e, pid) {
+    e.preventDefault();
+    const pl = st().piles.get(pid), p = toSvg(e);
+    drag = { type: "pile", id: pid, dx: pl.x - p.x, dy: pl.y - p.y };
+    for (const id of pl.ids) { const g = coinEl(st().coins.get(id)); g.classList.add("drag"); layers.coins.appendChild(g); }
+    svg.setPointerCapture(e.pointerId);
+  }
+
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = toSvg(e);
+    if (drag.type === "coin") {
+      const c = st().coins.get(drag.id);
+      c.x = p.x + drag.dx; c.y = p.y + drag.dy;
+      placeCoin(c);
+      hot(c.x, c.y);
+    } else {
+      const pl = st().piles.get(drag.id);
+      pl.x = p.x + drag.dx; pl.y = p.y + drag.dy;
+      layoutPile(pl, false);
+      pl.ids.forEach(id => placeCoin(st().coins.get(id)));
+      drawPiles();
+      const mx = pl.x + (pl.cols - 1) * pl.cell / 2, my = pl.y + (pl.rows - 1) * pl.cell / 2;
+      hot(mx, my);
+    }
+  });
+
+  function endDrag() {
+    if (!drag) return;
+    const d = drag; drag = null;
+    hot(-1, -1);
+    if (d.type === "coin") {
+      const c = st().coins.get(d.id);
+      coinEl(c).classList.remove("drag");
+      if (inTray(c.x, c.y)) st().coins.delete(c.id);
+      else if (inBagZone(c.x, c.y)) { c.inBag = true; layoutBag(); }
+      else {
+        const t = nearestCoin(c.x, c.y, R(c), o => o.id === c.id);
+        if (t) joinPile(t, [c.id]); else clampCoin(c);
+      }
+    } else {
+      const pl = st().piles.get(d.id);
+      if (!pl) return;
+      pl.ids.forEach(id => coinEl(st().coins.get(id)).classList.remove("drag"));
+      const mx = pl.x + (pl.cols - 1) * pl.cell / 2, my = pl.y + (pl.rows - 1) * pl.cell / 2;
+      if (inTray(mx, my)) { pl.ids.forEach(id => st().coins.delete(id)); st().piles.delete(pl.id); }
+      else if (inBagZone(mx, my)) {
+        pl.ids.forEach(id => { const c = st().coins.get(id); c.inBag = true; c.pile = null; });
+        st().piles.delete(pl.id); layoutBag();
+      } else {
+        // Dropped onto another coin or pile: the two piles join.
+        let t = null;
+        for (const id of pl.ids) {
+          const c = st().coins.get(id);
+          t = nearestCoin(c.x, c.y, R(c) - 10, o => o.pile === pl.id);
+          if (t) break;
+        }
+        if (t) { st().piles.delete(pl.id); joinPile(t, pl.ids); }
+        else layoutPile(pl);
+      }
+    }
+    render();
+    if (mode === "make") $("makeFb").textContent = "";
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // ---------- Games ----------
+  function pickCoins(max) {
+    const kinds = ORDER.filter(k => settings.kinds.has(k) && KINDS[k].v <= max);
+    if (!kinds.length) return null;
+    const [lo, hi] = { 100: [3, 8], 200: [4, 10], 500: [5, 12], 1000: [6, 15] }[max];
+    const n = rand(lo, hi), list = [];
+    let total = 0;
+    while (list.length < n) {
+      const fits = kinds.filter(k => total + KINDS[k].v <= max);
+      if (!fits.length) break;
+      const k = pick(fits);
+      list.push(k); total += KINDS[k].v;
+    }
+    return { list, total };
+  }
+  const NONE = "None of these coins fit. Turn on a smaller coin.";
+
+  function newMuch() {
+    const s = S.much;
+    s.coins.clear(); s.piles.clear();
+    $("muchIn").value = ""; $("muchFb").textContent = ""; $("muchFb").className = "feedback";
+    const got = pickCoins(settings.max);
+    if (!got) { games.much.answer = 0; setFb("muchFb", "nope", NONE); if (mode === "much") render(); return; }
+    games.much.answer = got.total;
+    // Scatter the coins so they don't overlap.
+    const placed = [];
+    for (const k of got.list) {
+      const r = KINDS[k].r;
+      let x, y, tries = 0;
+      do {
+        x = rand(r + 20, W - r - 20); y = rand(r + 20, H - r - 20); tries++;
+      } while (tries < 400 && placed.some(p => Math.hypot(p.x - x, p.y - y) < p.r + r + 16));
+      placed.push({ x, y, r });
+      const c = { id: nextId++, kind: k, x, y, s: 1, pile: null, inBag: false };
+      s.coins.set(c.id, c);
+    }
+    if (mode === "much") render();
+  }
+  function setFb(id, cls, html) { const f = $(id); f.className = `feedback ${cls}`; f.innerHTML = html; }
+
+  $("muchForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const a = games.much.answer;
+    if (!a) return;
+    const vals = readMoney($("muchIn").value);
+    if (!vals.length) { setFb("muchFb", "nope", "Type how much money you counted."); return; }
+    if (vals.includes(a)) setFb("muchFb", "good", `Yes! There is <span class="amt">${both(a)}</span>.`);
+    else setFb("muchFb", "nope", "Not quite. Count again!");
+  });
+  $("muchNew").addEventListener("click", newMuch);
+  $("muchShow").addEventListener("click", () => {
+    if (games.much.answer) setFb("muchFb", "good", `There is <span class="amt">${both(games.much.answer)}</span>.`);
+  });
+
+  function newMake() {
+    const got = pickCoins(settings.max);
+    $("makeFb").textContent = ""; $("makeFb").className = "feedback";
+    if (!got) { games.make.target = 0; $("target").textContent = "?"; setFb("makeFb", "nope", NONE); return; }
+    let t = got.total;
+    for (let i = 0; i < 6 && t === games.make.target; i++) t = pickCoins(settings.max).total;
+    games.make.target = t;
+    $("target").textContent = fmt(t);
+  }
+  function emptyBag() {
+    const s = S.make;
+    for (const c of [...s.coins.values()]) if (c.inBag) s.coins.delete(c.id);
+    if (mode === "make") render();
+  }
+  $("makeNew").addEventListener("click", () => { emptyBag(); newMake(); });
+  $("makeEmpty").addEventListener("click", () => { emptyBag(); $("makeFb").textContent = ""; });
+  $("makeCheck").addEventListener("click", () => {
+    const t = games.make.target;
+    if (!t) return;
+    const have = [...S.make.coins.values()].filter(c => c.inBag).reduce((s, c) => s + KINDS[c.kind].v, 0);
+    if (have === t) setFb("makeFb", "good", `Yes! You made <span class="amt">${fmt(t)}</span>.`);
+    else if (have === 0) setFb("makeFb", "nope", "The bag is empty. Drag some coins in.");
+    else if (have < t) setFb("makeFb", "nope", `Not enough yet. The bag has <span class="amt">${fmt(have)}</span>. Add more.`);
+    else setFb("makeFb", "nope", `Too much! The bag has <span class="amt">${fmt(have)}</span>. Take some out.`);
+  });
+
+  // ---------- Sort coins ----------
+  function updateTotal() {
+    const t = [...S.sort.coins.values()].reduce((s, c) => s + KINDS[c.kind].v, 0);
+    const o = $("total");
+    o.textContent = hideTotal ? "?" : fmt(t);
+    o.classList.toggle("hidden", hideTotal);
+  }
+  $("hideTotal").addEventListener("click", e => {
+    hideTotal = !hideTotal;
+    e.currentTarget.textContent = hideTotal ? "Show total" : "Hide total";
+    e.currentTarget.setAttribute("aria-pressed", hideTotal);
+    render();
+  });
+  $("clearSort").addEventListener("click", () => { S.sort.coins.clear(); S.sort.piles.clear(); render(); });
+
+  // ---------- Settings ----------
+  const picks = $("coinPicks");
+  for (const k of ORDER) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.kind = k; b.setAttribute("aria-pressed", "true");
+    const r = KINDS.toonie.r + 4;
+    b.innerHTML = `<svg viewBox="${-r} ${-r} ${2 * r} ${2 * r}" aria-hidden="true">${coinMarkup(k, false)}</svg><span>${KINDS[k].name}</span>`;
+    b.addEventListener("click", () => {
+      if (settings.kinds.has(k) && settings.kinds.size === 1) return; // keep at least one coin
+      settings.kinds.has(k) ? settings.kinds.delete(k) : settings.kinds.add(k);
+      b.setAttribute("aria-pressed", settings.kinds.has(k));
+      changed();
+    });
+    picks.appendChild(b);
+  }
+  const maxes = $("maxPicks");
+  for (const m of MAXES) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = `Up to $${m / 100}`; b.setAttribute("aria-pressed", m === settings.max);
+    b.addEventListener("click", () => {
+      settings.max = m;
+      maxes.querySelectorAll("button").forEach((x, i) => x.setAttribute("aria-pressed", MAXES[i] === m));
+      changed();
+    });
+    maxes.appendChild(b);
+  }
+  function changed() {
+    newMuch();
+    emptyBag(); newMake();
+    // Coins taken out of the bank are put away when their coin is turned off.
+    for (const c of [...S.make.coins.values()]) if (!settings.kinds.has(c.kind)) { takeFromPile(c); S.make.coins.delete(c.id); }
+    if (mode === "make") rebuild(); else render();
+  }
+  $("nums").addEventListener("change", e => { nums = e.target.checked; rebuild(); });
+
+  // ---------- Game switch ----------
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll("[data-mode]").forEach(b => { const on = b.dataset.mode === m; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    document.querySelectorAll("[data-show]").forEach(n => n.classList.toggle("on", n.dataset.show.split(" ").includes(m)));
+    rebuild();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+  newMuch();
+  newMake();
+  setMode("much");
+})();
+</script>
+
+</body>
+</html>
