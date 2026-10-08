@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Exploring Angles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Exploring Angles (K-6): four modes.
+   Explore: drag the blue dot to open the angle; its name and size show as it changes.
+   Name it: name the angle shown (acute, right, obtuse, straight, reflex).
+   Estimate: guess the size of an angle, or make an angle of a given size; stars for close answers.
+   Protractor: Learn walks through measuring one step at a time; Measure asks for the angle of everyday items. */
+:root { --purple: #6f45c2; --pink: #b02f7c; --gold: #d99a00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b596ff; --pink: #ff7cc8; --gold: #ffc940; } }
+:root[data-theme="dark"] { --purple: #b596ff; --pink: #ff7cc8; --gold: #ffc940; }
+[hidden] { display: none !important; }
+/* The mono font's degree sign is a wide, low "o"; the body font's sits up close to the number. */
+.dg { font-family: var(--font-body); }
+.t-acute { --tc: var(--green); } .t-right { --tc: var(--pt); } .t-obtuse { --tc: var(--orange); }
+.t-straight { --tc: var(--purple); } .t-reflex { --tc: var(--pink); } .t-plain { --tc: var(--orange); }
+
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 12px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+#mode button { font-size: 1.1rem; padding: 6px 16px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.board svg { aspect-ratio: 1000 / 760; outline: none; }
+.board svg:focus-visible { outline: 3px solid var(--pt); outline-offset: -3px; border-radius: 8px; }
+
+/* Angle drawing */
+.arm { stroke: var(--ink); stroke-width: 8; stroke-linecap: round; }
+.vtx { fill: var(--ink); }
+.wedge { fill: var(--tc); fill-opacity: 0.16; }
+.arc { fill: none; stroke: var(--tc); stroke-width: 5; stroke-linecap: round; }
+.deg { fill: var(--tc); font-family: var(--font-num); font-weight: 700; font-size: 44px; text-anchor: middle; dominant-baseline: central;
+  paint-order: stroke; stroke: var(--sheet); stroke-width: 9px; stroke-linejoin: round; }
+.knob { fill: var(--pt); stroke: var(--sheet); stroke-width: 5; cursor: grab; }
+.knob-ring { fill: none; stroke: var(--pt); stroke-width: 3; opacity: 0.35; }
+.help { stroke: var(--muted); stroke-width: 3; stroke-dasharray: 8 9; opacity: 0.7; }
+.help-t { fill: var(--muted); font-family: var(--font-num); font-weight: 700; font-size: 24px; text-anchor: middle; dominant-baseline: central; }
+.ghost { stroke-width: 6; stroke-dasharray: 14 10; stroke-linecap: round; }
+.ghost.you { stroke: var(--orange); } .ghost.goal { stroke: var(--green); }
+.ghost-t { font-family: var(--font-num); font-weight: 700; font-size: 28px; text-anchor: middle; dominant-baseline: central;
+  paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
+.ghost-t.you { fill: var(--orange); } .ghost-t.goal { fill: var(--green); }
+.callout { fill: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 30px; text-anchor: middle; dominant-baseline: central;
+  paint-order: stroke; stroke: var(--sheet); stroke-width: 8px; stroke-linejoin: round; }
+
+/* Protractor: clear plastic, outside row blue, inside row orange */
+.pbody { fill: var(--pt); fill-opacity: 0.1; stroke: var(--pt); stroke-width: 3; cursor: move; }
+.ptick { stroke: var(--ink); stroke-width: 1.5; pointer-events: none; }
+.ptick.big { stroke-width: 2.5; }
+.pbase { stroke: var(--ink); stroke-width: 2.5; pointer-events: none; }
+.pctr { stroke: var(--warn); stroke-width: 3; fill: none; pointer-events: none; }
+.plo, .pli { font-family: var(--font-body); font-weight: 700; font-size: 18px; text-anchor: middle; dominant-baseline: central; pointer-events: none;
+  paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.plo { fill: var(--pt); } .pli { fill: var(--orange); }
+.prot.hl-in .plo, .prot.hl-out .pli { opacity: 0.22; }
+.prot.hl-in .pli, .prot.hl-out .plo { font-size: 20px; }
+.pread { stroke: var(--green); stroke-width: 5; stroke-linecap: round; pointer-events: none; }
+.pread-c { fill: none; stroke: var(--green); stroke-width: 4; pointer-events: none; }
+.pknob { fill: var(--pt); stroke: var(--sheet); stroke-width: 4; cursor: grab; }
+.pknob-t { fill: var(--sheet); font-size: 28px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.pstem { stroke: var(--pt); stroke-width: 4; pointer-events: none; }
+.mark { fill: none; stroke: var(--orange); stroke-width: 6; }
+
+/* Panel */
+.panel .card { display: flex; flex-direction: column; gap: 12px; }
+.ask { font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; line-height: 1.2; margin: 0; }
+.hero { border-top: 8px solid var(--tc); }
+.tname { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2.4rem; line-height: 1.1; color: var(--tc); }
+.tdeg { margin: 0; font-family: var(--font-num); font-weight: 700; font-size: 3.4rem; line-height: 1; }
+.tsay { margin: 0; font-size: 1.2rem; font-weight: 700; min-height: 3.6rem; }
+.types { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.types button { width: 100%; display: grid; grid-template-columns: 58px auto 1fr; align-items: center; gap: 12px; text-align: left;
+  background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 10px; padding: 4px 12px; min-height: 52px; }
+.types button:hover { border-color: var(--tc); }
+.types svg { width: 58px; height: 40px; display: block; }
+.types b { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: var(--tc); }
+.types .r { color: var(--muted); font-size: 1rem; font-weight: 700; text-align: right; }
+.types button.on { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 15%, var(--sheet)); }
+.types button.bad { border-color: var(--warn); border-style: dashed; opacity: 0.7; }
+.types .mi-arm { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; fill: none; }
+.types .mi-arc { stroke: var(--tc); stroke-width: 3; fill: var(--tc); fill-opacity: 0.2; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row button { flex: 1 1 auto; min-height: 50px; font-size: 1.1rem; }
+.row .new { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.go { font-size: 1.4rem; min-height: 58px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.entry { display: flex; justify-content: center; align-items: center; gap: 4px; }
+.entry input { width: 3.4ch; min-width: 0; font-family: var(--font-num); font-weight: 700; font-size: 3.6rem; text-align: center; color: var(--ink);
+  background: var(--paper); border: 3px solid var(--pt); border-radius: 12px; padding: 0 4px; }
+.entry span { align-self: flex-start; margin-top: 0.1em; font-family: var(--font-body); font-weight: 700; font-size: 3.6rem; }
+.fb { min-height: 2.6rem; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; line-height: 1.2; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); }
+.fb small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.1rem; color: var(--ink); margin-top: 4px; }
+.stars { color: var(--gold); letter-spacing: 0.08em; font-size: 2.2rem; }
+.stars .off { color: var(--grid-major); }
+.score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 0; padding-top: 10px; border-top: 1px dashed var(--grid-major);
+  font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; }
+.score .k { font-family: var(--font-body); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; color: var(--muted); }
+.score .k + b { margin-right: 10px; }
+.checks { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.checks label { display: inline-flex; gap: 10px; align-items: center; font-weight: 700; font-size: 1.15rem; cursor: pointer; }
+.checks input { width: 24px; height: 24px; accent-color: var(--pt); }
+.checks button { min-height: 46px; font-size: 1.05rem; }
+.stepno { margin: 0; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
+.steptext { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.35; min-height: 7.4rem; }
+.steptext .in { color: var(--orange); } .steptext .out { color: var(--pt); } .steptext .ans { color: var(--green); }
+.hint { margin: 0; color: var(--muted); font-size: 1rem; font-weight: 700; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Exploring Angles</h1></div>
+    <div class="opts">
+      <span class="seg" id="mode"><button type="button" data-v="explore" aria-pressed="true">Explore</button><button type="button" data-v="name" aria-pressed="false">Name it</button><button type="button" data-v="est" aria-pressed="false">Estimate</button><button type="button" data-v="prot" aria-pressed="false">Protractor</button></span>
+      <span class="seg" id="estSub" hidden><button type="button" data-v="guess" aria-pressed="true">Guess the angle</button><button type="button" data-v="make" aria-pressed="false">Make the angle</button></span>
+      <span class="seg" id="estMax" hidden><button type="button" data-v="180" aria-pressed="true">Up to 180°</button><button type="button" data-v="360" aria-pressed="false">Up to 360°</button></span>
+      <span class="seg" id="protSub" hidden><button type="button" data-v="learn" aria-pressed="true">Learn</button><button type="button" data-v="measure" aria-pressed="false">Measure</button></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 760" tabindex="0" role="img" aria-label="Angle board. Arrow keys change the angle."></svg></div>
+
+    <!-- Explore -->
+    <div class="panel" id="pExplore">
+      <div class="card hero" id="exHero">
+        <p class="tname"><span id="exName"></span> angle</p>
+        <p class="tdeg" id="exDeg"></p>
+        <p class="tsay" id="exSay"></p>
+      </div>
+      <div class="card">
+        <ul class="types" id="exTypes"></ul>
+        <div class="checks">
+          <label><input type="checkbox" id="exShowDeg" checked> Show degrees</label>
+          <button type="button" id="exTurn">Turn the angle ↻</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name it -->
+    <div class="panel" id="pName" hidden>
+      <div class="card">
+        <p class="ask">What kind of angle is this?</p>
+        <ul class="types" id="nmTypes"></ul>
+        <p class="fb" id="nmFb" aria-live="polite"></p>
+        <div class="row"><button type="button" class="new" id="nmNext">Next angle</button></div>
+        <p class="score"><span class="k">Correct</span><b id="nmScore">0 of 0</b></p>
+      </div>
+    </div>
+
+    <!-- Estimate -->
+    <div class="panel" id="pEst" hidden>
+      <div class="card">
+        <p class="ask" id="esAsk"></p>
+        <div class="entry" id="esEntry"><input id="esIn" type="text" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="Your guess in degrees"><span>°</span></div>
+        <p class="hint" id="esHint">Drag the blue dot. Then press Check.</p>
+        <button type="button" class="go" id="esCheck">Check</button>
+        <p class="fb" id="esFb" aria-live="polite"></p>
+        <div class="row"><button type="button" class="new" id="esNext">Next angle</button></div>
+        <p class="score"><span class="k">Round</span><b id="esRound"></b><span class="k">Stars</span><b id="esStars"></b></p>
+        <div class="checks"><label><input type="checkbox" id="esHelp"> Show helper lines</label></div>
+      </div>
+    </div>
+
+    <!-- Protractor: Learn -->
+    <div class="panel" id="pLearn" hidden>
+      <div class="card">
+        <p class="ask">How to use a protractor</p>
+        <p class="stepno" id="lnNo"></p>
+        <p class="steptext" id="lnText" aria-live="polite"></p>
+        <div class="row"><button type="button" id="lnBack">Back</button><button type="button" class="go" id="lnNext">Next step</button></div>
+        <div class="row"><button type="button" id="lnRestart">Start over</button><button type="button" class="new" id="lnNew">New angle</button></div>
+      </div>
+    </div>
+
+    <!-- Protractor: Measure -->
+    <div class="panel" id="pMeasure" hidden>
+      <div class="card">
+        <p class="ask" id="msAsk"></p>
+        <p class="hint">Drag the protractor to move it. Drag the round handle to turn it.</p>
+        <div class="entry"><input id="msIn" type="text" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="Angle in degrees"><span>°</span></div>
+        <button type="button" class="go" id="msCheck">Check</button>
+        <p class="fb" id="msFb" aria-live="polite"></p>
+        <div class="row"><button type="button" id="msShow">Show me</button><button type="button" class="new" id="msNext">Next item</button></div>
+        <p class="score"><span class="k">Correct</span><b id="msScore">0 of 0</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const svg = $("svg"), W = 1000, H = 760, D = Math.PI / 180;
+  const norm = a => ((a % 360) + 360) % 360;
+  const sdiff = (a, b) => { const d = norm(a - b); return d > 180 ? d - 360 : d; };   // a − b, from −180 to 180
+  const P = (v, r, a) => ({ x: v.x + r * Math.cos(a * D), y: v.y - r * Math.sin(a * D) });
+  const n1 = x => Math.round(x * 10) / 10;
+  const xy = p => `${n1(p.x)} ${n1(p.y)}`;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const rnd5 = (a, b) => 5 * rnd(a / 5, b / 5);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const dirOf = (v, p) => norm(Math.atan2(v.y - p.y, p.x - v.x) / D);
+
+  const TYPES = [
+    { k: "acute", name: "Acute", rule: "less than 90°", say: "Smaller than a right angle.", ex: 45 },
+    { k: "right", name: "Right", rule: "exactly 90°", say: "A square corner.", ex: 90 },
+    { k: "obtuse", name: "Obtuse", rule: "between 90° and 180°", say: "Bigger than a right angle, smaller than a straight angle.", ex: 135 },
+    { k: "straight", name: "Straight", rule: "exactly 180°", say: "A straight line.", ex: 180 },
+    { k: "reflex", name: "Reflex", rule: "more than 180°", say: "Bigger than a straight angle.", ex: 240 }
+  ];
+  const T = k => TYPES.find(t => t.k === k);
+  const typeOf = d => (d < 90 ? "acute" : d === 90 ? "right" : d < 180 ? "obtuse" : d === 180 ? "straight" : "reflex");
+
+  /* ---------- drawing helpers ---------- */
+  // An angle opening counterclockwise from `base` by `size` degrees, vertex v.
+  function angleSVG(o) {
+    const { v, base, size } = o, len = o.len ?? 330, r = o.arcR ?? 90, a2 = base + size;
+    let s = `<g class="${o.cls || "t-plain"}">`;
+    if (size === 90 && o.square !== false) {
+      const k = 56, p1 = P(v, k, base), p3 = P(v, k, a2), c = P(p1, k, a2);
+      s += `<path class="wedge" d="M${xy(v)}L${xy(p1)}L${xy(c)}L${xy(p3)}Z"/><path class="arc" d="M${xy(p1)}L${xy(c)}L${xy(p3)}"/>`;
+    } else {
+      const w0 = P(v, r, base), w1 = P(v, r, a2), big = size > 180 ? 1 : 0;
+      s += `<path class="wedge" d="M${xy(v)}L${xy(w0)}A${r} ${r} 0 ${big} 0 ${xy(w1)}Z"/><path class="arc" d="M${xy(w0)}A${r} ${r} 0 ${big} 0 ${xy(w1)}"/>`;
+    }
+    s += `<line class="arm" x1="${n1(v.x)}" y1="${n1(v.y)}" x2="${n1(P(v, len, base).x)}" y2="${n1(P(v, len, base).y)}"/>`;
+    s += `<line class="arm" x1="${n1(v.x)}" y1="${n1(v.y)}" x2="${n1(P(v, len, a2).x)}" y2="${n1(P(v, len, a2).y)}"/>`;
+    s += `<circle class="vtx" cx="${n1(v.x)}" cy="${n1(v.y)}" r="9"/>`;
+    if (o.label) {
+      const lr = size < 30 ? r + 120 : size === 90 ? r + 40 : r + 62, q = P(v, lr, base + size / 2);
+      s += `<text class="deg" x="${n1(q.x)}" y="${n1(q.y)}">${o.label}<tspan class="dg">°</tspan></text>`;
+    }
+    return s + "</g>";
+  }
+  const knobSVG = p => `<circle class="knob-ring" cx="${n1(p.x)}" cy="${n1(p.y)}" r="34"/><circle class="knob" cx="${n1(p.x)}" cy="${n1(p.y)}" r="24"/>`;
+  function helperSVG(v, base, max, len) {
+    let s = "";
+    for (const d of max === 180 ? [90, 180] : [90, 180, 270]) {
+      const e = P(v, len, base + d), t = P(v, len + 34, base + d);
+      s += `<line class="help" x1="${n1(v.x)}" y1="${n1(v.y)}" x2="${n1(e.x)}" y2="${n1(e.y)}"/><text class="help-t" x="${n1(t.x)}" y="${n1(t.y)}">${d}<tspan class="dg">°</tspan></text>`;
+    }
+    return s;
+  }
+  function ghostSVG(v, a, len, cls, text) {
+    const e = P(v, len, a), t = P(v, len + 46, a);
+    return `<line class="ghost ${cls}" x1="${n1(v.x)}" y1="${n1(v.y)}" x2="${n1(e.x)}" y2="${n1(e.y)}"/><text class="ghost-t ${cls}" x="${n1(t.x)}" y="${n1(t.y)}">${text}<tspan class="dg">°</tspan></text>`;
+  }
+  // Small icon of each angle type for the panel buttons.
+  function miniSVG(size) {
+    const v = { x: 29, y: size > 180 ? 20 : 33 }, L = 24, a = P(v, L, 0), b = P(v, L, size);
+    let arc;
+    if (size === 90) { const p1 = P(v, 9, 0), p3 = P(v, 9, 90), c = P(p1, 9, 90); arc = `M${xy(v)}L${xy(p1)}L${xy(c)}L${xy(p3)}Z`; }
+    else { const w0 = P(v, 10, 0), w1 = P(v, 10, size); arc = `M${xy(v)}L${xy(w0)}A10 10 0 ${size > 180 ? 1 : 0} 0 ${xy(w1)}Z`; }
+    return `<svg viewBox="0 0 58 40" aria-hidden="true"><path class="mi-arc" d="${arc}"/><path class="mi-arm" d="M${xy(a)}L${xy(v)}L${xy(b)}"/></svg>`;
+  }
+
+  /* ---------- protractor ---------- */
+  const PR = 280;
+  // st = {x, y, r}: centre and turn (degrees counterclockwise). row: "in" or "out" to highlight; read: local angle of the reading.
+  function protSVG(st, o = {}) {
+    let s = `<g class="prot${o.row ? " hl-" + o.row : ""}" transform="translate(${n1(st.x)} ${n1(st.y)}) rotate(${n1(-st.r)})">`;
+    s += `<path class="pbody" d="M${-PR} 0A${PR} ${PR} 0 0 1 ${PR} 0Z"/>`;
+    let small = "", big = "", labels = "";
+    const O = { x: 0, y: 0 };
+    for (let t = 0; t <= 180; t++) {
+      const len = t % 10 === 0 ? 26 : t % 5 === 0 ? 17 : 9, p1 = P(O, PR, t), p2 = P(O, PR - len, t);
+      const seg = `M${xy(p1)}L${xy(p2)}`;
+      if (t % 10 === 0) {
+        big += seg;
+        const lo = P(O, PR - 42, t), li = P(O, PR - 70, t);
+        labels += `<text class="plo" x="${n1(lo.x)}" y="${n1(lo.y)}" transform="rotate(${90 - t} ${n1(lo.x)} ${n1(lo.y)})">${180 - t}</text>`;
+        labels += `<text class="pli" x="${n1(li.x)}" y="${n1(li.y)}" transform="rotate(${90 - t} ${n1(li.x)} ${n1(li.y)})">${t}</text>`;
+      } else small += seg;
+    }
+    s += `<path class="ptick" d="${small}"/><path class="ptick big" d="${big}"/>${labels}`;
+    s += `<line class="pbase" x1="${-PR}" y1="0" x2="${PR}" y2="0"/>`;
+    s += `<path class="pctr" d="M-16 0H16M0 0V-18"/><circle class="pctr" cx="0" cy="0" r="6"/>`;
+    if (o.read != null) {
+      const e = P(O, PR + 6, o.read), c = P(O, o.row === "out" ? PR - 42 : PR - 70, o.read);
+      s += `<line class="pread" x1="0" y1="0" x2="${n1(e.x)}" y2="${n1(e.y)}"/><circle class="pread-c" cx="${n1(c.x)}" cy="${n1(c.y)}" r="21"/>`;
+    }
+    if (o.knob) s += `<line class="pstem" x1="0" y1="${-PR}" x2="0" y2="${-PR - 22}"/><circle class="pknob" cx="0" cy="${-PR - 44}" r="24"/><text class="pknob-t" x="0" y="${-PR - 43}">↻</text>`;
+    return s + "</g>";
+  }
+  // Where a protractor sits to measure an angle: "in" puts 0 on arm 1 (read the inside row), "out" puts 0 on arm 2 (outside row).
+  const placeFor = (v, base, side, size) => ({ x: v.x, y: v.y, r: norm(side === "in" ? base : base + size - 180) });
+  // Out-of-the-way spots for a protractor that is not in use yet; the one farthest from the vertex wins.
+  function parkFor(v, upright) {
+    const spots = [{ x: 290, y: 748, r: 0 }, { x: 710, y: 748, r: 0 }].concat(upright ? [] : [{ x: 290, y: 12, r: 180 }, { x: 710, y: 12, r: 180 }]);
+    return spots.reduce((a, b) => (Math.hypot(b.x - v.x, b.y - v.y) > Math.hypot(a.x - v.x, a.y - v.y) ? b : a));
+  }
+  // Centre a drawing on the board: pts are offsets from the vertex; returns the vertex position.
+  function centre(pts) {
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    return { x: W / 2 - (Math.min(...xs) + Math.max(...xs)) / 2, y: H / 2 - (Math.min(...ys) + Math.max(...ys)) / 2 };
+  }
+  const discPts = (r0, rad) => Array.from({ length: 7 }, (_, k) => P({ x: 0, y: 0 }, rad, r0 + k * 30));
+
+  /* ---------- state ---------- */
+  let mode = "explore";
+  const V = { x: 500, y: 392 };
+  const ex = { base: 0, size: 45, showDeg: true };
+  const nm = { base: 0, size: 45, answer: null, right: 0, total: 0 };
+  const es = { sub: "guess", max: 180, round: 0, stars: 0, base: 0, size: 60, user: 30, done: false, help: false, over: false };
+  const ln = { step: 0, side: "in", size: 50, base: 20, v: { ...V }, st: null, anim: 0 };
+  const ms = { item: null, v: { ...V }, base: 0, size: 45, st: null, tries: 0, done: false, right: 0, total: 0, shown: false, last: "" };
+  let drag = null;
+
+  /* ---------- Explore ---------- */
+  function renderExplore() {
+    const t = typeOf(ex.size), info = T(t);
+    svg.innerHTML = angleSVG({ v: V, base: ex.base, size: ex.size, cls: "t-" + t, label: ex.showDeg ? ex.size : null }) + knobSVG(P(V, 330, ex.base + ex.size));
+    $("exHero").className = "card hero t-" + t;
+    $("exName").textContent = info.name;
+    $("exDeg").innerHTML = ex.showDeg ? ex.size + '<span class="dg">°</span>' : "";
+    $("exDeg").hidden = !ex.showDeg;
+    $("exSay").textContent = info.say;
+    for (const b of $("exTypes").querySelectorAll("button")) b.classList.toggle("on", b.dataset.k === t);
+  }
+  function setExplore(size) {
+    if (ex.size >= 330 && size <= 30) size = 359;          // the arm stops at a full turn instead of jumping back to 0
+    else if (ex.size <= 30 && size >= 330) size = 1;
+    for (const s of [90, 180]) if (Math.abs(size - s) <= 3) size = s;
+    ex.size = Math.max(1, Math.min(359, size));
+    renderExplore();
+  }
+
+  /* ---------- Name it ---------- */
+  function newName() {
+    const k = pick(TYPES).k;
+    nm.size = { acute: rnd5(15, 80), right: 90, obtuse: rnd5(100, 165), straight: 180, reflex: rnd5(195, 335) }[k];
+    nm.base = rnd5(0, 355); nm.answer = null;
+    $("nmFb").textContent = ""; $("nmFb").className = "fb";
+    renderName();
+  }
+  function renderName() {
+    const t = typeOf(nm.size), done = nm.answer != null;
+    svg.innerHTML = angleSVG({ v: V, base: nm.base, size: nm.size, len: 310, cls: done ? "t-" + t : "t-plain", label: done ? nm.size : null });
+    for (const b of $("nmTypes").querySelectorAll("button")) {
+      b.classList.toggle("on", done && b.dataset.k === t);
+      b.classList.toggle("bad", done && b.dataset.k === nm.answer && nm.answer !== t);
+    }
+    $("nmScore").textContent = `${nm.right} of ${nm.total}`;
+  }
+  function answerName(k) {
+    if (nm.answer != null) return;
+    const t = typeOf(nm.size), info = T(t);
+    nm.answer = k; nm.total++;
+    const fb = $("nmFb");
+    if (k === t) { nm.right++; fb.className = "fb ok"; fb.innerHTML = `Yes! ${info.name}. <small>${info.say} It is ${nm.size}°.</small>`; }
+    else { fb.className = "fb no"; fb.innerHTML = `Not quite. It is ${info.name.toLowerCase()}. <small>${info.say} It is ${nm.size}°.</small>`; }
+    renderName();
+    $("nmNext").focus();
+  }
+
+  /* ---------- Estimate ---------- */
+  const ROUNDS = 10;
+  function newEst() {
+    if (es.over) { es.round = 0; es.stars = 0; es.over = false; }
+    es.round++;
+    es.size = es.max === 180 ? rnd(10, 170) : rnd(10, 350);
+    es.base = es.max === 180 ? rnd(-25, 25) : rnd(0, 359);
+    if (es.sub === "make") { es.size = es.max === 180 ? rnd5(15, 170) : rnd5(15, 345); do es.user = rnd5(10, es.max === 180 ? 170 : 350); while (Math.abs(es.user - es.size) < 40); }
+    es.done = false;
+    $("esIn").value = ""; $("esFb").textContent = ""; $("esFb").className = "fb";
+    $("esCheck").disabled = false; $("esNext").textContent = "Next angle";
+    renderEst();
+    if (es.sub === "guess" && mode === "est") $("esIn").focus();
+  }
+  function renderEst() {
+    const guess = es.sub === "guess";
+    $("esAsk").textContent = guess ? "How big is this angle?" : `Make a ${es.size}° angle`;
+    $("esEntry").hidden = !guess; $("esHint").hidden = guess;
+    $("esRound").textContent = `${es.round} of ${ROUNDS}`;
+    $("esStars").textContent = "★ " + es.stars;
+    const v = V, len = 300;
+    let s = es.help ? helperSVG(v, es.base, es.max, len) : "";
+    if (guess) {
+      s += angleSVG({ v, base: es.base, size: es.size, len, square: false, label: es.done ? es.size : null });
+      if (es.done && es.user !== es.size && es.user > 0 && es.user < 360) s += ghostSVG(v, es.base + es.user, len, "you", "you: " + es.user);
+    } else {
+      s += angleSVG({ v, base: es.base, size: es.user, len, square: false, label: es.done ? es.user : null });
+      if (es.done && es.user !== es.size) s += ghostSVG(v, es.base + es.size, len, "goal", "goal: " + es.size);
+      if (!es.done) s += knobSVG(P(v, len, es.base + es.user));
+    }
+    svg.innerHTML = s;
+  }
+  function checkEst() {
+    if (es.done) return;
+    const fb = $("esFb");
+    if (es.sub === "guess") {
+      const n = parseInt($("esIn").value, 10);
+      if (isNaN(n)) { fb.className = "fb no"; fb.innerHTML = "Type a number first."; return; }
+      if (n <= 0 || n >= 360) { fb.className = "fb no"; fb.innerHTML = `Try a number from 1 to ${es.max === 180 ? 180 : 359}.`; return; }
+      es.user = n;
+    }
+    es.done = true;
+    const off = Math.abs(es.user - es.size), stars = off <= 5 ? 3 : off <= 10 ? 2 : off <= 20 ? 1 : 0;
+    es.stars += stars;
+    const word = ["Keep practicing!", "Close!", "Very close!", "Amazing!"][stars];
+    const starTxt = `<span class="stars">${"★".repeat(stars)}<span class="off">${"★".repeat(3 - stars)}</span></span>`;
+    const detail = es.sub === "guess"
+      ? (off === 0 ? `It is exactly ${es.size}°!` : `It is ${es.size}°. You said ${es.user}°. Off by ${off}°.`)
+      : (off === 0 ? `You made exactly ${es.size}°!` : `You made ${es.user}°. The goal was ${es.size}°. Off by ${off}°.`);
+    fb.className = "fb" + (stars ? " ok" : " no");
+    fb.innerHTML = `${starTxt} ${word}<small>${detail}</small>`;
+    $("esCheck").disabled = true;
+    if (es.round >= ROUNDS) {
+      es.over = true;
+      fb.innerHTML += `<small>Game over! You got ${es.stars} of ${ROUNDS * 3} stars.</small>`;
+      $("esNext").textContent = "Play again";
+    }
+    renderEst();
+    $("esNext").focus();
+  }
+  function resetEst() { es.round = 0; es.stars = 0; es.over = false; newEst(); }
+
+  /* ---------- Protractor: Learn ---------- */
+  function newLearn() {
+    ln.side = ln.side === "in" ? "out" : "in";
+    ln.size = ln.side === "in" ? pick([30, 40, 50, 60, 70]) : pick([110, 120, 130, 140, 150]);
+    if (Math.random() < 0.5) ln.size = ln.side === "in" ? pick([110, 120, 130]) : pick([40, 50, 60, 70]);
+    ln.base = rnd(-30, 30);
+    const tgt = placeFor({ x: 0, y: 0 }, ln.base, ln.side, ln.size);
+    ln.v = centre([{ x: 0, y: 0 }, P({ x: 0, y: 0 }, 340, ln.base), P({ x: 0, y: 0 }, 340, ln.base + ln.size), ...discPts(tgt.r, 300)]);
+    ln.step = 0; ln.st = parkFor(ln.v, true);
+    renderLearn(false);
+  }
+  const LSTEPS = 6;
+  function learnTarget(step) {
+    const tgt = placeFor(ln.v, ln.base, ln.side, ln.size);
+    if (step === 0) return parkFor(ln.v, true);
+    if (step === 1) return { x: ln.v.x, y: ln.v.y, r: 0 };
+    return tgt;
+  }
+  function learnText(step) {
+    const row = ln.side === "in" ? `<span class="in">inside (orange)</span>` : `<span class="out">outside (blue)</span>`;
+    const other = 180 - ln.size, t = typeOf(ln.size);
+    return [
+      `A protractor measures angles. It is half a circle with two rows of numbers from 0 to 180.`,
+      `Find the small mark in the middle of the bottom edge. Put it right on the <b>vertex</b>, the corner of the angle.`,
+      `Turn the protractor so its bottom edge lies along one arm of the angle.`,
+      `Find the 0 that sits on that arm. It is on the ${row} row. Use only that row.`,
+      `Count up along the ${row} row until you reach the other arm. It points to <span class="ans">${ln.size}</span>.`,
+      `The angle is <span class="ans">${ln.size}°</span>. Check: it is ${t}, so it should be ${t === "acute" ? "less" : "more"} than 90. ✓ The other row says ${other}, but it does not start at 0 on an arm, so it is wrong here.`
+    ][step];
+  }
+  function drawLearn() {
+    const st = ln.st, step = ln.step;
+    let s = angleSVG({ v: ln.v, base: ln.base, size: ln.size, len: 340, arcR: 46, square: false });
+    if (step === 1 || step === 0) {
+      const c = P(ln.v, 70, ln.base + ln.size / 2 + 180);
+      if (step === 1) s += `<text class="callout" x="${n1(c.x)}" y="${n1(c.y)}">vertex</text>`;
+    }
+    const read = step >= 4 && !ln.anim ? (ln.side === "in" ? ln.size : 180 - ln.size) : null;
+    s += protSVG(st, { row: step >= 3 && !ln.anim ? ln.side : null, read });
+    svg.innerHTML = s;
+  }
+  function renderLearn(animate) {
+    $("lnNo").textContent = `Step ${ln.step + 1} of ${LSTEPS}`;
+    $("lnText").innerHTML = learnText(ln.step);
+    $("lnBack").disabled = ln.step === 0;
+    $("lnNext").disabled = ln.step === LSTEPS - 1;
+    const to = learnTarget(ln.step);
+    cancelAnimationFrame(ln.anim); ln.anim = 0;
+    if (!animate) { ln.st = to; drawLearn(); return; }
+    const from = { ...ln.st }, dr = sdiff(to.r, from.r), t0 = performance.now(), dur = 800;
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      ln.st = { x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e, r: from.r + dr * e };
+      ln.anim = k < 1 ? requestAnimationFrame(tick) : 0;
+      drawLearn();
+    };
+    ln.anim = requestAnimationFrame(tick);
+  }
+
+  /* ---------- Protractor: Measure ---------- */
+  // Each item draws itself with its vertex at (0, 0); the two straight edges from the vertex are the arms at `base` and `base + size`.
+  const O = { x: 0, y: 0 };
+  const poly = (pts, style) => `<path d="M${pts.map(xy).join("L")}Z" style="${style}"/>`;
+  const ITEMS = {
+    scissors: { what: "the open scissors", range: [20, 75], turn: true, draw(b, z) {
+      let s = "";
+      for (const [a, side] of [[b, -1], [b + z, 1]]) {
+        const tip = P(O, 340, a), back = P(P(O, 150, a), 26, a + side * 90), root = P(O, 26, a + side * 90);
+        s += poly([O, tip, back, root], "fill: var(--grid-major); stroke: var(--muted); stroke-width: 3; stroke-linejoin: round");
+        const ring = P(O, 105, a + 180);
+        s += `<line x1="0" y1="0" x2="${n1(ring.x)}" y2="${n1(ring.y)}" style="stroke: var(--orange); stroke-width: 14; stroke-linecap: round"/>`;
+        s += `<circle cx="${n1(ring.x)}" cy="${n1(ring.y)}" r="34" style="fill: none; stroke: var(--orange); stroke-width: 12"/>`;
+      }
+      s += `<circle cx="0" cy="0" r="11" style="fill: var(--ink)"/>`;
+      return { s, pts: [P(O, 145, b + 180), P(O, 145, b + z + 180)] };
+    } },
+    clock: { what: "the clock hands", range: [30, 170], turn: true, draw(b, z) {
+      let s = `<circle cx="0" cy="0" r="352" style="fill: var(--sheet); stroke: var(--ink); stroke-width: 8"/>`;
+      for (let k = 0; k < 12; k++) { const p1 = P(O, 340, k * 30), p2 = P(O, 318, k * 30); s += `<line x1="${n1(p1.x)}" y1="${n1(p1.y)}" x2="${n1(p2.x)}" y2="${n1(p2.y)}" style="stroke: var(--muted); stroke-width: 6; stroke-linecap: round"/>`; }
+      const h = P(O, 300, b), m = P(O, 330, b + z);
+      s += `<line x1="0" y1="0" x2="${n1(h.x)}" y2="${n1(h.y)}" style="stroke: var(--pt); stroke-width: 12; stroke-linecap: round"/>`;
+      s += `<line x1="0" y1="0" x2="${n1(m.x)}" y2="${n1(m.y)}" style="stroke: var(--orange); stroke-width: 8; stroke-linecap: round"/>`;
+      s += `<circle cx="0" cy="0" r="12" style="fill: var(--ink)"/>`;
+      return { s, pts: discPts(0, 356).concat(discPts(180, 356)) };
+    } },
+    pizza: { what: "the pizza slice", range: [20, 60], turn: true, draw(b, z) {
+      const e1 = P(O, 340, b), e2 = P(O, 340, b + z), c1 = P(O, 322, b), c2 = P(O, 322, b + z);
+      let s = `<path d="M0 0L${xy(e1)}A340 340 0 0 0 ${xy(e2)}Z" style="fill: #f2c14e; stroke: #a8581b; stroke-width: 4; stroke-linejoin: round"/>`;
+      s += `<path d="M${xy(c1)}A322 322 0 0 0 ${xy(c2)}" style="fill: none; stroke: #b8661f; stroke-width: 30; stroke-linecap: round"/>`;
+      return { s, pts: [P(O, 350, b + z / 2)] };
+    } },
+    roof: { what: "the roof", range: [80, 150], turn: false, draw(b, z) {
+      const e1 = P(O, 340, b), e2 = P(O, 340, b + z), top = e1.y, x1 = Math.min(e1.x, e2.x) + 40, x2 = Math.max(e1.x, e2.x) - 40;
+      let s = `<rect x="${n1(x1)}" y="${n1(top)}" width="${n1(x2 - x1)}" height="190" style="fill: var(--chip); stroke: var(--ink); stroke-width: 4"/>`;
+      const mid = (x1 + x2) / 2;
+      s += `<rect x="${n1(mid - 36)}" y="${n1(top + 80)}" width="72" height="110" style="fill: var(--orange); fill-opacity: 0.5; stroke: var(--ink); stroke-width: 3"/>`;
+      s += poly([O, e1, e2], "fill: var(--orange); fill-opacity: 0.35; stroke: var(--ink); stroke-width: 10; stroke-linejoin: round");
+      return { s, pts: [{ x: x1, y: top + 194 }, { x: x2, y: top + 194 }] };
+    } },
+    laptop: { what: "the open laptop", range: [95, 140], turn: false, draw(b, z) {
+      // b = 0 is the keyboard along the table, the screen opens to b + z.
+      const kb = P(O, 340, b), kb2 = P(kb, 22, b - 90), kb0 = P(O, 22, b - 90);
+      const sc = P(O, 300, b + z), sc2 = P(sc, 20, b + z + 90), sc0 = P(O, 20, b + z + 90);
+      const in1 = P(P(O, 30, b + z), 12, b + z + 90), in2 = P(P(O, 280, b + z), 12, b + z + 90);
+      let s = poly([O, kb, kb2, kb0], "fill: var(--muted); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round");
+      s += poly([O, sc, sc2, sc0], "fill: var(--muted); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round");
+      s += `<line x1="${n1(in1.x)}" y1="${n1(in1.y)}" x2="${n1(in2.x)}" y2="${n1(in2.y)}" style="stroke: var(--pt); stroke-width: 8; stroke-linecap: round"/>`;
+      return { s, pts: [kb2, sc2] };
+    } },
+    ramp: { what: "the ramp", range: [15, 40], turn: false, draw(b, z) {
+      const run = 360, top = { x: run, y: -run * Math.tan(z * D) }, ball = P(P(O, 250, z), 26, z + 90);
+      let s = poly([O, { x: run, y: 0 }, top], "fill: var(--green); fill-opacity: 0.3; stroke: var(--ink); stroke-width: 5; stroke-linejoin: round");
+      s += `<line x1="-30" y1="0" x2="${run + 40}" y2="0" style="stroke: var(--ink); stroke-width: 4"/>`;
+      s += `<circle cx="${n1(ball.x)}" cy="${n1(ball.y)}" r="24" style="fill: var(--pt)"/>`;
+      return { s, pts: [top, { x: run + 40, y: 0 }, { x: -30, y: 0 }] };
+    } }
+  };
+  function newMeasure() {
+    let k; do k = pick(Object.keys(ITEMS)); while (k === ms.last);
+    ms.last = k;
+    const it = ITEMS[k];
+    ms.item = k; ms.size = rnd5(...it.range);
+    let base = it.turn ? rnd(0, 359) : k === "roof" ? 270 - ms.size / 2 : 0;
+    ms.flip = !it.turn && k !== "roof" && Math.random() < 0.5;
+    const d = it.draw(base, ms.size);
+    // A flipped item is mirrored left to right, so its arms become 180 − (base + size) and 180 − base.
+    ms.base = ms.flip ? norm(180 - base - ms.size) : norm(base);
+    ms.drawn = d.s;
+    const pts = [O, P(O, 340, ms.base), P(O, 340, ms.base + ms.size), ...discPts(ms.base, 300), ...d.pts.map(p => (ms.flip ? { x: -p.x, y: p.y } : p))];
+    ms.v = centre(pts);
+    ms.st = parkFor(ms.v);
+    ms.tries = 0; ms.done = false; ms.shown = false;
+    $("msAsk").textContent = `Measure the angle of ${it.what}.`;
+    $("msIn").value = ""; $("msFb").textContent = ""; $("msFb").className = "fb";
+    $("msCheck").disabled = false;
+    renderMeasure();
+  }
+  function renderMeasure() {
+    const v = ms.v;
+    let s = `<g transform="translate(${n1(v.x)} ${n1(v.y)})${ms.flip ? " scale(-1 1)" : ""}">${ms.drawn}</g>`;
+    const w0 = P(v, 40, ms.base), w1 = P(v, 40, ms.base + ms.size);
+    s += `<path class="mark" d="M${xy(w0)}A40 40 0 0 0 ${xy(w1)}"/>`;
+    const side = ms.shown ? ms.showSide : null;
+    s += protSVG(ms.st, { knob: true, row: side, read: side ? (side === "in" ? ms.size : 180 - ms.size) : null });
+    svg.innerHTML = s;
+    $("msScore").textContent = `${ms.right} of ${ms.total}`;
+  }
+  function checkMeasure() {
+    if (ms.done) return;
+    const n = parseInt($("msIn").value, 10), fb = $("msFb");
+    if (isNaN(n)) { fb.className = "fb no"; fb.innerHTML = "Type a number first."; return; }
+    ms.tries++;
+    if (ms.tries === 1) ms.total++;
+    if (Math.abs(n - ms.size) <= 2) {
+      if (ms.tries === 1) ms.right++;
+      ms.done = true; $("msCheck").disabled = true;
+      fb.className = "fb ok"; fb.innerHTML = `Yes! It is ${ms.size}°.<small>${n === ms.size ? "Perfect reading." : "Close enough: protractor readings can be off by a degree or two."}</small>`;
+      $("msNext").focus();
+    } else if (Math.abs(n - (180 - ms.size)) <= 2) {
+      fb.className = "fb no"; fb.innerHTML = `Check your row.<small>Use the row that has 0 on an arm. Is this angle ${ms.size < 90 ? "smaller" : "bigger"} than a right angle?</small>`;
+    } else {
+      fb.className = "fb no"; fb.innerHTML = `Not quite. Try again.<small>Put the middle mark on the corner. Line the bottom edge up with one arm. Start counting at 0.</small>`;
+    }
+    renderMeasure();
+  }
+  function showMeasure() {
+    // Use whichever row needs the smaller turn from where the protractor is now.
+    const a = placeFor(ms.v, ms.base, "in", ms.size), b = placeFor(ms.v, ms.base, "out", ms.size);
+    ms.showSide = Math.abs(sdiff(a.r, ms.st.r)) <= Math.abs(sdiff(b.r, ms.st.r)) ? "in" : "out";
+    ms.st = ms.showSide === "in" ? a : b; ms.shown = true;
+    if (!ms.done) { if (ms.tries === 0) ms.total++; ms.done = true; $("msCheck").disabled = true; }
+    $("msFb").className = "fb ok"; $("msFb").innerHTML = `It is ${ms.size}°.<small>The 0 is on the ${ms.showSide === "in" ? "inside (orange)" : "outside (blue)"} row, so read that row.</small>`;
+    renderMeasure();
+  }
+
+  /* ---------- pointer and keys ---------- */
+  function toSvg(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+  const protMode = () => mode === "prot" && $("protSub").querySelector("[aria-pressed=true]").dataset.v;
+  svg.addEventListener("pointerdown", e => {
+    const p = toSvg(e);
+    if (mode === "explore") drag = { kind: "explore" };
+    else if (mode === "est" && es.sub === "make" && !es.done) drag = { kind: "make" };
+    else if (protMode() === "measure") {
+      const st = ms.st, knob = P(st, PR + 44, st.r + 90);
+      if (Math.hypot(p.x - knob.x, p.y - knob.y) < 40) drag = { kind: "rot", off: sdiff(dirOf(st, p) - 90, st.r) };
+      else {
+        const mx = p.x - st.x, my = st.y - p.y, c = Math.cos(st.r * D), s = Math.sin(st.r * D);
+        const lx = mx * c + my * s, ly = -mx * s + my * c;
+        if (ly >= -12 && Math.hypot(lx, ly) <= PR) drag = { kind: "move", dx: p.x - st.x, dy: p.y - st.y };
+      }
+      if (drag) ms.shown = false;
+    }
+    if (!drag) return;
+    e.preventDefault(); svg.setPointerCapture(e.pointerId);
+    move(p);
+  });
+  function move(p) {
+    if (!drag) return;
+    if (drag.kind === "explore") setExplore(Math.round(norm(dirOf(V, p) - ex.base)));
+    else if (drag.kind === "make") { let d = Math.round(norm(dirOf(V, p) - es.base)); if (es.max === 180 && d > 180) d = d > 270 ? 1 : 180; es.user = Math.max(1, Math.min(359, d)); renderEst(); }
+    else if (drag.kind === "rot") {
+      let r = norm(dirOf(ms.st, p) - 90 - drag.off);
+      for (const a of [ms.base, ms.base + 180, ms.base + ms.size, ms.base + ms.size + 180]) if (Math.abs(sdiff(r, a)) < 4) r = norm(a);
+      ms.st = { ...ms.st, r }; renderMeasure();
+    } else if (drag.kind === "move") {
+      let x = Math.max(0, Math.min(W, p.x - drag.dx)), y = Math.max(0, Math.min(H, p.y - drag.dy));
+      if (Math.hypot(x - ms.v.x, y - ms.v.y) < 22) { x = ms.v.x; y = ms.v.y; }
+      ms.st = { ...ms.st, x, y }; renderMeasure();
+    }
+  }
+  svg.addEventListener("pointermove", e => { if (drag && svg.hasPointerCapture(e.pointerId)) move(toSvg(e)); });
+  const end = e => { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); drag = null; };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  svg.addEventListener("keydown", e => {
+    const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+    if (!d) return;
+    if (mode === "explore") { e.preventDefault(); ex.size = Math.max(1, Math.min(359, ex.size + d)); renderExplore(); }
+    else if (mode === "est" && es.sub === "make" && !es.done) { e.preventDefault(); es.user = Math.max(1, Math.min(es.max === 180 ? 180 : 359, es.user + d)); renderEst(); }
+    else if (protMode() === "measure") {
+      e.preventDefault();
+      const k = { ArrowLeft: [-4, 0], ArrowRight: [4, 0], ArrowUp: [0, -4], ArrowDown: [0, 4] }[e.key];
+      if (e.shiftKey) ms.st = { ...ms.st, r: norm(ms.st.r + d) }; else ms.st = { ...ms.st, x: ms.st.x + k[0], y: ms.st.y + k[1] };
+      renderMeasure();
+    }
+  });
+
+  /* ---------- panel wiring ---------- */
+  function typeButtons(ul, withRule, onClick) {
+    ul.innerHTML = TYPES.map(t => `<li><button type="button" class="t-${t.k}" data-k="${t.k}">${miniSVG(t.ex)}<b>${t.name}</b><span class="r">${withRule ? t.rule : ""}</span></button></li>`).join("");
+    for (const b of ul.querySelectorAll("button")) b.addEventListener("click", () => onClick(b.dataset.k));
+  }
+  typeButtons($("exTypes"), true, k => { ex.size = T(k).ex; renderExplore(); });
+  typeButtons($("nmTypes"), false, answerName);
+  $("exShowDeg").addEventListener("change", e => { ex.showDeg = e.target.checked; renderExplore(); });
+  $("exTurn").addEventListener("click", () => {
+    const from = ex.base, to = ex.base + 45, t0 = performance.now();
+    const tick = now => { const k = Math.min(1, (now - t0) / 500); ex.base = norm(from + (to - from) * k); renderExplore(); if (k < 1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+  $("nmNext").addEventListener("click", newName);
+  $("esCheck").addEventListener("click", checkEst);
+  $("esNext").addEventListener("click", newEst);
+  $("esIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); es.done ? newEst() : checkEst(); } });
+  $("esHelp").addEventListener("change", e => { es.help = e.target.checked; renderEst(); });
+  $("lnNext").addEventListener("click", () => { if (ln.step < LSTEPS - 1) { ln.step++; renderLearn(true); } });
+  $("lnBack").addEventListener("click", () => { if (ln.step > 0) { ln.step--; renderLearn(true); } });
+  $("lnRestart").addEventListener("click", () => { ln.step = 0; renderLearn(true); });
+  $("lnNew").addEventListener("click", newLearn);
+  $("msCheck").addEventListener("click", checkMeasure);
+  $("msShow").addEventListener("click", showMeasure);
+  $("msNext").addEventListener("click", newMeasure);
+  $("msIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); ms.done ? newMeasure() : checkMeasure(); } });
+
+  function seg(id, fn) {
+    const el = $(id);
+    for (const b of el.children) b.addEventListener("click", () => {
+      for (const x of el.children) x.setAttribute("aria-pressed", x === b);
+      fn(b.dataset.v);
+    });
+  }
+  function show() {
+    const sub = $("protSub").querySelector("[aria-pressed=true]").dataset.v;
+    $("pExplore").hidden = mode !== "explore";
+    $("pName").hidden = mode !== "name";
+    $("pEst").hidden = mode !== "est";
+    $("pLearn").hidden = !(mode === "prot" && sub === "learn");
+    $("pMeasure").hidden = !(mode === "prot" && sub === "measure");
+    $("estSub").hidden = $("estMax").hidden = mode !== "est";
+    $("protSub").hidden = mode !== "prot";
+    cancelAnimationFrame(ln.anim); ln.anim = 0;
+    if (mode === "explore") renderExplore();
+    else if (mode === "name") renderName();
+    else if (mode === "est") renderEst();
+    else if (sub === "learn") renderLearn(false);
+    else renderMeasure();
+  }
+  seg("mode", v => { mode = v; show(); });
+  seg("estSub", v => { es.sub = v; resetEst(); });
+  seg("estMax", v => { es.max = +v; resetEst(); });
+  seg("protSub", () => show());
+
+  newName(); resetEst(); newLearn(); newMeasure();
+  show();
+})();
+</script>
+
+</body>
+</html>
