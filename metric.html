@@ -147,10 +147,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 <style>
 /* Metric Conversions: a staircase from kilo down to milli sits over a place-value chart.
    The number is written in the chart with its decimal point after the unit it is in; each press hops the point one step
-   toward the new unit (× 10 going down the stairs, ÷ 10 going up) and fills in placeholder zeros. Practice mode asks questions. */
+   toward the new unit (× 10 going down the stairs, ÷ 10 going up) and fills in placeholder zeros. Practice mode asks questions.
+   Kept deliberately sparse (Shawn, 2026-10-08: "simplify all the text and visual overload"): stairs show only the unit,
+   hops appear only once made, one equation under the chart, one short line in the panel. */
 .main { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
 .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
-.tools .tl { font-weight: 700; color: var(--muted); }
 .seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.2rem; min-height: 48px; padding: 6px 18px; }
 .seg-btns button + button { border-left: 2px solid var(--grid-major); }
@@ -167,14 +168,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .ask .word { font-family: var(--font-body); font-size: 1.2rem; color: var(--muted); }
 #pAns { width: 7ch; border-color: var(--orange); }
 .err { margin: 10px 0 0; color: var(--warn); font-weight: 700; font-size: 1.1rem; }
-.why { margin: 0; font-size: 1.2rem; }
-.why + .why { margin-top: 6px; }
-.nw { white-space: nowrap; }
-.times { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--green); margin: 4px 0 8px; }
-.result { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.25; overflow-wrap: anywhere; }
-.result .r-from { color: var(--pt); }
-.result .r-to { color: var(--orange); background: color-mix(in srgb, var(--orange) 15%, transparent); border-radius: 10px; padding: 0 10px; }
-.result .wait { color: var(--muted); }
+.times { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--green); margin: 16px 0 0; }
 .btns { display: flex; flex-wrap: wrap; gap: 10px; }
 .btns button { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; }
 .btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
@@ -191,30 +185,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .step.from { fill: color-mix(in srgb, var(--pt) 20%, var(--sheet)); stroke: var(--pt); stroke-width: 4; }
 .step.to { fill: color-mix(in srgb, var(--orange) 20%, var(--sheet)); stroke: var(--orange); stroke-width: 4; }
 .st-sym { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
-.st-word { fill: var(--muted); font-family: var(--font-display); font-weight: 800; text-anchor: middle; }
-.st-size { fill: var(--muted); font-family: var(--font-num); font-weight: 500; text-anchor: middle; }
 .from .st-sym, .st-sym.from { fill: var(--pt); }
 .st-sym.to { fill: var(--orange); }
-.tag { font-family: var(--font-display); font-weight: 800; font-size: 17px; text-anchor: middle; fill: var(--sheet); }
-.tag-bg.from { fill: var(--pt); } .tag-bg.to { fill: var(--orange); }
 .hop { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
-.hop.todo { stroke: var(--grid-major); stroke-dasharray: 6 7; stroke-width: 3; }
 .hop-lbl { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 20px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
-.hop-lbl.todo { fill: var(--muted); }
 .arrowhead { fill: var(--green); }
 .cell { fill: var(--sheet); stroke: var(--ink); stroke-width: 2; }
 .cell.extra { fill: none; stroke: var(--grid-major); stroke-dasharray: 6 6; }
 .dig { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
 .dig.new { fill: var(--warn); }
-.dig.gone { opacity: 0.22; }
 .point { fill: var(--warn); stroke: var(--sheet); stroke-width: 3; }
-.c-hop { fill: none; stroke: var(--warn); stroke-width: 3; stroke-linecap: round; }
-.c-head { fill: var(--warn); }
 .chain { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
 .chain .now { fill: var(--orange); }
 .chain .start { fill: var(--pt); }
 .chain .eqs { fill: var(--muted); }
-@media (max-width: 600px) { .ask { font-size: 1.4rem; } .ask input, .ask select { height: 52px; } .result { font-size: 1.6rem; } }
+@media (max-width: 600px) { .ask { font-size: 1.4rem; } .ask input, .ask select { height: 52px; } }
 </style>
 
 <div class="wrap">
@@ -222,7 +207,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Metric Conversions</h1></div>
     <div class="tools">
-      <span class="tl">Base unit</span>
       <div class="seg-btns units" role="group" aria-label="Base unit">
         <button type="button" data-base="m" class="on">m</button><button type="button" data-base="g">g</button><button type="button" data-base="L">L</button>
       </div>
@@ -237,7 +221,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
     <div class="panel" id="explore">
       <section class="card">
-        <p class="label">Change</p>
         <div class="ask">
           <input id="num" type="text" inputmode="decimal" autocomplete="off" aria-label="Number" value="3.5">
           <select id="from" class="from" aria-label="From unit"></select>
@@ -245,23 +228,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           <select id="to" class="to" aria-label="To unit"></select>
         </div>
         <p class="err" id="err" hidden></p>
-        <p class="hint">Tap a step on the stairs to change to that unit.</p>
-      </section>
-      <section class="card">
-        <p class="label">How to move</p>
-        <div id="how"></div>
-        <div class="result" id="result" aria-live="polite"></div>
+        <p class="times" id="how"></p>
       </section>
       <div class="btns">
         <button type="button" class="go" id="hop">Move 1 place</button>
-        <button type="button" id="all">Show the answer</button>
         <button type="button" id="again">Start over</button>
       </div>
     </div>
 
     <div class="panel" id="practice" hidden>
       <section class="card">
-        <p class="label" id="qNum">Question 1</p>
         <div class="ask">
           <span id="pGiven" class="r-from"></span><span>=</span>
           <input id="pAns" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer">
@@ -274,10 +250,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <button type="button" id="showme">Show me</button>
         <button type="button" id="next">New question</button>
       </div>
-      <section class="card">
-        <p class="score">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
-        <p class="hint">Down the stairs: × 10 each step, the decimal moves right. Up the stairs: ÷ 10 each step, the decimal moves left.</p>
-      </section>
+      <p class="score" style="margin-top: 4px">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
     </div>
   </div>
 </div>
@@ -288,9 +261,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg");
   const PRE = ["k", "h", "da", "", "d", "c", "m"];
-  const WORD = ["kilo", "hecto", "deka", "base unit", "deci", "centi", "milli"];
-  const SIZE = ["1000", "100", "10", "1", "0.1", "0.01", "0.001"];
-  const BASE_U = 3;
+    const BASE_U = 3;
   let base = "m", mode = "explore";
   const sym = u => PRE[u] + base;
 
@@ -348,33 +319,25 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const step = Math.sign(uTo - uFrom);
 
     // The stairs: kilo at the top left, milli at the bottom right.
-    const symSize = Math.min(46, cw * 0.44), smSize = Math.min(20, cw * 0.22);
+    const symSize = Math.min(54, cw * 0.46);
     for (let u = 0; u <= 6; u++) {
       const top = ST_TOP + u * ST_DROP, x = colX(u);
       const cls = u === uFrom ? " from" : u === uTo ? " to" : "";
       const g = el("g", { class: "stair", "data-u": u });
       el("rect", { class: "step" + cls, x: x + 2, y: top, width: cw - 4, height: ST_BOT - top, rx: 8 }, g);
-      el("text", { class: "st-sym" + cls, x: x + cw / 2, y: top + 48, "font-size": symSize }, g).textContent = sym(u);
-      el("text", { class: "st-word", x: x + cw / 2, y: top + 76, "font-size": smSize }, g).textContent = WORD[u] === "base unit" ? (cw > 110 ? "base unit" : "base") : WORD[u];
-      el("text", { class: "st-size", x: x + cw / 2, y: top + 102, "font-size": smSize }, g).textContent = SIZE[u] + " " + base;
-      if (u === uFrom || (u === uTo && uTo !== uFrom)) {
-        const isFrom = u === uFrom, w = Math.min(cw - 10, 84), ty = ST_BOT - 24;
-        el("rect", { class: "tag-bg " + (isFrom ? "from" : "to"), x: x + cw / 2 - w / 2, y: ty - 18, width: w, height: 28, rx: 14 }, g);
-        el("text", { class: "tag", x: x + cw / 2, y: ty + 2 }, g).textContent = isFrom ? "from" : "to";
-      }
+      el("text", { class: "st-sym" + cls, x: x + cw / 2, y: top + 56, "font-size": symSize }, g).textContent = sym(u);
     }
 
     // Hops along the stairs from the starting unit to the new one; the ones already made are solid green.
     const done = Math.abs(cur - uFrom);
-    for (let i = 0; i < Math.abs(uTo - uFrom); i++) {
+    for (let i = 0; i < done; i++) {
       const a = uFrom + i * step, b = a + step;
       const ax = colX(a) + cw / 2, bx = colX(b) + cw / 2;
       const ay = ST_TOP + a * ST_DROP - 6, by = ST_TOP + b * ST_DROP - 6;
       const cy = Math.min(ay, by) - 52, mx = (ax + bx) / 2;
-      const todo = i >= done ? " todo" : "";
-      el("path", { class: "hop" + todo, d: `M${ax},${ay} Q${mx},${cy} ${bx},${by}` });
-      if (!todo) arrowHead(bx, by, bx - mx, by - cy, "arrowhead");
-      el("text", { class: "hop-lbl" + todo, x: mx, y: cy + 14 }).textContent = (step > 0 ? "× 10" : "÷ 10");
+      el("path", { class: "hop", d: `M${ax},${ay} Q${mx},${cy} ${bx},${by}` });
+      arrowHead(bx, by, bx - mx, by - cy, "arrowhead");
+      el("text", { class: "hop-lbl", x: mx, y: cy + 14 }).textContent = (step > 0 ? "× 10" : "÷ 10");
     }
 
     // The place-value chart: one box per place, the decimal point after the unit the number is in now.
@@ -383,35 +346,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const digSize = Math.min(70, cw * 0.72);
     for (let c = cmin; c <= cmax; c++) {
       el("rect", { class: "cell" + (c < 0 || c > 6 ? " extra" : ""), x: colX(c) + 2, y: CELL_Y, width: cw - 4, height: CELL_H, rx: 6 });
-      // Zeros that were typed but are not needed any more (2500 mm read as 0.0025 km) fade out instead of vanishing.
-      const inNow = c >= lo && c <= hi, inStart = c >= sLo && c <= sHi;
-      if (!inNow && !inStart) continue;
-      const d = digitAt(c), isNew = d === null && !inStart;
-      el("text", { class: "dig" + (isNew ? " new" : "") + (inNow ? "" : " gone"), x: colX(c) + cw / 2, y: CELL_Y + CELL_H / 2 + digSize * 0.36, "font-size": digSize }).textContent = d ?? "0";
+      if (c < lo || c > hi) continue;
+      const d = digitAt(c), isNew = d === null && (c < sLo || c > sHi);
+      el("text", { class: "dig" + (isNew ? " new" : ""), x: colX(c) + cw / 2, y: CELL_Y + CELL_H / 2 + digSize * 0.36, "font-size": digSize }).textContent = d ?? "0";
     }
 
-    // Loops under the chart for each hop the point has made.
-    for (let i = 0; i < done; i++) {
-      const a = colX(uFrom + i * step) + cw, b = colX(uFrom + (i + 1) * step) + cw;
-      const y = CELL_Y + CELL_H + 6, cy = y + 46;
-      el("path", { class: "c-hop", d: `M${a},${y} Q${(a + b) / 2},${cy} ${b},${y}` });
-      arrowHead(b, y, b - (a + b) / 2, y - cy, "c-head", 9);
-    }
     el("circle", { class: "point", cx: colX(pos) + cw, cy: CELL_Y + CELL_H - 14, r: Math.min(11, cw * 0.13) + 2 });
 
-    // Along the bottom: each hop gives a new name for the same amount.
-    const terms = [];
-    for (let i = 0; i <= done; i++) { const k = uFrom + i * step; terms.push(show(readAt(k)) + " " + sym(k)); }
-    const hideEnd = mode === "practice" && !practiceShown;
-    const shownTerms = hideEnd ? terms.slice(0, 1) : terms;
-    const chars = shownTerms.join(" = ").length;
-    const size = Math.min(44, 1150 / (chars * 0.62));
-    const t = el("text", { class: "chain", x: 600, y: 722, "font-size": size });
-    shownTerms.forEach((s, i) => {
-      if (i) el("tspan", { class: "eqs" }, t).textContent = " = ";
-      const last = i === shownTerms.length - 1 && cur === uTo && i > 0;
-      el("tspan", { class: i === 0 ? "start" : last ? "now" : "" }, t).textContent = s;
-    });
+    // Along the bottom: the conversion, with ? until the decimal arrives.
+    if (uTo === uFrom) return;
+    const there = cur === uTo;
+    const terms = [show(readAt(uFrom)) + " " + sym(uFrom), (there ? show(readAt(uTo)) : "?") + " " + sym(uTo)];
+    const size = Math.min(56, 1150 / (terms.join(" = ").length * 0.62));
+    const t = el("text", { class: "chain", x: 600, y: 712, "font-size": size });
+    el("tspan", { class: "start" }, t).textContent = terms[0];
+    el("tspan", { class: "eqs" }, t).textContent = " = ";
+    el("tspan", { class: "now" }, t).textContent = terms[1];
   }
   function arrowHead(x, y, dx, dy, cls, s = 11) {
     const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
@@ -447,23 +397,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
   function howText() {
     const s = Math.abs(uTo - uFrom), down = uTo > uFrom;
-    if (!s) return `<p class="why">Pick two different units.</p>`;
-    const op = down ? "×" : "÷", factor = group("1" + "0".repeat(s));
-    const chain = Array(s).fill(`<span class="nw">${op} 10</span>`).join(" ") + (s > 1 ? ` <span class="nw">= ${op} ${factor}</span>` : "");
-    return `<p class="why"><span class="c-pt">${sym(uFrom)}</span> to <span class="c-orange">${sym(uTo)}</span> is <b>${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}</b> the stairs.</p>
-      <p class="times">${chain}</p>
-      <p class="why">${down ? "The units get smaller, so you need more of them." : "The units get bigger, so you need fewer of them."}
-      The decimal moves <b>${s} place${s > 1 ? "s" : ""} ${down ? "right" : "left"}</b>.</p>`;
+    if (!s) return "Pick two different units.";
+    return `${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}: ${down ? "×" : "÷"} ${group("1" + "0".repeat(s))}`;
   }
   function panel() {
     if (mode === "explore") {
-      $("how").innerHTML = howText();
-      const there = cur === uTo;
-      $("result").innerHTML = `<span class="r-from">${show(readAt(uFrom))} ${sym(uFrom)}</span> = ` +
-        (there ? `<span class="r-to">${show(readAt(uTo))} ${sym(uTo)}</span>` : `<span class="wait">? ${sym(uTo)}</span>`);
-      const dir = uTo > cur ? "right" : "left";
-      $("hop").textContent = there ? "Move 1 place" : `Move 1 place ${dir}`;
-      $("hop").disabled = $("all").disabled = there || busy;
+      $("how").textContent = howText();
+      $("hop").disabled = cur === uTo || busy;
     } else {
       $("showme").disabled = busy || practiceShown;
       $("check").disabled = busy || practiceShown || q.right;
@@ -483,7 +423,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   $("from").addEventListener("change", () => { uFrom = +$("from").value; restart(); });
   $("to").addEventListener("change", () => { uTo = +$("to").value; restart(); });
   $("hop").addEventListener("click", () => { if (!busy) hopOnce(); });
-  $("all").addEventListener("click", () => { if (!busy) hopAll(); });
   $("again").addEventListener("click", () => { if (!busy) restart(); });
 
   // Tap a step: in Explore it becomes the unit to change to.
@@ -518,7 +457,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     q = { s: n, a, b, right: false, counted: false };
     qCount++; practiceShown = false;
     num = parse(n); uFrom = a; uTo = b; cur = pos = a;
-    $("qNum").textContent = "Question " + qCount;
     $("pGiven").innerHTML = `<span class="c-pt">${show(readAt(a))} ${sym(a)}</span>`;
     $("pUnit").textContent = sym(b);
     $("pAns").value = ""; $("fb").textContent = ""; $("fb").className = "fb";
@@ -543,12 +481,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (got === want) {
       q.right = true; tally(true);
       $("fb").className = "fb ok";
-      $("fb").textContent = `Correct! ${s} step${s > 1 ? "s" : ""} ${down ? "down, × " : "up, ÷ "}${group("1" + "0".repeat(s))}.`;
+      $("fb").textContent = "Correct!";
       practiceShown = true; hopAll();
     } else {
       tally(false);
       $("fb").className = "fb no";
-      $("fb").textContent = `Not yet. ${sym(uFrom)} to ${sym(uTo)} is ${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}, so the decimal moves ${s} place${s > 1 ? "s" : ""} ${down ? "right" : "left"}. Try again or press Show me.`;
+      $("fb").textContent = `Not yet. ${s} step${s > 1 ? "s" : ""} ${down ? "down" : "up"}.`;
     }
     panel();
   }
@@ -558,7 +496,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (busy || practiceShown) return;
     tally(false); practiceShown = true;
     $("fb").className = "fb";
-    $("fb").textContent = `Watch the decimal: ${show(readAt(uFrom))} ${sym(uFrom)} = ${show(readAt(uTo))} ${sym(uTo)}`;
+    $("fb").textContent = "";
     draw(); panel(); hopAll();
   });
   $("next").addEventListener("click", () => { if (!busy) newQuestion(); });

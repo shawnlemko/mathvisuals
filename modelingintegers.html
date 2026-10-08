@@ -607,6 +607,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   let op = "+";
   document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => {
     op = b.dataset.op;
+    liveQ();
     document.querySelectorAll("[data-op]").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
   });
   const readNum = s => { s = s.trim().replace(/[−–]/g, "-").replace(/^\+/, ""); return /^-?\d+$/.test(s) ? +s : NaN; };
@@ -644,6 +645,13 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     startQ(a, op, b);
   };
   ["qa", "qb"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("goQ").click(); }));
+  // The question always matches the typed numbers and the chosen operation (Shawn): any change starts it over.
+  function liveQ() {
+    const a = readNum($("qa").value), b = readNum($("qb").value), q = S.calc.q;
+    if (isNaN(a) || isNaN(b) || Math.abs(a) > 10 || Math.abs(b) > 10) return;
+    if (!q || q.a !== a || q.b !== b || q.op !== op) startQ(a, op, b);
+  }
+  ["qa", "qb"].forEach(id => $(id).addEventListener("input", liveQ));
 
   function calcHint() {
     const { a, op: o, b } = S.calc.q, s = S.calc, sg = Math.sign(b), k = Math.abs(b);

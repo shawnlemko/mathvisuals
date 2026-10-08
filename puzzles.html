@@ -200,7 +200,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 @keyframes shake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
 /* ---------- Crossword ---------- */
-.cw { display: grid; grid-template-columns: repeat(5, var(--t)); grid-template-rows: repeat(5, var(--t)); gap: calc(var(--t) * 0.06); }
+.cw { display: grid; gap: calc(var(--t) * 0.06); }
 .cw > * { display: flex; align-items: center; justify-content: center; font-family: var(--font-num); font-weight: 700; line-height: 1; }
 .cw .num { border-radius: calc(var(--t) * 0.12); font-size: calc(var(--t) * 0.4); background: var(--paper); border: 3px solid var(--grid-major); color: var(--ink); }
 .cw .op { font-size: calc(var(--t) * 0.5); color: var(--orange); }
@@ -212,7 +212,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .cw .blank.wrong { border-style: solid; border-color: var(--bad); color: var(--bad); }
 .cw .blank.shown { border-style: solid; border-color: var(--green); color: var(--green); background: var(--chip); }
 .cw .eq.down { transform: rotate(90deg); }
-.cw .void { visibility: hidden; }
+.cw .block { background: var(--grid); border-radius: calc(var(--t) * 0.1); }
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .pad button { font-family: var(--font-num); font-size: clamp(1.4rem, 4vh, 2.2rem); padding: 0; height: clamp(42px, 6.9vh, 80px); border-radius: 10px; background: var(--paper); }
 .pad button:hover { background: var(--chip); }
@@ -420,67 +420,123 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ================= Crossword =================
-  // 5 by 5 grid: three equations across (rows 0, 2, 4) and three down (columns 0, 2, 4) share nine numbers.
-  const CW = {
-    as: { easy: { start: 10, max: 20, blanks: 3 }, med: { start: 25, max: 50, blanks: 4 }, hard: { start: 50, max: 100, blanks: 5 } },
-    md: { easy: { start: 6, max: 36, blanks: 3 }, med: { start: 10, max: 100, blanks: 4 }, hard: { start: 12, max: 144, blanks: 5 } },
+  // Number spots sit in an N by N grid (3, 4 or 5 by level); grey spots are blocked. Every run of three
+  // spots across or down is one equation: first op second = third. Numbers stay small at every level:
+  // harder levels are bigger grids with more blanks that have to be solved in a chain.
+  const CW_SIZE = { easy: 3, med: 4, hard: 5 };
+  // Patterns (1 = number spot) where every run across and down is 1 or 3 long and every spot is in an equation.
+  const CW_TEMPLATES = {
+    easy: ["111111111"],
+    med: ["0001011101111110", "0111111011101000", "1000111011100111", "1110011101110001"],
+    hard: ["0011100010101111110110111", "0011110010101111110100111", "0011111101101111001000111", "0011111101101111001001110", "0111000010101111110110111", "0111001000111011011111101", "0111001001111011011111100", "0111010010101111110100111", "1011111101101110001000111", "1011111101101110001001110", "1110001000111011011111101", "1110001001111011011111100", "1110010111111010100101110", "1110010111111010100111100", "1110110111111010100001110", "1110110111111010100011100"],
   };
-  // Equations as [left, op, right, result] using number positions 0..8 (row by row in the 3 by 3 of numbers).
-  const EQS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8]];
+  const CW_NUMS = { as: { lo: 1, max: 20 }, md: { lo: 1, max: 60 } };
+  // Share of the number spots left blank, and the fewest solving rounds the blanks must need.
+  const CW_BLANKS = { easy: { share: 0.34, rounds: 1 }, med: { share: 0.5, rounds: 2 }, hard: { share: 0.45, rounds: 3 } };
   const apply = (a, op, b) => {
     if (op === "+") return a + b;
     if (op === "−") return a - b;
     if (op === "×") return a * b;
     return b !== 0 && a % b === 0 ? a / b : NaN;
   };
-  function genNumbers() {
-    const c = CW[st.fam][st.level];
-    const opsOf = st.fam === "as" ? ["+", "−"] : ["×", "÷"];
-    const lo = st.fam === "as" ? 1 : 2;
-    for (let tries = 0; tries < 200000; tries++) {
-      const ops = EQS.map(() => pick(opsOf));
-      // Easy keeps one operation per puzzle; Medium and Hard mix both.
-      if (st.level === "easy" ? new Set(ops).size !== 1 : new Set(ops).size !== 2) continue;
-      if (st.level === "easy" && st.fam === "as" && ops[0] === "−" && Math.random() < 0.5) continue;
-      const v = Array(9).fill(0);
-      [0, 1, 3, 4].forEach(i => { v[i] = rnd(lo, c.start); });
-      v[2] = apply(v[0], ops[0], v[1]);
-      v[5] = apply(v[3], ops[1], v[4]);
-      v[6] = apply(v[0], ops[3], v[3]);
-      v[7] = apply(v[1], ops[4], v[4]);
-      v[8] = apply(v[6], ops[2], v[7]);
-      if (apply(v[2], ops[5], v[5]) !== v[8]) continue;
-      if (!v.every(x => Number.isInteger(x) && x >= lo && x <= c.max)) continue;
-      if (new Set(v).size < 6) continue;
-      return { v, ops };
-    }
-    return null;
+  // Turn and flip a pattern so the same shapes show up in different directions.
+  function orient(pat, n) {
+    let g = [...Array(n)].map((_, r) => [...pat.slice(r * n, r * n + n)]);
+    if (Math.random() < 0.5) g = g[0].map((_, c) => g.map(row => row[c]));
+    if (Math.random() < 0.5) g = g.map(row => row.reverse());
+    if (Math.random() < 0.5) g.reverse();
+    return g.flat().map(Number);
   }
-  // Steps needed to fill the blanks when each step solves equations with one unknown; null when stuck.
-  function solveSteps(hidden) {
-    const known = new Set([...Array(9).keys()].filter(i => !hidden.has(i)));
-    let steps = 0;
-    while (known.size < 9) {
+  function equationsOf(white, n) {
+    const eqs = [];
+    for (const dir of ["across", "down"]) for (let a = 0; a < n; a++) {
+      let run = [];
+      for (let b = 0; b <= n; b++) {
+        const i = dir === "across" ? a * n + b : b * n + a;
+        if (b < n && white[i]) { run.push(i); continue; }
+        if (run.length === 3) eqs.push({ cells: run, dir });
+        run = [];
+      }
+    }
+    return eqs;
+  }
+  // Fill the one missing number of an equation; NaN when it can't be a whole number in range.
+  function missing(op, [a, b, c], unk) {
+    if (unk === 2) return apply(a, op, b);
+    const inv = { "+": "−", "−": "+", "×": "÷", "÷": "×" }[op];
+    if (unk === 0) return apply(c, inv, b);
+    return op === "+" || op === "×" ? apply(c, inv, a) : apply(a, op, c);
+  }
+  function propagate(vals, eqs, lim) {
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const e of eqs) {
+        const v = e.cells.map(i => vals[i]);
+        const unk = v.map((x, k) => x === undefined ? k : -1).filter(k => k >= 0);
+        if (unk.length === 0) { if (apply(v[0], e.op, v[1]) !== v[2]) return false; }
+        else if (unk.length === 1) {
+          const x = missing(e.op, v, unk[0]);
+          if (!Number.isInteger(x) || x < lim.lo || x > lim.max) return false;
+          vals[e.cells[unk[0]]] = x;
+          changed = true;
+        }
+      }
+    }
+    return true;
+  }
+  // Backtracking search: guess small numbers, let the equations fill in what they force.
+  function fillNumbers(cells, eqs, lim) {
+    let budget = 3000;
+    const tryFill = vals => {
+      if (--budget < 0) return null;
+      const open = cells.filter(i => vals[i] === undefined);
+      if (!open.length) return vals;
+      const at = open[Math.floor(Math.random() * open.length)];
+      const top = st.fam === "as" ? 12 : 9;
+      for (const x of shuffle([...Array(top - lim.lo + 1).keys()].map(k => k + lim.lo)).slice(0, 6)) {
+        const next = { ...vals, [at]: x };
+        if (!propagate(next, eqs, lim)) continue;
+        const done = tryFill(next);
+        if (done) return done;
+      }
+      return null;
+    };
+    return tryFill({});
+  }
+  // Rounds needed to fill the blanks when each round solves equations with one unknown; null when stuck.
+  function solveRounds(cells, eqs, hidden) {
+    const known = new Set(cells.filter(i => !hidden.has(i)));
+    let rounds = 0;
+    while (known.size < cells.length) {
       const add = [];
-      for (const e of EQS) { const unk = e.filter(i => !known.has(i)); if (unk.length === 1) add.push(unk[0]); }
+      for (const e of eqs) { const unk = e.cells.filter(i => !known.has(i)); if (unk.length === 1) add.push(unk[0]); }
       if (!add.length) return null;
       add.forEach(i => known.add(i));
-      steps++;
+      rounds++;
     }
-    return steps;
+    return rounds;
   }
   function genCw() {
-    const c = CW[st.fam][st.level];
-    for (let tries = 0; tries < 200; tries++) {
-      const g = genNumbers();
-      if (!g) continue;
-      for (let h = 0; h < 300; h++) {
-        const hidden = new Set(shuffle([...Array(9).keys()]).slice(0, c.blanks));
-        const steps = solveSteps(hidden);
-        if (steps === null) continue;
-        if (st.level === "easy" && steps !== 1) continue;
-        if (st.level === "hard" && steps < 2) continue;
-        return { ...g, hidden };
+    const n = CW_SIZE[st.level], lim = CW_NUMS[st.fam], bl = CW_BLANKS[st.level];
+    const opsOf = st.fam === "as" ? ["+", "−"] : ["×", "÷"];
+    for (let tries = 0; tries < 300; tries++) {
+      const white = orient(pick(CW_TEMPLATES[st.level]), n);
+      const cells = white.map((w, i) => w ? i : -1).filter(i => i >= 0);
+      const eqs = equationsOf(white, n);
+      // Easy keeps one operation per puzzle; Medium and Hard mix both.
+      const one = pick(opsOf);
+      eqs.forEach(e => { e.op = st.level === "easy" ? one : pick(opsOf); });
+      if (st.level !== "easy" && new Set(eqs.map(e => e.op)).size < 2) continue;
+      const vals = fillNumbers(cells, eqs, lim);
+      if (!vals) continue;
+      const v = cells.map(i => vals[i]);
+      if (v.filter(x => x === 1).length > 1 || new Set(v).size < v.length * 0.6) continue;
+      const count = Math.round(cells.length * bl.share);
+      for (let h = 0; h < 400; h++) {
+        const hidden = new Set(shuffle(cells.slice()).slice(0, count));
+        const rounds = solveRounds(cells, eqs, hidden);
+        if (rounds === null || rounds < bl.rounds || (st.level === "easy" && rounds !== 1)) continue;
+        return { n, white, eqs, v: vals, hidden };
       }
     }
     return null;
@@ -488,7 +544,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   let cw = null;
   function startCw() {
-    cw = genCw();
+    cw = null;
+    while (!cw) cw = genCw();
     cw.typed = {};
     cw.sel = [...cw.hidden].sort((a, b) => a - b)[0];
     cw.marks = {};
@@ -498,31 +555,41 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     say("Read across → and down ↓.");
   }
   function drawCw() {
+    const n = cw.n, size = 2 * n - 1;
     const grid = el("div", "cw");
-    const cellAt = (r, c) => {
-      if (r % 2 === 0 && c % 2 === 0) return { num: (r / 2) * 3 + c / 2 };
-      if (r % 2 === 0) return c === 1 ? { op: cw.ops[r / 2] } : { eq: "=" };
-      if (c % 2 === 0) return r === 1 ? { op: cw.ops[3 + c / 2] } : { eq: "=" };
-      return {};
+    const track = [...Array(size)].map((_, k) => k % 2 ? "calc(var(--t) * 0.62)" : "var(--t)").join(" ");
+    grid.style.gridTemplateColumns = track;
+    grid.style.gridTemplateRows = track;
+    // What sits between two number spots: the operation, the = sign, or a grey block.
+    const between = (i, j, dir) => {
+      for (const e of cw.eqs) {
+        if (e.dir !== dir) continue;
+        const k = e.cells.indexOf(i);
+        if (k >= 0 && e.cells[k + 1] === j) return k === 0 ? { op: e.op } : { eq: true };
+      }
+      return null;
     };
-    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
-      const cell = cellAt(r, c);
+    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+      let cell = null;
+      if (r % 2 === 0 && c % 2 === 0) { const i = (r / 2) * n + c / 2; if (cw.white[i]) cell = { num: i }; }
+      else if (r % 2 === 0) cell = between((r / 2) * n + (c - 1) / 2, (r / 2) * n + (c + 1) / 2, "across");
+      else if (c % 2 === 0) { cell = between(((r - 1) / 2) * n + c / 2, ((r + 1) / 2) * n + c / 2, "down"); if (cell && cell.eq) cell.down = true; }
+      if (!cell) { grid.append(el("div", "block")); continue; }
       if (cell.num !== undefined) {
-        const n = cell.num;
-        if (cw.hidden.has(n)) {
+        const i = cell.num;
+        if (cw.hidden.has(i)) {
           const b = el("button", "num blank");
           b.type = "button";
           b.setAttribute("aria-label", "Missing number");
-          b.textContent = cw.shown && cw.marks[n] !== "right" ? cw.v[n] : (cw.typed[n] || "");
-          if (cw.shown && cw.marks[n] !== "right") b.classList.add("shown");
-          else if (cw.marks[n]) b.classList.add(cw.marks[n]);
-          if (n === cw.sel && !cw.shown) b.classList.add("sel");
-          b.onclick = () => { cw.sel = n; drawCw(); };
+          b.textContent = cw.shown && cw.marks[i] !== "right" ? cw.v[i] : (cw.typed[i] || "");
+          if (cw.shown && cw.marks[i] !== "right") b.classList.add("shown");
+          else if (cw.marks[i]) b.classList.add(cw.marks[i]);
+          if (i === cw.sel && !cw.shown) b.classList.add("sel");
+          b.onclick = () => { cw.sel = i; drawCw(); };
           grid.append(b);
-        } else grid.append(el("div", "num", cw.v[n]));
+        } else grid.append(el("div", "num", cw.v[i]));
       } else if (cell.op) grid.append(el("div", "op", cell.op));
-      else if (cell.eq) grid.append(el("div", r % 2 === 1 ? "eq down" : "eq", "="));
-      else grid.append(el("div", "void"));
+      else grid.append(el("div", cell.down ? "eq down" : "eq", "="));
     }
     $("board").replaceChildren(grid);
     const blanks = [...cw.hidden];
@@ -590,7 +657,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const narrow = w < 640;
       b.classList.toggle("narrow", narrow);
       t = Math.min(h / (rows + (rows - 1) * 0.22), w / (k + 1 + 0.5 + (narrow ? 0 : 3.55) + (k + 2) * 0.12));
-    } else t = Math.min(w, h) / 5.3;
+    } else {
+      // n number spots plus n - 1 narrower gaps (0.62) and the small grid gaps.
+      const n = cw ? cw.n : 3, span = n + (n - 1) * 0.62 + (2 * n - 2) * 0.06;
+      t = Math.min(w, h) / span;
+    }
     b.style.setProperty("--t", Math.max(36, Math.min(160, Math.floor(t))) + "px");
   }
   new ResizeObserver(fit).observe($("board"));

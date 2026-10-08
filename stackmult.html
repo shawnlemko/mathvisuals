@@ -253,7 +253,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 <!-- Stacked Multiplication (grades 3 to 7): type a question like 124 × 6 or press New question, work it out in the
      digit boxes, then Check answer finds the first wrong box. Carries get their own small row for each digit of the
      bottom number (blue for the ones digit, purple for the tens digit), with the matching partial product row. The purple
-     carry row appears only once the blue × row is filled in (Shawn: two levels of boxes at once is confusing).
+     carry row appears only once the blue × row is filled in (Shawn: two levels of boxes at once is confusing), and the
+     carry row for adding only once both × rows are filled in.
      Decimals: work as whole numbers, then click where the decimal point goes in the answer. -->
 
 <div class="wrap">
@@ -640,7 +641,7 @@ window.Written = (() => {
       sh.rule(R.part[1], 0, N);
       addc = [];
       for (let p = 1; p <= n + 1; p++) addc[p] = sh.cell(R.addc, col(p), "sm", "Carry box for adding");
-      sh.lab(R.addc, LAB, "carry +");
+      addc.lab = sh.lab(R.addc, LAB, "carry +");
       sum = rowCells(R.sum, F, "", "Answer box");
       sh.lab(R.sum, LAB, "answer");
     }
@@ -653,6 +654,10 @@ window.Written = (() => {
         const ready = firstRow.every(e => e.value !== "") || carry[1].some(e => e && e.value !== "");
         box(1).forEach(e => e.classList.toggle("wait", !ready));
         box(0).forEach(e => e.classList.toggle("done-row", ready));
+        // The carry boxes for adding show only once both × rows are filled in (Shawn).
+        const second = parts[1].slice(0, String(Ai * b[1]).length + 1);
+        const adding = (ready && second.every(e => e.value !== "")) || addc.some(e => e && e.value !== "");
+        [...addc.filter(Boolean), addc.lab].forEach(e => e.classList.toggle("wait", !adding));
       });
     }
     let slots = null;
