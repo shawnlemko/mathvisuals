@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Telling Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Telling Time: an analog clock with three modes.
+   Explore: drag the hands (the minute hand carries the hour hand along), digital clock optional.
+   Set the clock: a digital time is given, students move the hands to match.
+   Read the clock: the clock shows a time, students type the digital time. */
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.opt { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 12px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+#mode button { font-size: 1.1rem; padding: 6px 16px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.board svg { aspect-ratio: 1 / 1; }
+
+/* Clock face */
+.face { fill: var(--sheet); stroke: var(--ink); stroke-width: 10; }
+.tick { stroke: var(--muted); stroke-width: 3; stroke-linecap: round; }
+.tick.five { stroke: var(--ink); stroke-width: 7; }
+.hnum { fill: var(--ink); font-family: var(--font-display); font-weight: 800; font-size: 74px; text-anchor: middle; dominant-baseline: central; }
+.mnum { fill: var(--orange); font-family: var(--font-num); font-weight: 700; font-size: 27px; text-anchor: middle; dominant-baseline: central; }
+.wedge { fill: var(--orange); fill-opacity: 0.13; }
+.hand { outline: none; }
+.hand .hit { stroke: transparent; stroke-width: 56; stroke-linecap: round; }
+.hand.live { cursor: grab; }
+.hand.live.drag { cursor: grabbing; }
+.hand-h .bar { stroke: var(--pt); stroke-width: 24; stroke-linecap: round; }
+.hand-m .bar { stroke: var(--orange); stroke-width: 13; stroke-linecap: round; }
+.hand-h .tip { fill: var(--pt); }
+.hand-m .tip { fill: var(--orange); }
+.hand:focus-visible .bar { filter: drop-shadow(0 0 6px var(--pt)); }
+.cap { fill: var(--ink); stroke: var(--sheet); stroke-width: 4; }
+
+/* Panel */
+.panel .card { display: flex; flex-direction: column; gap: 12px; }
+.ask { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; margin: 0; }
+.digital { display: flex; justify-content: center; align-items: baseline; font-family: var(--font-num); font-weight: 700; font-size: 5.6rem; line-height: 1.1;
+  background: var(--paper); border: 3px solid var(--grid-major); border-radius: 14px; padding: 8px 12px; }
+.digital .h { color: var(--pt); }
+.digital .m { color: var(--orange); }
+.digital .colon { color: var(--ink); padding: 0 2px; }
+.digital.off { color: var(--muted); }
+.digital.off span { color: var(--muted); }
+.words { margin: 0; font-size: 1.45rem; font-weight: 700; min-height: 2.2rem; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; color: var(--muted); font-weight: 700; font-size: 1.05rem; }
+.key b.h { color: var(--pt); } .key b.m { color: var(--orange); }
+.checks { display: flex; flex-direction: column; gap: 10px; }
+.checks label { display: inline-flex; gap: 12px; align-items: center; font-weight: 700; font-size: 1.2rem; cursor: pointer; }
+.checks input { width: 26px; height: 26px; accent-color: var(--pt); }
+
+.entry { display: flex; justify-content: center; align-items: center; gap: 6px; }
+.entry input { width: 2.4ch; min-width: 0; height: 1.35em; font-family: var(--font-num); font-weight: 700; font-size: 4.6rem; text-align: center;
+  background: var(--paper); border: 3px solid var(--grid-major); border-radius: 12px; }
+.entry #inH { color: var(--pt); border-color: var(--pt); }
+.entry #inM { color: var(--orange); border-color: var(--orange); }
+.entry .colon { font-family: var(--font-num); font-weight: 700; font-size: 4.6rem; }
+.go { font-size: 1.4rem; min-height: 60px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row button { flex: 1 1 auto; min-height: 50px; font-size: 1.1rem; }
+.row .new { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.fb { min-height: 3.2rem; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2rem; line-height: 1.2; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.15rem; color: var(--ink); margin-top: 4px; }
+.score { display: flex; align-items: baseline; gap: 10px; margin: 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 1.9rem; }
+.score span { font-family: var(--font-body); font-size: 1.1rem; color: var(--muted); }
+.score .k { font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
+@media (max-width: 600px) { .digital { font-size: 4rem; } .entry input, .entry .colon { font-size: 3.4rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Telling Time</h1></div>
+    <div class="opts">
+      <span class="seg" id="mode"><button type="button" data-v="explore" aria-pressed="true">Explore</button><button type="button" data-v="set" aria-pressed="false">Set the clock</button><button type="button" data-v="read" aria-pressed="false">Read the clock</button></span>
+      <span class="opt" id="levelWrap" hidden>Times
+        <span class="seg" id="level"><button type="button" data-v="60" aria-pressed="false">Hours</button><button type="button" data-v="30" aria-pressed="false">Half hours</button><button type="button" data-v="15" aria-pressed="false">Quarter hours</button><button type="button" data-v="5" aria-pressed="true">5 minutes</button><button type="button" data-v="1" aria-pressed="false">Any minute</button></span></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board"><svg id="svg" viewBox="0 0 800 800" role="img" aria-label="Clock"></svg></div>
+    <div class="panel">
+      <!-- Explore -->
+      <div class="card" id="pExplore">
+        <p class="ask">Move the hands</p>
+        <div class="digital" id="dig" aria-live="polite"></div>
+        <p class="words" id="words"></p>
+        <p class="key"><span><b class="h">Short hand</b> = hours</span><span><b class="m">Long hand</b> = minutes</span></p>
+        <div class="checks">
+          <label><input type="checkbox" id="showDig" checked> Show digital clock</label>
+        </div>
+      </div>
+      <!-- Set the clock -->
+      <div class="card" id="pSet" hidden>
+        <p class="ask">Make the clock show</p>
+        <div class="digital" id="target"></div>
+        <button type="button" class="go" id="setCheck">Check</button>
+        <p class="fb" id="setFb" aria-live="polite"></p>
+        <div class="row"><button type="button" id="setShow">Show me</button><button type="button" class="new" id="setNew">New time</button></div>
+        <p class="score"><span class="k">Correct</span><b id="setScore">0 <span>of 0</span></b></p>
+      </div>
+      <!-- Read the clock -->
+      <div class="card" id="pRead" hidden>
+        <p class="ask">What time is it?</p>
+        <div class="entry">
+          <input id="inH" type="text" inputmode="numeric" maxlength="2" autocomplete="off" aria-label="Hour">
+          <span class="colon">:</span>
+          <input id="inM" type="text" inputmode="numeric" maxlength="2" autocomplete="off" aria-label="Minutes">
+        </div>
+        <button type="button" class="go" id="readCheck">Check</button>
+        <p class="fb" id="readFb" aria-live="polite"></p>
+        <div class="row"><button type="button" id="readShow">Show me</button><button type="button" class="new" id="readNew">New time</button></div>
+        <p class="score"><span class="k">Correct</span><b id="readScore">0 <span>of 0</span></b></p>
+      </div>
+      <div class="card checks">
+        <label><input type="checkbox" id="showMin" checked> Show minute numbers</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const C = 400, R = 330;            // clock centre and face radius in SVG units
+  const LEN_H = 180, LEN_M = 285;    // hand lengths
+
+  // t = minutes after 12:00, kept unbounded while dragging; the clock shows t mod 720.
+  let t = 10 * 60 + 10, mode = "explore", level = 5, anim = 0;
+  const game = {
+    set: { goal: 0, tried: false, done: false, right: 0, tries: 0 },
+    read: { goal: 0, tried: false, done: false, right: 0, tries: 0 },
+  };
+
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const mod = (a, n) => ((a % n) + n) % n;
+  const polar = (deg, r) => [C + r * Math.sin(deg * Math.PI / 180), C - r * Math.cos(deg * Math.PI / 180)];
+  const hourOf = tt => { const h = Math.floor(mod(tt, 720) / 60); return h === 0 ? 12 : h; };
+  const minOf = tt => mod(tt, 60);
+  const pad = m => String(m).padStart(2, "0");
+  const digitalHTML = tt => `<span class="h">${hourOf(tt)}</span><span class="colon">:</span><span class="m">${pad(minOf(tt))}</span>`;
+  const plain = tt => `${hourOf(tt)}:${pad(minOf(tt))}`;
+  // Friendly words for a time: "3 o'clock", "quarter past 3", "40 minutes after 3".
+  function say(tt) {
+    const h = hourOf(tt), m = minOf(tt), next = h === 12 ? 1 : h + 1;
+    if (m === 0) return `${h} o'clock`;
+    if (m === 15) return `quarter past ${h}`;
+    if (m === 30) return `half past ${h}`;
+    if (m === 45) return `quarter to ${next}`;
+    const mins = n => `${n} minute${n === 1 ? "" : "s"}`;
+    return m < 30 ? `${mins(m)} after ${h}` : `${mins(m)} after ${h} (${mins(60 - m)} to ${next})`;
+  }
+
+  // ---- Draw the clock once; the hands and wedge update on every change. ----
+  el("circle", { class: "face", cx: C, cy: C, r: R });
+  const wedge = el("path", { class: "wedge" });
+  for (let i = 0; i < 60; i++) {
+    const five = i % 5 === 0, [x1, y1] = polar(i * 6, five ? R - 40 : R - 22), [x2, y2] = polar(i * 6, R - 10);
+    el("line", { class: "tick" + (five ? " five" : ""), x1, y1, x2, y2 });
+  }
+  for (let h = 1; h <= 12; h++) {
+    const [x, y] = polar(h * 30, R - 88);
+    el("text", { class: "hnum", x, y: y + 2 }).textContent = h;
+  }
+  const minNums = el("g", {});
+  for (let i = 0; i < 12; i++) {
+    const [x, y] = polar(i * 30, R + 36);
+    el("text", { class: "mnum", x, y }, minNums).textContent = pad(i * 5);
+  }
+  function makeHand(cls, len, name) {
+    const g = el("g", { class: "hand " + cls, tabindex: 0, role: "slider", "aria-label": name });
+    // A wide see-through line under each hand makes it easy to grab on a smartboard.
+    el("line", { class: "hit", x1: C, y1: C, x2: C, y2: C - len }, g);
+    el("line", { class: "bar", x1: C, y1: C + 28, x2: C, y2: C - len + 20 }, g);
+    const w = cls === "hand-h" ? 26 : 18;
+    el("path", { class: "tip", d: `M${C - w} ${C - len + 30} L${C} ${C - len - 4} L${C + w} ${C - len + 30} Z` }, g);
+    return g;
+  }
+  const handH = makeHand("hand-h", LEN_H, "Hour hand");
+  const handM = makeHand("hand-m", LEN_M, "Minute hand");
+  el("circle", { class: "cap", cx: C, cy: C, r: 20 });
+
+  function render() {
+    const m = minOf(t), mAng = m * 6, hAng = mod(t, 720) / 2;
+    handM.setAttribute("transform", `rotate(${mAng} ${C} ${C})`);
+    handH.setAttribute("transform", `rotate(${hAng} ${C} ${C})`);
+    handM.setAttribute("aria-valuetext", `${m} minutes`);
+    handH.setAttribute("aria-valuetext", `${hourOf(t)} o'clock hour`);
+    // The orange wedge sweeps from 12 to the minute hand: how far the minutes have gone this hour.
+    const showWedge = mode === "explore" || (game[mode] && game[mode].done);
+    if (showWedge && m > 0) {
+      const [x, y] = polar(mAng, R - 10);
+      wedge.setAttribute("d", `M${C} ${C} L${C} ${C - R + 10} A${R - 10} ${R - 10} 0 ${mAng > 180 ? 1 : 0} 1 ${x} ${y} Z`);
+    } else wedge.setAttribute("d", "");
+    svg.setAttribute("aria-label", mode === "read" && !game.read.done ? "Clock showing a time to read" : `Clock showing ${plain(t)}`);
+    if (mode === "explore") {
+      const on = $("showDig").checked;
+      $("dig").className = "digital" + (on ? "" : " off");
+      $("dig").innerHTML = on ? digitalHTML(t) : `<span>?</span><span class="colon">:</span><span>??</span>`;
+      $("words").textContent = on ? say(t) : "";
+    }
+  }
+
+  // ---- Dragging: angle from the centre; the minute hand drags the hour hand along like a real clock. ----
+  const live = () => mode === "explore" || (mode === "set" && !anim);
+  function angleAt(e) {
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+    return mod(Math.atan2(p.x - C, C - p.y) * 180 / Math.PI, 360);
+  }
+  function moveTo(which, ang) {
+    if (which === "m") {
+      let d = Math.round(ang / 6) % 60 - minOf(t);
+      if (d > 30) d -= 60; if (d < -30) d += 60;   // passing 12 moves the hour forward or back
+      t += d;
+    } else {
+      let d = Math.round(ang * 2) - mod(t, 720);    // the hour hand moves 1 degree every 2 minutes
+      if (d > 360) d -= 720; if (d < -360) d += 720;
+      t += d;
+    }
+    changed();
+  }
+  let dragging = null;
+  for (const [g, which] of [[handH, "h"], [handM, "m"]]) {
+    g.addEventListener("pointerdown", e => {
+      if (!live()) return;
+      e.preventDefault();
+      dragging = which; g.classList.add("drag"); g.setPointerCapture(e.pointerId); g.focus();
+    });
+    g.addEventListener("pointermove", e => { if (dragging === which) moveTo(which, angleAt(e)); });
+    const end = () => { if (dragging === which) { dragging = null; g.classList.remove("drag"); } };
+    g.addEventListener("pointerup", end);
+    g.addEventListener("pointercancel", end);
+    g.addEventListener("keydown", e => {
+      if (!live()) return;
+      const step = which === "m" ? (e.shiftKey ? 5 : 1) : 60;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") t += step;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowDown") t -= step;
+      else return;
+      e.preventDefault(); changed();
+    });
+  }
+  function changed() {
+    if (mode === "set" && game.set.done) { game.set.done = false; }
+    if (mode === "set") { $("setFb").textContent = ""; $("setFb").className = "fb"; }
+    render();
+  }
+
+  // Smoothly turn the hands forward to a time (used by Show me).
+  function animateTo(goal, done) {
+    cancelAnimationFrame(anim);
+    const start = t, dist = mod(goal - start, 720), t0 = performance.now(), dur = Math.min(2200, 500 + dist * 4);
+    const stepF = now => {
+      const k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      t = Math.round(start + dist * e);
+      render();
+      if (k < 1) anim = requestAnimationFrame(stepF); else { anim = 0; t = goal; render(); done && done(); }
+    };
+    anim = requestAnimationFrame(stepF);
+  }
+
+  // ---- Challenges ----
+  function randomTime(prev) {
+    let g;
+    do {
+      const h = Math.floor(Math.random() * 12), m = level === 60 ? 0 : level * Math.floor(Math.random() * (60 / level));
+      g = h * 60 + m;
+    } while (g === prev || (mode === "set" && g === 0));
+    return g;
+  }
+  const scoreHTML = s => `${s.right} <span>of ${s.tries}</span>`;
+  function newSet() {
+    const s = game.set;
+    cancelAnimationFrame(anim); anim = 0;
+    s.goal = randomTime(s.goal); s.tried = false; s.done = false;
+    t = 0;   // start each challenge at 12:00
+    $("target").innerHTML = digitalHTML(s.goal);
+    $("setFb").textContent = ""; $("setFb").className = "fb";
+    render();
+  }
+  function checkSet() {
+    const s = game.set;
+    if (anim) return;
+    const ok = mod(t, 720) === s.goal;
+    if (!s.tried) { s.tries++; if (ok) s.right++; s.tried = true; }
+    $("setScore").innerHTML = scoreHTML(s);
+    const fb = $("setFb");
+    if (ok) {
+      s.done = true;
+      fb.className = "fb ok"; fb.innerHTML = `Yes! ${plain(s.goal)}<small>${say(s.goal)}</small>`;
+    } else {
+      fb.className = "fb no";
+      const mOk = minOf(t) === minOf(s.goal);
+      const tip = mOk ? "The minutes are right. Turn the long hand all the way around to change the hour."
+        : `The long hand shows minutes. ${pad(minOf(s.goal))} minutes means it points to ${minOf(s.goal) % 5 === 0 ? "the " + (minOf(s.goal) / 5 || 12) : "a tick between numbers"}.`;
+      fb.innerHTML = `Not yet. Your clock says ${plain(t)}<small>${tip}</small>`;
+    }
+    render();
+  }
+  function showSet() {
+    const s = game.set;
+    if (!s.tried) { s.tries++; s.tried = true; $("setScore").innerHTML = scoreHTML(s); }
+    animateTo(s.goal, () => { s.done = true; $("setFb").className = "fb ok"; $("setFb").innerHTML = `${plain(s.goal)}<small>${say(s.goal)}</small>`; render(); });
+  }
+
+  function newRead() {
+    const s = game.read;
+    s.goal = randomTime(s.goal); s.tried = false; s.done = false;
+    t = s.goal;
+    $("inH").value = ""; $("inM").value = ""; $("inH").disabled = false; $("inM").disabled = false;
+    $("readFb").textContent = ""; $("readFb").className = "fb";
+    render();
+    $("inH").focus();
+  }
+  function checkRead() {
+    const s = game.read;
+    if (s.done) { newRead(); return; }
+    const hs = $("inH").value.trim(), ms = $("inM").value.trim();
+    if (!hs) { $("inH").focus(); return; }
+    if (!ms) { $("inM").focus(); return; }
+    const h = +hs, m = +ms, gh = hourOf(s.goal), gm = minOf(s.goal);
+    const ok = h === gh && m === gm;
+    if (!s.tried) { s.tries++; if (ok) s.right++; s.tried = true; }
+    $("readScore").innerHTML = scoreHTML(s);
+    const fb = $("readFb");
+    if (ok) {
+      s.done = true;
+      fb.className = "fb ok"; fb.innerHTML = `Yes! ${plain(s.goal)}<small>${say(s.goal)}</small>`;
+      $("inH").disabled = true; $("inM").disabled = true;
+      $("readNew").focus();
+    } else {
+      fb.className = "fb no";
+      // Hints for the usual mix-ups, in order of how common they are.
+      let tip;
+      if (m > 59) tip = "Minutes go from 00 to 59. At 60 minutes a new hour starts.";
+      else if (h < 1 || h > 12) tip = "The hours on this clock go from 1 to 12.";
+      else if (m === gh * 5 % 60 && h === (gm / 5 || 12)) tip = "The hands are switched. The short hand shows the hour.";
+      else if (h !== gh && m === gm && h === (gh % 12) + 1) tip = `The short hand has not reached ${h} yet, so the hour is still ${gh}.`;
+      else if (h !== gh && m === gm) tip = "The minutes are right. Look at the short hand for the hour.";
+      else if (gm % 5 === 0 && m === gm / 5 && m !== 0) tip = `The long hand points to the ${m}. Count by 5s: ${m} × 5 = ${gm} minutes.`;
+      else if (h === gh) tip = "The hour is right. Count the minutes on the long hand, by 5s and then by 1s.";
+      else tip = "Short hand = hours, long hand = minutes.";
+      fb.innerHTML = `Not yet<small>${tip}</small>`;
+    }
+    render();
+  }
+  function showRead() {
+    const s = game.read;
+    if (!s.tried) { s.tries++; s.tried = true; $("readScore").innerHTML = scoreHTML(s); }
+    s.done = true;
+    $("inH").value = hourOf(s.goal); $("inM").value = pad(minOf(s.goal));
+    $("inH").disabled = true; $("inM").disabled = true;
+    $("readFb").className = "fb ok"; $("readFb").innerHTML = `${plain(s.goal)}<small>${say(s.goal)}</small>`;
+    render();
+    $("readNew").focus();
+  }
+
+  // ---- Mode and options ----
+  function setMode(m) {
+    cancelAnimationFrame(anim); anim = 0;
+    mode = m;
+    for (const b of $("mode").children) b.setAttribute("aria-pressed", b.dataset.v === m);
+    $("pExplore").hidden = m !== "explore"; $("pSet").hidden = m !== "set"; $("pRead").hidden = m !== "read";
+    $("levelWrap").hidden = m === "explore";
+    for (const g of [handH, handM]) {
+      g.classList.toggle("live", m !== "read");
+      g.setAttribute("tabindex", m === "read" ? -1 : 0);
+    }
+    if (m === "set") newSet();
+    else if (m === "read") newRead();
+    else render();
+  }
+  $("mode").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setMode(b.dataset.v); });
+  $("level").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    level = +b.dataset.v;
+    for (const x of $("level").children) x.setAttribute("aria-pressed", x === b);
+    if (mode === "set") newSet(); else if (mode === "read") newRead();
+  });
+  $("showDig").addEventListener("change", render);
+  $("showMin").addEventListener("change", () => { minNums.style.display = $("showMin").checked ? "" : "none"; });
+
+  $("setCheck").addEventListener("click", checkSet);
+  $("setShow").addEventListener("click", showSet);
+  $("setNew").addEventListener("click", newSet);
+  $("readCheck").addEventListener("click", checkRead);
+  $("readShow").addEventListener("click", showRead);
+  $("readNew").addEventListener("click", newRead);
+  // Typing boxes: digits only; ":" or a full hour jumps to the minutes; Enter checks.
+  $("inH").addEventListener("input", () => {
+    const raw = $("inH").value, v = raw.replace(/\D/g, "");
+    $("inH").value = v;
+    if (/[:.\s]/.test(raw) || v.length === 2 || (v.length === 1 && v !== "1")) $("inM").focus();
+  });
+  $("inM").addEventListener("input", () => { $("inM").value = $("inM").value.replace(/\D/g, ""); });
+  $("inM").addEventListener("keydown", e => { if (e.key === "Backspace" && !$("inM").value) $("inH").focus(); });
+  for (const id of ["inH", "inM"]) $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); checkRead(); } });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && mode === "read" && game.read.done && document.activeElement.tagName !== "BUTTON") { e.preventDefault(); newRead(); }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
