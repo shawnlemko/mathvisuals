@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Logarithms as Exponents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Logarithms as Exponents: a log is defined as the exponent you are looking for.
+   Explore: start at 1 and multiply by the base (hops on the board, growth bars under them) until you reach the number;
+   the count of hops is the exponent, then b^x = y morphs into log_b(y) = x with each part keeping its colour.
+   Practice: convert between the two forms, or find a log, with checking. Base blue, exponent orange, result green. */
+:root { --purple: #6a4fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b39dff; } }
+:root[data-theme="dark"] { --purple: #b39dff; }
+.main { grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.2rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns.nums button { font-family: var(--font-num); min-width: 2.8em; padding: 6px 10px; }
+.seg-btns.small { display: grid; grid-template-columns: 1fr 1fr; }
+.seg-btns.small button { font-size: 1.05rem; padding: 6px 12px; }
+.seg-btns.small button + button { border-left: 0; }
+.seg-btns.small button:nth-child(even) { border-left: 2px solid var(--grid-major); }
+.seg-btns.small button:nth-child(n+3) { border-top: 2px solid var(--grid-major); }
+.pick .seg-btns { justify-self: start; }
+
+.vis { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.vis .board { flex: 1 1 auto; }
+@media (min-width: 861px) and (min-height: 520px) { .main > .vis { overflow: visible; } }
+.strip { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; min-height: 8.5rem; }
+.strip .lead { margin: 0 0 4px; font-size: 1.2rem; }
+.eqn { position: relative; font-family: var(--font-num); font-weight: 700; font-size: clamp(2.2rem, 3.6vw, 3.6rem); line-height: 1.5; white-space: nowrap; color: var(--ink); }
+.eqn [data-k] { display: inline-block; }
+.eqn .sup { font-size: 0.58em; vertical-align: 1.2em; margin-left: 0.04em; }
+.eqn .sub { font-size: 0.58em; vertical-align: -0.55em; margin: 0 0.06em; }
+.eqn .op { margin: 0 0.35em; }
+.eqn .lg { margin-right: 0.02em; }
+.eqn .pop { animation: popin 0.5s ease both; }
+.words { margin: 2px 0 0; font-size: 1.3rem; color: var(--muted); min-height: 1.6em; }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.62em; line-height: 1.1; }
+.fr > span:first-child { border-bottom: 0.09em solid currentColor; padding: 0 0.15em; }
+.eqn .sup .fr { font-size: 0.8em; }
+.cb { color: var(--pt); font-weight: 700; }
+.cx { color: var(--orange); font-weight: 700; }
+.cy { color: var(--green); font-weight: 700; }
+.eqn input { font: inherit; text-align: center; width: 3.2ch; height: 1.25em; padding: 0; margin: 0 0.06em; background: var(--paper); border: 3px solid; border-radius: 10px; color: inherit; vertical-align: baseline; }
+.eqn input.sup, .eqn input.sub { font-size: 0.58em; width: 3.4ch; }
+.eqn input.sub { vertical-align: -0.55em; }
+.eqn input.sup { vertical-align: 1.2em; }
+.eqn input.wide { width: 4.8ch; }
+.eqn input.cb { border-color: var(--pt); }
+.eqn input.cx { border-color: var(--orange); }
+.eqn input.cy { border-color: var(--green); }
+.eqn input.bad { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--paper)); }
+.eqn input.good { background: color-mix(in srgb, var(--green) 14%, var(--paper)); }
+.eqn input:disabled { opacity: 1; -webkit-text-fill-color: currentColor; }
+.flip { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; background: var(--purple); color: var(--sheet); border-color: var(--purple); }
+.flip:hover { background: var(--sheet); color: var(--purple); border-color: var(--purple); }
+
+.key .rule { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; margin: 0; line-height: 1.6; }
+.key .rule + .rule { margin-top: 2px; }
+.key .means { font-family: var(--font-body); font-size: 1.05rem; color: var(--muted); font-weight: 400; margin: 0 6px; }
+.key p.big { margin: 8px 0 0; font-size: 1.25rem; font-weight: 700; }
+.pick { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px 14px; }
+.pick .tl { font-weight: 700; color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; gap: 10px; }
+.stepper button { min-width: 48px; min-height: 48px; font-size: 1.5rem; padding: 0; }
+.stepper output { min-width: 5.5ch; text-align: center; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; color: var(--green); }
+ol.steps { margin: 0; padding-left: 1.6em; display: flex; flex-direction: column; gap: 8px; font-size: 1.12rem; }
+ol.steps li { color: var(--muted); }
+ol.steps li.now { color: var(--ink); font-weight: 700; }
+ol.steps sup, ol.steps sub, .fb sup, .fb sub, .key sup, .key sub, .lead sup, .lead sub { line-height: 0; }
+.nw { white-space: nowrap; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btns button { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.fb { margin: 12px 0 0; font-size: 1.2rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb.show { color: var(--ink); }
+.score { font-size: 1.1rem; color: var(--muted); margin: 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.4rem; }
+
+/* Board drawing */
+.node { fill: var(--sheet); stroke: var(--ink); stroke-width: 3; }
+.node.start { stroke: var(--muted); stroke-dasharray: 8 6; }
+.node.goal { fill: color-mix(in srgb, var(--green) 18%, var(--sheet)); stroke: var(--green); stroke-width: 4; }
+.nv { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.goal-t { fill: var(--green); }
+.hop { fill: none; stroke: var(--pt); stroke-width: 4; stroke-linecap: round; }
+.hop-head { fill: var(--pt); }
+.hop-lbl { fill: var(--pt); font-family: var(--font-num); font-weight: 700; font-size: 26px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.badge { fill: var(--orange); }
+.badge-t { fill: var(--sheet); font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.pw { font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; }
+.pw .b { fill: var(--pt); } .pw .x { fill: var(--orange); }
+.bar { fill: var(--green); fill-opacity: 0.35; stroke: var(--green); stroke-width: 2; }
+.bar.last { fill-opacity: 0.75; }
+.base-line { stroke: var(--grid-major); stroke-width: 2; }
+.cap { fill: var(--muted); font-family: var(--font-body); font-size: 20px; }
+.chip-bg { fill: color-mix(in srgb, var(--green) 14%, var(--sheet)); stroke: var(--green); stroke-width: 2; }
+.chip-t { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 28px; dominant-baseline: central; }
+.chip-w { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 22px; dominant-baseline: central; }
+.count-t { fill: var(--orange); font-family: var(--font-display); font-weight: 800; font-size: 24px; dominant-baseline: central; }
+.pop, .grow, .draw, .fade { transform-box: fill-box; }
+.pop { transform-origin: center; animation: popin 0.45s ease both; }
+.grow { transform-origin: bottom; animation: grow 0.5s ease both; }
+.draw { stroke-dasharray: 1; animation: draw 0.5s ease both; }
+.fade { animation: fadein 0.4s ease both; }
+@keyframes popin { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pop, .grow, .draw, .fade, .eqn .pop { animation: none; } }
+@media (max-width: 600px) { .eqn { font-size: 1.8rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Logarithms as Exponents</h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Mode">
+        <button type="button" data-mode="explore" class="on">Explore</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="vis">
+      <div class="board"><svg id="svg" viewBox="0 0 1200 640" role="img" aria-label="Start at 1 and multiply by the base. Each hop is one multiplication; the bars show how big each number is."></svg></div>
+      <section class="card strip">
+        <div>
+          <p class="lead" id="lead" hidden></p>
+          <div class="eqn" id="eqn" aria-live="polite"></div>
+          <p class="words" id="words"></p>
+        </div>
+        <button type="button" class="flip" id="flip" hidden>Switch form</button>
+      </section>
+    </div>
+
+    <div class="panel" id="explore">
+      <section class="card">
+        <div class="pick">
+          <span class="tl">Base</span>
+          <div class="seg-btns nums" role="group" aria-label="Base" id="bases">
+            <button type="button" data-b="2" class="on">2</button><button type="button" data-b="3">3</button><button type="button" data-b="4">4</button><button type="button" data-b="5">5</button><button type="button" data-b="10">10</button>
+          </div>
+          <span class="tl">Number</span>
+          <div class="stepper"><button type="button" id="yDown" aria-label="Smaller number">−</button><output id="yOut">8</output><button type="button" id="yUp" aria-label="Bigger number">+</button></div>
+        </div>
+      </section>
+      <section class="card">
+        <p class="label">Steps</p>
+        <ol class="steps" id="steps"></ol>
+      </section>
+      <div class="btns">
+        <button type="button" id="back">Back</button>
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="restart">Start over</button>
+      </div>
+      <section class="card key">
+        <p class="label">What a log means</p>
+        <p class="rule">log<sub class="cb">b</sub>(<span class="cy">y</span>) = <span class="cx">x</span><span class="means">means</span><span class="cb">b</span><sup class="cx">x</sup> = <span class="cy">y</span></p>
+        <p class="big">The log is the exponent.</p>
+      </section>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <p class="label">Practice</p>
+        <div class="seg-btns small" role="group" aria-label="Question type" id="types">
+          <button type="button" data-t="tolog">To log form</button><button type="button" data-t="toexp">To exponent form</button><button type="button" data-t="eval">Find the log</button><button type="button" data-t="mix" class="on">Mix</button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="check">Check</button>
+        <button type="button" id="showme">Show me</button>
+        <button type="button" id="newq">New question</button>
+      </div>
+      <p class="score">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
+      <section class="card key">
+        <p class="label">What a log means</p>
+        <p class="rule">log<sub class="cb">b</sub>(<span class="cy">y</span>) = <span class="cx">x</span><span class="means">means</span><span class="cb">b</span><sup class="cx">x</sup> = <span class="cy">y</span></p>
+        <p class="big">The log is the exponent.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const svg = $('#svg'), eqn = $('#eqn'), words = $('#words'), lead = $('#lead'), flipBtn = $('#flip');
+let mode = 'explore';
+
+/* ---------- numbers ---------- */
+const MAXX = { 2: 8, 3: 6, 4: 5, 5: 5, 10: 6 }, MINX = -3;
+const neg = k => (k < 0 ? '−' + -k : String(k));
+const parts = (b, k) => (k >= 0 ? { n: b ** k, d: 1 } : { n: 1, d: b ** -k });
+const big = n => (n >= 10000 ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(n));
+const yTxt = (b, x) => { const p = parts(b, x); return p.d === 1 ? big(p.n) : `${p.n}/${big(p.d)}`; };
+const yHTML = (b, x) => { const p = parts(b, x); return p.d === 1 ? big(p.n) : `<span class="fr"><span>${p.n}</span><span>${big(p.d)}</span></span>`; };
+const expT = (b, x) => `<span class="nw"><span class="cb">${b}</span><sup class="cx">${neg(x)}</sup> = <span class="cy">${yTxt(b, x)}</span></span>`;
+const logT = (b, x) => `<span class="nw">log<sub class="cb">${b}</sub>(<span class="cy">${yTxt(b, x)}</span>) = <span class="cx">${neg(x)}</span></span>`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+/* Big equations: every part has a key so it can slide to its new spot when the form changes. */
+const expForm = (b, xs, ys) =>
+  `<span data-k="b" class="cb">${b}</span><span data-k="x" class="cx sup">${xs}</span><span data-k="eq" class="op">=</span><span data-k="y" class="cy">${ys}</span>`;
+const logForm = (b, xs, ys) =>
+  `<span data-k="log" class="lg">log</span><span data-k="b" class="cb sub">${b}</span><span data-k="lp">(</span><span data-k="y" class="cy">${ys}</span><span data-k="rp">)</span><span data-k="eq" class="op">=</span><span data-k="x" class="cx">${xs}</span>`;
+
+/* Slide each keyed part from where it was to where it is in the new form (FLIP), fade the rest in or out. */
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function morph(el, html, dur = 1100) {
+  if (reduced) { el.innerHTML = html; return; }
+  const box = el.getBoundingClientRect();
+  const old = {};
+  el.querySelectorAll('[data-k]').forEach(n => {
+    const r = n.getBoundingClientRect();
+    old[n.dataset.k] = { r, node: n, fs: getComputedStyle(n).fontSize };
+  });
+  el.innerHTML = html;
+  const nb = el.getBoundingClientRect();
+  const moved = [];
+  el.querySelectorAll('[data-k]').forEach(n => {
+    const o = old[n.dataset.k];
+    n.style.transition = 'none';
+    if (o) {
+      const r = n.getBoundingClientRect();
+      const s = r.height ? o.r.height / r.height : 1;
+      n.style.transformOrigin = '0 0';
+      n.style.transform = `translate(${o.r.left - box.left - (r.left - nb.left)}px, ${o.r.top - box.top - (r.top - nb.top)}px) scale(${s})`;
+      delete old[n.dataset.k];
+    } else n.style.opacity = '0';
+    moved.push(n);
+  });
+  const ghosts = Object.values(old).map(o => {
+    const g = o.node.cloneNode(true);
+    Object.assign(g.style, { position: 'absolute', left: o.r.left - box.left + 'px', top: o.r.top - box.top + 'px', margin: 0, fontSize: o.fs, verticalAlign: 'baseline', pointerEvents: 'none' });
+    el.appendChild(g);
+    return g;
+  });
+  void el.offsetWidth;
+  requestAnimationFrame(() => {
+    moved.forEach(n => {
+      n.style.transition = `transform ${dur}ms cubic-bezier(.6,.05,.3,1), opacity 400ms ease ${dur * 0.6}ms`;
+      n.style.transform = '';
+      n.style.opacity = '';
+    });
+    ghosts.forEach(g => { g.style.transition = 'opacity 300ms ease'; g.style.opacity = '0'; });
+    setTimeout(() => ghosts.forEach(g => g.remove()), 400);
+  });
+}
+
+/* ---------- board: hops from 1 to the number, bars under them ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+function drawChain(b, x, shown, o = {}) {
+  const n = Math.abs(x), ln = o.blind ? 3 : n, slots = Math.max(ln + 1, 4), sp = Math.min(1100 / slots, 240);
+  const cx = k => 600 + (k - ln / 2) * sp;
+  const cy = 250, w = Math.min(sp * 0.74, 175), h = 86;
+  const yb = 612, maxH = 220;
+  const maxV = x >= 0 ? b ** n : 1;
+  const delay = k => (o.stagger ? (k - 1) * 0.75 : 0);
+  const anim = k => o.stagger || (o.animLast && k === shown);
+  let g = '';
+  // Goal chip, top right
+  const goalS = yTxt(b, x);
+  const gw = 150 + goalS.length * 17;
+  g += `<rect class="chip-bg" x="${1180 - gw}" y="14" width="${gw}" height="54" rx="12"/><text class="chip-w" x="${1196 - gw}" y="41">Goal</text><text class="chip-t" x="${1270 - gw}" y="42">${goalS}</text>`;
+  // Count, top left
+  if (shown > 0) g += `<text class="count-t" x="24" y="41">${x >= 0 ? plural(shown, 'multiplication') : plural(shown, 'division')} by ${b}</text>`;
+  else g += `<text class="cap" x="24" y="41">Start at 1</text>`;
+  g += `<line class="base-line" x1="30" x2="1170" y1="${yb}" y2="${yb}"/>`;
+  for (let k = 0; k <= shown; k++) {
+    const X = cx(k), p = parts(b, x >= 0 ? k : -k);
+    const isGoal = k === n && !o.blind;
+    const cls = isGoal ? 'goal' : k === 0 ? 'start' : '';
+    const a = anim(k) && k > 0, d = delay(k) + 0.35;
+    const st = a ? ` style="animation-delay:${d}s"` : '';
+    // value box
+    let txt;
+    if (p.d === 1) {
+      const s = big(p.n), fs = Math.min(40, (w - 16) / (s.length * 0.62));
+      txt = `<text class="nv${isGoal ? ' goal-t' : ''}" x="${X}" y="${cy + 2}" font-size="${fs}">${s}</text>`;
+    } else {
+      const s = big(p.d), fs = Math.min(30, (w - 16) / (s.length * 0.62));
+      txt = `<text class="nv${isGoal ? ' goal-t' : ''}" x="${X}" y="${cy - 19}" font-size="${fs}">1</text><line x1="${X - fs * s.length * 0.33}" x2="${X + fs * s.length * 0.33}" y1="${cy}" y2="${cy}" stroke="currentColor" class="${isGoal ? 'cy' : ''}" style="stroke:${isGoal ? 'var(--green)' : 'var(--ink)'};stroke-width:3"/><text class="nv${isGoal ? ' goal-t' : ''}" x="${X}" y="${cy + 21}" font-size="${fs}">${s}</text>`;
+    }
+    g += `<g class="${a ? 'pop' : ''}"${st}><rect class="node ${cls}" x="${X - w / 2}" y="${cy - h / 2}" width="${w}" height="${h}" rx="14"/>${txt}</g>`;
+    // power label under it
+    const pk = x >= 0 ? k : -k;
+    g += `<text class="pw${a ? ' fade' : ''}"${st} x="${X}" y="${cy + h / 2 + 48}"><tspan class="b">${b}</tspan><tspan class="x" dy="-14" font-size="21">${neg(pk)}</tspan></text>`;
+    // bar (none before the answer, its height would give the answer away)
+    if (!o.blind) {
+    const v = p.n / p.d, bh = Math.max(4, (v / maxV) * maxH), bw = Math.min(w * 0.6, 90);
+    g += `<rect class="bar${k === shown ? ' last' : ''}${a ? ' grow' : ''}"${a ? ` style="animation-delay:${d + 0.1}s"` : ''} x="${X - bw / 2}" y="${yb - bh}" width="${bw}" height="${bh}" rx="4"/>`;
+    }
+    // hop from the one before
+    if (k > 0) {
+      const x1 = cx(k - 1) + w * 0.16, x2 = X - w * 0.16, top = cy - h / 2 - 4, mid = (x1 + x2) / 2, apex = top - 55;
+      const st0 = a ? ` style="animation-delay:${delay(k)}s"` : '';
+      g += `<path class="hop${a ? ' draw' : ''}"${st0} pathLength="1" d="M${x1},${top} Q${mid},${top - 110} ${x2},${top}"/>`;
+      g += `<path class="hop-head${a ? ' fade' : ''}"${st} d="M${x2},${top + 2} l-15,-11 l13,-7 z"/>`;
+      g += `<text class="hop-lbl${a ? ' fade' : ''}"${st0} x="${mid}" y="${apex - 10}">${x >= 0 ? '×' : '÷'} ${b}</text>`;
+      g += `<g class="${a ? 'pop' : ''}"${st}><circle class="badge" cx="${mid}" cy="${apex - 54}" r="22"/><text class="badge-t" x="${mid}" y="${apex - 53}" font-size="${pk < 0 ? 19 : 24}">${neg(pk)}</text></g>`;
+    }
+  }
+  svg.innerHTML = g;
+}
+
+/* ---------- Explore ---------- */
+const ex = { b: 2, x: 3, step: 0, form: 'exp' };
+const steps = () => { const a = ['ask']; for (let k = 1; k <= Math.abs(ex.x); k++) a.push('hop'); a.push('found', 'convert'); return a; };
+
+function stepText(i) {
+  const { b, x } = ex, n = Math.abs(x), y = yTxt(b, x), kind = steps()[i];
+  const B = `<span class="cb">${b}</span>`, Y = `<span class="cy">${y}</span>`;
+  if (kind === 'ask') {
+    if (x === 0) return `What power of ${B} makes ${Y}? Start at 1.`;
+    return `What power of ${B} makes ${Y}? Start at 1 and ${x > 0 ? 'multiply' : 'divide'} by ${B} until you reach ${Y}.`;
+  }
+  if (kind === 'hop') {
+    const v = yTxt(b, x > 0 ? i : -i);
+    return x > 0 ? `× ${B} makes ${v}. That is <span class="cx">${plural(i, 'multiplication')}</span>.`
+      : `÷ ${B} makes ${v}. Dividing counts down: <span class="cx">${neg(-i)}</span>.`;
+  }
+  if (kind === 'found') {
+    if (x === 0) return `We are already at 1 with no multiplying, so the exponent is <span class="cx">0</span>: ${expT(b, x)}.`;
+    if (x > 0) return `We reached ${Y} by multiplying by ${B} <span class="cx">${n} time${n === 1 ? '' : 's'}</span>, so ${expT(b, x)}.`;
+    return `We divided by ${B} <span class="cx">${n} time${n === 1 ? '' : 's'}</span>, so the exponent is <span class="cx">${neg(x)}</span>: ${expT(b, x)}.`;
+  }
+  return `A logarithm asks for that exponent: ${logT(b, x)}. Say “log base ${b} of ${y} is ${neg(x)}.”`;
+}
+
+function foundWords() {
+  const { b, x } = ex;
+  if (x === 0) return 'No multiplying at all: just 1.';
+  const op = x > 0 ? ' × ' : ' ÷ ';
+  return '1' + (op + b).repeat(Math.abs(x)) + ' = ' + yTxt(b, x);
+}
+
+function renderExplore(anim) {
+  const { b, x, step } = ex, n = Math.abs(x), list = steps(), kind = list[step];
+  const shown = Math.min(step, n);
+  drawChain(b, x, shown, { animLast: anim && kind === 'hop' });
+  lead.hidden = true;
+  const Y = yHTML(b, x);
+  flipBtn.hidden = kind !== 'convert';
+  if (kind === 'ask' || kind === 'hop') {
+    eqn.innerHTML = expForm(b, '?', Y); ex.form = 'exp';
+    words.textContent = kind === 'ask' ? `${b} to what power makes ${yTxt(b, x)}?`
+      : `${plural(shown, x > 0 ? 'multiplication' : 'division')} so far…`;
+  } else if (kind === 'found') {
+    eqn.innerHTML = expForm(b, neg(x), Y); ex.form = 'exp';
+    if (anim) eqn.querySelector('[data-k="x"]').classList.add('pop');
+    words.textContent = foundWords();
+  } else {
+    if (anim) morph(eqn, logForm(b, neg(x), Y)); else eqn.innerHTML = logForm(b, neg(x), Y);
+    ex.form = 'log';
+    words.textContent = `log base ${b} of ${yTxt(b, x)} is ${neg(x)}. The log is the exponent.`;
+  }
+  // Only the latest hop is listed so the steps stay short.
+  const idx = [];
+  for (let i = 0; i <= step; i++) if (!(list[i] === 'hop' && i < Math.min(step, n))) idx.push(i);
+  $('#steps').innerHTML = idx.map((i, j) => `<li value="${j + 1}" class="${i === step ? 'now' : ''}">${stepText(i)}</li>`).join('');
+  $('#back').disabled = step === 0;
+  $('#next').disabled = step === list.length - 1;
+  $('#yOut').innerHTML = yTxt(b, x);
+  $('#yDown').disabled = x <= MINX;
+  $('#yUp').disabled = x >= MAXX[b];
+  document.querySelectorAll('#bases button').forEach(btn => btn.classList.toggle('on', +btn.dataset.b === b));
+}
+
+flipBtn.onclick = () => {
+  const { b, x } = ex, Y = yHTML(b, x);
+  if (ex.form === 'log') { morph(eqn, expForm(b, neg(x), Y)); ex.form = 'exp'; words.textContent = foundWords(); }
+  else { morph(eqn, logForm(b, neg(x), Y)); ex.form = 'log'; words.textContent = `log base ${b} of ${yTxt(b, x)} is ${neg(x)}. The log is the exponent.`; }
+};
+$('#next').onclick = () => { if (ex.step < steps().length - 1) { ex.step++; renderExplore(true); } };
+$('#back').onclick = () => { if (ex.step > 0) { ex.step--; renderExplore(false); } };
+$('#restart').onclick = () => { ex.step = 0; renderExplore(false); };
+$('#yDown').onclick = () => { if (ex.x > MINX) { ex.x--; ex.step = 0; renderExplore(false); } };
+$('#yUp').onclick = () => { if (ex.x < MAXX[ex.b]) { ex.x++; ex.step = 0; renderExplore(false); } };
+document.querySelectorAll('#bases button').forEach(btn => btn.onclick = () => {
+  ex.b = +btn.dataset.b; ex.x = Math.min(ex.x, MAXX[ex.b]); ex.step = 0; renderExplore(false);
+});
+
+/* ---------- Practice ---------- */
+const pr = { type: 'mix', q: null, tried: false, done: false, right: 0, total: 0, last: '', timer: [] };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const fb = $('#fb');
+
+function newQ() {
+  pr.timer.forEach(clearTimeout); pr.timer = [];
+  let q;
+  do {
+    const t = pr.type === 'mix' ? pick(['tolog', 'toexp', 'eval']) : pr.type;
+    const b = pick([2, 2, 3, 3, 4, 5, 5, 6, 7, 8, 9, 10, 10]);
+    const xs = [0, 1];
+    for (let k = 2; k <= 7 && b ** k <= 10000; k++) xs.push(k, k, k);
+    xs.push(-1, -2); if (b <= 3) xs.push(-3);
+    q = { t, b, x: pick(xs) };
+  } while (`${q.b},${q.x}` === pr.last);
+  pr.last = `${q.b},${q.x}`;
+  pr.q = q; pr.tried = false; pr.done = false;
+  renderPractice();
+}
+
+function renderPractice() {
+  const { t, b, x } = pr.q;
+  lead.hidden = false; flipBtn.hidden = true;
+  fb.textContent = ''; fb.className = 'fb';
+  const box = (k, cls) => `<input data-k="${k}" class="${cls}" autocomplete="off" spellcheck="false" aria-label="${k === 'b' ? 'base' : k === 'x' ? 'exponent' : 'result'}">`;
+  const yw = yTxt(b, x).length > 3 ? ' wide' : '';
+  if (t === 'tolog') {
+    lead.innerHTML = `Write ${expT(b, x)} in log form.`;
+    eqn.innerHTML = `<span data-k="log">log</span>${box('b', 'cb sub')}<span data-k="lp">(</span>${box('y', 'cy' + yw)}<span data-k="rp">)</span><span data-k="eq" class="op">=</span>${box('x', 'cx')}`;
+  } else if (t === 'toexp') {
+    lead.innerHTML = `Write ${logT(b, x)} in exponent form.`;
+    eqn.innerHTML = `${box('b', 'cb')}${box('x', 'cx sup')}<span data-k="eq" class="op">=</span>${box('y', 'cy' + yw)}`;
+  } else {
+    lead.innerHTML = `Find the value of the log.`;
+    eqn.innerHTML = `<span data-k="log">log</span><span data-k="b" class="cb sub">${b}</span><span data-k="lp">(</span><span data-k="y" class="cy">${yHTML(b, x)}</span><span data-k="rp">)</span><span data-k="eq" class="op">=</span>${box('x', 'cx')}`;
+  }
+  words.textContent = '';
+  drawChain(b, x, 0, { blind: true });
+  eqn.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); pr.done ? newQ() : check(); }
+  }));
+  $('#check').disabled = false; $('#showme').disabled = false;
+  const first = eqn.querySelector('input');
+  if (first && mode === 'practice') first.focus({ preventScroll: true });
+}
+
+/* Reads 8, -3, −3, 1/8, 0.125, 1 000 */
+function val(s) {
+  s = s.replace(/[\s, ]/g, '').replace(/[−–]/g, '-');
+  if (!s) return NaN;
+  const m = s.match(/^(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/);
+  if (m) return +m[2] === 0 ? NaN : +m[1] / +m[2];
+  return /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? +s : NaN;
+}
+const same = (a, b) => Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(b));
+
+function check() {
+  if (pr.done) return;
+  const { t, b, x } = pr.q, p = parts(b, x), y = p.n / p.d;
+  const ins = [...eqn.querySelectorAll('input')];
+  if (ins.some(i => !i.value.trim())) { fb.className = 'fb no'; fb.textContent = 'Fill in every box first.'; return; }
+  const want = { b, x, y }, got = {};
+  ins.forEach(i => { got[i.dataset.k] = val(i.value); });
+  const bad = ins.filter(i => !same(got[i.dataset.k], want[i.dataset.k])).map(i => i.dataset.k);
+  ins.forEach(i => { i.classList.toggle('bad', bad.includes(i.dataset.k)); i.classList.remove('good'); });
+  if (!pr.tried) { pr.tried = true; pr.total++; if (!bad.length) pr.right++; }
+  updateScore();
+  if (!bad.length) {
+    ins.forEach(i => { i.classList.add('good'); i.disabled = true; });
+    pr.done = true;
+    fb.className = 'fb ok';
+    fb.innerHTML = `Yes! ${expT(b, x)} and ${logT(b, x)} say the same thing.`;
+    words.textContent = x === 0 ? `${b} to the power 0 is 1.` : foundWordsFor(b, x);
+    drawChain(b, x, Math.abs(x), { stagger: true });
+    $('#check').disabled = true; $('#showme').disabled = true;
+    return;
+  }
+  fb.className = 'fb no';
+  fb.innerHTML = hint(t, b, x, bad, got);
+  eqn.querySelector('input.bad').focus({ preventScroll: true });
+}
+
+function foundWordsFor(b, x) {
+  return '1' + ((x > 0 ? ' × ' : ' ÷ ') + b).repeat(Math.abs(x)) + ' = ' + yTxt(b, x);
+}
+
+function hint(t, b, x, bad, got) {
+  const p = parts(b, x), y = p.n / p.d, B = `<span class="cb">${b}</span>`, Y = `<span class="cy">${yTxt(b, x)}</span>`;
+  const has = k => bad.includes(k);
+  if (t === 'eval') {
+    let h = `Ask: ${B} to what power makes ${Y}?`;
+    if (x === 0) h += ` Any base to the power 0 is 1.`;
+    else if (x < 0 && got.x > 0) h += ` It is a fraction, so you divide by ${B}: the exponent is negative.`;
+    else if (x > 0) h += ` Count how many times you multiply 1 by ${B}.`;
+    return h;
+  }
+  if (has('b') && has('y') && same(got.b, y) && same(got.y, b)) return `Close! The base ${B} goes ${t === 'tolog' ? 'small, under log' : 'on the bottom of the power'}, and ${Y} is the result.`;
+  if (has('x') && has('y') && same(got.x, y) && same(got.y, x)) return t === 'tolog' ? `Switch two boxes: the log equals the exponent, and the result goes in the brackets.` : `Switch two boxes: the log's answer is the exponent, and the number in brackets is the result.`;
+  if (t === 'tolog') {
+    if (has('b')) return `The base is the number that gets multiplied. It stays the base in log form, written small under log.`;
+    if (has('x')) return `The log equals the exponent. Which number is up high in ${expT(b, x)}?`;
+    return `What the power makes, the number after the = sign, goes in the brackets.`;
+  }
+  if (has('b')) return `The small number written under log is the base.`;
+  if (has('x')) return `The log's answer becomes the exponent.`;
+  return `The number in the brackets is what the power makes.`;
+}
+
+function showMe() {
+  if (pr.done) return;
+  const { t, b, x } = pr.q, Y = yHTML(b, x);
+  if (!pr.tried) { pr.tried = true; pr.total++; updateScore(); }
+  pr.done = true;
+  $('#check').disabled = true; $('#showme').disabled = true;
+  fb.className = 'fb show';
+  drawChain(b, x, Math.abs(x), { stagger: true });
+  const T = (f, ms) => pr.timer.push(setTimeout(f, ms));
+  if (t === 'tolog') {
+    eqn.innerHTML = expForm(b, neg(x), Y);
+    fb.innerHTML = `The base ${`<span class="cb">${b}</span>`} stays the base, the result goes in the brackets, and the log equals the exponent: ${logT(b, x)}.`;
+    T(() => morph(eqn, logForm(b, neg(x), Y)), 500);
+  } else if (t === 'toexp') {
+    eqn.innerHTML = logForm(b, neg(x), Y);
+    fb.innerHTML = `The base stays the base, the log's answer becomes the exponent, and the number in brackets is the result: ${expT(b, x)}.`;
+    T(() => morph(eqn, expForm(b, neg(x), Y)), 500);
+  } else {
+    eqn.innerHTML = logForm(b, '?', Y);
+    fb.innerHTML = `Turn it into a power: ${`<span class="cb">${b}</span>`}<sup class="cx">?</sup> = <span class="cy">${yTxt(b, x)}</span>. The exponent that works is <span class="cx">${neg(x)}</span>, so ${logT(b, x)}.`;
+    T(() => morph(eqn, expForm(b, '?', Y)), 500);
+    T(() => { const k = eqn.querySelector('[data-k="x"]'); k.textContent = neg(x); k.classList.add('pop'); }, 2000);
+    T(() => morph(eqn, logForm(b, neg(x), Y)), 3000);
+  }
+  words.textContent = x === 0 ? `${b} to the power 0 is 1.` : foundWordsFor(b, x);
+}
+
+function updateScore() { $('#right').textContent = pr.right; $('#tried').textContent = pr.total; }
+$('#check').onclick = check;
+$('#showme').onclick = showMe;
+$('#newq').onclick = newQ;
+document.querySelectorAll('#types button').forEach(btn => btn.onclick = () => {
+  pr.type = btn.dataset.t;
+  document.querySelectorAll('#types button').forEach(o => o.classList.toggle('on', o === btn));
+  newQ();
+});
+
+/* ---------- mode ---------- */
+document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick = () => {
+  mode = btn.dataset.mode;
+  document.querySelectorAll('[data-mode]').forEach(o => o.classList.toggle('on', o === btn));
+  $('#explore').hidden = mode !== 'explore';
+  $('#practice').hidden = mode !== 'practice';
+  if (mode === 'explore') renderExplore(false);
+  else if (pr.q) { pr.done = false; renderPractice(); } else newQ();
+});
+document.addEventListener('keydown', e => {
+  if (mode !== 'explore' || e.target.closest('input, button')) return;
+  if (e.key === 'ArrowRight') $('#next').click();
+  if (e.key === 'ArrowLeft') $('#back').click();
+});
+renderExplore(false);
+})();
+</script>
+
+</body>
+</html>

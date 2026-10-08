@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Domain and Range</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Domain and Range practice: a simple graph (separate points, segments, rays, lines, V shapes, parabolas)
+   with open and closed endpoints and arrows. Students type the domain and range in words, set-builder or
+   interval notation and Check; equivalent forms are accepted. A right answer (or Show answer) draws the
+   domain along the x-axis in blue and the range along the y-axis in orange. */
+.main { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr); }
+h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+@media (max-width: 1440px) { .seg-btns button { font-size: 1rem; padding: 6px 11px; } .tools { gap: 10px; } header { gap: 8px 16px; } }
+
+.panel { gap: 10px; }
+.panel .card { padding: 12px 16px; }
+.ans .label { display: flex; align-items: baseline; gap: 10px; font-size: 1rem; margin-bottom: 6px; }
+.ans .label b { font-family: var(--font-display); font-size: 1.5rem; text-transform: none; letter-spacing: 0; }
+.ans.dom .label b { color: var(--pt); } .ans.rng .label b { color: var(--orange); }
+.ans input { width: 100%; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; color: var(--ink); background: var(--paper);
+  border: 3px solid var(--grid-major); border-radius: 10px; height: 60px; padding: 0 14px; }
+.ans.dom input { border-color: var(--pt); } .ans.rng input { border-color: var(--orange); }
+.ans.words input { font-family: var(--font-body); font-size: 1.35rem; }
+.ans input.ok { background: color-mix(in srgb, var(--green) 14%, var(--paper)); }
+.ans input.no { background: color-mix(in srgb, var(--warn) 10%, var(--paper)); }
+.fb { margin: 8px 0 0; font-size: 1.1rem; font-weight: 700; min-height: 1.5em; line-height: 1.35; }
+.fb:empty { display: none; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.almost { color: var(--orange); } .fb.show { color: var(--ink); }
+.fb .big { display: block; font-family: var(--font-num); font-size: 1.5rem; margin-top: 2px; }
+.ex { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.ex code { font-family: var(--font-num); font-weight: 700; color: var(--ink); background: var(--chip); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+.keys button { font-family: var(--font-num); font-size: 1.35rem; min-width: 44px; min-height: 46px; padding: 4px 10px; background: var(--sheet); }
+.keys.words button { font-family: var(--font-body); font-size: 1.1rem; }
+.btns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.btns button { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.score { margin: 0 0 0 auto; font-size: 1.05rem; color: var(--muted); white-space: nowrap; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.35rem; }
+
+/* Board drawing */
+.gr { fill: none; stroke: var(--ink); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.gr-head { fill: var(--ink); }
+.dot { fill: var(--ink); stroke: var(--sheet); stroke-width: 2; }
+.dot.open { fill: var(--sheet); stroke: var(--ink); stroke-width: 4; }
+.pd { stroke-width: 9; stroke-linecap: butt; opacity: 0.75; }
+.pd.x { stroke: var(--pt); } .pd.y { stroke: var(--orange); }
+.pd-head.x { fill: var(--pt); } .pd-head.y { fill: var(--orange); }
+.pdot.x { fill: var(--pt); stroke: var(--pt); stroke-width: 3; } .pdot.y { fill: var(--orange); stroke: var(--orange); stroke-width: 3; }
+.pdot.open { fill: var(--sheet); stroke-width: 4; }
+.guide { fill: none; stroke-width: 2.5; stroke-dasharray: 6 6; }
+.guide.x { stroke: var(--pt); } .guide.y { stroke: var(--orange); }
+@media (max-width: 600px) { .ans input { font-size: 1.3rem; height: 56px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1><span class="d">Domain</span> and <span class="r">Range</span></h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Notation" id="noteBtns">
+        <button type="button" data-n="words">Words</button>
+        <button type="button" data-n="set" class="on">Set-builder</button>
+        <button type="button" data-n="interval">Interval</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Graphs" id="kindBtns">
+        <button type="button" data-k="mixed" class="on">Mixed</button>
+        <button type="button" data-k="discrete">Discrete</button>
+        <button type="button" data-k="continuous">Continuous</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="plane" role="img" aria-label="A graph on a coordinate plane"></svg>
+    </div>
+
+    <div class="panel">
+      <section class="card ans dom" id="domCard">
+        <label class="label" for="dIn"><b>Domain</b> the x-values</label>
+        <input id="dIn" autocomplete="off" spellcheck="false" aria-describedby="dFb">
+        <p class="fb" id="dFb" aria-live="polite"></p>
+      </section>
+      <section class="card ans rng" id="rngCard">
+        <label class="label" for="rIn"><b>Range</b> the y-values</label>
+        <input id="rIn" autocomplete="off" spellcheck="false" aria-describedby="rFb">
+        <p class="fb" id="rFb" aria-live="polite"></p>
+      </section>
+      <section class="card">
+        <p class="ex" id="ex"></p>
+        <div class="keys" id="keys"></div>
+        <div class="btns">
+          <button type="button" class="go" id="checkBtn">Check</button>
+          <button type="button" id="showBtn">Show answer</button>
+          <button type="button" id="newBtn">New graph</button>
+          <p class="score" title="The first Check on each graph counts">Correct: <b id="score">0 of 0</b></p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MathBoard: a coordinate-plane board shared by the concept visuals.
+   Usage:
+     const b = MathBoard.create(svgEl, { min: -10, max: 10 });
+     const A = b.point({ name: "A", x: -3, y: -2, onMove: render });
+     const ln = b.line();            // b.lineThrough(ln, A, B) extends it across the plane
+     const s  = b.segment("green");  // b.setSegment(s, p, q, { arrow: true })
+     const t  = b.label("green");    // t.set("rise = 4", x, y, "start") / t.hide()
+     const f  = b.fill("green");     // b.setPolygon(f, [p, q, r])
+   Points snap to integers and stay inside [min, max]. Helpers: MathBoard.fmt (true minus sign), MathBoard.gcd. */
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const set = (e, attrs) => { for (const k in attrs) e.setAttribute(k, attrs[k]); };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+
+  function create(svg, opts = {}) {
+    const min = opts.min ?? -10, max = opts.max ?? 10, unit = opts.unit ?? 30, pad = opts.pad ?? 30;
+    const size = (max - min) * unit + pad * 2;
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    const sx = x => pad + (x - min) * unit;
+    const sy = y => pad + (max - y) * unit;
+    const clamp = v => Math.max(min, Math.min(max, v));
+
+    const defs = el("defs", {}, svg);
+    ["green", "orange"].forEach(c => {
+      const m = el("marker", { id: `mb-arr-${c}`, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, defs);
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: `mb-arrow ${c}` }, m);
+    });
+
+    // Layers keep drawing order fixed: grid, fills, lines, labels, points.
+    const layers = {};
+    ["grid", "fills", "lines", "labels", "points"].forEach(n => (layers[n] = el("g", {}, svg)));
+
+    const g = layers.grid;
+    const major = opts.majorEvery ?? 0, tickEvery = opts.tickEvery ?? 1; // grade 8: every line labeled, counting by 1
+    for (let i = min; i <= max; i++) {
+      const cls = i === 0 ? "mb-axis" : major && i % major === 0 ? "mb-major" : "mb-minor";
+      el("line", { x1: sx(i), y1: sy(min), x2: sx(i), y2: sy(max), class: cls }, g);
+      el("line", { x1: sx(min), y1: sy(i), x2: sx(max), y2: sy(i), class: cls }, g);
+    }
+    for (let i = min; i <= max; i++) {
+      if (i === 0 || i % tickEvery) continue;
+      el("text", { x: sx(i), y: sy(0) + 22, class: "mb-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, g).textContent = fmt(i);
+    }
+    el("text", { x: sx(max) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(max) + 16, class: "mb-tick" }, g).textContent = "y";
+
+    function toPlane(evt) {
+      const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+      const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: clamp(Math.round((p.x - pad) / unit + min)), y: clamp(Math.round(max - (p.y - pad) / unit)) };
+    }
+
+    const show = (e, on) => { e.style.display = on ? "" : "none"; };
+
+    const board = {
+      svg, min, max, sx, sy, clamp, toPlane, layers, show,
+      line(cls = "") { return el("line", { class: `mb-line ${cls}` }, layers.lines); },
+      segment(color) { return el("line", { class: `mb-seg ${color}` }, layers.lines); },
+      fill(color) { return el("path", { class: `mb-fill ${color}` }, layers.fills); },
+
+      // Draw `line` through plane points p and q, extended to the edges of the plane.
+      lineThrough(line, p, q) {
+        const dx = q.x - p.x, dy = q.y - p.y;
+        if (dx === 0 && dy === 0) return show(line, false);
+        show(line, true);
+        if (dx === 0) return set(line, { x1: sx(p.x), y1: sy(min), x2: sx(p.x), y2: sy(max) });
+        const m = dy / dx, pts = [];
+        [min, max].forEach(x => { const y = p.y + m * (x - p.x); if (y >= min - 1e-9 && y <= max + 1e-9) pts.push([x, y]); });
+        if (m !== 0) [min, max].forEach(y => { const x = p.x + (y - p.y) / m; if (x > min && x < max) pts.push([x, y]); });
+        const a = pts[0], b = pts[pts.length - 1];
+        set(line, { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]) });
+      },
+
+      // Segment from p to q in plane units. `arrow` adds an arrowhead at q; `gap` stops short of q (px), e.g. to clear a point.
+      setSegment(seg, p, q, { arrow = false, gap = 0 } = {}) {
+        let x2 = sx(q.x), y2 = sy(q.y);
+        const L = Math.hypot(x2 - sx(p.x), y2 - sy(p.y));
+        if (gap && L > gap) { x2 -= (x2 - sx(p.x)) / L * gap; y2 -= (y2 - sy(p.y)) / L * gap; }
+        set(seg, { x1: sx(p.x), y1: sy(p.y), x2, y2 });
+        const color = seg.classList.contains("green") ? "green" : "orange";
+        arrow ? seg.setAttribute("marker-end", `url(#mb-arr-${color})`) : seg.removeAttribute("marker-end");
+      },
+
+      setPolygon(path, pts) {
+        path.setAttribute("d", pts.map((p, i) => `${i ? "L" : "M"}${sx(p.x)},${sy(p.y)}`).join(" ") + " Z");
+      },
+
+      // Text with a backing chip so grid lines never cut through it. x, y are in px.
+      label(color = "") {
+        const bg = el("rect", { class: "mb-lbl-bg", rx: 5 }, layers.labels);
+        const t = el("text", { class: `mb-lbl ${color}` }, layers.labels);
+        return {
+          set(text, x, y, anchor = "middle") {
+            t.textContent = text; set(t, { x, y, "text-anchor": anchor });
+            show(t, true); show(bg, true);
+            const b = t.getBBox();
+            set(bg, { x: b.x - 5, y: b.y - 2, width: b.width + 10, height: b.height + 4 });
+          },
+          hide() { show(t, false); show(bg, false); }
+        };
+      },
+
+      /* Draggable, keyboard-movable point. onMove(point) runs after every move.
+         `allow(x, y)` can veto a position (return false). */
+      point({ name, x, y, onMove, allow, showCoords = true }) {
+        const h = el("g", { class: "mb-handle", tabindex: 0, role: "slider", "aria-label": `Point ${name}. Use arrow keys to move.` }, layers.points);
+        el("circle", { class: "hit", r: 26 }, h);
+        const ring = el("circle", { class: "ring", r: 18 }, h);
+        el("circle", { class: "dot", r: 14 }, h);
+        el("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, h).textContent = name;
+        const coord = el("text", { class: "mb-coord" }, h);
+        const P = {
+          name, x, y, el: h, showCoords,
+          moveTo(nx, ny, silent) {
+            nx = clamp(nx); ny = clamp(ny);
+            if (nx === P.x && ny === P.y) return;
+            if (allow && !allow(nx, ny)) return;
+            P.x = nx; P.y = ny; P.draw();
+            if (!silent && onMove) onMove(P);
+          },
+          // Place the coordinate tag; `away` is a point the tag should face away from.
+          draw(away) {
+            h.setAttribute("transform", `translate(${sx(P.x)},${sy(P.y)})`);
+            h.setAttribute("aria-valuetext", `(${P.x}, ${P.y})`);
+            coord.textContent = `(${fmt(P.x)}, ${fmt(P.y)})`;
+            let dx = away && P.x < away.x ? -1 : 1, dy = away && P.y < away.y ? -1 : 1;
+            if (P.x >= max - 2) dx = -1; if (P.x <= min + 2) dx = 1;
+            if (P.y >= max - 1) dy = -1; if (P.y <= min + 1) dy = 1;
+            set(coord, { x: dx * 20, y: dy > 0 ? -18 : 34, "text-anchor": dx > 0 ? "start" : "end" });
+            show(coord, P.showCoords);
+          }
+        };
+        h.addEventListener("pointerdown", e => { e.preventDefault(); h.setPointerCapture(e.pointerId); h.classList.add("drag"); ring.setAttribute("r", 24); h.focus(); });
+        h.addEventListener("pointermove", e => { if (h.hasPointerCapture(e.pointerId)) { const p = toPlane(e); P.moveTo(p.x, p.y); } });
+        const end = e => { if (h.hasPointerCapture(e.pointerId)) h.releasePointerCapture(e.pointerId); h.classList.remove("drag"); ring.setAttribute("r", 18); };
+        h.addEventListener("pointerup", end); h.addEventListener("pointercancel", end);
+        h.addEventListener("keydown", e => {
+          const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key];
+          if (!d) return; e.preventDefault(); P.moveTo(P.x + d[0], P.y + d[1]);
+        });
+        P.draw();
+        return P;
+      }
+    };
+    return board;
+  }
+
+  window.MathBoard = { create, fmt, gcd };
+})();
+</script>
+<script>
+(() => {
+  const { fmt } = MathBoard;
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const INF = Infinity, EDGE = 9.6;
+
+  const b = MathBoard.create($("plane"), { min: -10, max: 10 });
+  const defs = b.svg.querySelector("defs");
+  [["gr", "gr-head"], ["px", "pd-head x"], ["py", "pd-head y"]].forEach(([id, cls]) => {
+    const m = el("marker", { id: "dr-" + id, viewBox: "0 0 10 10", refX: 5, refY: 5, markerWidth: id === "gr" ? 4.2 : 2.6, markerHeight: id === "gr" ? 4.2 : 2.6, orient: "auto-start-reverse", markerUnits: "strokeWidth" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", class: cls }, m);
+  });
+  // The graph sits over the grid; the domain and range marks sit over the axes, under the graph.
+  const proj = el("g", {}, b.layers.fills), gfx = el("g", {}, b.layers.lines);
+
+  let note = "set", kind = "mixed", g = null, state = null;
+  let right = 0, tries = 0;
+
+  // ---------- answers: {set: [values]} or {lo, loC, hi, hiC} ----------
+  const ALL = { lo: -INF, loC: false, hi: INF, hiC: false };
+  const isSet = a => !!a.set;
+  function same(a, e) {
+    if (isSet(a) !== isSet(e)) return false;
+    if (isSet(e)) return a.set.length === e.set.length && a.set.every((v, i) => Math.abs(v - e.set[i]) < 1e-9);
+    const end = (v, c, w, d) => (v === w || Math.abs(v - w) < 1e-9) && (!isFinite(w) || c === d);
+    return end(a.lo, a.loC, e.lo, e.loC) && end(a.hi, a.hiC, e.hi, e.hiC);
+  }
+  const N = n => fmt(+n.toFixed(2));
+  const listWords = vs => vs.length === 1 ? N(vs[0]) : vs.slice(0, -1).map(N).join(", ") + " and " + N(vs[vs.length - 1]);
+  function write(a, v, how) {
+    if (isSet(a)) return how === "words" ? `the ${v}-values are ${listWords(a.set)}` : `{${a.set.map(N).join(", ")}}`;
+    const lo = isFinite(a.lo), hi = isFinite(a.hi);
+    if (how === "interval") return `${a.loC ? "[" : "("}${lo ? N(a.lo) : "−∞"}, ${hi ? N(a.hi) : "∞"}${a.hiC ? "]" : ")"}`;
+    if (how === "words") {
+      if (!lo && !hi) return "all real numbers";
+      const parts = [];
+      if (lo) parts.push(`greater than ${a.loC ? "or equal to " : ""}${N(a.lo)}`);
+      if (hi) parts.push(`less than ${a.hiC ? "or equal to " : ""}${N(a.hi)}`);
+      return `${v} is ${parts.join(" and ")}`;
+    }
+    if (!lo && !hi) return `{${v} | ${v} ∈ R}`;
+    if (lo && hi) return `{${v} | ${N(a.lo)} ${a.loC ? "≤" : "<"} ${v} ${a.hiC ? "≤" : "<"} ${N(a.hi)}, ${v} ∈ R}`;
+    return lo ? `{${v} | ${v} ${a.loC ? "≥" : ">"} ${N(a.lo)}, ${v} ∈ R}` : `{${v} | ${v} ${a.hiC ? "≤" : "<"} ${N(a.hi)}, ${v} ∈ R}`;
+  }
+
+  // ---------- reading what a student typed ----------
+  const NUM = "-?\\d+(?:\\.\\d+)?(?:/\\d+)?";
+  const num = s => { const [p, q] = s.split("/"); return q ? +p / +q : +p; };
+  const fail = msg => ({ err: msg });
+  const toSet = vs => ({ set: [...new Set(vs.map(v => +v.toFixed(6)))].sort((x, y) => x - y) });
+
+  // Symbols and spacing made uniform: true minus to "-", <= to ≤, inf to ∞, ℝ to r.
+  function tidy(s) {
+    return s.toLowerCase().replace(/[−–—]/g, "-").replace(/<=|=</g, "≤").replace(/>=|=>/g, "≥")
+      .replace(/infinity|inf/g, "∞").replace(/ℝ/g, "r").replace(/\s+/g, "");
+  }
+  function interval(n) {
+    if (n === "r" || n === "(-∞,∞)" || n === "(-∞,+∞)") return { ...ALL };
+    const m = n.match(new RegExp(`^([\\[(])(-?∞|${NUM}),(\\+?-?∞|${NUM})([\\])])$`));
+    if (!m) return fail("Interval notation looks like [−2, 5) or (−∞, 3].");
+    const lo = m[2] === "-∞" ? -INF : m[2] === "∞" ? null : num(m[2]);
+    const hi = /∞/.test(m[3]) ? (m[3].includes("-") ? null : INF) : num(m[3]);
+    if (lo === null) return fail("The left end can only be −∞, never ∞.");
+    if (hi === null) return fail("The right end can only be ∞, never −∞.");
+    if ((!isFinite(lo) && m[1] === "[") || (!isFinite(hi) && m[4] === "]")) return fail("∞ always gets a round bracket, because the graph never reaches it.");
+    if (lo >= hi) return fail("Write the smaller number first.");
+    return { lo, loC: m[1] === "[", hi, hiC: m[4] === "]" };
+  }
+  // Inequalities like -3≤x<5, x≥2, 4>y. Several are joined with commas or "and".
+  function inequalities(parts, v) {
+    const a = { ...ALL }; let used = 0, other = null;
+    for (const p of parts) {
+      if (!p) continue;
+      if (/^[a-z]∈r$/.test(p)) { if (p[0] !== v) other = p[0]; continue; }
+      const t = p.split(/(≤|≥|<|>)/);
+      if (t.length < 3 || t.length % 2 === 0) return fail(`I can't read “${p}”.`);
+      for (let i = 0; i + 2 < t.length; i += 2) {
+        let [L, op, R] = [t[i], t[i + 1], t[i + 2]];
+        const isV = s => /^[a-z]$/.test(s), isN = s => new RegExp(`^${NUM}$`).test(s);
+        if (isV(L) && L !== v) other = L; if (isV(R) && R !== v) other = R;
+        if (isN(L) && isV(R)) { [L, R] = [R, L]; op = { "≤": "≥", "≥": "≤", "<": ">", ">": "<" }[op]; }
+        else if (!(isV(L) && isN(R))) return fail(`I can't read “${p}”.`);
+        const n = num(R); used++;
+        if (op === "≥" || op === ">") { if (n > a.lo || (n === a.lo && op === ">")) { a.lo = n; a.loC = op === "≥"; } }
+        else if (n < a.hi || (n === a.hi && op === "<")) { a.hi = n; a.hiC = op === "≤"; }
+      }
+    }
+    if (other) return fail(`Use ${v}: the ${v === "x" ? "domain is about x-values" : "range is about y-values"}.`);
+    if (a.lo > a.hi || (a.lo === a.hi && !(a.loC && a.hiC))) return fail("No number fits both of those.");
+    if (a.lo === a.hi) return { set: [a.lo] };
+    return a;
+  }
+  function setBuilder(n, v) {
+    const inner = n.replace(/^\{/, "").replace(/\}$/, "");
+    const bar = inner.search(/[|:]/);
+    const right = bar < 0 ? inner : inner.slice(bar + 1), left = bar < 0 ? "" : inner.slice(0, bar);
+    if (left && /^[a-z]/.test(left) && left[0] !== v) return fail(`Use ${v}: the ${v === "x" ? "domain is about x-values" : "range is about y-values"}.`);
+    if (!right && /^[a-z]∈r$/.test(left)) return { ...ALL };
+    return inequalities(right.split(/,|and/), v);
+  }
+  const NEG = "(?:not including|not includes|excluding|but not|not)";
+  function words(raw, v) {
+    let s = " " + raw.toLowerCase().replace(/[−–—]/g, "-").replace(/negative\s*/g, "-").replace(/-\s+(?=\d)/g, "-") + " ";
+    if (/all\s+real|any\s+real|every\s+real/.test(s)) return { ...ALL };
+    const between = s.match(new RegExp(`(?:between|from)\\s*(${NUM})\\s*(?:and|to|through)\\s*(${NUM})`));
+    if (between) {
+      let A = num(between[1]), B = num(between[2]);
+      if (A > B) [A, B] = [B, A];
+      const rest = s.replace(between[0], " ");
+      let ca = null, cb = null;
+      if (/exclusive|not\s+inclusive|neither|not\s+including\s+(either|both|the\s+end)|excluding\s+both/.test(rest)) ca = cb = false;
+      else if (/inclusive|including\s+both|both\s+(are\s+)?included|including\s+the\s+end/.test(rest)) ca = cb = true;
+      const said = (n, w) => {
+        const t = String(n).replace("-", "\\-");
+        if (new RegExp(`${NEG}\\s*${t}(?![\\d.])`).test(rest) || new RegExp(`(?<![\\d.])${t}\\s*(is\\s+|are\\s+)?not\\s+included`).test(rest)) return false;
+        if (new RegExp(`(?<!not\\s)(including|includes|and)\\s*${t}(?![\\d.])`).test(rest) || new RegExp(`(?<![\\d.])${t}\\s*(is\\s+)?included`).test(rest)) return true;
+        return w;
+      };
+      ca = said(between[1], ca); cb = said(between[2], cb);
+      if (A !== num(between[1])) [ca, cb] = [cb, ca];
+      if (ca === null || cb === null) return fail(`Say whether ${ca === null ? N(A) : N(B)} is included, like “including ${N(A)} but not ${N(B)}”.`);
+      return { lo: A, loC: ca, hi: B, hiC: cb };
+    }
+    const ops = [["greater than or equal to", "≥"], ["more than or equal to", "≥"], ["bigger than or equal to", "≥"], ["at least", "≥"], ["no less than", "≥"],
+      ["less than or equal to", "≤"], ["smaller than or equal to", "≤"], ["at most", "≤"], ["no more than", "≤"], ["no greater than", "≤"],
+      ["greater than", ">"], ["more than", ">"], ["bigger than", ">"], ["larger than", ">"], ["above", ">"], ["less than", "<"], ["smaller than", "<"], ["below", "<"]];
+    ops.forEach(([w, o]) => { s = s.split(w).join(" " + o + " "); });
+    const cmp = [...s.matchAll(new RegExp(`(≥|≤|>|<)\\s*(${NUM})`, "g"))];
+    if (cmp.length) {
+      const vs = s.match(/\b([a-z])\s+(is|are|values?)\b/); if (vs && vs[1] !== v && vs[1].length === 1 && /[xy]/.test(vs[1])) return fail(`Use ${v}: the ${v === "x" ? "domain is about x-values" : "range is about y-values"}.`);
+      return inequalities(cmp.map(m => v + m[1] + m[2]), v);
+    }
+    const vals = s.replace(/[xy]-values?/g, " ").match(new RegExp(NUM, "g"));
+    if (vals) return toSet(vals.map(num));
+    return fail("Try “x is greater than −2 and less than or equal to 5”.");
+  }
+
+  // Works out which notation was typed, reads it, and says whether it is the notation asked for.
+  function read(raw, v) {
+    const n = tidy(raw);
+    if (!n) return { empty: true };
+    const listRe = new RegExp(`^${NUM}(,${NUM})*$`);
+    let how, a;
+    if (/^\{.*\}$/.test(n) && listRe.test(n.slice(1, -1))) { how = "list"; a = toSet(n.slice(1, -1).split(",").map(num)); }
+    else if (listRe.test(n)) { how = "bare"; a = toSet(n.split(",").map(num)); }
+    else if (n === "r" || /^[\[(].*[\])]$/.test(n) && !/[a-z|{]/.test(n)) { how = "interval"; a = interval(n); }
+    else if (/[{|≤≥<>]/.test(n)) { how = /^\{.*\}$/.test(n) ? "set" : "ineq"; a = setBuilder(n, v); }
+    else if (/[a-z]{2}/.test(n)) { how = "words"; a = words(raw, v); }
+    else return { a: fail("I can't read that yet.") };
+    const okHow = { words: ["words", "bare", "list"], set: ["set", "list"], interval: ["interval", "list"] }[note];
+    return { a, how, fits: okHow.includes(how) };
+  }
+
+  // ---------- graphs ----------
+  // A continuous graph is a polyline or a parabola piece from its left end to its right end.
+  // Each end is "c" (closed dot), "o" (open dot) or "a" (arrow, keeps going). Extremes are worked out
+  // from the ends and the turning points, so open dots and arrows give the right brackets.
+  const endKind = () => pick(["c", "c", "o"]);
+  function edgeHit(p, d) { // first spot past p (heading d) where the graph leaves the drawing box
+    let t = INF;
+    if (d.x) t = Math.min(t, ((d.x > 0 ? EDGE : -EDGE) - p.x) / d.x);
+    if (d.y) t = Math.min(t, ((d.y > 0 ? EDGE : -EDGE) - p.y) / d.y);
+    return { x: p.x + d.x * t, y: p.y + d.y * t, t: t * Math.hypot(d.x, d.y) };
+  }
+  function polyline(n, ends) {
+    for (let tries = 0; tries < 400; tries++) {
+      const xs = [ri(-8, -1)];
+      for (let i = 1; i < n; i++) xs.push(xs[i - 1] + ri(2, 5));
+      if (xs[n - 1] > 8) continue;
+      const shift = ri(-8 - xs[0], 8 - xs[n - 1]) * (ends.includes("a") ? 0.5 : 1) | 0;
+      const pts = xs.map(x => ({ x: x + shift, y: ri(-7, 7) }));
+      let ok = pts.every((p, i) => !i || p.y !== pts[i - 1].y || (i > 1 && i < n - 1 && Math.random() < 0.3));
+      if (n > 2) ok = ok && pts.some((p, i) => i && i < n - 1 && (p.y - pts[i - 1].y) * (pts[i + 1].y - p.y) < 0);
+      if (!ok) continue;
+      const g = { type: "poly", pts, ends };
+      if (ends[0] === "a") { const d = { x: pts[0].x - pts[1].x, y: pts[0].y - pts[1].y }; g.leftTip = edgeHit(pts[0], d); if (g.leftTip.t < 1.6 || !d.y) continue; g.leftDir = d; }
+      if (ends[1] === "a") { const d = { x: pts[n - 1].x - pts[n - 2].x, y: pts[n - 1].y - pts[n - 2].y }; g.rightTip = edgeHit(pts[n - 1], d); if (g.rightTip.t < 1.6 || !d.y) continue; g.rightDir = d; }
+      return g;
+    }
+    return null;
+  }
+  function parabola(arrows) {
+    for (let tries = 0; tries < 400; tries++) {
+      const a = pick([1, -1, 0.5, -0.5, 0.5, -0.5]), h = ri(-4, 4), k = a > 0 ? ri(-7, 2) : ri(-2, 7);
+      const f = x => a * (x - h) ** 2 + k;
+      if (arrows) {
+        // Let the curve run to the edge of the box both ways.
+        const reach = Math.sqrt((EDGE * Math.sign(a) - k) / a);
+        if (h - reach < -EDGE || h + reach > EDGE) continue;
+        return { type: "para", a, h, k, f, x0: h - reach, x1: h + reach, ends: ["a", "a"] };
+      }
+      const step = Math.abs(a) === 0.5 ? 2 : 1;
+      const d0 = step * ri(1, 3), d1 = step * ri(0, 3);
+      const [x0, x1] = Math.random() < 0.5 ? [h - d0, h + d1] : [h - d1, h + d0];
+      if (x1 - x0 < 2 || x0 < -9 || x1 > 9 || [x0, x1].some(x => Math.abs(f(x)) > 9)) continue;
+      return { type: "para", a, h, k, f, x0, x1, ends: [endKind(), endKind()] };
+    }
+    return null;
+  }
+  function discrete() {
+    const n = ri(4, 7), xs = new Set();
+    while (xs.size < n) xs.add(ri(-8, 8));
+    const pts = [...xs].sort((p, q) => p - q).map(x => ({ x, y: ri(-8, 8) }));
+    if (Math.random() < 0.5) { const i = ri(1, n - 1); pts[i].y = pts[ri(0, i - 1)].y; } // a repeated y-value
+    return { type: "dots", pts };
+  }
+  function makeGraph() {
+    const want = kind === "mixed" ? (Math.random() < 0.3 ? "discrete" : "continuous") : kind;
+    if (want === "discrete") return discrete();
+    const r = Math.random();
+    let gr = null;
+    while (!gr) {
+      const t = pick(["seg", "poly", "poly", "ray", "polyArrow", "line", "vee", "para", "paraPiece", "paraPiece"]);
+      if (t === "seg") gr = polyline(2, [endKind(), pick(["o", "c"])]);
+      if (t === "poly") gr = polyline(ri(3, 4), [endKind(), endKind()]);
+      if (t === "ray") gr = polyline(2, Math.random() < 0.5 ? ["a", endKind()] : [endKind(), "a"]);
+      if (t === "polyArrow") gr = polyline(3, Math.random() < 0.5 ? ["a", endKind()] : [endKind(), "a"]);
+      if (t === "line") gr = polyline(2, ["a", "a"]);
+      if (t === "vee") { gr = polyline(3, ["a", "a"]); if (gr && gr.leftDir.y * gr.rightDir.y < 0) gr = null; }
+      if (t === "para") gr = parabola(true);
+      if (t === "paraPiece") gr = parabola(false);
+    }
+    return gr;
+  }
+
+  // Exact domain and range, plus where each bound is reached (for the guide lines).
+  function answers(g) {
+    if (g.type === "dots") return { d: toSet(g.pts.map(p => p.x)), r: toSet(g.pts.map(p => p.y)) };
+    let L, R, cand = [];
+    if (g.type === "poly") {
+      const p = g.pts, n = p.length;
+      L = { x: p[0].x, e: g.ends[0] }; R = { x: p[n - 1].x, e: g.ends[1] };
+      p.forEach((q, i) => {
+        const e = i === 0 ? g.ends[0] : i === n - 1 ? g.ends[1] : "c";
+        if (e === "a") cand.push({ y: (i === 0 ? g.leftDir.y : g.rightDir.y) > 0 ? INF : -INF });
+        else cand.push({ y: q.y, c: e === "c", x: q.x });
+      });
+    } else {
+      L = { x: g.x0, e: g.ends[0] }; R = { x: g.x1, e: g.ends[1] };
+      if (g.ends[0] === "a") cand.push({ y: g.a > 0 ? INF : -INF });
+      else { cand.push({ y: g.f(g.x0), c: g.ends[0] === "c", x: g.x0 }); cand.push({ y: g.f(g.x1), c: g.ends[1] === "c", x: g.x1 }); }
+      if (g.h > g.x0 && g.h < g.x1) cand.push({ y: g.k, c: true, x: g.h });
+    }
+    const d = { lo: L.e === "a" ? -INF : L.x, loC: L.e === "c", hi: R.e === "a" ? INF : R.x, hiC: R.e === "c" };
+    const ys = cand.map(c => c.y), lo = Math.min(...ys), hi = Math.max(...ys);
+    const at = y => cand.filter(c => c.y === y);
+    const r = { lo, loC: isFinite(lo) && at(lo).some(c => c.c), hi, hiC: isFinite(hi) && at(hi).some(c => c.c) };
+    r.loX = isFinite(lo) ? (at(lo).find(c => c.c) || at(lo)[0]).x : null;
+    r.hiX = isFinite(hi) ? (at(hi).find(c => c.c) || at(hi)[0]).x : null;
+    return { d, r };
+  }
+
+  // ---------- drawing ----------
+  const X = b.sx, Y = b.sy;
+  function drawGraph() {
+    gfx.replaceChildren(); proj.replaceChildren();
+    const dot = (p, open) => el("circle", { cx: X(p.x), cy: Y(p.y), r: 9, class: "dot" + (open ? " open" : "") }, gfx);
+    if (g.type === "dots") { g.pts.forEach(p => dot(p)); return; }
+    let pts;
+    if (g.type === "poly") pts = [...(g.leftTip ? [g.leftTip] : []), ...g.pts, ...(g.rightTip ? [g.rightTip] : [])];
+    else { pts = []; for (let i = 0; i <= 120; i++) { const x = g.x0 + (g.x1 - g.x0) * i / 120; pts.push({ x, y: g.f(x) }); } }
+    const path = el("path", { class: "gr", d: pts.map((p, i) => `${i ? "L" : "M"}${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ") }, gfx);
+    if (g.ends[0] === "a") path.setAttribute("marker-start", "url(#dr-gr)");
+    if (g.ends[1] === "a") path.setAttribute("marker-end", "url(#dr-gr)");
+    const first = pts[0], last = pts[pts.length - 1];
+    if (g.ends[0] !== "a") dot(first, g.ends[0] === "o");
+    if (g.ends[1] !== "a") dot(last, g.ends[1] === "o");
+  }
+  // Domain along the x-axis (blue), range along the y-axis (orange), with dashed guides to the graph.
+  function drawProj(which) {
+    const a = which === "d" ? state.ans.d : state.ans.r, ax = which === "d" ? "x" : "y";
+    const at = v => ax === "x" ? { x: X(v), y: Y(0) } : { x: X(0), y: Y(v) };
+    const guide = (p, q) => el("line", { x1: X(p.x), y1: Y(p.y), x2: X(q.x), y2: Y(q.y), class: "guide " + ax }, proj);
+    const pdot = (v, open) => { const p = at(v); el("circle", { cx: p.x, cy: p.y, r: 8, class: "pdot " + ax + (open ? " open" : "") }, proj); };
+    if (isSet(a)) {
+      g.pts.forEach(p => guide(p, ax === "x" ? { x: p.x, y: 0 } : { x: 0, y: p.y }));
+      a.set.forEach(v => pdot(v));
+      return;
+    }
+    const lo = isFinite(a.lo) ? a.lo : -EDGE - 0.1, hi = isFinite(a.hi) ? a.hi : EDGE + 0.1;
+    const p = at(lo), q = at(hi);
+    const bar = el("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y, class: "pd " + ax }, proj);
+    if (!isFinite(a.lo)) bar.setAttribute("marker-start", `url(#dr-p${ax})`);
+    if (!isFinite(a.hi)) bar.setAttribute("marker-end", `url(#dr-p${ax})`);
+    const f = x => g.type === "para" ? g.f(x) : (() => { const P = g.pts; for (let i = 1; i < P.length; i++) if (x <= P[i].x) return P[i - 1].y + (P[i].y - P[i - 1].y) * (x - P[i - 1].x) / (P[i].x - P[i - 1].x); return P[P.length - 1].y; })();
+    [[a.lo, a.loC, a.loX], [a.hi, a.hiC, a.hiX]].forEach(([v, c, x]) => {
+      if (!isFinite(v)) return;
+      if (ax === "x") { if (Math.abs(f(v)) > 0.05) guide({ x: v, y: f(v) }, { x: v, y: 0 }); }
+      else if (Math.abs(x) > 0.05) guide({ x, y: v }, { x: 0, y: v });
+      pdot(v, !c);
+    });
+  }
+
+  // ---------- feedback ----------
+  function why(a, e, v) {
+    const dom = v === "x";
+    if (isSet(e) && !isSet(a)) return "These are separate points, so list just their values in braces.";
+    if (!isSet(e) && isSet(a)) return "The graph is connected, so every value in between counts too. Use an interval, not a list.";
+    if (isSet(e)) {
+      const missing = e.set.filter(x => !a.set.includes(x)).length, extra = a.set.filter(x => !e.set.includes(x)).length;
+      if (missing && !extra) return `Not quite: ${missing === 1 ? "one value is" : missing + " values are"} missing. Check each point's ${v}-value.`;
+      if (extra && !missing) return `Not quite: ${extra === 1 ? "one value doesn't" : extra + " values don't"} match a point. Check each point's ${v}-value.`;
+      return `Not quite. Read the ${v}-value of each point, and write each value once.`;
+    }
+    const side = (lo) => {
+      const ev = lo ? e.lo : e.hi, ec = lo ? e.loC : e.hiC, av = lo ? a.lo : a.hi, ac = lo ? a.loC : a.hiC;
+      const word = lo ? (dom ? "left" : "down") : (dom ? "right" : "up"), small = lo ? "smallest" : "largest";
+      if (!isFinite(ev) && isFinite(av)) return `The arrow keeps going ${word} forever, so there is no ${small} ${v}-value: use ${lo ? "−∞" : "∞"}.`;
+      if (isFinite(ev) && !isFinite(av)) return `The graph stops going ${word}, so there is a ${small} ${v}-value.`;
+      if (isFinite(ev) && Math.abs(ev - av) > 1e-9) return `Check the ${small} ${v}-value: look at the ${dom ? (lo ? "point farthest left" : "point farthest right") : (lo ? "lowest point" : "highest point")} of the graph.`;
+      if (isFinite(ev) && ec !== ac) return ec ? `${N(ev)} is included: the graph reaches it, so use ${note === "interval" ? (lo ? "[" : "]") : note === "words" ? "“or equal to”" : "≤ or ≥, not < or >"}.`
+        : `${N(ev)} is not included: the dot there is open, so use ${note === "interval" ? (lo ? "(" : ")") : note === "words" ? "just “greater than” or “less than”" : "< or >, not ≤ or ≥"}.`;
+      return "";
+    };
+    return side(true) || side(false) || "Not quite.";
+  }
+
+  function checkOne(which, counting) {
+    const v = which === "d" ? "x" : "y", inp = which === "d" ? $("dIn") : $("rIn"), fb = which === "d" ? $("dFb") : $("rFb");
+    const e = which === "d" ? state.ans.d : state.ans.r;
+    const r = read(inp.value, v);
+    inp.classList.remove("ok", "no");
+    const say = (cls, html) => { fb.className = "fb " + cls; fb.innerHTML = html; };
+    if (r.empty) { say("almost", `Type the ${which === "d" ? "domain" : "range"} too.`); return null; }
+    if (r.a.err) { say("no", r.a.err); inp.classList.add("no"); return false; }
+    const good = same(r.a, e);
+    if (good && !r.fits) { say("almost", `That's the right set! Now write it in ${{ words: "words", set: "set-builder notation", interval: "interval notation" }[note]}.`); return false; }
+    if (good) {
+      say("ok", `Yes! ${isSet(e) ? "Separate points, so it is a list." : ""}`);
+      inp.classList.add("ok"); state.done[which] = true; redrawProj(); return true;
+    }
+    say("no", why(r.a, e, v)); inp.classList.add("no"); return false;
+  }
+  function check() {
+    const d = checkOne("d"), r = checkOne("r");
+    if (d === null || r === null || state.counted) return;
+    state.counted = true; tries++; if (d && r) right++;
+    $("score").textContent = `${right} of ${tries}`;
+  }
+  function showAnswer() {
+    if (!state.counted) { state.counted = true; tries++; $("score").textContent = `${right} of ${tries}`; }
+    [["d", "x", $("dFb"), $("dIn")], ["r", "y", $("rFb"), $("rIn")]].forEach(([w, v, fb, inp]) => {
+      if (state.done[w]) return;
+      fb.className = "fb show";
+      fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], v, note)}</span>`;
+      inp.classList.remove("ok", "no");
+      state.done[w] = state.shown[w] = true;
+    });
+    redrawProj();
+  }
+  function redrawProj() { proj.replaceChildren(); ["d", "r"].forEach(w => state.done[w] && drawProj(w)); }
+
+  // ---------- controls ----------
+  const EX = {
+    words: `Example: <code>x is greater than −2 and less than or equal to 5</code>`,
+    set: `Example: <code>{x | −2 &lt; x ≤ 5, x ∈ R}</code> Points? <code>{−3, 1, 4}</code>`,
+    interval: `Example: <code>(−2, 5]</code> or <code>[1, ∞)</code> Points? <code>{−3, 1, 4}</code>`
+  };
+  const KEYS = {
+    words: ["all real numbers", "greater than", "less than", "or equal to", "and", "−"],
+    set: ["{", "}", "|", "x", "y", "≤", "<", "≥", ">", "∈", "R", ",", "−"],
+    interval: ["[", "]", "(", ")", "∞", "−", ",", "{", "}"]
+  };
+  let lastInput = $("dIn");
+  [$("dIn"), $("rIn")].forEach(inp => {
+    inp.addEventListener("focus", () => (lastInput = inp));
+    inp.addEventListener("input", () => {
+      const p = inp.selectionStart, before = inp.value;
+      inp.value = before.replace(/<=/g, "≤").replace(/>=/g, "≥");
+      const d = before.length - inp.value.length; inp.setSelectionRange(p - d, p - d);
+    });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+  });
+  function setNote(n) {
+    note = n;
+    document.querySelectorAll("#noteBtns button").forEach(x => x.classList.toggle("on", x.dataset.n === n));
+    $("ex").innerHTML = EX[n];
+    const k = $("keys"); k.replaceChildren(); k.className = "keys" + (n === "words" ? " words" : "");
+    KEYS[n].concat(["⌫"]).forEach(t => {
+      const btn = document.createElement("button"); btn.type = "button"; btn.textContent = t;
+      btn.setAttribute("aria-label", t === "⌫" ? "Delete" : "Type " + t);
+      btn.addEventListener("pointerdown", e => e.preventDefault()); // keep the cursor in the box
+      btn.addEventListener("click", () => {
+        const inp = lastInput, s = inp.selectionStart ?? inp.value.length, f = inp.selectionEnd ?? s;
+        let ins = t === "R" ? "R" : t;
+        if (n === "words") ins = (s && !/\s$/.test(inp.value.slice(0, s)) ? " " : "") + t + (t === "−" ? "" : " ");
+        if (t === "⌫") { const a = s === f ? Math.max(0, s - 1) : s; inp.value = inp.value.slice(0, a) + inp.value.slice(f); inp.setSelectionRange(a, a); }
+        else { inp.value = inp.value.slice(0, s) + ins + inp.value.slice(f); inp.setSelectionRange(s + ins.length, s + ins.length); }
+        inp.focus();
+      });
+      k.appendChild(btn);
+    });
+    document.querySelectorAll(".ans").forEach(c => c.classList.toggle("words", n === "words"));
+    $("dIn").placeholder = { words: "x is …", set: "{x | … }", interval: "( , )" }[n];
+    $("rIn").placeholder = { words: "y is …", set: "{y | … }", interval: "( , )" }[n];
+    // Answers already shown follow the new notation; typed answers are checked again in it.
+    if (state) ["d", "r"].forEach(w => {
+      const fb = w === "d" ? $("dFb") : $("rFb");
+      if (state.shown[w]) fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], w === "d" ? "x" : "y", n)}</span>`;
+      else { fb.textContent = ""; fb.className = "fb"; state.done[w] = false; (w === "d" ? $("dIn") : $("rIn")).classList.remove("ok", "no"); }
+    });
+    if (state) redrawProj();
+  }
+  function newGraph() {
+    let prev = g && JSON.stringify(answers(g));
+    do { g = makeGraph(); } while (prev && JSON.stringify(answers(g)) === prev);
+    state = { ans: answers(g), done: {}, shown: {}, counted: false };
+    $("dIn").value = $("rIn").value = "";
+    [$("dIn"), $("rIn")].forEach(i => i.classList.remove("ok", "no"));
+    [$("dFb"), $("rFb")].forEach(f => { f.textContent = ""; f.className = "fb"; });
+    drawGraph();
+    $("plane").setAttribute("aria-label", g.type === "dots" ? `${g.pts.length} separate points` : "A continuous graph");
+  }
+  document.querySelectorAll("#noteBtns button").forEach(x => x.addEventListener("click", () => setNote(x.dataset.n)));
+  document.querySelectorAll("#kindBtns button").forEach(x => x.addEventListener("click", () => {
+    kind = x.dataset.k; document.querySelectorAll("#kindBtns button").forEach(y => y.classList.toggle("on", y === x)); newGraph();
+  }));
+  $("checkBtn").addEventListener("click", check);
+  $("showBtn").addEventListener("click", showAnswer);
+  $("newBtn").addEventListener("click", newGraph);
+
+  setNote("set");
+  newGraph();
+  window.__dr = { read, same, write, answers, get g() { return g; }, set g(v) { g = v; state = { ans: answers(v), done: {}, shown: {}, counted: false }; drawGraph(); }, setNote, check };
+})();
+</script>
+
+</body>
+</html>

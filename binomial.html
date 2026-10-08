@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The Binomial Theorem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* The Binomial Theorem (Alberta Math 30-1): t_(k+1) = nCk · a^(n−k) · b^k.
+   Find a term: type a binomial, its exponent and a term number. The terms show as empty boxes; the student fills in
+   the formula for that term (a think aloud explains k, n and the powers), then works out each part (or presses the
+   part's key to have it worked out), then checks the final term.
+   Find the binomial: the reverse. A term and its place are given with the first term of the binomial; the student
+   finds k, then n, then b, and types the binomial. */
+:root { --a: var(--pt); --b: var(--orange); --kn: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --kn: #b88cff; } }
+:root[data-theme="dark"] { --kn: #b88cff; }
+[hidden] { display: none !important; }
+.wrap > * + * { margin-top: 12px; }
+header { margin-bottom: 12px; }
+.card { padding: 12px 18px; }
+
+.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.tabs button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; }
+.tabs button + button { border-left: 2px solid var(--grid-major); }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+
+.ca { color: var(--a); } .cb { color: var(--b); } .ck { color: var(--kn); }
+.m { font-family: var(--font-num); font-weight: 700; }
+.m i, .v { font-style: italic; font-family: var(--font-display); font-weight: 800; }
+sup, sub { font-size: 0.62em; line-height: 0; }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.72em; line-height: 1.12; margin: 0 2px; }
+.fr > span:first-child { border-bottom: 2px solid currentColor; padding: 0 3px 1px; }
+.fr > span:last-child { padding: 1px 3px 0; }
+
+/* Setup row */
+.setup { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 36px; }
+.grp { display: flex; align-items: center; gap: 10px; }
+.lab { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+input.in { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; padding: 4px 10px; border-radius: 8px; border: 2px solid var(--grid-major);
+  background: var(--sheet); color: var(--ink); min-width: 0; text-align: center; }
+input.in.sm { font-size: 1.15rem; padding: 2px 4px; width: 2.6em; }
+input.in.ok { border-color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--sheet)); color: var(--green); }
+input.in.bad { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--sheet)); }
+.binin { display: inline-flex; align-items: flex-start; font-family: var(--font-num); font-weight: 700; font-size: 2rem; line-height: 1; }
+.binin .par { padding-top: 6px; }
+.binin #bin { font-size: 1.6rem; }
+.binin .up { margin-top: -10px; }
+.gen { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; }
+.tpick { display: inline-flex; align-items: flex-end; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; }
+.tpick input { margin-bottom: -12px; }
+.err { color: var(--warn); font-weight: 700; margin: 0; }
+.puz { font-size: 1.5rem; margin: 0; flex: 1 1 30em; }
+.puz .m { font-size: 1.7rem; }
+.qbox { display: inline-block; min-width: 1.4em; padding: 0 6px; border: 2px dashed var(--muted); border-radius: 6px; color: var(--muted); text-align: center; line-height: 1.2; }
+sup .qbox { min-width: 1em; padding: 0 3px; }
+.btn-main { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btn-main:hover { background: var(--sheet); color: var(--pt); }
+
+/* The terms of the expansion */
+.seq { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.seq .lead { font-size: 1.6rem; margin-right: 6px; }
+.seq .plus { color: var(--muted); }
+.tb { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 3.4em; padding: 6px 8px 4px; border: 2px solid var(--grid-major);
+  border-radius: 8px; background: var(--sheet); font-family: var(--font-num); font-size: 1.3rem; }
+.tb .tv { min-height: 1.5em; display: flex; align-items: center; }
+.tb .tv.empty { color: var(--grid-major); }
+.tb .tl { font-size: 0.85rem; color: var(--muted); }
+.tb.sel { border: 3px solid var(--kn); background: color-mix(in srgb, var(--kn) 8%, var(--sheet)); }
+.tb.sel .tl { color: var(--kn); }
+.tb.done .tv { color: var(--green); }
+div.tb { cursor: default; }
+.seq .more { color: var(--muted); font-size: 1.6rem; }
+#allBtn { margin-left: auto; }
+
+/* Work area */
+.bt { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 12px; align-items: start; }
+@media (max-width: 860px) { .bt { grid-template-columns: 1fr; } }
+@media (min-width: 861px) and (min-height: 520px) {
+  .wrap > .bt { flex: 1 1 auto; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .bt > .card { overflow-y: auto; min-height: 0; }
+  /* The final answer stays in view; the parts above it scroll if they must. */
+  .bt > .card.calc { display: flex; flex-direction: column; overflow: hidden; }
+  .card.calc > * { flex: none; }
+  #calc { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
+.fml { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-family: var(--font-num); font-weight: 700; font-size: 2rem; margin: 4px 0 10px; }
+.fml .in { font-size: 1.5rem; }
+.fml .in.sm { width: 2.2em; font-size: 1.15rem; }
+.fml .lo { align-self: flex-end; margin-bottom: -8px; }
+.fml .hi { align-self: flex-start; margin-top: -12px; }
+.fml .in.a { border-left: 6px solid var(--a); } .fml .in.b { border-left: 6px solid var(--b); }
+.think { border-left: 4px solid var(--kn); padding: 2px 0 2px 14px; margin: 0; }
+.think p { margin: 0 0 8px; font-size: 1.12rem; }
+.think p:last-child { margin-bottom: 0; }
+.think .m, .why .m, .step p .m { font-family: var(--font-body); font-size: 1.12em; }
+.row-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+.ready { color: var(--green); font-weight: 700; margin: 0; }
+.wait { color: var(--muted); font-style: italic; font-size: 1.1rem; }
+
+.crow { padding: 6px 0 8px; border-bottom: 1px dashed var(--grid); }
+.crow:last-of-type { border-bottom: 0; }
+.cl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; }
+.cl .in { font-size: 1.35rem; padding: 2px 10px; }
+.key { font-family: var(--font-num); font-size: 1.15rem; padding: 6px 14px; border-radius: 8px; border-width: 2px; }
+.why { margin: 4px 0 0; font-size: 1.02rem; line-height: 1.45; }
+.final { margin-top: 6px; padding-top: 10px; border-top: 2px solid var(--grid-major); }
+.final .cl { font-size: 1.6rem; }
+.verdict2 { margin: 8px 0 0; font-weight: 700; font-size: 1.2rem; }
+.verdict2.yes { color: var(--green); } .verdict2.no { color: var(--warn); }
+
+.step { padding: 4px 0 8px; border-bottom: 1px dashed var(--grid); }
+.step:last-child { border-bottom: 0; }
+.step p { margin: 0 0 4px; font-size: 1.05rem; line-height: 1.45; }
+.step .cl { font-size: 1.5rem; }
+.ansrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; flex: 1 1 100%; }
+.ansrow .verdict2 { margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>The Binomial Theorem</h1></div>
+    <div class="tabs" id="tabs" role="group" aria-label="Mode">
+      <button type="button" data-m="term" aria-pressed="true">Find a term</button>
+      <button type="button" data-m="rev" aria-pressed="false">Find the binomial</button>
+    </div>
+  </header>
+
+  <!-- Find a term -->
+  <section class="card" data-mode="term">
+    <div class="setup">
+      <label class="grp"><span class="lab">Binomial</span>
+        <span class="binin"><span class="par">(</span><input class="in" id="bin" data-min="10" value="2x − 3" autocomplete="off" spellcheck="false" aria-label="Binomial, like 2x − 3 or x/2 + 1/x"><span class="par">)</span><input class="in sm up" id="nIn" value="5" inputmode="numeric" aria-label="Exponent n"></span>
+      </label>
+      <div class="grp"><span class="lab">Term</span><span class="gen">t<sub>k+1</sub> = <sub>n</sub>C<sub>k</sub> <span class="ca">a</span><sup>n−k</sup> <span class="cb">b</span><sup>k</sup></span></div>
+      <label class="grp"><span class="lab">Find</span><span class="tpick">t<input class="in sm" id="tIn" value="3" inputmode="numeric" aria-label="Term number to find"></span></label>
+      <p class="err" id="err"></p>
+    </div>
+  </section>
+
+  <!-- Find the binomial -->
+  <section class="card" data-mode="rev" hidden>
+    <div class="setup">
+      <p class="puz" id="puz"></p>
+      <button type="button" class="btn-main" id="newP">New puzzle</button>
+      <div class="ansrow">
+        <span class="binin"><span class="par">(</span><input class="in" id="ans2" data-min="10" autocomplete="off" spellcheck="false" aria-label="The binomial"><span class="par">)</span><input class="in sm up" id="n2" inputmode="numeric" aria-label="Exponent"></span>
+        <button type="button" class="key" id="check2">Check</button><button type="button" class="key" id="show2">Show</button>
+        <p class="verdict2" id="verdict2"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card seq" id="seq" aria-label="The terms of the expansion"></section>
+
+  <div class="bt" data-mode="term">
+    <section class="card">
+      <p class="label">Step 1 · Fill in the formula</p>
+      <div class="fml" id="fml"></div>
+      <div class="think" id="think"></div>
+      <div class="row-btns"><button type="button" id="fillMe">Fill it in for me</button><p class="ready" id="ready"></p></div>
+    </section>
+    <section class="card calc">
+      <p class="label">Step 2 · Work out each part</p>
+      <div id="calc"></div>
+      <div id="calcFin"></div>
+    </section>
+  </div>
+
+  <div class="bt" data-mode="rev" hidden>
+    <section class="card">
+      <p class="label">Step 1 · Find k and n</p>
+      <div id="rs1"></div>
+    </section>
+    <section class="card">
+      <p class="label">Step 2 · Find b</p>
+      <div id="rs2"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  /* ---------- Monomials with exact fractions: { p, q, v } = (p / q) · x^v.x · y^v.y ... ---------- */
+  const abs = a => (a < 0n ? -a : a);
+  const gcd = (a, b) => { a = abs(a); b = abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  function M(p, q = 1n, v = {}) {
+    if (q === 0n) throw new Error("zero");
+    if (q < 0n) { p = -p; q = -q; }
+    if (p === 0n) return { p: 0n, q: 1n, v: {} };
+    const g = gcd(p, q); p /= g; q /= g;
+    const w = {};
+    for (const k of Object.keys(v).sort()) if (v[k]) w[k] = v[k];
+    return { p, q, v: w };
+  }
+  const num = m => M(m.p, m.q);
+  const neg = m => M(-m.p, m.q, m.v);
+  function mul(a, b) {
+    const v = { ...a.v };
+    for (const k in b.v) v[k] = (v[k] || 0) + b.v[k];
+    return M(a.p * b.p, a.q * b.q, v);
+  }
+  function inv(a) {
+    if (a.p === 0n) throw new Error("zero");
+    const v = {};
+    for (const k in a.v) v[k] = -a.v[k];
+    return M(a.q, a.p, v);
+  }
+  function pow(a, e) {
+    if (e < 0) return pow(inv(a), -e);
+    const v = {};
+    for (const k in a.v) v[k] = a.v[k] * e;
+    return M(a.p ** BigInt(e), a.q ** BigInt(e), v);
+  }
+  const hasVars = m => Object.keys(m.v).length > 0;
+  const sameVars = (a, b) => { const ka = Object.keys(a.v), kb = Object.keys(b.v); return ka.length === kb.length && ka.every(k => a.v[k] === b.v[k]); };
+  const eq = (a, b) => a && b && a.p === b.p && a.q === b.q && sameVars(a, b);
+  const isInt = m => m.q === 1n && !hasVars(m);
+
+  const SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹", SUPMAP = { "⁻": "-" };
+  [...SUP].forEach((c, i) => (SUPMAP[c] = String(i)));
+  function norm(s) {
+    return String(s).replace(/[−–—]/g, "-").replace(/[×·⋅∙]/g, "*").replace(/÷/g, "/")
+      .replace(/[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, r => "^" + [...r].map(c => SUPMAP[c]).join("")).replace(/\*\*/g, "^");
+  }
+
+  // One term: numbers (whole, decimal), letters, ^ whole powers, * / and side-by-side multiplying, brackets, signs.
+  // Left to right like the other tools: 3/4x is (3/4)x, 2/x is 2 over x.
+  function parseMono(src) {
+    const s = norm(src);
+    let i = 0;
+    const sk = () => { while (s[i] === " ") i++; };
+    function base() {
+      sk();
+      const c = s[i];
+      if (c === "(") { i++; const m = prod(); sk(); if (s[i] !== ")") throw 0; i++; return m; }
+      const n = s.slice(i).match(/^(\d+\.?\d*|\.\d+)/);
+      if (n) {
+        i += n[0].length;
+        const [w, f = ""] = n[0].split(".");
+        return M(BigInt((w || "0") + f), 10n ** BigInt(f.length));
+      }
+      if (/[a-zA-Z]/.test(c)) { i++; return M(1n, 1n, { [c]: 1 }); }
+      throw 0;
+    }
+    function factor() {
+      let b = base();
+      sk();
+      if (s[i] === "^") {
+        i++; sk();
+        let br = false;
+        if (s[i] === "(") { br = true; i++; sk(); }
+        let sg = 1;
+        if (s[i] === "-") { sg = -1; i++; } else if (s[i] === "+") i++;
+        const d = s.slice(i).match(/^\d+/);
+        if (!d) throw 0;
+        i += d[0].length;
+        if (br) { sk(); if (s[i] !== ")") throw 0; i++; }
+        if (+d[0] > 60) throw 0;
+        b = pow(b, sg * +d[0]);
+      }
+      return b;
+    }
+    function prod() {
+      sk();
+      let sg = 1n;
+      while (s[i] === "-" || s[i] === "+") { if (s[i] === "-") sg = -sg; i++; sk(); }
+      let m = factor();
+      for (;;) {
+        sk();
+        const c = s[i];
+        if (c === "*") { i++; m = mul(m, factor()); }
+        else if (c === "/") { i++; m = mul(m, inv(factor())); }
+        else if (c && /[\d.a-zA-Z(]/.test(c)) m = mul(m, factor());
+        else break;
+      }
+      return sg < 0n ? neg(m) : m;
+    }
+    try {
+      if (!s.trim()) return null;
+      const r = prod(); sk();
+      return i < s.length ? null : r;
+    } catch (e) { return null; }
+  }
+
+  // A whole number, or a little sum like 5 − 2.
+  function parseInt2(src) {
+    const s = norm(src).replace(/\s/g, "");
+    if (!/^[+-]?\d+([+-]\d+)*$/.test(s)) return null;
+    return s.match(/[+-]?\d+/g).reduce((t, x) => t + +x, 0);
+  }
+
+  // A binomial: two terms joined by + or −, maybe in brackets, maybe with ^n after the brackets.
+  function parseBin(src) {
+    let s = norm(src).trim(), n = null;
+    const outer = t => {
+      if (t[0] !== "(" || t[t.length - 1] !== ")") return false;
+      let d = 0;
+      for (let i = 0; i < t.length; i++) { if (t[i] === "(") d++; else if (t[i] === ")") { d--; if (d === 0 && i < t.length - 1) return false; } }
+      return true;
+    };
+    const pw = s.match(/^(\(.*\))\s*\^\s*(\d+)$/);
+    if (pw && outer(pw[1])) { s = pw[1]; n = +pw[2]; }
+    if (outer(s)) s = s.slice(1, -1).trim();
+    let d = 0;
+    const cuts = [];
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === "(") d++; else if (c === ")") d--;
+      else if ((c === "+" || c === "-") && d === 0) {
+        const before = s.slice(0, i).trimEnd();
+        if (before && !/[\^*/(+-]$/.test(before)) cuts.push(i);
+      }
+    }
+    if (cuts.length !== 1) return { error: "Type two terms joined by + or −, like 2x − 3 or x/2 + 1/x." };
+    const a = parseMono(s.slice(0, cuts[0])), b = parseMono(s.slice(cuts[0]));
+    if (!a || !b) return { error: "One of the terms could not be read. Try something like 2x − 3 or x/2 + 1/x." };
+    if (!a.p || !b.p) return { error: "Neither term can be 0." };
+    return { a, b, n };
+  }
+
+  /* ---------- Writing math ---------- */
+  const supN = e => `<sup>${e < 0 ? "−" + -e : e}</sup>`;
+  function varsH(v, side) {
+    return Object.keys(v).filter(k => v[k] * side > 0).map(k => `<i>${k}</i>${Math.abs(v[k]) !== 1 ? supN(Math.abs(v[k])) : ""}`).join("");
+  }
+  function H(m) {
+    if (m.p === 0n) return "0";
+    const top = varsH(m.v, 1), bot = varsH(m.v, -1), ap = abs(m.p);
+    const nm = (ap === 1n && top ? "" : String(ap)) + top;
+    const dn = (m.q === 1n ? "" : String(m.q)) + bot;
+    const body = dn ? `<span class="fr"><span>${nm || "1"}</span><span>${dn}</span></span>` : nm;
+    return (m.p < 0n ? "−" : "") + body;
+  }
+  const P = m => `(${H(m)})`;
+  // A factor in a product: brackets around a negative.
+  const F = m => (m.p < 0n ? P(m) : H(m));
+  const SUPS = n => String(n).split("").map(c => (c === "-" ? "⁻" : SUP[+c])).join("");
+  function varsT(v, side) {
+    return Object.keys(v).filter(k => v[k] * side > 0).map(k => k + (Math.abs(v[k]) !== 1 ? SUPS(Math.abs(v[k])) : "")).join("");
+  }
+  // Plain text the parser reads back (for filling in boxes).
+  function T(m) {
+    if (m.p === 0n) return "0";
+    const top = varsT(m.v, 1), bot = varsT(m.v, -1), ap = abs(m.p);
+    const nm = (ap === 1n && top ? "" : String(ap)) + top;
+    const dParts = (m.q === 1n ? 0 : 1) + Object.keys(m.v).filter(k => m.v[k] < 0).length;
+    const dn = (m.q === 1n ? "" : String(m.q)) + bot;
+    const body = dn ? `${nm || "1"}/${dParts > 1 || (m.q !== 1n && bot) ? "(" + dn + ")" : dn}` : nm;
+    return (m.p < 0n ? "−" : "") + body;
+  }
+  const binH = (a, b) => `${H(a)} ${b.p < 0n ? "−" : "+"} ${H(b.p < 0n ? neg(b) : b)}`;
+  const binT = (a, b) => `${T(a)} ${b.p < 0n ? "−" : "+"} ${T(b.p < 0n ? neg(b) : b)}`;
+  const Cn = (n, k) => `<sub>${n}</sub>C<sub>${k}</sub>`;
+  const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+  const fact = n => { let f = 1n; for (let i = 2n; i <= BigInt(n); i++) f *= i; return f; };
+  const choose = (n, k) => fact(n) / (fact(k) * fact(n - k));
+  const fmt = x => { const s = abs(x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " "); return (x < 0n ? "−" : "") + s; };
+  const term = (a, b, n, k) => mul(M(choose(n, k)), mul(pow(a, n - k), pow(b, k)));
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  function box(cls, label, min = 6) { const i = el("input", "in " + cls); i.autocomplete = "off"; i.spellcheck = false; i.setAttribute("aria-label", label); if (!cls.includes("sm")) i.dataset.min = min; return i; }
+  // Typing boxes widen to fit what is in them.
+  function grow() { document.querySelectorAll("input.in[data-min]").forEach(i => (i.style.width = Math.max(+i.dataset.min, i.value.length + 2) + "ch")); }
+  document.addEventListener("input", grow);
+  document.addEventListener("click", () => requestAnimationFrame(grow));
+  document.addEventListener("keydown", () => requestAnimationFrame(grow));
+  const rootName = k => (k === 2 ? "a square root" : k === 3 ? "a cube root" : `the ${ord(k)} root`);
+
+  /* ---------- Think-aloud explanations ---------- */
+  function chooseWhy(n, k) {
+    const c = choose(n, k);
+    if (k === 0 || k === n) return `${Cn(n, k)} = 1. There is only one way to choose ${k === 0 ? "none" : "all"} of the ${n} brackets.`;
+    return `${Cn(n, k)} = <span class="m">${n}! ÷ (${k}! × ${n - k}!) = ${fmt(fact(n))} ÷ (${fmt(fact(k))} × ${fmt(fact(n - k))}) = ${fmt(c)}</span>. ` +
+      `It counts the ways to choose which ${k} of the ${n} brackets give the <span class="cb">b</span>.`;
+  }
+  function powWhy(m, e) {
+    const r = pow(m, e);
+    if (e === 0) return `Anything to the power 0 is 1, so <span class="m">${P(m)}⁰ = 1</span>.`;
+    if (e === 1) return `A power of 1 leaves it the same: <span class="m">${P(m)}¹ = ${H(m)}</span>.`;
+    const c = num(m), cr = pow(c, e), parts = [];
+    const vars = hasVars(m);
+    if (!(abs(c.p) === 1n && c.q === 1n && vars) || c.p < 0n) {
+      let s;
+      if (c.q !== 1n) s = `${P(c)}${supN(e)} = <span class="fr"><span>${c.p < 0n ? "(−" + abs(c.p) + ")" : c.p}${supN(e)}</span><span>${c.q}${supN(e)}</span></span> = ${H(cr)}`;
+      else if (e <= 4 && abs(c.p) <= 20n) s = `${c.p < 0n ? P(c) : H(c)}${supN(e)} = ${Array(e).fill(c.p < 0n ? P(c) : H(c)).join(c.p < 0n ? "" : " × ")} = ${H(cr)}`;
+      else s = `${c.p < 0n ? P(c) : H(c)}${supN(e)} = ${H(cr)}`;
+      parts.push(`<span class="m">${s}</span>`);
+    }
+    for (const k in m.v) {
+      const d = m.v[k];
+      const one = M(1n, 1n, { [k]: d });
+      parts.push(d === 1 ? `<span class="m"><i>${k}</i></span> becomes <span class="m">${H(pow(one, e))}</span>`
+        : `<span class="m">${P(one)}${supN(e)} = ${H(pow(one, e))}</span> (multiply the exponents)`);
+    }
+    let s = parts.length > 1 || vars ? `Raise each part to the power ${e}: ${parts.join(", and ")}. So <span class="m">${P(m)}${supN(e)} = ${H(r)}</span>.` : `${parts[0]}.`;
+    if (m.p < 0n) s += e % 2 ? " An odd power keeps it negative." : " An even power makes it positive.";
+    return s;
+  }
+  function multWhy(c, A, B, t, label) {
+    const nums = [M(c), num(A), num(B)];
+    const shown = nums.filter(x => !(x.p === 1n && x.q === 1n));
+    const prodN = num(t);
+    let s = shown.length ? `Multiply the numbers: <span class="m">${shown.map(F).join(" × ")} = ${H(prodN)}</span>. ` : "";
+    const va = Object.keys(A.v), vb = Object.keys(B.v);
+    if (va.some(k => vb.includes(k))) s += `For the variables, add the exponents: <span class="m">${H(M(1n, 1n, A.v))} · ${H(M(1n, 1n, B.v))} = ${hasVars(t) ? H(M(1n, 1n, t.v)) : "1"}</span>. `;
+    else if (hasVars(t)) s += `Then bring along the variables: <span class="m">${H(M(1n, 1n, t.v))}</span>. `;
+    return s + `So <span class="m">${label} = ${H(t)}</span>.`;
+  }
+
+  /* ---------- Shared: the row of term boxes ---------- */
+  const seq = $("seq");
+  function drawSeq({ lead, n, sel, shown, upTo, clickable, allBtn }) {
+    seq.innerHTML = "";
+    seq.appendChild(el("span", "lead", lead + " ="));
+    const last = upTo ?? n + 1;
+    for (let i = 1; i <= last; i++) {
+      if (i > 1) seq.appendChild(el("span", "plus", "+"));
+      const b = el(clickable ? "button" : "div", "tb" + (i === sel ? " sel" : "") + (shown[i] ? " done" : ""));
+      if (clickable) { b.type = "button"; b.setAttribute("aria-label", `Find term ${i}`); b.onclick = () => clickable(i); }
+      b.appendChild(el("span", "tv" + (shown[i] ? "" : " empty"), shown[i] ? H(shown[i]) : "?"));
+      b.appendChild(el("span", "tl", `t<sub>${i}</sub>`));
+      seq.appendChild(b);
+    }
+    if (upTo != null) { seq.appendChild(el("span", "plus", "+")); seq.appendChild(el("span", "more", "…")); }
+    if (allBtn) seq.appendChild(allBtn);
+  }
+
+  /* ---------- Find a term ---------- */
+  const binIn = $("bin"), nIn = $("nIn"), tIn = $("tIn"), errP = $("err");
+  const S = { a: null, b: null, n: 5, t: 3, found: {}, all: false, formulaOK: false };
+  const allBtn = el("button", "", "Show all terms");
+  allBtn.type = "button"; allBtn.id = "allBtn";
+  allBtn.onclick = () => { S.all = !S.all; drawTermSeq(); };
+
+  function readSetup() {
+    const r = parseBin(binIn.value);
+    if (r.n != null) { nIn.value = r.n; binIn.value = binT(r.a, r.b); }
+    const n = parseInt2(nIn.value), t = parseInt2(tIn.value);
+    binIn.classList.toggle("bad", !!r.error);
+    nIn.classList.toggle("bad", !(n >= 1 && n <= 12));
+    if (r.error) return r.error;
+    if (!(n >= 1 && n <= 12)) return "Use an exponent from 1 to 12.";
+    const tOk = t >= 1 && t <= n + 1;
+    tIn.classList.toggle("bad", !tOk);
+    if (!tOk) return `(${binT(r.a, r.b)})${SUPS(n)} has ${n + 1} terms: pick t₁ to t${String(n + 1).split("").map(d => "₀₁₂₃₄₅₆₇₈₉"[d]).join("")}.`;
+    const same = S.a && eq(S.a, r.a) && eq(S.b, r.b) && S.n === n;
+    if (!same) { S.found = {}; S.all = false; }
+    const changed = !same || S.t !== t;
+    Object.assign(S, { a: r.a, b: r.b, n, t });
+    return changed ? "" : null;
+  }
+
+  function drawTermSeq() {
+    const { a, b, n, t } = S, shown = {};
+    for (let i = 1; i <= n + 1; i++) if (S.all || S.found[i]) shown[i] = term(a, b, n, i - 1);
+    allBtn.textContent = S.all ? "Hide the terms" : "Show all terms";
+    drawSeq({ lead: `(${binH(a, b)})${supN(n)}`, n, sel: t, shown, clickable: i => { tIn.value = i; update(); }, allBtn });
+  }
+
+  // Step 1: the formula for this term with a box for each value.
+  let fBoxes = [];
+  function buildFormula() {
+    const { a, b, n, t } = S, k = t - 1;
+    const f = $("fml");
+    f.innerHTML = "";
+    const add = (node, cls) => { if (cls) node.classList.add(cls); f.appendChild(node); return node; };
+    add(el("span", "", `t<sub>${t}</sub> =`));
+    const bn = add(box("sm", "n"), "lo"), C = add(el("span", "", "C")), bk = add(box("sm", "k"), "lo");
+    C.style.marginInline = "2px";
+    add(el("span", "", "("));
+    const ba = add(box("a", "first term a", 5));
+    add(el("span", "", ")"));
+    const e1 = add(box("sm", "power on a"), "hi");
+    add(el("span", "", "("));
+    const bb = add(box("b", "second term b", 5));
+    add(el("span", "", ")"));
+    const e2 = add(box("sm", "power on b"), "hi");
+    fBoxes = [
+      [bn, v => parseInt2(v) === n, String(n)],
+      [bk, v => parseInt2(v) === k, String(k)],
+      [ba, v => eq(parseMono(v), a), T(a)],
+      [e1, v => parseInt2(v) === n - k, String(n - k)],
+      [bb, v => eq(parseMono(v), b), T(b)],
+      [e2, v => parseInt2(v) === k, String(k)],
+    ];
+    fBoxes.forEach(([inp, ok], idx) => {
+      inp.oninput = () => { inp.classList.remove("bad"); inp.classList.toggle("ok", ok(inp.value)); checkFormula(); };
+      inp.onblur = () => { if (inp.value.trim() && !ok(inp.value)) inp.classList.add("bad"); };
+      inp.onkeydown = e => { if (e.key === "Enter") { inp.onblur(); const nx = fBoxes[idx + 1]; if (nx) nx[0].focus(); } };
+    });
+
+    const think = $("think");
+    const kLine = t === 1
+      ? `It is the first term, so <span class="m ck">k = 0</span>. The term number is always one more than k.`
+      : `We want the ${ord(t)} term, <span class="m">t<sub>${t}</sub></span>. The term number is k + 1, so k + 1 = ${t} and <span class="m ck">k = ${k}</span>.`;
+    think.innerHTML =
+      `<p>${kLine}</p>` +
+      `<p>n is the exponent on the binomial, so <span class="m ck">n = ${n}</span>.</p>` +
+      `<p>The first term, <span class="m ca">a = ${H(a)}</span>, gets the power <span class="m">n − k = ${n} − ${k} = ${n - k}</span>.${n - k === 0 ? " Anything to the power 0 is 1, so this part will be 1." : ""}</p>` +
+      `<p>The second term, <span class="m cb">b = ${H(b)}</span>, gets the power <span class="m">k = ${k}</span>.${k === 0 ? " Anything to the power 0 is 1, so this part will be 1." : ""}</p>`;
+    S.formulaOK = false;
+    $("ready").textContent = "";
+    buildCalc();
+  }
+  function checkFormula() {
+    const ok = fBoxes.every(([i, f]) => f(i.value));
+    if (ok !== S.formulaOK) { S.formulaOK = ok; $("ready").textContent = ok ? "✓ The formula is ready." : ""; buildCalc(); }
+  }
+  $("fillMe").onclick = () => { fBoxes.forEach(([i, , v]) => { i.value = v; i.classList.remove("bad"); i.classList.add("ok"); }); checkFormula(); };
+
+  // Step 2: each part, then the term.
+  function buildCalc() {
+    const calc = $("calc"), calcFin = $("calcFin");
+    calc.innerHTML = ""; calcFin.innerHTML = "";
+    if (!S.formulaOK) { calc.appendChild(el("p", "wait", "Fill in the formula first. The parts to work out show up here.")); return; }
+    const { a, b, n, t } = S, k = t - 1;
+    const c = choose(n, k), A = pow(a, n - k), B = pow(b, k), tt = term(a, b, n, k);
+    const parts = [
+      { lab: Cn(n, k), key: Cn(n, k), val: M(c), why: () => chooseWhy(n, k) },
+      { lab: `(<span class="ca">${H(a)}</span>)${supN(n - k)}`, key: "Calculate", val: A, why: () => powWhy(a, n - k) },
+      { lab: `(<span class="cb">${H(b)}</span>)${supN(k)}`, key: "Calculate", val: B, why: () => powWhy(b, k) },
+    ];
+    const prodLine = el("span");
+    const okAll = () => parts.every(p => p.ok);
+    const setProd = () => {
+      prodLine.innerHTML = okAll()
+        ? `${F(M(c))} · ${A.p < 0n || A.q !== 1n ? P(A) : H(A)} · ${B.p < 0n || B.q !== 1n ? P(B) : H(B)}`
+        : `${Cn(n, k)} · (${H(a)})${supN(n - k)} · (${H(b)})${supN(k)}`;
+    };
+    const inputs = [];
+    parts.forEach((p, idx) => {
+      const row = el("div", "crow"), line = el("div", "cl"), why = el("p", "why");
+      line.appendChild(el("span", "", p.lab + " ="));
+      const inp = box("", "value");
+      inputs.push(inp);
+      const keyB = el("button", "key", p.key); keyB.type = "button";
+      line.append(inp, keyB);
+      row.append(line, why);
+      calc.appendChild(row);
+      const test = () => { p.ok = eq(parseMono(inp.value), p.val); inp.classList.toggle("ok", p.ok); if (p.ok) inp.classList.remove("bad"); setProd(); };
+      inp.oninput = () => { inp.classList.remove("bad"); test(); if (p.ok) why.innerHTML = p.why(); };
+      inp.onblur = () => { if (inp.value.trim() && !p.ok) inp.classList.add("bad"); };
+      inp.onkeydown = e => { if (e.key === "Enter") { inp.onblur(); (inputs[idx + 1] || ans).focus(); } };
+      keyB.onclick = () => { inp.value = T(p.val); test(); why.innerHTML = p.why(); };
+    });
+    const fin = el("div", "final"), line = el("div", "cl"), verdict = el("p", "verdict2"), why = el("p", "why");
+    line.appendChild(el("span", "", `t<sub>${t}</sub> =`));
+    line.appendChild(prodLine);
+    line.appendChild(el("span", "", "="));
+    const ans = box("", "the term", 8);
+    const chk = el("button", "key", "Check"), show = el("button", "key", "Show");
+    chk.type = show.type = "button";
+    line.append(ans, chk, show);
+    fin.append(line, verdict, why);
+    calcFin.appendChild(fin);
+    setProd();
+    const label = `t<sub>${t}</sub>`;
+    const win = () => {
+      ans.classList.add("ok"); ans.classList.remove("bad");
+      verdict.className = "verdict2 yes"; verdict.innerHTML = `✓ Yes! <span class="m">${label} = ${H(tt)}</span>`;
+      why.innerHTML = multWhy(c, A, B, tt, label);
+      S.found[t] = true; drawTermSeq();
+    };
+    const check = () => {
+      const m = parseMono(ans.value);
+      if (!m) { verdict.className = "verdict2 no"; verdict.textContent = "Type the term, like −1080x² or x³/8."; ans.classList.add("bad"); return; }
+      if (eq(m, tt)) return win();
+      ans.classList.add("bad"); ans.classList.remove("ok");
+      verdict.className = "verdict2 no";
+      const nm = num(m), nt = num(tt);
+      if (eq(neg(m), tt)) verdict.textContent = "Close! Check the sign.";
+      else if (sameVars(m, tt)) verdict.textContent = "The variable part is right. Check the number: multiply the three parts.";
+      else if (eq(nm, nt)) verdict.textContent = "The number is right. Check the variable and its exponent.";
+      else verdict.textContent = "Not yet. Multiply the three parts above.";
+    };
+    chk.onclick = check;
+    ans.onkeydown = e => { if (e.key === "Enter") check(); };
+    ans.oninput = () => { ans.classList.remove("bad", "ok"); verdict.textContent = ""; };
+    show.onclick = () => { ans.value = T(tt); win(); };
+  }
+
+  function update() {
+    const r = readSetup();
+    errP.textContent = r || "";
+    if (r !== "") return;
+    drawTermSeq();
+    buildFormula();
+  }
+  [binIn, nIn, tIn].forEach(i => {
+    i.addEventListener("change", update);
+    i.addEventListener("keydown", e => { if (e.key === "Enter") update(); });
+  });
+  [nIn, tIn].forEach(i => i.addEventListener("input", () => { if (parseInt2(i.value) != null) update(); }));
+
+  /* ---------- Find the binomial ---------- */
+  const R = {};
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  function newPuzzle() {
+    const As = [M(1n, 1n, { x: 1 }), M(2n, 1n, { x: 1 }), M(2n, 1n, { x: 1 }), M(3n, 1n, { x: 1 }), M(1n, 2n, { x: 1 }), M(1n, 3n, { x: 1 })];
+    for (let tries = 0; tries < 500; tries++) {
+      const a = pick(As), b = M(BigInt(pick([2, 3, 4, 5, 2, 3])) * (Math.random() < 0.45 ? -1n : 1n));
+      const n = 3 + Math.floor(Math.random() * 5), k = 1 + Math.floor(Math.random() * (n - 1));
+      const tt = term(a, b, n, k);
+      if (abs(tt.p) > 200000n || tt.q > 100n) continue;
+      if (R.a && eq(R.a, a) && eq(R.b, b) && R.n === n && R.k === k) continue;
+      Object.assign(R, { a, b, n, k, tt, stage: 0, solved: false });
+      break;
+    }
+    drawRev();
+  }
+  function revLead() {
+    return R.solved ? `(${binH(R.a, R.b)})${supN(R.n)}` : `(${H(R.a)} + <span class="qbox">?</span>)<sup><span class="qbox">?</span></sup>`;
+  }
+  function drawRevSeq() {
+    const shown = {};
+    if (R.solved) for (let i = 1; i <= R.n + 1; i++) shown[i] = term(R.a, R.b, R.n, i - 1);
+    else shown[R.k + 1] = R.tt;
+    drawSeq({ lead: revLead(), n: R.n, sel: R.k + 1, shown, upTo: R.stage >= 2 || R.solved ? null : R.k + 1 });
+  }
+  function drawRev() {
+    const { a, k, tt } = R, t = k + 1;
+    $("puz").innerHTML = `The <b>${ord(t)} term</b> of <span class="m">(<span class="ca">${H(a)}</span> + <span class="qbox">?</span>)<sup><span class="qbox">?</span></sup></span> is <span class="m">${H(tt)}</span>. What is the binomial?`;
+    $("ans2").value = ""; $("n2").value = "";
+    $("ans2").classList.remove("ok", "bad"); $("n2").classList.remove("ok", "bad");
+    $("verdict2").textContent = "";
+    drawRevSeq();
+    drawRevSteps();
+  }
+  // One step: a few think-aloud lines, a box and a Show button. Answering it (or Show) opens the next step.
+  function revStep(host, idx, lines, lab, ok, val, after) {
+    const st = el("div", "step");
+    lines.forEach(l => st.appendChild(el("p", "", l)));
+    const line = el("div", "cl"), inp = box("", lab.replace(/<[^>]+>/g, "")), show = el("button", "key", "Show"), note = el("p", "why");
+    show.type = "button";
+    line.append(el("span", "", lab + " ="), inp, show);
+    st.append(line, note);
+    host.appendChild(st);
+    const done = () => { inp.classList.add("ok"); inp.classList.remove("bad"); if (after) note.innerHTML = after(inp.value); if (R.stage === idx) { R.stage = idx + 1; drawRevSeq(); drawRevSteps(); } };
+    if (R.stage > idx) { inp.value = val; inp.classList.add("ok"); if (after) note.innerHTML = after(val); }
+    inp.oninput = () => { inp.classList.remove("bad"); if (ok(inp.value)) done(); else inp.classList.remove("ok"); };
+    inp.onkeydown = e => { if (e.key === "Enter" && inp.value.trim() && !ok(inp.value)) inp.classList.add("bad"); };
+    show.onclick = () => { inp.value = val; done(); };
+  }
+  function drawRevSteps() {
+    const { a, b, n, k, tt } = R, t = k + 1;
+    const s1 = $("rs1"), s2 = $("rs2");
+    s1.innerHTML = ""; s2.innerHTML = "";
+    const xe = tt.v.x;
+    revStep(s1, 0, [
+      `This is the ${ord(t)} term, <span class="m">t<sub>${t}</sub></span>. The term number is always k + 1, so <span class="m">k + 1 = ${t}</span>.`,
+    ], `<span class="ck">k</span>`, v => parseInt2(v) === k, String(k));
+    if (R.stage < 2) s2.appendChild(el("p", "wait", "Find k and n first."));
+    if (R.stage < 1) return;
+    revStep(s1, 1, [
+      `Only <span class="m ca">${H(a)}</span> has an <i class="v">x</i> in it, and in the formula it gets the power <span class="m">n − k</span>.`,
+      `The term has <span class="m">${H(M(1n, 1n, { x: xe }))}</span>, so <span class="m">n − k = ${xe}</span>. With k = ${k}: <span class="m">n − ${k} = ${xe}</span>.`,
+    ], `<span class="ck">n</span>`, v => parseInt2(v) === n, String(n));
+    if (R.stage < 2) return;
+    const c = choose(n, k), A = pow(a, n - k), known = mul(M(c), A), bk = pow(b, k);
+    const bLab = k === 1 ? `<span class="cb">b</span>` : `<span class="cb">b</span>${supN(k)}`;
+    revStep(s2, 2, [
+      `Put what we know in the formula: <span class="m">t<sub>${t}</sub> = ${Cn(n, k)} (${H(a)})${supN(n - k)} ${bLab}</span>.`,
+      `Work out the parts we know: <span class="m">${Cn(n, k)} = ${fmt(c)}</span> and <span class="m">(${H(a)})${supN(n - k)} = ${H(A)}</span>, so <span class="m">t<sub>${t}</sub> = ${H(known)} · ${bLab}</span>.`,
+      `That has to match the term: <span class="m">${H(known)} · ${bLab} = ${H(tt)}</span>. Divide both sides by <span class="m">${H(known)}</span>.`,
+    ], bLab, v => eq(parseMono(v), bk), T(bk));
+    if (k === 1 || R.stage < 3) return;
+    const even = k % 2 === 0;
+    const bAbs = b.p < 0n ? neg(b) : b;
+    revStep(s2, 3, [
+      `Undo the power ${k} with ${rootName(k)}: <span class="m">${H(bAbs)}${supN(k)} = ${H(pow(bAbs, k))}</span>${even ? "" : `, and <span class="m">${P(neg(bAbs))}${supN(k)} = ${H(pow(neg(bAbs), k))}</span>`}.` +
+        (even ? " An even power hides the sign, so b could be positive or negative." : " An odd power keeps the sign, so there is only one answer."),
+    ], `<span class="cb">b</span>`, v => { const m = parseMono(norm(v).replace(/^\s*(\+-|±)/, "")); return eq(m, b) || (even && eq(m, neg(b))); },
+      even ? `±${T(bAbs)}` : T(b),
+      () => (even ? `Both <span class="m">${H(bAbs)}</span> and <span class="m">${H(neg(bAbs))}</span> work, because <span class="m">${P(neg(bAbs))}${supN(k)} = ${H(pow(bAbs, k))}</span> too.` : ""));
+  }
+  function checkRev() {
+    const v = $("verdict2"), ai = $("ans2"), ni = $("n2");
+    const r = parseBin(ai.value);
+    if (r.n != null) ni.value = r.n;
+    const n = parseInt2(ni.value);
+    v.className = "verdict2 no";
+    if (r.error) { v.textContent = r.error; ai.classList.add("bad"); return; }
+    const evenOK = R.k % 2 === 0 && eq(r.b, neg(R.b));
+    if (eq(r.b, R.a) && (eq(r.a, R.b) || (R.k % 2 === 0 && eq(r.a, neg(R.b))))) { v.textContent = `Keep ${T(R.a)} first: which term is the ${ord(R.k + 1)} depends on which comes first.`; return; }
+    if (!eq(r.a, R.a)) { v.textContent = `The first term should stay ${T(R.a)}.`; ai.classList.add("bad"); return; }
+    if (!(eq(r.b, R.b) || evenOK)) { v.textContent = "Not yet. Check the second term: work through Step 2."; ai.classList.add("bad"); return; }
+    ai.classList.add("ok");
+    if (n !== R.n) { v.textContent = "The binomial is right. Check the exponent n."; ni.classList.add("bad"); return; }
+    ni.classList.add("ok");
+    const b = r.b;
+    v.className = "verdict2 yes";
+    v.innerHTML = `✓ Yes! <span class="m">(${binH(R.a, b)})${supN(R.n)}</span> has ${ord(R.k + 1)} term <span class="m">${H(R.tt)}</span>.` +
+      (R.k % 2 === 0 ? ` <span class="m">(${binH(R.a, neg(b))})${supN(R.n)}</span> works too.` : "");
+    R.solved = true;
+    if (!eq(b, R.b)) R.b = b;
+    drawRevSeq();
+  }
+  $("check2").onclick = checkRev;
+  [$("ans2"), $("n2")].forEach(i => {
+    i.onkeydown = e => { if (e.key === "Enter") checkRev(); };
+    i.oninput = () => { i.classList.remove("bad", "ok"); $("verdict2").textContent = ""; };
+  });
+  $("show2").onclick = () => { $("ans2").value = binT(R.a, R.b); $("n2").value = R.n; checkRev(); };
+  $("newP").onclick = newPuzzle;
+
+  /* ---------- Mode switch ---------- */
+  let mode = "term";
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
+    document.querySelectorAll("[data-mode]").forEach(s => (s.hidden = s.dataset.mode !== m));
+    if (m === "term") drawTermSeq(); else drawRevSeq();
+  }
+  document.querySelectorAll("#tabs button").forEach(b => (b.onclick = () => setMode(b.dataset.m)));
+
+  update();
+  newPuzzle();
+  setMode("term");
+  grow();
+})();
+</script>
+
+</body>
+</html>
