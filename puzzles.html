@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Kakooma and Math Crosswords</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --bad: #c8323c; --purple: #7346c9; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #ff6b74; --purple: #b99bff; } }
+:root[data-theme="dark"] { --bad: #ff6b74; --purple: #b99bff; }
+
+/* Segmented toggles: one choice pressed at a time. */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--chip); border: 1px solid var(--grid-major); border-radius: 12px; }
+.seg button { background: transparent; border: 0; border-radius: 9px; padding: 8px 16px; min-height: 46px; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+.seg button:hover { background: var(--sheet); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.seg.fam button { font-family: var(--font-num); font-size: 1.5rem; padding: 4px 18px; letter-spacing: 0.08em; }
+.ops { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) clamp(250px, 23vw, 380px); gap: clamp(14px, 2vw, 28px); }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+#board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 12px; padding: clamp(10px, 2vh, 24px); display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; --t: 80px; }
+@media (max-width: 860px) { #board { min-height: 60vh; } }
+.side { display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 14px); }
+.side > * { flex: none; }
+.rule { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.3; margin: 0; }
+.rule em { font-style: normal; color: var(--green); }
+.prog { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; margin: 0; color: var(--muted); }
+.prog b { font-family: var(--font-num); color: var(--ink); }
+.msg { min-height: 1.3em; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; }
+.msg.right { color: var(--green); }
+.msg.wrong { color: var(--bad); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btns button { font-family: var(--font-display); font-size: 1.05rem; padding: 10px 12px; border-radius: 10px; min-height: 48px; }
+.go { background: var(--green); border: 2px solid var(--green); color: var(--sheet); }
+.go:hover { background: var(--sheet); color: var(--green); border-color: var(--green); }
+
+/* ---------- Kakooma ---------- */
+.kak { display: flex; flex-direction: column; gap: calc(var(--t) * 0.22); }
+.krow { display: flex; align-items: center; gap: calc(var(--t) * 0.12); }
+.tile, .slot { width: var(--t); height: var(--t); flex: none; padding: 0; border-radius: calc(var(--t) * 0.16); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--t) * 0.42); line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.tile { background: var(--paper); border: 3px solid var(--grid-major); color: var(--ink); }
+.tile:hover { border-color: var(--pt); background: var(--chip); }
+.tile.part { border-color: var(--pt); color: var(--pt); background: var(--chip); }
+.tile.ans { border-color: var(--green); background: var(--green); color: var(--sheet); }
+.tile.miss { border-color: var(--bad); color: var(--bad); animation: shake 0.4s; }
+.krow.done .tile:not(.part):not(.ans) { opacity: 0.35; }
+.arrow { font-size: calc(var(--t) * 0.4); color: var(--muted); width: calc(var(--t) * 0.5); text-align: center; flex: none; }
+.slot { border: 3px dashed var(--grid-major); background: transparent; color: var(--green); cursor: default; }
+.slot.filled { border-style: solid; border-color: var(--green); }
+.kak.final .slot.filled { border-color: var(--purple); color: var(--purple); cursor: pointer; background: var(--paper); }
+.kak.final .slot.filled:hover { background: var(--chip); }
+.slot.fpart { border-color: var(--pt) !important; color: var(--pt) !important; }
+.slot.fans { border-color: var(--purple) !important; background: var(--purple) !important; color: var(--sheet) !important; }
+.slot.miss { border-color: var(--bad) !important; color: var(--bad) !important; animation: shake 0.4s; }
+.eqn { width: calc(var(--t) * 3.4); flex: none; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--t) * 0.3); line-height: 1.25; padding-left: calc(var(--t) * 0.15); }
+.narrow .eqn { display: none; }
+.eqn span { display: block; }
+.eqn span + span { color: var(--muted); font-size: 0.8em; }
+@keyframes shake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* ---------- Crossword ---------- */
+.cw { display: grid; grid-template-columns: repeat(5, var(--t)); grid-template-rows: repeat(5, var(--t)); gap: calc(var(--t) * 0.06); }
+.cw > * { display: flex; align-items: center; justify-content: center; font-family: var(--font-num); font-weight: 700; line-height: 1; }
+.cw .num { border-radius: calc(var(--t) * 0.12); font-size: calc(var(--t) * 0.4); background: var(--paper); border: 3px solid var(--grid-major); color: var(--ink); }
+.cw .op { font-size: calc(var(--t) * 0.5); color: var(--orange); }
+.cw .eq { font-size: calc(var(--t) * 0.5); color: var(--muted); }
+.cw .blank { padding: 0; border: 3px dashed var(--pt); background: var(--sheet); color: var(--pt); cursor: pointer; }
+.cw .blank:empty::before { content: "?"; color: var(--grid-major); }
+.cw .blank.sel { border-style: solid; border-width: 4px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--pt) 25%, transparent); }
+.cw .blank.right { border-style: solid; border-color: var(--green); color: var(--green); }
+.cw .blank.wrong { border-style: solid; border-color: var(--bad); color: var(--bad); }
+.cw .blank.shown { border-style: solid; border-color: var(--green); color: var(--green); background: var(--chip); }
+.cw .eq.down { transform: rotate(90deg); }
+.cw .void { visibility: hidden; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pad button { font-family: var(--font-num); font-size: clamp(1.4rem, 4vh, 2.2rem); padding: 0; height: clamp(42px, 6.9vh, 80px); border-radius: 10px; background: var(--paper); }
+.pad button:hover { background: var(--chip); }
+.pad .ok { background: var(--green); border-color: var(--green); color: var(--sheet); font-family: var(--font-display); font-size: clamp(1rem, 2.6vh, 1.5rem); }
+.pad .ok:hover { background: var(--sheet); color: var(--green); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Kakooma and Math Crosswords</h1></div>
+    <div class="ops">
+      <div class="seg" id="game" role="group" aria-label="Puzzle"></div>
+      <div class="seg fam" id="fam" role="group" aria-label="Operations"></div>
+      <div class="seg" id="level" role="group" aria-label="Level"></div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div id="board"></div>
+    <div class="side">
+      <p class="rule" id="rule"></p>
+      <p class="prog" id="prog"></p>
+      <p class="msg" id="msg" aria-live="polite"></p>
+      <div class="pad" id="pad" aria-label="Number keys" hidden></div>
+      <div class="btns">
+        <button type="button" class="go" id="new">New puzzle</button>
+        <button type="button" id="show">Show answers</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+  const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+  const st = { game: "kak", fam: "as", level: "easy" };
+  const GAMES = [["kak", "Kakooma"], ["cw", "Crossword"]];
+  const FAMS = [["as", "+ −"], ["md", "× ÷"]];
+  const LEVELS = [["easy", "Easy"], ["med", "Medium"], ["hard", "Hard"]];
+
+  function seg(box, items, current, choose) {
+    box.replaceChildren(...items.map(([v, txt]) => {
+      const b = el("button", "", txt);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(v === current));
+      b.onclick = () => { if (v !== current) choose(v); };
+      return b;
+    }));
+  }
+  function drawControls() {
+    seg($("game"), GAMES, st.game, v => { st.game = v; newPuzzle(); });
+    seg($("fam"), FAMS, st.fam, v => { st.fam = v; newPuzzle(); });
+    seg($("level"), LEVELS, st.level, v => { st.level = v; newPuzzle(); });
+  }
+  const say = (text, cls = "") => { $("msg").textContent = text; $("msg").className = "msg " + cls; };
+
+  // ================= Kakooma =================
+  // Each row hides one number that is the sum (or product) of two others in that row.
+  // On Medium and Hard the row answers then make one last puzzle of the same kind.
+  const KAK = {
+    as: { easy: { rows: 4, k: 4, max: 10, final: false }, med: { rows: 4, k: 5, max: 20, final: true }, hard: { rows: 5, k: 6, max: 50, final: true } },
+    md: { easy: { rows: 4, k: 4, max: 30, final: false }, med: { rows: 4, k: 5, max: 100, final: true }, hard: { rows: 5, k: 6, max: 144, final: true } },
+  };
+  const combine = (a, b) => st.fam === "as" ? a + b : a * b;
+  const low = () => st.fam === "as" ? 1 : 2;
+  // Ways to make t from two different numbers in range.
+  function pairsFor(t) {
+    const out = [];
+    for (let a = low(); a * 2 < t || (st.fam === "md" && a * a < t); a++) {
+      if (st.fam === "as") { const b = t - a; if (b > a) out.push([a, b]); }
+      else if (t % a === 0 && t / a > a) out.push([a, t / a]);
+    }
+    return out;
+  }
+  // Index of every number in the row that is made by two others; the puzzle needs exactly one.
+  function makers(row) {
+    const found = [];
+    row.forEach((x, i) => {
+      for (let p = 0; p < row.length; p++) for (let q = p + 1; q < row.length; q++)
+        if (p !== i && q !== i && combine(row[p], row[q]) === x) found.push({ i, p, q });
+    });
+    return found;
+  }
+  // A row of k numbers where t is the only one made by two others; extras come from pool.
+  function kakRow(t, k, pool) {
+    const pairs = pairsFor(t).filter(([a, b]) => pool.includes(a) && pool.includes(b));
+    if (!pairs.length || pool.length < k) return null;
+    for (let tries = 0; tries < 400; tries++) {
+      const row = [...pick(pairs), t];
+      while (row.length < k) { const x = pick(pool); if (!row.includes(x)) row.push(x); }
+      shuffle(row);
+      const m = makers(row);
+      if (m.length === 1 && row[m[0].i] === t) return { nums: row, ...m[0] };
+    }
+    return null;
+  }
+  function genKak() {
+    const c = KAK[st.fam][st.level];
+    const all = [];
+    for (let x = low(); x <= c.max; x++) all.push(x);
+    const targets = all.filter(t => pairsFor(t).length);
+    for (let tries = 0; tries < 500; tries++) {
+      let answers, final = null;
+      if (c.final) {
+        // The answers are a puzzle of their own, so build that row first.
+        const f = kakRow(pick(targets), c.rows, targets);
+        if (!f) continue;
+        answers = f.nums; final = f;
+      } else answers = shuffle(targets.slice()).slice(0, c.rows);
+      const rows = answers.map(t => kakRow(t, c.k, all));
+      if (rows.every(Boolean)) return { rows, answers, final };
+    }
+    return null;
+  }
+  function kakLines(a, b, t) {
+    return st.fam === "as" ? [`${a} + ${b} = ${t}`, `${t} − ${b} = ${a}`] : [`${a} × ${b} = ${t}`, `${t} ÷ ${b} = ${a}`];
+  }
+  const word = () => st.fam === "as" ? "sum" : "product";
+
+  let kak = null;
+  function startKak() {
+    kak = genKak();
+    kak.solved = kak.rows.map(() => false);
+    kak.finalDone = false;
+    drawKak();
+    say("");
+  }
+  function kakRule() {
+    const finalTime = kak.final && kak.solved.every(Boolean) && !kak.finalDone;
+    $("rule").innerHTML = finalTime
+      ? `Last step: which <em>answer</em> is the ${word()} of two other answers?`
+      : `In each row, find the number that is the <em>${word()}</em> of two others.`;
+    const n = kak.solved.filter(Boolean).length;
+    $("prog").innerHTML = `Rows found: <b>${n}</b> of <b>${kak.rows.length}</b>` + (kak.final ? `<br>Last step: <b>${kak.finalDone ? kakLines(kak.answers[kak.final.p], kak.answers[kak.final.q], kak.answers[kak.final.i])[0] : "—"}</b>` : "");
+  }
+  function drawKak() {
+    const box = el("div", "kak");
+    const allRows = kak.solved.every(Boolean);
+    if (kak.final && allRows && !kak.finalDone) box.classList.add("final");
+    kak.rows.forEach((r, ri) => {
+      const row = el("div", "krow" + (kak.solved[ri] ? " done" : ""));
+      r.nums.forEach((x, i) => {
+        const b = el("button", "tile", x);
+        b.type = "button";
+        if (kak.solved[ri]) { if (i === r.i) b.classList.add("ans"); else if (i === r.p || i === r.q) b.classList.add("part"); }
+        b.onclick = () => tapTile(ri, i, b);
+        row.append(b);
+      });
+      row.append(el("span", "arrow", "→"));
+      const slot = el("button", "slot", kak.solved[ri] ? r.nums[r.i] : "");
+      slot.type = "button";
+      if (kak.solved[ri]) slot.classList.add("filled");
+      if (kak.finalDone) {
+        if (ri === kak.final.i) slot.classList.add("fans");
+        else if (ri === kak.final.p || ri === kak.final.q) slot.classList.add("fpart");
+      }
+      slot.onclick = () => tapSlot(ri, slot);
+      row.append(slot);
+      const eqn = el("div", "eqn");
+      if (kak.solved[ri]) kakLines(r.nums[r.p], r.nums[r.q], r.nums[r.i]).forEach(t => eqn.append(el("span", "", t)));
+      row.append(eqn);
+      box.append(row);
+    });
+    $("board").replaceChildren(box);
+    kakRule();
+    fit();
+  }
+  function shake(b) { b.classList.remove("miss"); void b.offsetWidth; b.classList.add("miss"); setTimeout(() => b.classList.remove("miss"), 600); }
+  function tapTile(ri, i, b) {
+    const r = kak.rows[ri];
+    if (kak.solved[ri]) return;
+    if (i === r.i) {
+      kak.solved[ri] = true;
+      drawKak();
+      if (kak.solved.every(Boolean)) say(kak.final ? `All rows found! Now look at the answers.` : "Puzzle solved! 🎉", "right");
+      else say(`Yes! ${kakLines(r.nums[r.p], r.nums[r.q], r.nums[r.i])[0]}`, "right");
+    } else {
+      shake(b);
+      say(`${r.nums[i]} is not the ${word()} of two others in that row.`, "wrong");
+    }
+  }
+  function tapSlot(ri, b) {
+    if (!kak.final || kak.finalDone || !kak.solved.every(Boolean)) return;
+    const f = kak.final;
+    if (ri === f.i) {
+      kak.finalDone = true;
+      drawKak();
+      say("Puzzle solved! 🎉", "right");
+    } else {
+      shake(b);
+      say(`${kak.answers[ri]} is not the ${word()} of two other answers.`, "wrong");
+    }
+  }
+  function showKak() {
+    kak.solved = kak.rows.map(() => true);
+    if (kak.final) kak.finalDone = true;
+    drawKak();
+    say("Here are the answers.");
+  }
+
+  // ================= Crossword =================
+  // 5 by 5 grid: three equations across (rows 0, 2, 4) and three down (columns 0, 2, 4) share nine numbers.
+  const CW = {
+    as: { easy: { start: 10, max: 20, blanks: 3 }, med: { start: 25, max: 50, blanks: 4 }, hard: { start: 50, max: 100, blanks: 5 } },
+    md: { easy: { start: 6, max: 36, blanks: 3 }, med: { start: 10, max: 100, blanks: 4 }, hard: { start: 12, max: 144, blanks: 5 } },
+  };
+  // Equations as [left, op, right, result] using number positions 0..8 (row by row in the 3 by 3 of numbers).
+  const EQS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8]];
+  const apply = (a, op, b) => {
+    if (op === "+") return a + b;
+    if (op === "−") return a - b;
+    if (op === "×") return a * b;
+    return b !== 0 && a % b === 0 ? a / b : NaN;
+  };
+  function genNumbers() {
+    const c = CW[st.fam][st.level];
+    const opsOf = st.fam === "as" ? ["+", "−"] : ["×", "÷"];
+    const lo = st.fam === "as" ? 1 : 2;
+    for (let tries = 0; tries < 200000; tries++) {
+      const ops = EQS.map(() => pick(opsOf));
+      // Easy keeps one operation per puzzle; Medium and Hard mix both.
+      if (st.level === "easy" ? new Set(ops).size !== 1 : new Set(ops).size !== 2) continue;
+      if (st.level === "easy" && st.fam === "as" && ops[0] === "−" && Math.random() < 0.5) continue;
+      const v = Array(9).fill(0);
+      [0, 1, 3, 4].forEach(i => { v[i] = rnd(lo, c.start); });
+      v[2] = apply(v[0], ops[0], v[1]);
+      v[5] = apply(v[3], ops[1], v[4]);
+      v[6] = apply(v[0], ops[3], v[3]);
+      v[7] = apply(v[1], ops[4], v[4]);
+      v[8] = apply(v[6], ops[2], v[7]);
+      if (apply(v[2], ops[5], v[5]) !== v[8]) continue;
+      if (!v.every(x => Number.isInteger(x) && x >= lo && x <= c.max)) continue;
+      if (new Set(v).size < 6) continue;
+      return { v, ops };
+    }
+    return null;
+  }
+  // Steps needed to fill the blanks when each step solves equations with one unknown; null when stuck.
+  function solveSteps(hidden) {
+    const known = new Set([...Array(9).keys()].filter(i => !hidden.has(i)));
+    let steps = 0;
+    while (known.size < 9) {
+      const add = [];
+      for (const e of EQS) { const unk = e.filter(i => !known.has(i)); if (unk.length === 1) add.push(unk[0]); }
+      if (!add.length) return null;
+      add.forEach(i => known.add(i));
+      steps++;
+    }
+    return steps;
+  }
+  function genCw() {
+    const c = CW[st.fam][st.level];
+    for (let tries = 0; tries < 200; tries++) {
+      const g = genNumbers();
+      if (!g) continue;
+      for (let h = 0; h < 300; h++) {
+        const hidden = new Set(shuffle([...Array(9).keys()]).slice(0, c.blanks));
+        const steps = solveSteps(hidden);
+        if (steps === null) continue;
+        if (st.level === "easy" && steps !== 1) continue;
+        if (st.level === "hard" && steps < 2) continue;
+        return { ...g, hidden };
+      }
+    }
+    return null;
+  }
+
+  let cw = null;
+  function startCw() {
+    cw = genCw();
+    cw.typed = {};
+    cw.sel = [...cw.hidden].sort((a, b) => a - b)[0];
+    cw.marks = {};
+    cw.shown = false;
+    $("rule").innerHTML = "Fill in the missing numbers so every row and column is a <em>true equation</em>.";
+    drawCw();
+    say("Read across → and down ↓.");
+  }
+  function drawCw() {
+    const grid = el("div", "cw");
+    const cellAt = (r, c) => {
+      if (r % 2 === 0 && c % 2 === 0) return { num: (r / 2) * 3 + c / 2 };
+      if (r % 2 === 0) return c === 1 ? { op: cw.ops[r / 2] } : { eq: "=" };
+      if (c % 2 === 0) return r === 1 ? { op: cw.ops[3 + c / 2] } : { eq: "=" };
+      return {};
+    };
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+      const cell = cellAt(r, c);
+      if (cell.num !== undefined) {
+        const n = cell.num;
+        if (cw.hidden.has(n)) {
+          const b = el("button", "num blank");
+          b.type = "button";
+          b.setAttribute("aria-label", "Missing number");
+          b.textContent = cw.shown && cw.marks[n] !== "right" ? cw.v[n] : (cw.typed[n] || "");
+          if (cw.shown && cw.marks[n] !== "right") b.classList.add("shown");
+          else if (cw.marks[n]) b.classList.add(cw.marks[n]);
+          if (n === cw.sel && !cw.shown) b.classList.add("sel");
+          b.onclick = () => { cw.sel = n; drawCw(); };
+          grid.append(b);
+        } else grid.append(el("div", "num", cw.v[n]));
+      } else if (cell.op) grid.append(el("div", "op", cell.op));
+      else if (cell.eq) grid.append(el("div", r % 2 === 1 ? "eq down" : "eq", "="));
+      else grid.append(el("div", "void"));
+    }
+    $("board").replaceChildren(grid);
+    const blanks = [...cw.hidden];
+    const filled = blanks.filter(n => cw.typed[n]).length;
+    $("prog").innerHTML = `Filled: <b>${filled}</b> of <b>${blanks.length}</b>`;
+    fit();
+  }
+  function cwKey(k) {
+    if (!cw || cw.shown) return;
+    const order = [...cw.hidden].sort((a, b) => a - b);
+    const n = cw.sel;
+    if (k === "ok") return checkCw();
+    if (k === "next" || k === "prev") {
+      const i = order.indexOf(n);
+      cw.sel = order[(i + (k === "next" ? 1 : order.length - 1)) % order.length];
+    } else if (k === "back") { cw.typed[n] = (cw.typed[n] || "").slice(0, -1); delete cw.marks[n]; }
+    else if ((cw.typed[n] || "").length < 3) { cw.typed[n] = ((cw.typed[n] === "0" ? "" : cw.typed[n]) || "") + k; delete cw.marks[n]; }
+    drawCw();
+  }
+  function checkCw() {
+    const blanks = [...cw.hidden];
+    let right = 0, wrong = 0;
+    for (const n of blanks) {
+      if (!cw.typed[n]) { delete cw.marks[n]; continue; }
+      const ok = Number(cw.typed[n]) === cw.v[n];
+      cw.marks[n] = ok ? "right" : "wrong";
+      ok ? right++ : wrong++;
+    }
+    drawCw();
+    if (right === blanks.length) say("Puzzle solved! 🎉", "right");
+    else if (wrong) say(`${wrong} red: try again.`, "wrong");
+    else if (right) say(`${right} right so far. Keep going!`, "right");
+    else say("Type a number in a ? box first.");
+  }
+  function showCw() { cw.shown = true; drawCw(); say("Here are the answers."); }
+
+  // On-screen keypad for the crossword (also works with the keyboard).
+  for (const k of ["7", "8", "9", "4", "5", "6", "1", "2", "3", "back", "0", "ok"]) {
+    const b = el("button", k === "ok" ? "ok" : "", k === "back" ? "⌫" : k === "ok" ? "Check" : k);
+    b.type = "button";
+    if (k === "back") b.setAttribute("aria-label", "Erase");
+    b.onclick = () => cwKey(k);
+    $("pad").append(b);
+  }
+  document.addEventListener("keydown", e => {
+    if (st.game !== "cw" || e.ctrlKey || e.metaKey || e.altKey) return;
+    const map = { Backspace: "back", Delete: "back", Enter: "ok", ArrowRight: "next", ArrowDown: "next", ArrowLeft: "prev", ArrowUp: "prev", Tab: e.shiftKey ? "prev" : "next" };
+    const k = /^[0-9]$/.test(e.key) ? e.key : map[e.key];
+    if (!k) return;
+    if (k === "ok" && e.target.closest && e.target.closest(".seg, .btns")) return;
+    e.preventDefault();
+    cwKey(k);
+  });
+
+  // ================= Sizing =================
+  // Tiles scale so the whole puzzle fills the board without scrolling.
+  function fit() {
+    const b = $("board"), cs = getComputedStyle(b);
+    const w = b.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const h = b.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    let t;
+    if (st.game === "kak" && kak) {
+      const rows = kak.rows.length, k = kak.rows[0].nums.length;
+      // Phones skip the equations beside each row so the tiles stay big enough to tap.
+      const narrow = w < 640;
+      b.classList.toggle("narrow", narrow);
+      t = Math.min(h / (rows + (rows - 1) * 0.22), w / (k + 1 + 0.5 + (narrow ? 0 : 3.55) + (k + 2) * 0.12));
+    } else t = Math.min(w, h) / 5.3;
+    b.style.setProperty("--t", Math.max(36, Math.min(160, Math.floor(t))) + "px");
+  }
+  new ResizeObserver(fit).observe($("board"));
+
+  function newPuzzle() {
+    drawControls();
+    $("pad").hidden = st.game !== "cw";
+    if (st.game === "kak") startKak(); else startCw();
+  }
+  $("new").onclick = newPuzzle;
+  $("show").onclick = () => { if (st.game === "kak") showKak(); else showCw(); };
+  newPuzzle();
+})();
+</script>
+
+</body>
+</html>

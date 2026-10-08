@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Factoring Quadratics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --bad: #c8323c; --purple: #7a3fc0; --teal: #0f7f86; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; } }
+:root[data-theme="dark"] { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; }
+
+/* Segmented toggles: one choice pressed at a time. */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--chip); border: 1px solid var(--grid-major); border-radius: 12px; }
+.seg button { background: transparent; border: 0; border-radius: 9px; padding: 8px 16px; min-height: 46px; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
+.seg button:hover { background: var(--sheet); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.seg.lvl button { font-family: var(--font-num); font-weight: 700; }
+
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+.bar > button, .typed button { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; min-height: 48px; padding: 8px 18px; border-radius: 10px; }
+.bar .new { background: var(--green); border-color: var(--green); color: var(--sheet); }
+.bar .new:hover { background: var(--sheet); color: var(--green); }
+.typed { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.typed input { font-family: var(--font-num); font-size: 1.15rem; min-height: 48px; width: 16em; padding: 6px 12px; border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 0.42fr); gap: clamp(14px, 2vw, 32px); background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 12px; padding: clamp(12px, 2vh, 24px) clamp(14px, 2vw, 30px); }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } .typed { margin-left: 0; } .work { --fs: 1.45rem; } }
+.work { --fs: clamp(1.1rem, min(3.9vh, 2.4vw), 2.5rem); font-size: var(--fs); display: flex; flex-direction: column; justify-content: safe center; gap: clamp(6px, 1.6vh, 18px); min-width: 0; }
+.cf { margin: 0; font-size: 0.6em; color: var(--muted); text-align: center; }
+.cf b { color: var(--ink); font-family: var(--font-num); }
+.cap { margin: 0; font-size: max(0.92rem, 0.48em); color: var(--muted); font-weight: 700; line-height: 1.25; }
+.m { font-family: var(--font-num); font-weight: 700; white-space: nowrap; }
+
+/* Answer boxes. Placeholders are the text prompts; borders show checked state. */
+input.bx { font: inherit; font-family: var(--font-num); font-weight: 700; width: 4.4ch; padding: 0.04em 0.1em; text-align: center; color: var(--ink); background: var(--paper); border: 0.12em solid var(--grid-major); border-radius: 0.22em; position: relative; z-index: 1; }
+input.bx.wide { width: 7.4ch; }
+input.bx.mid { width: 5.4ch; }
+input.bx::placeholder { font-family: var(--font-body); font-weight: 700; font-size: 0.5em; color: var(--muted); opacity: 0.9; }
+input.bx:focus { outline: none; border-color: var(--pt); }
+input.bx.ok { border-color: var(--green); color: var(--green); }
+input.bx.bad { border-color: var(--bad); color: var(--bad); }
+input.bx.todo, input.bx.try { border-color: var(--orange); }
+input.bx.row1 { background: color-mix(in srgb, var(--pt) 9%, var(--paper)); }
+input.bx.row2 { background: color-mix(in srgb, var(--orange) 10%, var(--paper)); }
+input.bx.dg1:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--purple) 60%, var(--grid-major)); }
+input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 60%, var(--grid-major)); }
+
+/* Logic method: factors stacked under the first and last terms, an X between them. */
+.lg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; justify-items: center; }
+.lg .t { grid-row: 1; font-family: var(--font-num); font-weight: 700; font-size: 1.45em; line-height: 1.15; white-space: nowrap; }
+.lg .t2 { grid-column: 2; } .lg .t3 { grid-column: 3; }
+.lg .t2.match { color: var(--green); }
+.lg .cap { grid-row: 2; text-align: center; margin: 0.15em 0 0.35em; }
+.lg .band { grid-column: 1 / -1; align-self: stretch; justify-self: stretch; margin: 0.12em 0; border-radius: 0.3em; }
+.band.b1 { grid-row: 3; background: color-mix(in srgb, var(--pt) 8%, transparent); }
+.band.b2 { grid-row: 4; background: color-mix(in srgb, var(--orange) 9%, transparent); }
+.lg.read .band { outline: 0.08em solid; } .lg.read .b1 { outline-color: var(--pt); } .lg.read .b2 { outline-color: var(--orange); }
+.lg input.bx { margin: 0.4em 0; }
+.lg .r1 { grid-row: 3; } .lg .r2 { grid-row: 4; } .lg .c1 { grid-column: 1; } .lg .c3 { grid-column: 3; }
+.lg .xw { grid-column: 2; grid-row: 3 / 5; align-self: stretch; justify-self: stretch; position: relative; }
+.lg .x { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.x line { stroke-width: 4; stroke-linecap: round; }
+.x .l1 { stroke: var(--purple); } .x .l2 { stroke: var(--teal); }
+.diag { grid-column: 1 / -1; grid-row: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.3em; margin-top: 0.3em; font-family: var(--font-num); font-weight: 700; }
+.diag .p1 { color: var(--purple); } .diag .p2 { color: var(--teal); }
+.vs { grid-column: 1 / -1; grid-row: 6; min-height: 1.3em; font-size: 0.62em; font-weight: 700; text-align: center; }
+.vs.good { color: var(--green); } .vs.off { color: var(--orange); }
+.fin { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.2em; font-family: var(--font-num); font-weight: 700; }
+.fin .lead { font-family: var(--font-display); font-weight: 800; font-size: 0.7em; margin-right: 0.4em; }
+.fin.done { color: var(--green); }
+
+/* Decomposition: one line per step. */
+.ds { display: flex; flex-direction: column; gap: 0.12em; }
+.ex { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25em; font-family: var(--font-num); font-weight: 700; }
+.ex .info { font-size: 0.55em; font-family: var(--font-body); color: var(--muted); margin-left: 0.4em; }
+.ex .info.good { color: var(--green); }
+.grp { color: var(--muted); }
+.dtri { font-family: var(--font-num); font-weight: 700; font-size: 1.3em; text-align: center; line-height: 1.15; }
+
+/* Coach: the next step, then the buttons. */
+.coach { display: flex; flex-direction: column; gap: 14px; min-width: 0; border-left: 1px dashed var(--grid-major); padding-left: clamp(14px, 2vw, 30px); }
+@media (max-width: 860px) { .coach { border-left: 0; padding-left: 0; border-top: 1px dashed var(--grid-major); padding-top: 14px; } }
+.msg { flex: 1 1 auto; font-size: clamp(1.1rem, min(3.3vh, 1.8vw), 1.7rem); line-height: 1.35; font-weight: 700; }
+.msg p { margin: 0 0 0.6em; }
+.msg .m { color: var(--pt); }
+.msg.good { color: var(--green); }
+.msg.good .m { color: var(--green); }
+.msg .bad { color: var(--bad); }
+.cbtns { display: flex; flex-wrap: wrap; gap: 10px; }
+.cbtns button { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; padding: 10px 18px; min-height: 48px; border-radius: 10px; }
+.cbtns .chk { background: var(--pt); border-color: var(--pt); color: var(--sheet); font-size: 1.35rem; padding: 10px 28px; }
+.cbtns .chk:hover { background: var(--sheet); color: var(--pt); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Factoring Quadratics</h1></div>
+    <div class="seg" id="method" role="group" aria-label="Method">
+      <button type="button" data-v="dec">Decomposition</button>
+      <button type="button" data-v="logic">Logic</button>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="seg lvl" id="level" role="group" aria-label="Kind of question">
+      <button type="button" data-v="1">x² + bx + c</button>
+      <button type="button" data-v="2">ax² + bx + c</button>
+    </div>
+    <button type="button" class="new" id="newQ">New question</button>
+    <form class="typed" id="typedForm">
+      <input id="typed" autocomplete="off" spellcheck="false" placeholder="Type one: 6x^2 + 7x + 2" aria-label="Type a quadratic to factor">
+      <button type="submit">Go</button>
+    </form>
+  </div>
+
+  <div class="stage">
+    <section class="work" id="workLogic" hidden>
+      <p class="cf" id="cfL" hidden></p>
+      <div class="lg" id="lg">
+        <div class="band b1"></div><div class="band b2"></div>
+        <div class="t t1" id="lt1"></div><div class="t t2" id="lt2"></div><div class="t t3" id="lt3"></div>
+        <p class="cap c1" id="lcap1"></p><p class="cap c3" id="lcap3"></p>
+        <input class="bx r1 c1 row1" data-k="f1" placeholder="?x" aria-label="First factor of the first term, top row">
+        <input class="bx r2 c1 row2" data-k="f2" placeholder="?x" aria-label="Second factor of the first term, bottom row">
+        <div class="xw"><svg class="x" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line class="l1" x1="4" y1="25" x2="96" y2="75" vector-effect="non-scaling-stroke"/>
+          <line class="l2" x1="4" y1="75" x2="96" y2="25" vector-effect="non-scaling-stroke"/>
+        </svg></div>
+        <input class="bx r1 c3 row1" data-k="c1" placeholder="?" aria-label="First factor of the constant, top row">
+        <input class="bx r2 c3 row2" data-k="c2" placeholder="?" aria-label="Second factor of the constant, bottom row">
+        <div class="diag">
+          <input class="bx mid dg1" data-k="d1" aria-label="Product along the purple diagonal">
+          <span>+</span>
+          <input class="bx mid dg2" data-k="d2" aria-label="Product along the teal diagonal">
+          <span>=</span>
+          <input class="bx mid" data-k="sum" placeholder="sum" aria-label="Sum of the diagonal products">
+        </div>
+        <div class="vs" id="vs"></div>
+      </div>
+      <p class="cap" style="text-align:center">The answer is the horizontal terms: read across each row.</p>
+      <div class="fin" id="finL"><span class="lead">Answer:</span><span class="pre"></span>(<input class="bx wide row1" data-k="A" placeholder="top row" aria-label="Top row binomial">)(<input class="bx wide row2" data-k="B" placeholder="bottom row" aria-label="Bottom row binomial">)</div>
+    </section>
+
+    <section class="work" id="workDec" hidden>
+      <div class="dtri" id="dtri"></div>
+      <p class="cf" id="cfD" hidden></p>
+      <div class="ds"><p class="cap">1. Multiply the first and last numbers: a × c</p>
+        <div class="ex"><span id="acText"></span><span>=</span><input class="bx" data-k="ac" placeholder="a × c" aria-label="a times c"></div></div>
+      <div class="ds"><p class="cap" id="cap2"></p>
+        <div class="ex"><input class="bx" data-k="n1" placeholder="?" aria-label="First number"><span>and</span><input class="bx" data-k="n2" placeholder="?" aria-label="Second number"><span class="info" id="nInfo"></span></div></div>
+      <div class="ds"><p class="cap">3. Split the middle term into two x terms using those numbers</p>
+        <div class="ex"><span id="sFirst"></span><input class="bx mid" data-k="s1" placeholder="+ ?x" aria-label="First x term"><input class="bx mid" data-k="s2" placeholder="+ ?x" aria-label="Second x term"><span id="sLast"></span></div></div>
+      <div class="ds"><p class="cap">4. Group in pairs. Take out the common factor of each group</p>
+        <div class="ex grp" id="grpLine"></div>
+        <div class="ex"><input class="bx" data-k="g1" placeholder="factor" aria-label="Common factor of the first group">(<input class="bx wide" data-k="i1" placeholder="bracket" aria-label="First bracket">)<input class="bx mid" data-k="g2" placeholder="+ factor" aria-label="Common factor of the second group">(<input class="bx wide" data-k="i2" placeholder="bracket" aria-label="Second bracket">)</div></div>
+      <div class="ds"><p class="cap">5. The matching bracket is one factor. The terms outside make the other</p>
+        <div class="fin" id="finD"><span class="pre"></span>(<input class="bx wide" data-k="A" placeholder="bracket" aria-label="Matching bracket">)(<input class="bx wide" data-k="B" placeholder="outside terms" aria-label="Outside terms">)</div></div>
+    </section>
+
+    <aside class="coach">
+      <p class="label">Next step</p>
+      <div class="msg" id="msg" aria-live="polite"></div>
+      <div class="cbtns">
+        <button type="button" class="chk" id="check">Check</button>
+        <button type="button" id="show">Show answer</button>
+        <button type="button" id="clear">Clear</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const st = { method: "dec", level: 1, q: null };
+
+  // ---------- Polynomials as [constant, x, x²] ----------
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  const MINUS = "−";
+  function parse(s) { // null = empty, undefined = can't read
+    s = s.toLowerCase().replace(/[−–—]/g, "-").replace(/²/g, "^2").replace(/[\s·*×]/g, "");
+    s = s.replace(/^(y|[a-z]\(x\))=/, "").replace(/=0$/, "");
+    while (s.startsWith("(") && s.endsWith(")")) s = s.slice(1, -1);
+    if (!s) return null;
+    const out = [0, 0, 0], re = /([+-]?)(\d*)(x(?:\^?2)?)?/y;
+    let i = 0;
+    while (i < s.length) {
+      re.lastIndex = i;
+      const m = re.exec(s);
+      if (!m || (!m[2] && !m[3])) return undefined;
+      const k = (m[1] === "-" ? -1 : 1) * (m[2] ? Number(m[2]) : 1);
+      out[m[3] ? (m[3].length > 1 ? 2 : 1) : 0] += k;
+      i = re.lastIndex;
+    }
+    return out;
+  }
+  const mul = (p, q) => { const r = [0, 0, 0, 0, 0]; p.forEach((a, i) => q.forEach((b, j) => { r[i + j] += a * b; })); return r; };
+  const same = (p, q) => { for (let i = 0; i < 5; i++) if ((p[i] || 0) !== (q[i] || 0)) return false; return true; };
+  const deg = p => { for (let i = p.length - 1; i >= 0; i--) if (p[i]) return i; return -1; };
+  const isMono = (p, pow) => p && p.every((v, i) => (i === pow ? v !== 0 : v === 0));
+  function fmt(p) {
+    const parts = [];
+    for (let i = Math.min(p.length - 1, 2); i >= 0; i--) {
+      const k = p[i];
+      if (!k) continue;
+      const a = Math.abs(k), body = i === 0 ? String(a) : (a === 1 ? "" : a) + (i === 2 ? "x²" : "x");
+      parts.push(parts.length ? (k < 0 ? ` ${MINUS} ` : " + ") + body : (k < 0 ? MINUS : "") + body);
+    }
+    return parts.join("") || "0";
+  }
+  const signed = p => { const s = fmt(p); return s.startsWith(MINUS) ? `${MINUS} ${s.slice(1)}` : `+ ${s}`; };
+  const html = s => `<span class="m">${s}</span>`;
+  const lead = g => (g === 1 ? "" : g === -1 ? MINUS : fmt([g])); // common factor written in front of brackets
+
+  // ---------- Questions ----------
+  function solve(a, b, c) { // (m x + p)(n x + q), m, n > 0
+    for (let m = a; m >= 1; m--) {
+      if (a % m) continue;
+      const n = a / m;
+      for (let p = -Math.abs(c); p <= Math.abs(c); p++) {
+        if (!p || c % p) continue;
+        const q = c / p;
+        if (m * q + n * p === b && gcd(m, p) === 1 && gcd(n, q) === 1) return { m, n, p, q };
+      }
+    }
+    return null;
+  }
+  function setQuestion(a, b, c) {
+    let g = gcd(gcd(a, b), c);
+    if (a < 0) g = -g;
+    const r = [c / g, b / g, a / g];
+    const sol = solve(r[2], r[1], r[0]);
+    if (!sol) return false;
+    st.q = { orig: [c, b, a], g, r, sol };
+    render();
+    return true;
+  }
+  const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const rndNz = k => { let v = 0; while (!v) v = rnd(-k, k); return v; };
+  function generate() {
+    for (let tries = 0; tries < 500; tries++) {
+      let m = 1, n = 1;
+      if (st.level === 2) { m = rnd(1, 5); n = rnd(1, 4); if (m * n < 2 || m * n > 12) continue; }
+      const p = rndNz(st.level === 1 ? 9 : 7), q = rndNz(st.level === 1 ? 9 : 7);
+      if (gcd(m, p) !== 1 || gcd(n, q) !== 1) continue;
+      const a = m * n, b = m * q + n * p, c = p * q;
+      if (gcd(gcd(a, b), c) !== 1 || Math.abs(c) > 40) continue;
+      if (b === 0 && Math.random() < 0.85) continue;
+      const prev = st.q && st.q.orig;
+      if (prev && prev[0] === c && prev[1] === b && prev[2] === a) continue;
+      if (setQuestion(a, b, c)) return;
+    }
+  }
+
+  // ---------- Boxes ----------
+  const boxes = {};
+  for (const w of ["workLogic", "workDec"]) {
+    boxes[w] = {};
+    $(w).querySelectorAll("input.bx").forEach(el => { boxes[w][el.dataset.k] = el; });
+  }
+  const cur = () => boxes[st.method === "logic" ? "workLogic" : "workDec"];
+  const ORDER = { logic: ["f1", "f2", "c1", "c2", "d1", "d2", "sum", "A", "B"], dec: ["ac", "n1", "n2", "s1", "s2", "g1", "i1", "g2", "i2", "A", "B"] };
+
+  function render() {
+    const { r, g } = st.q;
+    const [c, b, a] = r;
+    const cfText = g === 1 ? "" : `Take out the common factor first: <b>${fmt(st.q.orig)} = ${lead(g)}(${fmt(r)})</b>. Factor what is in the brackets.`;
+    const pre = lead(g);
+    for (const id of ["cfL", "cfD"]) { $(id).hidden = g === 1; $(id).innerHTML = cfText; }
+    document.querySelectorAll(".fin .pre").forEach(el => { el.textContent = pre; });
+    // Logic
+    $("lt1").textContent = fmt([0, 0, a]);
+    $("lt2").textContent = signed([0, b || 0, 0]).replace(/^\+ 0$/, "+ 0x");
+    $("lt3").textContent = signed([c]);
+    $("lcap1").textContent = `What times what makes ${fmt([0, 0, a])}?`;
+    $("lcap3").textContent = `What times what makes ${fmt([c])}?`;
+    // Decomposition
+    $("dtri").textContent = fmt(r);
+    $("acText").textContent = `${fmt([a])} × ${c < 0 ? `(${fmt([c])})` : fmt([c])}`;
+    $("cap2").textContent = `2. Find two numbers that multiply to a × c and add to b (${fmt([b])})`;
+    $("sFirst").textContent = fmt([0, 0, a]);
+    $("sLast").textContent = signed([c]);
+    clearAll();
+  }
+
+  function clearAll() {
+    for (const w in boxes) for (const k in boxes[w]) { boxes[w][k].value = ""; boxes[w][k].className = boxes[w][k].className.replace(/\b(ok|bad|todo|try)\b/g, "").trim(); }
+    $("finL").classList.remove("done");
+    $("finD").classList.remove("done");
+    live();
+    setMsg(startMsg(), false);
+  }
+  function startMsg() {
+    const [c, , a] = st.q.r;
+    return st.method === "logic"
+      ? `<p>What two terms multiply to make ${html(fmt([0, 0, a]))}? Write them one above the other under it.</p><p>Then do the same for ${html(fmt([c]))}.</p>`
+      : `<p>Start by multiplying the first number by the last number: ${html(`${a} × ${fmt([c])}`)}.</p>`;
+  }
+  function setMsg(h, good) { $("msg").innerHTML = h; $("msg").classList.toggle("good", !!good); }
+  function mark(k, s) { const el = cur()[k]; el.classList.remove("ok", "bad", "todo", "try"); if (s) el.classList.add(s); }
+
+  // Live hints as the student types: diagonal prompts, the grouping line.
+  function live() {
+    if (!st.q) return;
+    const L = boxes.workLogic, v = k => parse(L[k].value);
+    const f1 = v("f1"), f2 = v("f2"), c1 = v("c1"), c2 = v("c2");
+    const tag = (a, b) => (a && b ? `${fmt(a)} × ${fmt(b)}` : "↘ ×");
+    L.d1.placeholder = f1 && c2 ? tag(f1, c2) : "multiply";
+    L.d2.placeholder = f2 && c1 ? tag(f2, c1) : "multiply";
+    const D = boxes.workDec;
+    const [c, , a] = st.q.r, s1 = parse(D.s1.value), s2 = parse(D.s2.value);
+    const t = p => (p && isMono(p, 1) ? p : null);
+    const g1 = t(s1) ? `${fmt([0, 0, a])} ${signed(s1)}` : `${fmt([0, 0, a])} + ?`;
+    const g2 = t(s2) ? `${fmt(s2)} ${signed([c])}` : `? ${signed([c])}`;
+    $("grpLine").textContent = `(${g1}) + (${g2})`;
+    const n1 = parse(D.n1.value), n2 = parse(D.n2.value);
+    $("nInfo").className = "info";
+    if (isMono(n1, 0) && isMono(n2, 0)) {
+      const P = n1[0] * n2[0], S = n1[0] + n2[0];
+      $("nInfo").textContent = `× gives ${fmt([P])}, + gives ${fmt([S])}`;
+    } else $("nInfo").textContent = "";
+  }
+
+  // ---------- Checking ----------
+  // Walk the boxes in the order a student works. Every filled box is marked;
+  // the message speaks about the first problem or the next empty box.
+  function check() {
+    const res = st.method === "logic" ? checkLogic() : checkDec();
+    for (const k of ORDER[st.method]) mark(k, res.marks[k] || "");
+    setMsg(res.msg, res.done);
+    $(st.method === "logic" ? "finL" : "finD").classList.toggle("done", !!res.done);
+    if (res.focus) cur()[res.focus].focus();
+    return res;
+  }
+  function finalCheck(B, marks, target) {
+    const A = parse(B.A.value), Bv = parse(B.B.value);
+    const okBin = p => p && deg(p) === 1 && p[0] !== 0;
+    for (const [k, p] of [["A", A], ["B", Bv]]) if (p !== null && !okBin(p)) marks[k] = "bad";
+    if (okBin(A) && okBin(Bv)) {
+      if (same(mul(A, Bv), target)) { marks.A = marks.B = "ok"; return { ok: true }; }
+      marks.A = marks.B = "bad";
+      return { ok: false, msg: `<p>(${html(fmt(A))})(${html(fmt(Bv))}) multiplies to ${html(fmt(mul(A, Bv)))}, not ${html(fmt(target))}.</p>` };
+    }
+    if (A !== null && !okBin(A) || Bv !== null && !okBin(Bv)) return { ok: false, msg: "<p>Each bracket needs an x term and a number, like <span class=\"m\">2x + 1</span>.</p>" };
+    return null;
+  }
+  function doneMsg(B) {
+    const { orig, g } = st.q;
+    const pre = lead(g);
+    return `<p>Yes! ${html(fmt(orig))}</p><p>${html(`= ${pre}(${fmt(parse(B.A.value))})(${fmt(parse(B.B.value))})`)}</p><p>Press New question for another.</p>`;
+  }
+
+  function checkLogic() {
+    const B = boxes.workLogic, marks = {}, [c, b, a] = st.q.r;
+    const v = k => parse(B[k].value);
+    let msg = null, focus = null;
+    const first = (h, k) => { if (!msg) { msg = h; focus = k; } };
+    const ax2 = html(fmt([0, 0, a])), cc = html(fmt([c]));
+    // Factors of the first term.
+    const f = ["f1", "f2"].map(k => v(k)), fOk = f.map(p => isMono(p, 1));
+    f.forEach((p, i) => { if (p !== null && !fOk[i]) { marks[["f1", "f2"][i]] = "bad"; first(`<p>Each factor of ${ax2} needs an x, like ${html("3x")} or ${html("x")}.</p>`, ["f1", "f2"][i]); } });
+    if (fOk[0] && fOk[1]) {
+      if (f[0][1] * f[1][1] === a) marks.f1 = marks.f2 = "ok";
+      else { marks.f1 = marks.f2 = "bad"; first(`<p>${html(`${fmt(f[0])} × ${fmt(f[1])} = ${fmt([0, 0, f[0][1] * f[1][1]])}`)}, not ${ax2}.</p>`, "f1"); }
+    } else {
+      fOk.forEach((ok, i) => { if (ok) marks[["f1", "f2"][i]] = a % f[i][1] ? "bad" : "ok"; if (ok && a % f[i][1]) first(`<p>${html(Math.abs(f[i][1]))} does not go into ${html(a)}.</p>`, ["f1", "f2"][i]); });
+      const k = f[0] === null ? "f1" : "f2";
+      if (f[0] === null || f[1] === null) { marks[k] = "todo"; first(`<p>What two terms multiply to make ${ax2}? Write them one above the other under ${ax2}.</p>`, k); }
+    }
+    // Factors of the constant.
+    const cv = ["c1", "c2"].map(k => v(k)), cOk = cv.map(p => isMono(p, 0));
+    cv.forEach((p, i) => { if (p !== null && !cOk[i]) { marks[["c1", "c2"][i]] = "bad"; first(`<p>Write a number here, like ${html("2")} or ${html(`${MINUS}3`)}.</p>`, ["c1", "c2"][i]); } });
+    if (cOk[0] && cOk[1]) {
+      if (cv[0][0] * cv[1][0] === c) marks.c1 = marks.c2 = "ok";
+      else { marks.c1 = marks.c2 = "bad"; first(`<p>${html(`${fmt(cv[0])} × ${fmt(cv[1])} = ${fmt([cv[0][0] * cv[1][0]])}`)}, not ${cc}.</p>`, "c1"); }
+    } else {
+      cOk.forEach((ok, i) => { if (ok) marks[["c1", "c2"][i]] = c % cv[i][0] ? "bad" : "ok"; if (ok && c % cv[i][0]) first(`<p>${html(fmt([Math.abs(cv[i][0])]))} does not go into ${cc}.</p>`, ["c1", "c2"][i]); });
+      const k = cv[0] === null ? "c1" : "c2";
+      if (cv[0] === null || cv[1] === null) { marks[k] = "todo"; first(`<p>What two numbers multiply to make ${cc}? Write them one above the other under ${cc}.</p>`, k); }
+    }
+    // Diagonal products and their sum.
+    const ready = marks.f1 === "ok" && marks.f2 === "ok" && marks.c1 === "ok" && marks.c2 === "ok";
+    const want = { d1: ready && mul(f[0], cv[1]), d2: ready && mul(f[1], cv[0]) };
+    const d = { d1: v("d1"), d2: v("d2") };
+    for (const k of ["d1", "d2"]) {
+      const [x, y] = k === "d1" ? [f[0], cv[1]] : [f[1], cv[0]];
+      const col = k === "d1" ? "purple" : "teal";
+      if (d[k] === null) { if (ready) { marks[k] = "todo"; first(`<p>Multiply along the ${col} diagonal: ${html(`${fmt(x)} × ${fmt(y)}`)}.</p>`, k); } continue; }
+      if (!ready) { first("<p>Fill in the factors above first.</p>", "f1"); continue; }
+      if (same(d[k], want[k])) marks[k] = "ok";
+      else { marks[k] = "bad"; first(`<p>${html(`${fmt(x)} × ${fmt(y)}`)} is not ${html(d[k] ? fmt(d[k]) : "?")}. Multiply the numbers and keep the x.</p>`, k); }
+    }
+    const sum = v("sum");
+    let matched = false;
+    $("lt2").classList.remove("match"); $("lg").classList.remove("read");
+    $("vs").className = "vs"; $("vs").textContent = "";
+    if (marks.d1 === "ok" && marks.d2 === "ok") {
+      const s = want.d1[1] + want.d2[1];
+      if (sum === null) { marks.sum = "todo"; first(`<p>Add the two diagonal products: ${html(`${fmt(want.d1)} ${signed(want.d2)}`)}.</p>`, "sum"); }
+      else if (!same(sum, [0, s])) { marks.sum = "bad"; first(`<p>${html(`${fmt(want.d1)} ${signed(want.d2)}`)} is not ${html(sum ? fmt(sum) : "?")}.</p>`, "sum"); }
+      else if (s === b) {
+        marks.sum = "ok"; matched = true;
+        $("lt2").classList.add("match"); $("lg").classList.add("read");
+        $("vs").className = "vs good"; $("vs").textContent = `✓ ${fmt([0, s])} matches the middle term`;
+      } else {
+        marks.sum = "try";
+        $("vs").className = "vs off"; $("vs").textContent = `${fmt([0, s])} ≠ ${fmt([0, b])}, the middle term`;
+        const swap = `switch ${html(fmt(cv[0]))} and ${html(fmt(cv[1]))}`;
+        first(s === -b
+          ? `<p>Right size, wrong sign: ${html(fmt([0, s]))} but the middle term is ${html(fmt([0, b]))}.</p><p>Change the signs of both numbers under ${cc}.</p>`
+          : `<p>${html(fmt([0, s]))} does not match the middle term ${html(fmt([0, b]))}.</p><p>Try to ${swap}, or try a different pair of factors.</p>`, "c1");
+      }
+    } else if (sum !== null) marks.sum = "";
+    // The answer: the horizontal terms.
+    const fin = finalCheck(B, marks, st.q.r);
+    if (fin && fin.ok) return { marks, msg: doneMsg(B), done: true };
+    if (fin && !fin.ok && (matched || !msg)) { msg = null; first(fin.msg + (matched ? "<p>Read across each row: the top row is one bracket, the bottom row is the other.</p>" : ""), "A"); }
+    if (matched) {
+      if (B.A.value.trim() === "") marks.A = "todo";
+      first(`<p>It works! The answer is the horizontal terms.</p><p>Read across the top row for the first bracket and the bottom row for the second.</p>`, B.A.value.trim() === "" ? "A" : "B");
+    }
+    return { marks, msg, focus };
+  }
+
+  function checkDec() {
+    const B = boxes.workDec, marks = {}, [c, b, a] = st.q.r;
+    const v = k => parse(B[k].value);
+    let msg = null, focus = null;
+    const first = (h, k) => { if (!msg) { msg = h; focus = k; } };
+    const ac = a * c;
+    // Step 1: a × c.
+    const acv = v("ac");
+    if (acv === null) { marks.ac = "todo"; first(`<p>Multiply the first number by the last number: ${html(`${a} × ${fmt([c])}`)}.</p>`, "ac"); }
+    else if (same(acv, [ac])) marks.ac = "ok";
+    else { marks.ac = "bad"; first(`<p>${html(`${a} × ${fmt([c])}`)} is not ${html(acv ? fmt(acv) : "?")}.</p>`, "ac"); }
+    // Step 2: two numbers.
+    const n = [v("n1"), v("n2")], nOk = n.map(p => isMono(p, 0));
+    n.forEach((p, i) => { if (p !== null && !nOk[i]) { marks[`n${i + 1}`] = "bad"; first("<p>Write a number in each box.</p>", `n${i + 1}`); } });
+    if (nOk[0] && nOk[1]) {
+      const P = n[0][0] * n[1][0], S = n[0][0] + n[1][0];
+      if (P === ac && S === b) { marks.n1 = marks.n2 = "ok"; $("nInfo").className = "info good"; }
+      else {
+        marks.n1 = marks.n2 = "bad";
+        first(P !== ac
+          ? `<p>${html(`${fmt(n[0])} × ${fmt(n[1])} = ${fmt([P])}`)}, but they need to multiply to ${html(fmt([ac]))}.</p>`
+          : `<p>${html(`${fmt(n[0])} × ${fmt(n[1])} = ${fmt([P])}`)} ✓ but ${html(`${fmt(n[0])} + ${fmt(n[1])} = ${fmt([S])}`)}. They need to add to ${html(fmt([b]))}.</p>`, "n1");
+      }
+    } else if (n[0] === null || n[1] === null) {
+      const k = n[0] === null ? "n1" : "n2"; marks[k] = "todo";
+      first(`<p>Find two numbers that multiply to ${html(fmt([ac]))} and add to ${html(fmt([b]))}.</p>`, k);
+    }
+    // Step 3: split the middle term.
+    const nums = marks.n1 === "ok" ? [n[0][0], n[1][0]] : null;
+    const s = [v("s1"), v("s2")];
+    if (s[0] === null || s[1] === null) {
+      if (nums) { const k = s[0] === null ? "s1" : "s2"; marks[k] = "todo"; first(`<p>Split ${html(fmt([0, b]))} into ${html(fmt([0, nums[0]]))} and ${html(fmt([0, nums[1]]))}. Write each with its sign.</p>`, k); }
+      s.forEach((p, i) => { if (p !== null) marks[`s${i + 1}`] = isMono(p, 1) && nums && nums.includes(p[1]) ? "ok" : "bad"; });
+    } else if (isMono(s[0], 1) && isMono(s[1], 1) && nums && [s[0][1], s[1][1]].sort().join() === [...nums].sort().join()) {
+      marks.s1 = marks.s2 = "ok";
+    } else {
+      marks.s1 = marks.s2 = "bad";
+      first(nums ? `<p>Use your two numbers as the x terms: ${html(`${signed([0, nums[0]])} ${signed([0, nums[1]])}`)}.</p>` : "<p>Find the two numbers in step 2 first.</p>", "s1");
+    }
+    // Step 4: common factor of each group.
+    const split = marks.s1 === "ok" && marks.s2 === "ok";
+    const grp = split ? [[0, s[0][1], a], [c, s[1][1], 0]] : null;
+    const gi = [[v("g1"), v("i1")], [v("g2"), v("i2")]];
+    gi.forEach(([gv, iv], j) => {
+      const gk = `g${j + 1}`, ik = `i${j + 1}`;
+      if (!split) { if (gv !== null || iv !== null) first("<p>Split the middle term in step 3 first.</p>", "s1"); return; }
+      if (gv === null || iv === null) {
+        const k = gv === null ? gk : ik; marks[k] = "todo";
+        first(gv === null
+          ? `<p>What is the greatest common factor of ${html(fmt(grp[j]))}? Write it in front of the bracket.</p>`
+          : `<p>Divide each term of ${html(fmt(grp[j]))} by ${html(fmt(gv))} and write what is left in the bracket.</p>`, k);
+        return;
+      }
+      const prod = mul(gv, iv);
+      if (!same(prod, grp[j])) { marks[gk] = marks[ik] = "bad"; first(`<p>${html(`${fmt(gv)}(${fmt(iv)})`)} gives ${html(fmt(prod))}, not ${html(fmt(grp[j]))}.</p>`, gk); return; }
+      if (deg(iv) !== 1 || gcd(gcd(iv[0], iv[1]), iv[2]) !== 1) { marks[gk] = marks[ik] = "bad"; first(`<p>There is still a common factor inside ${html(`(${fmt(iv)})`)}. Take out more.</p>`, gk); return; }
+      marks[gk] = marks[ik] = "ok";
+    });
+    if (marks.i1 === "ok" && marks.i2 === "ok" && !same(gi[0][1], gi[1][1])) {
+      marks.g2 = marks.i2 = "try";
+      first(same(gi[0][1], gi[1][1].map(x => -x))
+        ? `<p>The brackets should match. Take out ${html(fmt(gi[1][0].map(x => -x)))} instead, so the second bracket is ${html(`(${fmt(gi[0][1])})`)}.</p>`
+        : "<p>The two brackets should match.</p>", "g2");
+    }
+    // Step 5: the answer.
+    const grouped = ["g1", "i1", "g2", "i2"].every(k => marks[k] === "ok");
+    const fin = finalCheck(B, marks, st.q.r);
+    if (fin && fin.ok) return { marks, msg: doneMsg(B), done: true };
+    if (fin && !fin.ok && (grouped || !msg)) { msg = null; first(fin.msg, "A"); }
+    if (grouped) {
+      const k = B.A.value.trim() === "" ? "A" : "B"; marks[k] = "todo";
+      first(`<p>${html(`(${fmt(gi[0][1])})`)} is in both groups, so it is one factor.</p><p>The terms outside, ${html(`${fmt(gi[0][0])} ${signed(gi[1][0])}`)}, make the other.</p>`, k);
+    }
+    return { marks, msg, focus };
+  }
+
+  function showAnswer() {
+    const { m, n, p, q } = st.q.sol, [c, b, a] = st.q.r;
+    const L = boxes.workLogic;
+    const put = (el, poly) => { el.value = fmt(poly); };
+    put(L.f1, [0, m]); put(L.f2, [0, n]); put(L.c1, [p]); put(L.c2, [q]);
+    put(L.d1, [0, m * q]); put(L.d2, [0, n * p]); put(L.sum, [0, b]);
+    put(L.A, [p, m]); put(L.B, [q, n]);
+    const D = boxes.workDec;
+    const N1 = m * q, N2 = n * p, k1 = gcd(a, N1);
+    put(D.ac, [a * c]); put(D.n1, [N1]); put(D.n2, [N2]);
+    D.s1.value = signed([0, N1]); D.s2.value = signed([0, N2]);
+    put(D.g1, [0, k1]); put(D.i1, [N1 / k1, a / k1]);
+    const g2 = N2 / (a / k1);
+    D.g2.value = signed([g2]); put(D.i2, [N1 / k1, a / k1]);
+    put(D.A, [N1 / k1, a / k1]); D.B.value = fmt([g2, k1]);
+    live();
+    check();
+  }
+
+  // ---------- Controls ----------
+  function pick(box, val) { box.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === String(val)))); }
+  $("method").onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    st.method = b.dataset.v; pick($("method"), st.method);
+    $("workLogic").hidden = st.method !== "logic"; $("workDec").hidden = st.method !== "dec";
+    const anyFilled = ORDER[st.method].some(k => cur()[k].value.trim());
+    if (anyFilled) check(); else setMsg(startMsg(), false);
+  };
+  $("level").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.level = Number(b.dataset.v); pick($("level"), st.level); generate(); };
+  $("newQ").onclick = generate;
+  $("typedForm").onsubmit = e => {
+    e.preventDefault();
+    const p = parse($("typed").value);
+    if (!p) { setMsg(`<p class="bad">I can't read that. Type it like <span class="m">6x^2 + 7x + 2</span>.</p>`); return; }
+    const [c, b, a] = p;
+    if (!a) { setMsg(`<p class="bad">That has no x² term. Type a quadratic like <span class="m">x^2 + 5x + 6</span>.</p>`); return; }
+    if (!c) { setMsg(`<p class="bad">There is no constant term, so take out the common factor: <span class="m">${fmt(p)} = ${fmt([0, gcd(a, b) * Math.sign(a)])}(${fmt([b / (gcd(a, b) * Math.sign(a)), a / (gcd(a, b) * Math.sign(a))])})</span>.</p>`); return; }
+    if (!setQuestion(a, b, c)) { setMsg(`<p class="bad"><span class="m">${fmt(p)}</span> does not factor with whole numbers. Try another one.</p>`); return; }
+    $("typed").value = "";
+  };
+  $("check").onclick = check;
+  $("show").onclick = showAnswer;
+  $("clear").onclick = clearAll;
+  document.querySelectorAll("input.bx").forEach(el => {
+    el.addEventListener("input", () => { el.classList.remove("ok", "bad", "todo", "try"); live(); });
+    el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+  });
+
+  pick($("method"), st.method); pick($("level"), st.level);
+  $("workDec").hidden = false;
+  generate();
+})();
+</script>
+
+</body>
+</html>

@@ -6,7 +6,7 @@
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Stacked Multiplication</title>
+<title>Stacked Addition and Subtraction</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -250,19 +250,26 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .sheet .given.struck { color: var(--muted); text-decoration: line-through; text-decoration-thickness: max(3px, calc(var(--cs) * 0.06)); text-decoration-color: var(--warn); }
 .sheet .lab.times { padding-left: calc(var(--cs) * 0.4); font-family: var(--font-num); font-size: calc(var(--cs) * 0.42); color: var(--c1); }
 </style>
-<!-- Stacked Multiplication (grades 3 to 7): type a question like 124 × 6 or press New question, work it out in the
-     digit boxes, then Check answer finds the first wrong box. Carries get their own small row for each digit of the
-     bottom number (blue for the ones digit, purple for the tens digit), with the matching partial product row. The purple
-     carry row appears only once the blue × row is filled in (Shawn: two levels of boxes at once is confusing).
-     Decimals: work as whole numbers, then click where the decimal point goes in the answer. -->
+<!-- Stacked Addition and Subtraction (grades 3 to 7; Shawn 2026-10-08): the same tool as Stacked Multiplication, with an
+     Add / Subtract switch at the top. Type a question like 456 + 278 or press New question, work it out in the boxes,
+     then Check answer finds the first wrong box. Adding: a small carry box above each column. Subtracting: a small
+     regroup box above each top digit for its new value (12, or 9 when regrouping across a zero); writing one strikes
+     out the digit under it. Decimals: the numbers line up on the decimal point, grey zeros fill the empty places, and
+     the student clicks where the point goes in the answer. -->
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
-    <h1>Stacked Multiplication</h1></div>
-    <div class="tabs" id="tabs" role="group" aria-label="Kind of numbers">
-      <button type="button" data-m="whole" aria-pressed="true">Whole numbers</button>
-      <button type="button" data-m="dec" aria-pressed="false">Decimals</button>
+    <h1 id="title">Stacked Addition</h1></div>
+    <div class="tops">
+      <div class="tabs" id="ops" role="group" aria-label="Add or subtract">
+        <button type="button" data-o="+" aria-pressed="true">Add</button>
+        <button type="button" data-o="−" aria-pressed="false">Subtract</button>
+      </div>
+      <div class="tabs" id="tabs" role="group" aria-label="Kind of numbers">
+        <button type="button" data-m="whole" aria-pressed="true">Whole numbers</button>
+        <button type="button" data-m="dec" aria-pressed="false">Decimals</button>
+      </div>
     </div>
   </header>
 
@@ -273,18 +280,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <p class="label">Question</p>
         <div class="q">
           <input id="qa" type="text" inputmode="decimal" autocomplete="off" placeholder="type a number" aria-label="Top number">
-          <span class="op" aria-hidden="true">×</span>
+          <span class="op" id="opsign" aria-hidden="true">+</span>
           <input id="qb" type="text" inputmode="decimal" autocomplete="off" placeholder="type a number" aria-label="Bottom number">
         </div>
         <p class="hint">Type your own question, or make one:</p>
         <div class="make">
           <select id="level" aria-label="Size of the question">
-            <option value="2x1">2 digits × 1 digit</option>
-            <option value="3x1" selected>3 digits × 1 digit</option>
-            <option value="4x1">4 digits × 1 digit</option>
-            <option value="2x2">2 digits × 2 digits</option>
-            <option value="3x2">3 digits × 2 digits</option>
-            <option value="4x2">4 digits × 2 digits</option>
+            <option value="2">2-digit numbers</option>
+            <option value="3" selected>3-digit numbers</option>
+            <option value="4">4-digit numbers</option>
+            <option value="5">5-digit numbers</option>
           </select>
           <button type="button" id="newq">New question</button>
         </div>
@@ -301,6 +306,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     </div>
   </div>
 </div>
+<style>
+.tops { display: flex; flex-wrap: wrap; gap: 10px; }
+</style>
 
 <script>
 /* Written: shared work grid and checker for Stacked Multiplication (stackmult.html), Long Division (longdiv.html)
@@ -567,174 +575,170 @@ window.Written = (() => {
 (() => {
   const { want, pointItem, num, withPoint, rnd, s } = Written;
   const m = x => `<span class="m">${x}</span>`;
+  const $ = id => document.getElementById(id);
+  let op = "+";
+
+  // Place names, by place: 0 = ones; -1 = tenths.
+  const PLACE = { 4: "ten thousands", 3: "thousands", 2: "hundreds", 1: "tens", 0: "ones", [-1]: "tenths", [-2]: "hundredths", [-3]: "thousandths" };
+  const ONE = { 5: "hundred thousand", 4: "ten thousand", 3: "thousand", 2: "hundred", 1: "ten", 0: "one", [-1]: "tenth", [-2]: "hundredth" };
+
+  // Line the two numbers up on the decimal point: digit strings of the same length, dp places after the point.
+  function align(A, B) {
+    const ip = x => x.S.split(".")[0], fp = x => x.S.split(".")[1] || "";
+    const I = Math.max(ip(A).length, ip(B).length), dp = Math.max(A.dp, B.dp);
+    const one = x => {
+      const i = ip(x), f = fp(x);
+      return { digits: (i + f.padEnd(dp, "0")).padStart(I + dp, " "), from: I - i.length, pad: I + f.length };
+    };
+    return { a: one(A), b: one(B), I, dp, N: I + dp };
+  }
+  const val = (x, dp) => Number(x.S.replace(".", "")) * 10 ** (dp - x.dp);
 
   function parse(a, b, mode) {
     const A = num(a), B = num(b);
     if (!A || !B) return { error: "Use only digits and one decimal point." };
-    if (A.work === "0" || B.work === "0") return { error: "Use numbers bigger than 0." };
-    if (B.work.length > 2 && A.work.length <= 2) return { error: "Put the number with more digits on top." };
-    if (A.work.length > 4) return { error: "The top number can have up to 4 digits." };
-    if (B.work.length > 2) return { error: "The bottom number can have 1 or 2 digits." };
     if (A.dp > 3 || B.dp > 3) return { error: "Use up to 3 digits after a decimal point." };
-    return { A, B, key: A.S + "×" + B.S, mode: A.dp || B.dp ? "dec" : mode };
+    const L = align(A, B);
+    if (L.N > 6 || L.I > 5) return { error: "Use numbers with up to 5 digits." };
+    if (op === "−" && val(A, L.dp) < val(B, L.dp)) return { error: "The top number has to be the bigger one. Swap them to subtract." };
+    return { A, B, op, key: A.S + op + B.S, mode: A.dp || B.dp ? "dec" : mode };
   }
 
   function generate(level, mode) {
-    const [k, n] = level.split("x").map(Number);
-    let top = String(rnd(1, 9));
-    for (let i = 1; i < k; i++) top += rnd(0, 9);
-    let bot = n === 1 ? String(rnd(2, 9)) : `${rnd(1, 9)}${rnd(2, 9)}`;
-    if (mode === "dec") {
-      top = top.slice(0, -1) + rnd(1, 9);
-      const dp = k === 2 ? 1 : rnd(1, 2);
-      top = top.slice(0, -dp) + "." + top.slice(-dp);
-      if (n === 2 && Math.random() < 0.5) bot = bot[0] + "." + bot[1];
+    const k = +level;
+    const dig = n => { let x = String(rnd(1, 9)); for (let i = 1; i < n; i++) x += rnd(0, 9); return x; };
+    const point = (x, dp) => dp ? x.slice(0, -dp) + "." + x.slice(-dp) : x;
+    for (let t = 0; t < 500; t++) {
+      let a = dig(k), b = dig(Math.random() < 0.6 ? k : Math.max(1, k - 1));
+      if (op === "−" && Math.random() < 0.25 && k >= 3) a = a[0] + "0".repeat(k - 2) + rnd(0, 4);      // regroup across zeros
+      let da = 0, db = 0;
+      if (mode === "dec") {
+        da = rnd(1, Math.min(2, k - 1)); db = rnd(1, Math.min(2, b.length > 1 ? b.length - 1 : 1));
+        if (a.endsWith("0") || b.endsWith("0")) continue;
+        if (b.length === 1) b = "0" + b;
+      }
+      const A = num(point(a, da)), B = num(point(b, db));
+      const dp = Math.max(da, db), x = val(A, dp), y = val(B, dp);
+      if (op === "−" && x <= y) continue;
+      // Make sure there is something to carry or regroup.
+      const cols = String(Math.max(x, y)).length;
+      let busy = false;
+      for (let p = 0, c = 0; p < cols; p++) {
+        const u = Math.floor(x / 10 ** p) % 10, v = Math.floor(y / 10 ** p) % 10;
+        if (op === "+") { if (u + v + c >= 10) busy = true; c = u + v + c >= 10 ? 1 : 0; }
+        else { if (u - c < v) busy = true; c = u - c < v ? 1 : 0; }
+      }
+      if (busy) return [A.S, B.S];
     }
-    return [top, bot];
+    return op === "+" ? ["456", "278"] : ["503", "268"];
   }
 
   function build(sh, P) {
-    const { A, B } = P;
-    const n = A.work.length, nb = B.work.length;
-    const a = [...A.work].reverse().map(Number), b = [...B.work].reverse().map(Number);
-    const Ai = +A.work, T = Ai * +B.work, dpT = A.dp + B.dp, Tlen = String(T).length;
-    const F = Math.max(nb === 1 ? n + 1 : n + 2, dpT + 1);          // boxes in the answer row
-    const N = Math.max(F, A.all.length, B.all.length);               // digit columns
-    const col = p => N - p;                                           // grid column of place p (0 = ones); column 0 holds × and +
+    const { A, B } = P, add = P.op === "+";
+    const L = align(A, B), dp = L.dp;
+    const x = val(A, dp), y = val(B, dp), T = add ? x + y : x - y;
+    const N = add ? L.N + 1 : L.N;                 // digit columns (adding may need one more on the left)
+    const col = p => N - p;                        // grid column of place p from the right; column 0 holds the sign
     const LAB = N + 2;
-    const tint = j => "c" + (j + 1);
-    const times = j => b[j] * 10 ** j;
+    const place = p => PLACE[p - dp] || "";
+    const R = { top: 1, bot: 2, ans: 4, small: 0 };
+    sh.reset([1, ...Array(N).fill(1), 0.2, 2], [add ? 0.62 : 0.66, 1, 1, 0.16, 1]);
 
-    // Rows: carry rows on top (one per bottom digit), the question, a line, then the work.
-    const R = nb === 1
-      ? { carry: [0], top: 1, bot: 2, part: [4], sum: 4 }
-      : { carry: [1, 0], top: 2, bot: 3, addc: 5, part: [6, 7], sum: 9 };
-    const units = nb === 1 ? [0.62, 1, 1, 0.16, 1] : [0.62, 0.62, 1, 1, 0.16, 0.62, 1, 1, 0.16, 1];
-    sh.reset([1, ...Array(N).fill(1), 0.2, 2.2], units);
-
-    // The question.
-    [...A.all].forEach((ch, k) => sh.given(R.top, col(A.all.length - 1 - k), ch));
-    if (A.dp) sh.dot(R.top, col(A.dp));
-    [...B.all].forEach((ch, k) => { const p = B.all.length - 1 - k; sh.given(R.bot, col(p), ch, p < nb ? tint(p) : ""); });
-    if (B.dp) sh.dot(R.bot, col(B.dp));
-    sh.given(R.bot, 0, "×", "sign");
+    // The two numbers, lined up on the point; grey zeros fill empty decimal places.
+    const tops = [];
+    const show = (r, X, keep) => [...X.digits].forEach((ch, k) => {
+      if (ch === " ") return;
+      const p = L.N - 1 - k, g = sh.given(r, col(p), ch, k >= X.pad ? "add" : "");
+      if (keep) tops[p] = g;
+    });
+    show(R.top, L.a, true);
+    show(R.bot, L.b, false);
+    if (dp) { [R.top, R.bot].forEach((r, i) => sh.dot(r, col(dp), [A, B][i].dp ? "" : "add")); }
+    sh.given(R.bot, 0, add ? "+" : "−", "sign");
     sh.rule(R.bot, 0, N);
 
-    // Boxes.
-    const carry = R.carry.map((r, j) => {
-      const row = [];
-      for (let p = 1; p < n; p++) row[p] = sh.cell(r, col(p), "sm " + tint(j), `Carry box for × ${times(j)}`);
-      row.lab = sh.lab(r, LAB, nb === 1 ? "carry" : `carry × ${times(j)}`, tint(j));
-      return row;
-    });
-    const rowCells = (r, len, cls, label) => { const row = []; for (let p = 0; p < len; p++) row[p] = sh.cell(r, col(p), cls, label); return row; };
-    let parts, sum, addc;
-    if (nb === 1) {
-      parts = [rowCells(R.sum, F, "", "Answer box")];
-      sum = parts[0];
-    } else {
-      parts = [rowCells(R.part[0], n + 1, "c1", `Box in the × ${times(0)} row`), rowCells(R.part[1], n + 2, "c2", `Box in the × ${times(1)} row`)];
-      sh.lab(R.part[0], LAB, `× ${times(0)}`, "c1");
-      sh.lab(R.part[1], LAB, `× ${times(1)}`, "c2");
-      sh.given(R.part[1], 0, "+", "sign");
-      sh.rule(R.part[1], 0, N);
-      addc = [];
-      for (let p = 1; p <= n + 1; p++) addc[p] = sh.cell(R.addc, col(p), "sm", "Carry box for adding");
-      sh.lab(R.addc, LAB, "carry +");
-      sum = rowCells(R.sum, F, "", "Answer box");
-      sh.lab(R.sum, LAB, "answer");
-    }
-    // Two rows of carry boxes at once is confusing (Shawn): the purple carry row for the tens digit shows only once
-    // every box of the blue × row is filled in, and the blue carry row then fades.
-    if (nb === 2) {
-      const firstRow = parts[0].slice(0, String(Ai * b[0]).length);
-      const box = j => [...carry[j].filter(Boolean), carry[j].lab];
-      sh.watch(() => {
-        const ready = firstRow.every(e => e.value !== "") || carry[1].some(e => e && e.value !== "");
-        box(1).forEach(e => e.classList.toggle("wait", !ready));
-        box(0).forEach(e => e.classList.toggle("done-row", ready));
-      });
-    }
+    const dx = p => Math.floor(x / 10 ** p) % 10, dy = p => Math.floor(y / 10 ** p) % 10;
+    const inB = p => p < L.N - L.b.from && p >= 0, inA = p => p < L.N - L.a.from;
+    const ans = [];
+    for (let p = 0; p < N; p++) ans[p] = sh.cell(R.ans, col(p), "", "Answer box");
     let slots = null;
-    if (dpT) { slots = []; for (let p = 1; p < F; p++) slots.push(sh.slot(R.sum, col(p))); }
-
-    // What goes in each box, in the order a student works.
+    if (dp) { slots = []; for (let p = 1; p < N; p++) slots.push(sh.slot(R.ans, col(p))); }
+    const need = p => p < String(T).length || p <= dp;   // places that must hold a digit
     const items = [];
-    const rowTag = j => nb === 1 ? "" : `<span class="tag ${tint(j)}">× ${times(j)} row</span> `;
-    for (let j = 0; j < nb; j++) {
-      const row = parts[j], V = Ai * b[j], vlen = String(V).length + j;
-      // Places past the end of this row's number may stay empty (or hold 0), except decimal places in a final answer.
-      const kind = p => p < vlen || (nb === 1 && p < dpT) ? "req" : "opt";
-      const put = (p, d, why) => items.push(want(row[p], d, kind(p), why));
-      for (let p = 0; p < j; p++) {
-        items.push(want(row[p], 0, "req", `${rowTag(j)}Now multiply by the ${b[j]} in the tens place. It is really ${b[j] * 10}, so first write a ${m(0)} here to hold the ones place.`));
-      }
-      let cin = 0;
-      for (let i = 0; i < n; i++) {
-        const t = a[i] * b[j] + cin;
-        const say = rowTag(j) + (cin ? `${m(`${a[i]} × ${b[j]} = ${a[i] * b[j]}`)}, plus the ${cin} you carried makes ${m(t)}.` : `${m(`${a[i]} × ${b[j]} = ${t}`)}.`);
-        if (i < n - 1) {
-          const d = t % 10, co = Math.floor(t / 10);
-          put(i + j, d, say + (co ? ` Write the ${m(d)} here and carry the ${m(co)}.` : ` Write ${m(t)} here.`));
-          const where = nb === 1 ? "" : ` Carries for × ${times(j)} go in the ${j ? "purple" : "blue"} row.`;
-          items.push(want(carry[j][i + 1], co, "opt", co
-            ? `${say} Carry the ${m(co)}: write it in this small box, above the next digit.${where}`
-            : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
-          cin = co;
-        } else {
-          const d = t % 10, co = Math.floor(t / 10);
-          put(i + j, d, say + (co ? ` That was the last digit on top, so write all of ${m(t)}: the ${m(d)} here and the ${m(co)} to its left.` : ` Write ${m(t)} here.`));
-          put(i + j + 1, co, co
-            ? `${say} That was the last digit on top, so the ${m(co)} from ${m(t)} goes here.`
-            : kind(i + j + 1) === "req" ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-            : `${say} That was the last digit on top and ${m(t)} has one digit, so this box stays empty.`);
-        }
-      }
-      for (let p = n + j + 1; p < row.length; p++) {
-        put(p, 0, kind(p) === "req"
-          ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-          : "Nothing goes in this box. Leave it empty.");
-      }
-    }
-    if (nb === 2) {
-      const P0 = Ai * b[0], P1 = Ai * b[1] * 10, l0 = String(P0).length, l1 = String(P1).length;
-      const dig = (x, p) => Math.floor(x / 10 ** p) % 10;
-      let cin = 0;
-      for (let p = 0; p < F; p++) {
-        const x = dig(P0, p), y = dig(P1, p), t = x + y + cin, d = t % 10, co = Math.floor(t / 10);
+
+    if (add) {
+      sh.lab(R.small, LAB, "carry");
+      const carry = [];
+      for (let p = 1; p < L.N; p++) carry[p] = sh.cell(R.small, col(p), "sm c1", "Carry box");
+      let c = 0;
+      for (let p = 0; p < N; p++) {
         const terms = [];
-        if (p < l0) terms.push(x);
-        if (p < l1) terms.push(y);
-        if (cin) terms.push(cin);
-        const say = terms.length > 1
-          ? `Add this column: ${m(terms.join(" + ") + " = " + t)}${cin ? ` (the last ${cin} is the one you carried)` : ""}.`
-          : terms.length ? `Only ${m(terms[0])} is in this column${cin && terms[0] === cin ? " (the one you carried)" : ""}.` : "";
-        const need = p < Tlen || p < dpT;
-        items.push(want(sum[p], d, need ? "req" : "opt", !terms.length
+        if (inA(p)) terms.push(dx(p));
+        if (inB(p)) terms.push(dy(p));
+        if (c) terms.push(c);
+        const t = terms.reduce((u, v) => u + v, 0), d = t % 10, co = Math.floor(t / 10);
+        const sum = terms.length > 1 ? `${m(terms.join(" + ") + " = " + t)}${c ? " (the last 1 is the one you carried)" : ""}`
+          : terms.length ? `only ${m(terms[0])}${c && !inA(p) && !inB(p) ? " (the 1 you carried)" : ""}, so ${m(t)}` : "";
+        const lastCol = p === L.N - 1;
+        const say = `Add the ${place(p)}: ${sum}.`;
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", !terms.length
           ? "Nothing is left to add here, so this box stays empty."
-          : need && p >= Tlen ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-          : say + (co ? ` Write the ${m(d)} here and carry the ${m(co)}.` : ` Write ${m(t)} here.`)));
-        if (p + 1 <= n + 1) {
-          items.push(want(addc[p + 1], co, "opt", co
-            ? `${say} Carry the ${m(co)}: write it in the small box above the next column.`
+          : say + (co ? (lastCol ? ` Write ${m(t)}: the ${m(d)} here and the ${m(co)} in the box to its left.` : ` That makes ${co} ${ONE[p - dp + 1]}, so write the ${m(d)} here and carry the ${m(co)}.`) : ` Write ${m(t)} here.`)));
+        if (carry[p + 1]) {
+          items.push(want(carry[p + 1], co, "opt", co
+            ? `${say} That is ${m(co)} ${ONE[p - dp + 1]} and ${m(d)} ${PLACE[p - dp]}: carry the ${m(co)} into this small box, at the top of the ${place(p + 1)}.`
             : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
         }
-        cin = co;
+        c = co;
+      }
+    } else {
+      // Regroup boxes over the top digits: work out each column's new value from the right.
+      sh.lab(R.small, LAB, "regroup");
+      const box = [];
+      for (let p = 0; p < L.N; p++) if (inA(p)) box[p] = sh.cell(R.small, col(p), "sm w2 c1", `Regroup box over the ${place(p)}`, 2);
+      sh.watch(() => box.forEach((b, p) => b && tops[p] && tops[p].classList.toggle("struck", b.value !== "")));
+      let gave = 0;
+      for (let p = 0; p < L.N; p++) {
+        const a = dx(p), b = dy(p), cur = a - gave, takes = cur < b, now = takes ? cur + 10 : cur;
+        const changed = gave || takes;
+        let why;
+        if (cur < 0) {
+          why = `The ${place(p)} column has 0, so it had to regroup too: it got 10 ${PLACE[p - dp]} from the ${place(p + 1)}, then gave 1 to the column on its right. ${m("10 − 1 = 9")}. Write ${m(9)} in this small box.`;
+        } else if (takes) {
+          why = `In the ${place(p)}, ${m(cur)} is less than ${m(b)}, so regroup: take 1 ${ONE[p - dp + 1]} from the next column and trade it for 10 ${PLACE[p - dp]}. ${m(`${cur} + 10 = ${now}`)}${gave ? ` (this column already gave 1 away, so it had ${cur})` : ""}. Write ${m(now)} in this small box.`;
+        } else if (gave) {
+          why = `You took 1 from the ${place(p)} for the column on its right, so ${m(a)} becomes ${m(`${a} − 1 = ${now}`)}. Write ${m(now)} in this small box.`;
+        } else {
+          why = `Nothing was regrouped in the ${place(p)}, so leave this small box empty.`;
+        }
+        if (box[p]) items.push({ el: box[p], why, ok: v => v === "" || v === String(changed ? now : a) });
+        const d = now - b;
+        const top = changed ? `${m(now)} (after regrouping)` : m(now);
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", inA(p)
+          ? `Subtract the ${place(p)}: ${top} − ${m(b)} = ${m(d)}.` + (takes ? ` ${m(cur)} was too small to take ${m(b)} away, so it had to regroup first.` : "") + (need(p) ? ` Write ${m(d)} here.` : " Nothing is left here, so this box stays empty (or write 0).")
+          : "Nothing is left here, so this box stays empty."));
+        gave = takes ? 1 : 0;
       }
     }
-    if (slots) {
-      const how = A.dp && B.dp ? `${m(A.S)} has ${s(A.dp, "digit")} after the point and ${m(B.S)} has ${B.dp}. ${m(`${A.dp} + ${B.dp} = ${dpT}`)}`
-        : `${m(A.dp ? A.S : B.S)} has ${s(dpT, "digit")} after the point${A.dp ? ` and ${m(B.S)} has none` : ` and ${m(A.S)} has none`}`;
-      items.push(pointItem(slots, dpT, `Count the digits after the decimal points: ${how}. So the answer needs ${s(dpT, "digit")} after its decimal point. Count ${dpT} from the right and click the dot there.`));
-    }
+    if (slots) items.push(pointItem(slots, dp, `The numbers are lined up on their decimal points, so the point in the answer goes straight down from them. Click the dot under the other points.`));
     return items;
   }
 
   function done(P) {
-    const dpT = P.A.dp + P.B.dp, T = +P.A.work * +P.B.work;
-    const ans = withPoint(T, dpT), short = String(+ans);
-    return `${P.A.S} × ${P.B.S} = ${ans}${dpT && short !== ans ? ` <span class="lead">(= ${short})</span>` : ""}`;
+    const L = align(P.A, P.B), x = val(P.A, L.dp), y = val(P.B, L.dp);
+    const ans = withPoint(P.op === "+" ? x + y : x - y, L.dp), short = String(+ans);
+    return `${P.A.S} ${P.op} ${P.B.S} = ${ans}${L.dp && short !== ans ? ` <span class="lead">(= ${short})</span>` : ""}`;
   }
+
+  // The Add / Subtract switch: changes the sign and rebuilds the question that is there.
+  const opBtns = [...document.querySelectorAll("#ops button")];
+  opBtns.forEach(btn => btn.addEventListener("click", () => {
+    op = btn.dataset.o;
+    opBtns.forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+    $("opsign").textContent = op;
+    $("title").textContent = op === "+" ? "Stacked Addition" : "Stacked Subtraction";
+    $("qa").dispatchEvent(new Event("input"));
+  }));
 
   Written.page({ mode: "whole", parse, generate, build, done,
     start: "Type the top number and the bottom number in the boxes above, or press <b>New question</b>." });

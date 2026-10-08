@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Combining Functions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Combining Functions (Math 30-1): f, g and h in any form, a combination in function notation,
+   a table whose columns are the steps toward the answer (Calculate above each), and a graph that fills in point by point. */
+:root { --h: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --h: #b98cff; } }
+:root[data-theme="dark"] { --h: #b98cff; }
+.c-f { color: var(--pt); } .c-g { color: var(--orange); } .c-h { color: var(--h); } .c-r { color: var(--green); }
+.v { font-family: var(--font-display); font-style: italic; font-weight: 800; padding-right: 0.08em; }
+sup { font-size: 0.62em; line-height: 0; }
+.sfrac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.8em; line-height: 1.1; margin: 0 0.12em; }
+.sfrac > span { padding: 0 0.2em; }
+.sfrac > span:first-child { border-bottom: 0.1em solid currentColor; padding-bottom: 0.08em; }
+.sfrac > span:last-child { padding-top: 0.08em; }
+.rad-in { border-top: 0.09em solid currentColor; padding: 0.04em 0.12em 0; margin-left: 0.02em; }
+.sv { color: var(--pt); }
+
+header .tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.tog[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.tools button { font-size: 1rem; min-height: 44px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+@media (min-width: 861px) and (min-height: 520px) {
+  .stage > .side { overflow: hidden; }
+  .side .tcard { flex: 1 1 auto; min-height: 42%; overflow: auto; }
+  .side .work { flex: 0 1 auto; min-height: 0; overflow: auto; }
+}
+
+/* Functions */
+.fns { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px; }
+.frow { display: flex; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.65rem; min-width: 0; }
+.fname { flex: none; white-space: nowrap; }
+.fbox { flex: 1 1 auto; min-width: 0; }
+.pretty { display: flex; align-items: center; min-height: 46px; padding: 0 10px; border: 2px dashed transparent; border-radius: 8px; cursor: text; white-space: nowrap; overflow-x: auto; }
+.pretty:hover { border-color: var(--grid-major); }
+.fbox input { width: 100%; height: 46px; padding: 0 10px; font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--pt); border-radius: 8px; }
+.fbox:not(.editing) input { display: none; }
+.fbox.editing .pretty { display: none; }
+.fbox.bad input { border-color: var(--warn); }
+.err { margin: 0; color: var(--warn); font-family: var(--font-body); font-weight: 700; font-size: 1rem; }
+.rm { flex: none; font-size: 1rem; padding: 6px 12px; }
+.addh { flex: none; font-size: 1rem; padding: 6px 12px; }
+.crow { border-top: 2px dashed var(--grid-major); padding-top: 8px; margin-top: 2px; font-size: 1.95rem; }
+.find { flex: none; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; color: var(--green); }
+.alt { color: var(--muted); margin-left: 0.5em; }
+#pick { flex: none; font: inherit; font-family: var(--font-body); font-weight: 700; font-size: 1rem; padding: 8px; border-radius: 8px;
+  border: 1px solid var(--grid-major); background: var(--chip); color: var(--ink); max-width: 9.5rem; }
+
+/* Table */
+.tcard { padding: 0; overflow-x: auto; }
+@media (max-width: 860px) { .crow { flex-wrap: wrap; } }
+.hint { margin: 0; padding: 10px 16px 0; font-size: 1rem; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-family: var(--font-num); font-weight: 700; text-align: center; }
+thead { position: sticky; top: 0; z-index: 1; background: var(--sheet); }
+th { padding: 8px 6px 6px; vertical-align: bottom; }
+.heads th { font-size: 1.45rem; border-bottom: 3px solid var(--ink); white-space: nowrap; }
+.heads th small { display: block; font-size: 0.68em; color: var(--muted); font-weight: 500; }
+th:first-child, td:first-child { border-right: 3px solid var(--ink); }
+th.top, td.top { background: color-mix(in srgb, var(--green) 9%, var(--sheet)); }
+td { padding: 6px; border-bottom: 1px solid var(--grid); font-size: 1.85rem; white-space: nowrap; }
+td small { display: block; font-size: 0.55em; color: var(--muted); font-weight: 500; line-height: 1.2; }
+td.top b { color: var(--green); }
+td.undef { color: var(--warn); font-size: 1.15rem; }
+tbody tr { cursor: pointer; }
+tbody tr.active td { background: color-mix(in srgb, var(--pt) 10%, var(--sheet)); }
+tbody tr.active td.top { background: color-mix(in srgb, var(--green) 16%, var(--sheet)); }
+td.xcell { color: var(--pt); }
+td.new { animation: pop 0.45s ease-out; }
+@keyframes pop { from { opacity: 0; transform: scale(0.7); } }
+#xin { width: 6ch; height: 48px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; text-align: center; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--pt); border-radius: 8px; }
+#xin.bad { border-color: var(--warn); }
+.calc { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; min-height: 46px; padding: 6px 12px; }
+.calc.next { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.calc:disabled { opacity: 0.35; cursor: default; }
+.many .heads th { font-size: 1.15rem; } .many td { font-size: 1.5rem; } .many .calc { font-size: 0.9rem; padding: 6px 8px; } .many th, .many td { padding-inline: 3px; }
+.empty { padding: 18px 16px; color: var(--muted); font-family: var(--font-body); font-weight: 400; font-size: 1.1rem; text-align: left; }
+
+/* Work */
+.work { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; }
+.work .label { margin: 0; }
+.wl { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.35em; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; }
+.wl.top { color: var(--green); }
+.wl.top > * { color: var(--ink); }
+.wl .why { font-family: var(--font-body); font-size: 1rem; color: var(--warn); }
+.wl.muted { font-family: var(--font-body); font-weight: 400; color: var(--muted); font-size: 1.1rem; }
+
+/* Board */
+.board svg text { font-family: var(--font-num); font-weight: 700; }
+.gm { stroke: var(--grid); stroke-width: 1; }
+.ga { stroke: var(--muted); stroke-width: 2; }
+.curve { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; opacity: 0.55; }
+.curve.res { stroke-width: 4; opacity: 0.9; stroke: var(--green); }
+.k-f { stroke: var(--pt); fill: var(--pt); } .k-g { stroke: var(--orange); fill: var(--orange); }
+.k-h { stroke: var(--h); fill: var(--h); } .k-r { stroke: var(--green); fill: var(--green); }
+.curve.k-f, .curve.k-g, .curve.k-h { fill: none; }
+.cname { font-size: 24px; stroke: var(--sheet); stroke-width: 5px; paint-order: stroke; }
+.pt { stroke: var(--sheet); stroke-width: 2.5; }
+.pt.old { opacity: 0.45; }
+.pt.now { animation: grow 0.4s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes grow { from { transform: scale(0); } }
+.guide { stroke-width: 2.5; stroke-dasharray: 7 6; fill: none; }
+.chipbg { fill: var(--sheet); stroke-width: 2; }
+.chiptx { font-size: 19px; stroke: none; }
+@media (prefers-reduced-motion: reduce) { td.new, .pt.now { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Combining Functions</h1></div>
+    <div class="tools">
+      <button type="button" class="tog" id="tFns" aria-pressed="true">f and g graphs</button>
+      <button type="button" class="tog" id="tRes" aria-pressed="false">Whole graph</button>
+      <button type="button" id="newEx">New example</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="side">
+      <section class="card fns" id="fns"></section>
+      <section class="card tcard" id="tcard">
+        <table><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+        <p class="empty" id="empty">Type an <i class="v">x</i> value and press Enter. Then press Calculate on each column, left to right (or keep pressing Enter).</p>
+      </section>
+      <section class="card work" id="work" aria-live="polite"></section>
+    </div>
+    <div class="board"><svg id="svg" viewBox="0 0 720 720" role="img" aria-label="Graph of the functions and the plotted points"></svg></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const minus = s => String(s).replace(/-/g, "−");
+  const X = '<i class="v">x</i>';
+  const sfrac = (a, b) => `<span class="sfrac"><span>${a}</span><span>${b}</span></span>`;
+  class Undef { constructor(why) { this.why = why; } }
+
+  // ---------- Reading a function: 2x + 1, x^2 - 3, 3(x - 1)² + 2, sqrt(x + 4), √x, |x - 2|, 1/(x - 1), 2^x ----------
+  function tokFn(src) {
+    const s = src.replace(/^[^=]*=/, "").toLowerCase().replace(/sqrt/g, "√").replace(/\s+/g, "");
+    if (!s) throw new Error("Type a rule, like 2x + 1");
+    const t = [];
+    for (let i = 0; i < s.length;) {
+      const c = s[i];
+      const num = s.slice(i).match(/^(\d+\.?\d*|\.\d+)/);
+      if (num) { t.push({ k: "num", v: +num[0] }); i += num[0].length; continue; }
+      i++;
+      if (c === "x") t.push({ k: "x" });
+      else if (c === "+") t.push({ k: "+" });
+      else if ("-−–".includes(c)) t.push({ k: "-" });
+      else if ("*·×∙•".includes(c)) t.push({ k: "*" });
+      else if ("/÷".includes(c)) t.push({ k: "/" });
+      else if (c === "^") t.push({ k: "^" });
+      else if (c === "²" || c === "³") t.push({ k: "sq", v: c === "²" ? 2 : 3 });
+      else if ("([{".includes(c)) t.push({ k: "(" });
+      else if (")]}".includes(c)) t.push({ k: ")" });
+      else if (c === "|") t.push({ k: "|" });
+      else if (c === "√") t.push({ k: "√" });
+      else throw new Error(`I can't read "${c}". Use x, numbers, + − × ÷ ^, √, | | and brackets.`);
+    }
+    return t;
+  }
+  function parseFn(src) {
+    const t = tokFn(src); let p = 0, absD = 0;
+    const peek = () => t[p] || { k: "end" };
+    const bad = () => { throw new Error("Check that rule. Example: 2(x − 1)² + 3"); };
+    const eat = k => { if (peek().k !== k) bad(); return t[p++]; };
+    const startsFactor = () => { const k = peek().k; return k === "num" || k === "x" || k === "(" || k === "√" || (k === "|" && absD === 0); };
+    function expr() { let a = term(); while (peek().k === "+" || peek().k === "-") { const op = t[p++].k; a = { t: op, a, b: term() }; } return a; }
+    function term() {
+      let a = unary();
+      for (;;) {
+        const k = peek().k;
+        if (k === "*" || k === "/") { p++; a = { t: k, a, b: unary() }; }
+        else if (startsFactor()) a = { t: "*", a, b: power(), imp: true };
+        else return a;
+      }
+    }
+    function unary() { if (peek().k === "-") { p++; return { t: "neg", a: unary() }; } if (peek().k === "+") { p++; return unary(); } return power(); }
+    function power() {
+      let a = primary();
+      for (;;) {
+        if (peek().k === "^") { p++; a = { t: "^", a, b: unary() }; }
+        else if (peek().k === "sq") a = { t: "^", a, b: { t: "num", v: t[p++].v } };
+        else return a;
+      }
+    }
+    function primary() {
+      const k = peek().k;
+      if (k === "num") return { t: "num", v: t[p++].v };
+      if (k === "x") { p++; return { t: "x" }; }
+      if (k === "(") { p++; const e = expr(); eat(")"); return e; }
+      if (k === "|") { p++; absD++; const e = expr(); absD--; eat("|"); return { t: "abs", a: e }; }
+      if (k === "√") { p++; return { t: "sqrt", a: primary() }; }
+      bad();
+    }
+    const tree = expr();
+    if (p !== t.length) bad();
+    return tree;
+  }
+  function ev(n, x) {
+    switch (n.t) {
+      case "num": return n.v;
+      case "x": return x;
+      case "neg": return -ev(n.a, x);
+      case "+": return ev(n.a, x) + ev(n.b, x);
+      case "-": return ev(n.a, x) - ev(n.b, x);
+      case "*": return ev(n.a, x) * ev(n.b, x);
+      case "/": { const d = ev(n.b, x); if (Math.abs(d) < 1e-12) throw new Undef("you can't divide by 0"); return ev(n.a, x) / d; }
+      case "^": {
+        const b = ev(n.a, x), e = ev(n.b, x), v = Math.pow(b, e);
+        if (Number.isNaN(v)) throw new Undef("a negative number can't take that power");
+        if (!Number.isFinite(v)) throw new Undef(b === 0 ? "you can't divide by 0" : "it is too large");
+        return v;
+      }
+      case "sqrt": { const v = ev(n.a, x); if (v < -1e-12) throw new Undef("you can't take the square root of a negative"); return Math.sqrt(Math.max(0, v)); }
+      case "abs": return Math.abs(ev(n.a, x));
+    }
+  }
+
+  // ---------- Numbers ----------
+  function frac(v) {
+    if (Math.abs(v - Math.round(v)) < 1e-9) return { n: Math.round(v), d: 1 };
+    for (let d = 2; d <= 12; d++) { const n = v * d; if (Math.abs(n - Math.round(n)) < 1e-9) return { n: Math.round(n), d }; }
+    return null;
+  }
+  const exact = v => !!frac(v);
+  const dec = v => minus(String(+v.toFixed(2)));
+  function numH(v) { // a value as HTML, no ≈ sign
+    const f = frac(v);
+    if (!f) return dec(v);
+    if (f.d === 1) return minus(f.n);
+    return (f.n < 0 ? "−" : "") + sfrac(Math.abs(f.n), f.d);
+  }
+  function numP(v) { const f = frac(v); return !f ? dec(v) : f.d === 1 ? minus(f.n) : minus(f.n) + "/" + f.d; }
+  const eqH = v => (exact(v) ? "= " : "≈ ") + numH(v);
+  const eqP = v => (exact(v) ? "= " : "≈ ") + numP(v);
+  const fmtC = v => minus(String(+v.toFixed(6)));
+
+  // A function rule as HTML; sub replaces x with a bracketed number.
+  function pf(n, sub, c = {}) {
+    let s, wrap = false;
+    switch (n.t) {
+      case "num": s = fmtC(n.v); break;
+      case "x": s = sub == null ? X : `<span class="sv">(${numH(sub)})</span>`; break;
+      case "neg": s = "−" + pf(n.a, sub, { prec: 2, right: true }); wrap = c.right || c.base; break;
+      case "+": case "-":
+        s = pf(n.a, sub, { prec: 1 }) + (n.t === "+" ? " + " : " − ") + pf(n.b, sub, { prec: 1, right: true, minus: n.t === "-" });
+        wrap = c.prec > 1 || c.base || (c.right && c.minus); break;
+      case "*": {
+        const A = pf(n.a, sub, { prec: 2 }), B = pf(n.b, sub, { prec: 2, right: true });
+        const juxt = n.imp && !/^[\d.−]/.test(B.replace(/<[^>]*>/g, ""));
+        s = A + (juxt ? "" : "·") + B; wrap = c.base || c.prec > 2; break;
+      }
+      case "/": s = sfrac(pf(n.a, sub), pf(n.b, sub)); wrap = c.base; break;
+      case "^": s = pf(n.a, sub, { base: true }) + "<sup>" + pf(n.b, sub) + "</sup>"; wrap = c.base; break;
+      case "sqrt": s = `√<span class="rad-in">${pf(n.a, sub)}</span>`; wrap = c.base; break;
+      case "abs": s = "|" + pf(n.a, sub) + "|"; break;
+    }
+    return wrap ? "(" + s + ")" : s;
+  }
+
+  // ---------- Functions ----------
+  const COLORS = { f: "f", g: "g", h: "h" };
+  const fns = { f: { text: "2x + 1" }, g: { text: "x^2 - 3" }, h: null };
+  const used = () => ["f", "g", "h"].filter(k => fns[k]);
+  const fnH = k => `<span class="c-${COLORS[k]}"><i class="v">${k}</i></span>`;
+  for (const k of ["f", "g"]) fns[k].tree = parseFn(fns[k].text);
+
+  // ---------- Reading the combination: (f + g)(x), (f − g)(x), (f·g)(x), (f/g)(x), f(g(x)), (f∘g)(x), f(g(x)) + h(x) ----------
+  function parseCombo(src) {
+    const s = src.replace(/\s+/g, ""), t = [];
+    if (!s) throw new Error("Type a combination, like (f + g)(x)");
+    for (let i = 0; i < s.length;) {
+      const c = s[i];
+      const num = s.slice(i).match(/^(\d+\.?\d*|\.\d+)/);
+      if (num) { t.push({ k: "num", v: +num[0] }); i += num[0].length; continue; }
+      i++;
+      if ("fgh".includes(c)) { if (!fns[c]) throw new Error(`Add ${c}(x) first.`); t.push({ k: "name", n: c }); }
+      else if (c === "x") t.push({ k: "x" });
+      else if ("∘o°".includes(c)) t.push({ k: "o" });
+      else if (c === "+") t.push({ k: "+" });
+      else if ("-−–".includes(c)) t.push({ k: "-" });
+      else if ("*·×∙•".includes(c)) t.push({ k: "*" });
+      else if ("/÷".includes(c)) t.push({ k: "/" });
+      else if ("([".includes(c)) t.push({ k: "(" });
+      else if (")]".includes(c)) t.push({ k: ")" });
+      else throw new Error(`I can't read "${c}". Use f, g, h, x, + − · / ∘ and brackets.`);
+    }
+    let p = 0;
+    const peek = () => t[p] || { k: "end" };
+    const bad = () => { throw new Error("Check that. Examples: (f + g)(x), f(g(x)), (f∘g)(x)"); };
+    const eat = k => { if (peek().k !== k) bad(); return t[p++]; };
+    function expr() { let a = term(); while (peek().k === "+" || peek().k === "-") { const op = t[p++].k; a = { k: "bin", op, a, b: term() }; } return a; }
+    function term() {
+      let a = comp();
+      for (;;) {
+        const k = peek().k;
+        if (k === "*" || k === "/") { p++; a = { k: "bin", op: k, a, b: comp() }; }
+        else if (["name", "x", "num", "("].includes(k)) a = { k: "bin", op: "*", a, b: comp(), imp: true };
+        else return a;
+      }
+    }
+    function comp() {
+      let a = unary();
+      while (peek().k === "o") {
+        p++; const b = unary();
+        // f∘g(x) is read as (f∘g)(x)
+        a = b.k === "call" ? { k: "call", fn: { k: "comp", a, b: b.fn }, arg: b.arg } : { k: "comp", a, b };
+      }
+      return a;
+    }
+    function unary() { if (peek().k === "-") { p++; return { k: "neg", a: unary() }; } return postfix(); }
+    function postfix() {
+      let a = primary();
+      while (peek().k === "(" && isFn(a)) { p++; const arg = expr(); eat(")"); a = { k: "call", fn: a, arg }; }
+      return a;
+    }
+    function primary() {
+      const k = peek().k;
+      if (k === "name") return { k: "name", n: t[p++].n };
+      if (k === "x") { p++; return { k: "x" }; }
+      if (k === "num") return { k: "num", v: t[p++].v };
+      if (k === "(") { p++; const e = expr(); eat(")"); return e; }
+      bad();
+    }
+    const ast = expr();
+    if (p !== t.length) bad();
+    if (isFn(ast)) throw new Error("Add (x) at the end, like (f + g)(x).");
+    const top = lowerV(ast);
+    if (top.k !== "app" && top.k !== "bin") throw new Error("Use at least one function, like f(x).");
+    return { ast, top };
+  }
+  function isFn(n) {
+    switch (n.k) {
+      case "name": return true;
+      case "x": case "num": case "call": return false;
+      case "neg": return isFn(n.a);
+      case "comp": if (!isFn(n.a) || !isFn(n.b)) throw new Error("∘ goes between function names, like (f∘g)(x)."); return true;
+      case "bin": { const a = isFn(n.a), b = isFn(n.b); if (a !== b) throw new Error("Write it all with (x), like f(x) + g(x), or all without, like (f + g)(x)."); return a; }
+    }
+  }
+  function lowerV(n) {
+    switch (n.k) {
+      case "x": return { k: "x" };
+      case "num": return { k: "num", v: n.v };
+      case "neg": return { k: "neg", a: lowerV(n.a) };
+      case "call": return applyF(n.fn, lowerV(n.arg));
+      case "bin": return { k: "bin", op: n.op, a: lowerV(n.a), b: lowerV(n.b) };
+    }
+  }
+  function applyF(F, arg) {
+    switch (F.k) {
+      case "name": return { k: "app", f: F.n, arg };
+      case "neg": return { k: "neg", a: applyF(F.a, arg) };
+      case "bin": return { k: "bin", op: F.op, a: applyF(F.a, arg), b: applyF(F.b, arg) };
+      case "comp": return applyF(F.a, applyF(F.b, arg));
+    }
+  }
+  const key = n => n.k === "x" ? "x" : n.k === "num" ? String(n.v) : n.k === "neg" ? "-" + key(n.a)
+    : n.k === "app" ? n.f + "(" + key(n.arg) + ")" : "(" + key(n.a) + n.op + key(n.b) + ")";
+  const SYM = { "+": " + ", "-": " − ", "*": " · ", "/": " / " };
+
+  // The combination in the notation that was typed. x is shown as a number when xv is given.
+  function pc(n, xv, c = {}, plain = false) {
+    let s, wrap = false;
+    const nm = k => plain ? k : fnH(k);
+    switch (n.k) {
+      case "name": s = nm(n.n); break;
+      case "x": s = xv == null ? (plain ? "x" : X) : (plain ? numP(xv) : numH(xv)); wrap = xv != null && xv < 0 && c.right; break;
+      case "num": s = fmtC(n.v); break;
+      case "neg": s = "−" + pc(n.a, xv, { prec: 2, right: true }, plain); wrap = c.right; break;
+      case "comp": s = pc(n.a, xv, { prec: 3 }, plain) + "∘" + pc(n.b, xv, { prec: 3, right: true }, plain); wrap = c.prec > 3; break;
+      case "call": {
+        const F = n.fn.k === "name" ? nm(n.fn.n) : "(" + pc(n.fn, xv, {}, plain) + ")";
+        s = F + "(" + pc(n.arg, xv, {}, plain) + ")"; break;
+      }
+      case "bin": {
+        if (n.op === "/" && !isFn(n) && !plain) { s = sfrac(pc(n.a, xv, {}, plain), pc(n.b, xv, {}, plain)); break; }
+        const pr = n.op === "+" || n.op === "-" ? 1 : 2;
+        const sym = isFn(n) ? { "+": " + ", "-": " − ", "*": "·", "/": "/" }[n.op] : SYM[n.op];
+        s = pc(n.a, xv, { prec: pr }, plain) + sym + pc(n.b, xv, { prec: pr, right: true, minus: n.op === "-" || n.op === "/" }, plain);
+        wrap = c.prec > pr || (c.right && c.minus && pr === 1) || (plain && c.right && c.minus && n.op === "/");
+      }
+    }
+    return wrap ? "(" + s + ")" : s;
+  }
+  // A step in point notation: f(g(x)), f(x) + g(x). With o.row the steps under the top one print as their values.
+  function pv(n, o, c = {}) {
+    if (o.row && o.depth > 0 && (n.k === "app" || n.k === "bin")) {
+      const v = o.row.vals[key(n)].v; const s = o.plain ? numP(v) : numH(v);
+      return v < 0 && c.right ? "(" + s + ")" : s;
+    }
+    const d = { ...o, depth: (o.depth || 0) + 1 };
+    switch (n.k) {
+      case "x": {
+        if (o.x == null) return o.plain ? "x" : X;
+        const s = o.plain ? numP(o.x) : numH(o.x); return o.x < 0 && c.right ? "(" + s + ")" : s;
+      }
+      case "num": return fmtC(n.v);
+      case "neg": { const s = "−" + pv(n.a, d, { prec: 2, right: true }); return c.right ? "(" + s + ")" : s; }
+      case "app": return (o.plain ? n.f : fnH(n.f)) + "(" + pv(n.arg, d) + ")";
+      case "bin": {
+        if (n.op === "/" && !o.plain) return sfrac(pv(n.a, d), pv(n.b, d));
+        const pr = n.op === "+" || n.op === "-" ? 1 : 2;
+        const s = pv(n.a, d, { prec: pr }) + SYM[n.op] + pv(n.b, d, { prec: pr, right: true, minus: n.op === "-" || n.op === "/" });
+        return c.prec > pr || (c.right && c.minus && (pr === 1 || n.op === "/")) ? "(" + s + ")" : s;
+      }
+    }
+  }
+
+  // ---------- State ----------
+  let comboText = "(f + g)(x)";
+  let combo = null, cols = [], rows = [], active = -1, justDone = null;
+  const view = { fns: true, res: false };
+
+  function setCombo(text) {
+    combo = parseCombo(text);
+    comboText = text;
+    cols = [];
+    const seen = new Set();
+    (function walk(n) {
+      if (n.k === "neg") return walk(n.a);
+      if (n.k === "app") walk(n.arg);
+      else if (n.k === "bin") { walk(n.a); walk(n.b); }
+      else return;
+      const k = key(n);
+      if (!seen.has(k)) { seen.add(k); cols.push({ key: k, node: n }); }
+    })(combo.top);
+    cols[cols.length - 1].top = true;
+    rows = []; active = -1; justDone = null;
+  }
+
+  // Value of a plain node in a row: x, a number, a negated step, or a calculated step.
+  function ready(n, row) {
+    if (n.k === "x" || n.k === "num") return true;
+    if (n.k === "neg") return ready(n.a, row);
+    return key(n) in row.vals;
+  }
+  function val(n, row) { // {v} or {err}
+    if (n.k === "x") return { v: row.x };
+    if (n.k === "num") return { v: n.v };
+    if (n.k === "neg") { const r = val(n.a, row); return r.err ? r : { v: -r.v }; }
+    return row.vals[key(n)];
+  }
+  function canCalc(col, row) {
+    if (!row || col.key in row.vals) return false;
+    const n = col.node;
+    return n.k === "app" ? ready(n.arg, row) : ready(n.a, row) && ready(n.b, row);
+  }
+  function calc(col, row) {
+    const n = col.node;
+    let r;
+    if (n.k === "app") {
+      const a = val(n.arg, row);
+      if (a.err) r = { err: "chain", from: n.arg };
+      else { try { r = { v: ev(fns[n.f].tree, a.v), input: a.v }; } catch (e) { if (!(e instanceof Undef)) throw e; r = { err: e.why, input: a.v }; } }
+    } else {
+      const a = val(n.a, row), b = val(n.b, row);
+      if (a.err) r = { err: "chain", from: n.a };
+      else if (b.err) r = { err: "chain", from: n.b };
+      else if (n.op === "/" && Math.abs(b.v) < 1e-12) r = { err: "you can't divide by 0" };
+      else r = { v: n.op === "+" ? a.v + b.v : n.op === "-" ? a.v - b.v : n.op === "*" ? a.v * b.v : a.v / b.v };
+    }
+    if (r.v != null && Math.abs(r.v) < 1e-12) r.v = 0;
+    row.vals[col.key] = r;
+    justDone = col.key;
+  }
+  function nextCol(row) { return cols.find(c => canCalc(c, row)); }
+
+  // ---------- Function cards ----------
+  function editor(box, getText, apply) {
+    const pretty = box.querySelector(".pretty"), inp = box.querySelector("input"), err = box.parentElement.parentElement.querySelector(".err");
+    const open = () => { inp.value = getText(); box.classList.add("editing"); inp.focus(); inp.select(); };
+    const done = () => {
+      const msg = apply(inp.value.trim());
+      if (msg) { box.classList.add("bad"); err.textContent = msg; err.hidden = false; return false; }
+      box.classList.remove("bad", "editing"); err.hidden = true; return true;
+    };
+    pretty.addEventListener("click", open);
+    pretty.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); done(); } if (e.key === "Escape") { box.classList.remove("bad", "editing"); err.hidden = true; } });
+    inp.addEventListener("blur", () => { if (box.classList.contains("editing")) done(); });
+  }
+  const PRESETS2 = ["(f + g)(x)", "(f − g)(x)", "(f · g)(x)", "(f / g)(x)", "(f ∘ g)(x)", "(g ∘ f)(x)", "f(g(x))", "g(f(x))", "(g − f)(x)", "(g / f)(x)", "(f ∘ f)(x)"];
+  const PRESETS3 = ["(f ∘ g ∘ h)(x)", "f(g(h(x)))", "f(g(x)) + h(x)", "(f + g)(x) − h(x)", "(f · g)(x) + h(x)", "h(f(x) + g(x))", "(f + g + h)(x)"];
+
+  function renderFns() {
+    const box = $("fns");
+    let html = "";
+    for (const k of used()) {
+      html += `<div><div class="frow"><span class="fname">${fnH(k)}(${X}) =</span>
+        <div class="fbox" data-k="${k}"><div class="pretty" tabindex="0" role="button" aria-label="${k} of x. Click to change it."></div><input type="text" autocomplete="off" spellcheck="false" aria-label="Type ${k}(x)"></div>
+        ${k === "h" ? '<button type="button" class="rm" id="rmH" aria-label="Remove h">✕</button>' : ""}${k === "g" && !fns.h ? '<button type="button" class="addh" id="addH">+ Add <i class="v">h</i>(<i class="v">x</i>)</button>' : ""}</div><p class="err" hidden></p></div>`;
+    }
+    html += `<div><div class="frow crow"><span class="find">Find</span>
+      <div class="fbox" data-k="combo"><div class="pretty" tabindex="0" role="button" aria-label="The combination. Click to change it."></div><input type="text" autocomplete="off" spellcheck="false" aria-label="Type the combination"></div>
+      <select id="pick" aria-label="Pick a combination"><option value="">Pick…</option>${[...PRESETS2, ...(fns.h ? PRESETS3 : [])].map(p => `<option>${p}</option>`).join("")}</select></div><p class="err" hidden></p></div>`;
+    box.innerHTML = html;
+    for (const k of used()) {
+      editor(box.querySelector(`.fbox[data-k="${k}"]`), () => fns[k].text, text => {
+        try { const tree = parseFn(text); fns[k].text = text; fns[k].tree = tree; } catch (e) { return e.message; }
+        rows = []; active = -1; paintFns(); renderTable(); draw();
+      });
+    }
+    editor(box.querySelector('.fbox[data-k="combo"]'), () => comboText, text => {
+      try { setCombo(text); } catch (e) { return e.message; }
+      paintFns(); renderTable(); draw();
+    });
+    $("pick").addEventListener("change", e => {
+      if (!e.target.value) return;
+      setCombo(e.target.value); e.target.value = "";
+      paintFns(); renderTable(); draw();
+    });
+    if ($("addH")) $("addH").addEventListener("click", () => {
+      fns.h = { text: "|x - 2|", tree: parseFn("|x - 2|") };
+      renderFns(); setCombo("f(g(h(x)))"); paintFns(); renderTable(); draw();
+    });
+    if ($("rmH")) $("rmH").addEventListener("click", () => {
+      fns.h = null;
+      if (/h/.test(comboText)) setCombo("(f + g)(x)"); else rows = [], active = -1;
+      renderFns(); renderTable(); draw();
+    });
+    paintFns();
+  }
+  function paintFns() {
+    for (const k of used()) document.querySelector(`.fbox[data-k="${k}"] .pretty`).innerHTML = "<span>" + pf(fns[k].tree) + "</span>";
+    const typed = pc(combo.ast), alt = pv(combo.top, {});
+    const strip = s => s.replace(/<[^>]*>|\s/g, "");
+    document.querySelector('.fbox[data-k="combo"] .pretty').innerHTML = "<span>" + typed + "</span>" + (strip(typed) !== strip(alt) ? `<span class="alt">= ${alt}</span>` : "");
+    const cp = document.querySelector('.fbox[data-k="combo"] .pretty'), altEl = cp.querySelector(".alt");
+    if (altEl && cp.scrollWidth > cp.clientWidth + 2) altEl.remove(); // the table header still shows it
+    const names = used().map(k => `<i class="v">${k}</i>`);
+    $("tFns").innerHTML = names.slice(0, -1).join(", ") + " and " + names[names.length - 1] + " graphs";
+    $("tRes").innerHTML = "Whole graph of " + pc(combo.ast, null, {}, true).replace(/[fghx]/g, m => `<i class="v">${m}</i>`);
+  }
+
+  // ---------- Table ----------
+  function renderTable() {
+    const head = cols.map((c, i) => `<th class="${c.top ? "top" : ""}"><button type="button" class="calc" data-i="${i}">Calculate</button></th>`).join("");
+    const names = cols.map(c => {
+      if (!c.top) return `<th>${pv(c.node, {})}</th>`;
+      const typed = pc(combo.ast), alt = pv(c.node, {});
+      const strip = s => s.replace(/<[^>]*>|\s/g, "");
+      return `<th class="top">${typed}${strip(typed) !== strip(alt) ? `<small>= ${alt}</small>` : ""}</th>`;
+    }).join("");
+    $("thead").innerHTML = `<tr class="btns"><th><input id="xin" type="text" inputmode="decimal" autocomplete="off" placeholder="x =" aria-label="Type an x value and press Enter"></th>${head}</tr>
+      <tr class="heads"><th>${X}</th>${names}</tr>`;
+    $("xin").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); enter(); } });
+    $("xin").addEventListener("input", () => $("xin").classList.remove("bad"));
+    $("thead").querySelectorAll(".calc").forEach(b => b.addEventListener("click", () => { const row = rows[active]; if (row && canCalc(cols[+b.dataset.i], row)) { calc(cols[+b.dataset.i], row); update(); } }));
+    $("tcard").classList.toggle("many", cols.length >= 4);
+    renderBody();
+  }
+  function cellHtml(c, row) {
+    const r = row.vals[c.key];
+    if (!r) return `<td class="${c.top ? "top" : ""}"></td>`;
+    const isNew = row === rows[active] && justDone === c.key ? " new" : "";
+    const step = pv(c.node, { x: row.x, row: r.err === "chain" || (c.node.k === "app" && c.node.arg.k === "x") ? null : row });
+    if (r.err) return `<td class="${c.top ? "top " : ""}undef${isNew}"><small>${step}</small>undefined</td>`;
+    return `<td class="${c.top ? "top" : ""}${isNew}"><small>${step} =</small><b>${exact(r.v) ? "" : "≈ "}${numH(r.v)}</b></td>`;
+  }
+  function renderBody() {
+    $("tbody").innerHTML = rows.map((row, i) => `<tr data-i="${i}" class="${i === active ? "active" : ""}"><td class="xcell">${numH(row.x)}</td>${cols.map(c => cellHtml(c, row)).join("")}</tr>`).join("");
+    $("tbody").querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => { active = +tr.dataset.i; justDone = null; update(); }));
+    $("empty").hidden = rows.length > 0;
+    const row = rows[active], nx = row && nextCol(row);
+    $("thead").querySelectorAll(".calc").forEach(b => { const c = cols[+b.dataset.i]; b.disabled = !canCalc(c, row); b.classList.toggle("next", c === nx); });
+    const tr = $("tbody").querySelector("tr.active");
+    if (tr) tr.scrollIntoView({ block: "nearest" });
+    renderWork();
+  }
+  function readX(s) {
+    s = s.replace(/^x\s*=/i, "").replace(/[−–]/g, "-").replace(/\s+/g, "");
+    let m = s.match(/^(-?)(\d+)\/(\d+)$/);
+    if (m) return +m[3] ? (m[1] ? -1 : 1) * m[2] / m[3] : NaN;
+    return /^-?(\d+\.?\d*|\.\d+)$/.test(s) ? +s : NaN;
+  }
+  function enter() {
+    const inp = $("xin"), t = inp.value.trim(), row = rows[active];
+    if (t) {
+      const x = readX(t);
+      if (!Number.isFinite(x)) { inp.classList.add("bad"); return; }
+      if (!row || Math.abs(row.x - x) > 1e-9) {
+        const at = rows.findIndex(r => Math.abs(r.x - x) < 1e-9);
+        if (at >= 0) active = at;
+        else { rows.push({ x, vals: {} }); active = rows.length - 1; }
+        justDone = null; update(); return;
+      }
+    }
+    if (row) { const c = nextCol(row); if (c) { calc(c, row); update(); } }
+  }
+  function update() { renderBody(); draw(); }
+
+  // ---------- Work lines ----------
+  function renderWork() {
+    const row = rows[active];
+    let html = '<p class="label">Steps</p>';
+    if (!row) { $("work").innerHTML = html + '<div class="wl muted">Each step shows up here.</div>'; return; }
+    const done = cols.filter(c => c.key in row.vals);
+    if (!done.length) html += `<div class="wl muted">Press Calculate above ${pv(cols.find(c => canCalc(c, row)).node, {})}.</div>`;
+    for (const c of done) {
+      const n = c.node, r = row.vals[c.key];
+      const parts = [];
+      if (c.top) { const typed = pc(combo.ast, row.x), lab = pv(n, { x: row.x }); parts.push(typed); if (typed.replace(/<[^>]*>|\s/g, "") !== lab.replace(/<[^>]*>|\s/g, "")) parts.push("= " + lab); }
+      else parts.push(pv(n, { x: row.x }));
+      if (r.err === "chain") {
+        parts.push(`<span class="why">is undefined because ${pv(r.from, { x: row.x })} is undefined.</span>`);
+      } else if (n.k === "app") {
+        if (n.arg.k !== "x") parts.push("= " + pv(n, { x: row.x, row }));
+        parts.push("= " + pf(fns[n.f].tree, r.input));
+        parts.push(r.err ? `<span class="why">is undefined: ${r.err}.</span>` : eqH(r.v));
+      } else {
+        parts.push("= " + pv(n, { x: row.x, row }));
+        parts.push(r.err ? `<span class="why">is undefined: ${r.err}.</span>` : eqH(r.v));
+      }
+      html += `<div class="wl${c.top ? " top" : ""}">${parts.map(p => `<span>${p}</span>`).join("")}</div>`;
+    }
+    $("work").innerHTML = html;
+  }
+
+  // ---------- Graph ----------
+  const svg = $("svg"), S = 720, PAD = 36;
+  const el = (tag, attrs, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+  function evalNode(n, x) {
+    switch (n.k) {
+      case "x": return x;
+      case "num": return n.v;
+      case "neg": return -evalNode(n.a, x);
+      case "app": return ev(fns[n.f].tree, evalNode(n.arg, x));
+      case "bin": {
+        const a = evalNode(n.a, x), b = evalNode(n.b, x);
+        if (n.op === "/" && Math.abs(b) < 1e-12) throw new Undef("÷0");
+        return n.op === "+" ? a + b : n.op === "-" ? a - b : n.op === "*" ? a * b : a / b;
+      }
+    }
+  }
+  function niceStep(R) {
+    if (R <= 10) return 1;
+    const raw = R / 10, e = 10 ** Math.floor(Math.log10(raw));
+    return [1, 2, 5, 10].map(m => m * e).find(s => s >= raw);
+  }
+  function points() {
+    const out = [];
+    rows.forEach((row, ri) => {
+      const now = ri === active;
+      for (const c of cols) {
+        const r = row.vals[c.key];
+        if (!r || r.err) continue;
+        if (c.node.k === "app") out.push({ x: r.input, y: r.v, k: c.node.f, now, col: c, row, kind: "fn" });
+        if (c.top) out.push({ x: row.x, y: r.v, k: "r", now, col: c, row, kind: "top" });
+      }
+    });
+    return out;
+  }
+  function draw() {
+    svg.innerHTML = "";
+    const pts = points();
+    let R = 10;
+    for (const p of pts) R = Math.max(R, Math.ceil(Math.max(Math.abs(p.x), Math.abs(p.y))) + 1);
+    R = Math.min(R, 1e6);
+    const step = niceStep(R); R = Math.ceil(R / step) * step;
+    const u = (S - 2 * PAD) / (2 * R);
+    const sx = x => PAD + (x + R) * u, sy = y => PAD + (R - y) * u;
+
+    const clip = el("clipPath", { id: "plane" }, el("defs", {}));
+    el("rect", { x: PAD, y: PAD, width: S - 2 * PAD, height: S - 2 * PAD }, clip);
+    ["r", "f", "g", "h"].forEach(k => {
+      const m = el("marker", { id: "arr-" + k, viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: "auto-start-reverse" }, svg.querySelector("defs"));
+      el("path", { d: "M0,0 L10,5 L0,10 z", class: "k-" + k }, m);
+    });
+    const grid = el("g", {});
+    for (let i = -R; i <= R; i += step) {
+      const cls = i === 0 ? "ga" : "gm";
+      el("line", { x1: sx(i), y1: sy(-R), x2: sx(i), y2: sy(R), class: cls }, grid);
+      el("line", { x1: sx(-R), y1: sy(i), x2: sx(R), y2: sy(i), class: cls }, grid);
+    }
+    for (let i = -R; i <= R; i += step) {
+      if (i === 0) continue;
+      el("text", { x: sx(i), y: sy(0) + 21, class: "mb-tick", "text-anchor": "middle" }, grid).textContent = minus(i);
+      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, grid).textContent = minus(i);
+    }
+    el("text", { x: sx(R) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, grid).textContent = "x";
+    el("text", { x: sx(0) + 8, y: sy(R) + 16, class: "mb-tick" }, grid).textContent = "y";
+
+    const plane = el("g", { "clip-path": "url(#plane)" });
+    const names = [];
+    const curve = (f, cls, name) => {
+      const N = 900; let d = "", prev = null; const spots = [];
+      for (let i = 0; i <= N; i++) {
+        const x = -R + (2 * R * i) / N;
+        let y; try { y = f(x); } catch (e) { y = NaN; }
+        if (!Number.isFinite(y) || Math.abs(y) > 6 * R) { prev = null; continue; }
+        if (prev != null && Math.abs(y - prev) > 2 * R) prev = null; // jump across an asymptote
+        d += (prev == null ? "M" : "L") + sx(x).toFixed(1) + "," + sy(y).toFixed(1);
+        prev = y;
+        if (Math.abs(y) < R * 0.86 && Math.abs(x) < R * 0.92) spots.push({ x, y });
+      }
+      if (!d) return;
+      el("path", { d, class: "curve " + cls }, plane);
+      if (!name) return;
+      const at = spots.reverse().find(q => names.every(b => Math.hypot(sx(q.x) - b.x, sy(q.y) - b.y) > 60));
+      if (!at) return;
+      names.push({ x: sx(at.x), y: sy(at.y) });
+      el("text", { x: sx(at.x) - 8, y: sy(at.y) - 10, class: "cname " + cls, "text-anchor": "end" }, plane).textContent = name;
+    };
+    if (view.fns) for (const k of used()) curve(x => ev(fns[k].tree, x), "k-" + k, k);
+    if (view.res) curve(x => evalNode(combo.top, x), "res", null);
+
+    // Guides for the row being worked on.
+    const row = rows[active];
+    const guides = el("g", {}, plane);
+    const chips = [];
+    if (row) {
+      for (const p of pts.filter(p => p.now)) {
+        const k = p.k;
+        if (p.kind === "fn") {
+          el("line", { x1: sx(p.x), y1: sy(0), x2: sx(p.x), y2: sy(p.y), class: "guide k-" + k, "marker-end": `url(#arr-${k})` }, guides);
+          chips.push({ p, k, text: `${p.col.node.f}(${numP(p.x)}) ${eqP(p.y)}` });
+        } else {
+          const n = p.col.node;
+          if (n.k === "app" && n.arg.k !== "x") {
+            const r = row.vals[p.col.key];
+            el("line", { x1: sx(r.input), y1: sy(p.y), x2: sx(p.x), y2: sy(p.y), class: "guide k-r", "marker-end": "url(#arr-r)" }, guides);
+          } else if (n.k === "bin") {
+            el("line", { x1: sx(p.x), y1: sy(0), x2: sx(p.x), y2: sy(p.y), class: "guide k-r", "marker-end": "url(#arr-r)" }, guides);
+          }
+          chips.push({ p, k: "r", text: `${pc(combo.ast, p.x, {}, true)} ${eqP(p.y)}`, top: true });
+        }
+      }
+    }
+    const dots = el("g", {}, plane);
+    // Older points first, the current row on top; result points last.
+    const order = [...pts].sort((a, b) => (a.now - b.now) || ((a.kind === "top") - (b.kind === "top")));
+    for (const p of order) {
+      const cls = `pt k-${p.k}${p.now ? (p.col.key === justDone ? " now" : "") : p.kind === "fn" ? " old" : ""}`;
+      el("circle", { cx: sx(p.x), cy: sy(p.y), r: p.kind === "top" ? (p.now ? 10 : 8) : p.now ? 8 : 5.5, class: cls }, dots);
+    }
+    // Label chips, nudged apart so they don't cover each other.
+    const boxes = [];
+    const lab = el("g", {});
+    chips.sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0));
+    for (const c of chips) {
+      const px = sx(c.p.x), py = sy(c.p.y);
+      const g = el("g", {}, lab);
+      const t = el("text", { x: 0, y: 0, class: "chiptx k-" + c.k }, g); t.textContent = c.text;
+      const w = t.getComputedTextLength() + 16, h = 30;
+      let x = px + 14, y = py - h / 2;
+      if (x + w > S - 4) x = px - 14 - w;
+      x = Math.max(4, x);
+      y = Math.max(4, Math.min(S - h - 4, y));
+      const y0 = y, hit = yy => boxes.some(b => x < b.x + b.w && x + w > b.x && yy < b.y + b.h && yy + h > b.y);
+      for (let i = 1; i < 14 && hit(y); i++) y = Math.max(4, Math.min(S - h - 4, y0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * (h + 4)));
+      boxes.push({ x, y, w, h });
+      const bg = el("rect", { x, y, width: w, height: h, rx: 7, class: "chipbg k-" + c.k }, g);
+      bg.style.fill = "var(--sheet)";
+      g.insertBefore(bg, t);
+      t.setAttribute("x", x + 8); t.setAttribute("y", y + 21);
+    }
+  }
+
+  // ---------- Header buttons ----------
+  $("tFns").addEventListener("click", () => { view.fns = !view.fns; $("tFns").setAttribute("aria-pressed", view.fns); draw(); });
+  $("tRes").addEventListener("click", () => { view.res = !view.res; $("tRes").setAttribute("aria-pressed", view.res); draw(); });
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const nz = (a, b) => { let v; do v = ri(a, b); while (!v); return v; };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const sg = v => (v < 0 ? " - " + -v : " + " + v);
+  const co = a => (a === 1 ? "" : a === -1 ? "-" : String(a));
+  const FORMS = [
+    () => `${co(nz(-3, 3))}x${sg(nz(-5, 5))}`,
+    () => `x^2${sg(nz(-5, 5))}`,
+    () => `${co(pick([1, 2, -1]))}(x${sg(nz(-3, 3))})^2${sg(nz(-4, 4))}`,
+    () => `(x${sg(nz(-4, 4))})(x${sg(nz(-4, 4))})`,
+    () => `sqrt(x${sg(ri(1, 6))})`,
+    () => `|x${sg(nz(-4, 4))}|`,
+    () => `${pick([1, 2, 3, 6])}/(x${sg(nz(-4, 4))})`,
+    () => `2^x`,
+  ];
+  $("newEx").addEventListener("click", () => {
+    const a = ri(0, FORMS.length - 1); let b; do b = ri(0, FORMS.length - 1); while (b === a);
+    fns.f = { text: FORMS[a]() }; fns.g = { text: FORMS[b]() };
+    if (fns.h) { let c; do c = ri(0, FORMS.length - 1); while (c === a || c === b); fns.h = { text: FORMS[c]() }; }
+    for (const k of used()) fns[k].tree = parseFn(fns[k].text);
+    renderFns();
+    setCombo(pick(fns.h ? PRESETS3 : PRESETS2.slice(0, 8)));
+    paintFns(); renderTable(); draw();
+  });
+
+  setCombo(comboText);
+  renderFns();
+  renderTable();
+  draw();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Trig Function Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; --ok: #1f7a5a; --bad: #c0263c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --ok: #4cc49a; --bad: #ff7d93; } }
+:root[data-theme="dark"] { --purple: #b98cff; --ok: #4cc49a; --bad: #ff7d93; }
+header { margin-bottom: 10px; }
+h1 .m { color: var(--pt); }
+.hdr-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; flex: none; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 46px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.seg-btns.fns button { font-family: var(--font-num); min-width: 3.4em; }
+button.big { font-size: 1.1rem; min-height: 46px; padding: 8px 16px; }
+button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+button.go:hover { background: var(--sheet); color: var(--pt); }
+.main { grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 10px; }
+.card { padding: 10px 14px; }
+.label { margin-bottom: 4px; }
+.eqbig { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; line-height: 1.3; display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.3em; }
+.eqbig + .eqbig { margin-top: 4px; }
+.eqbig.alt { color: var(--muted); font-size: 1.3rem; }
+.eqbig .frac { font-size: 0.7em; vertical-align: middle; }
+.eqbig .ph { color: var(--muted); font-style: italic; }
+.fnw { font-family: var(--font-num); }
+.instr { margin: 6px 0 0; font-size: 1.05rem; line-height: 1.35; }
+.tools { width: 100%; }
+.tools button { flex: 1 1 0; }
+.params { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 10px 0 8px; }
+.params label { display: flex; align-items: center; gap: 8px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; min-width: 0; }
+.params label > span:first-child { font-style: italic; flex: none; }
+.params input { flex: 1 1 auto; min-width: 0; width: 100%; font: inherit; font-size: 1.35rem; padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.params input.ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--sheet)); }
+.params input.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--sheet)); }
+.params .unit { flex: none; font-size: 1rem; color: var(--muted); }
+.params label[hidden] { display: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { flex: 1 1 auto; }
+.msg { font-size: 1.15rem; line-height: 1.35; }
+.msg .yes { color: var(--ok); font-weight: 700; font-size: 1.35rem; }
+.msg .no { color: var(--bad); font-weight: 700; font-size: 1.35rem; }
+.msg ul { margin: 6px 0 0; padding-left: 1.2em; }
+.msg li + li { margin-top: 3px; }
+.msg .alt { margin-top: 6px; color: var(--muted); }
+.props { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; font-size: 1rem; }
+.props b { display: block; font-family: var(--font-num); font-size: 1.3rem; }
+.props b small { display: block; color: var(--muted); font-size: 0.85em; }
+.props .frac { font-size: 0.85em; vertical-align: middle; }
+.keys { width: 100%; border-collapse: collapse; margin-top: 8px; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; text-align: center; }
+.keys th { font-style: italic; color: var(--muted); padding: 2px 6px 2px 0; text-align: left; }
+.keys td { border-left: 1px solid var(--grid); padding: 3px 2px; }
+.keys td small { display: block; color: var(--muted); font-size: 0.85em; }
+.keys .frac { font-size: 0.8em; }
+/* Board drawing */
+.g-minor { stroke: var(--grid); stroke-width: 1; }
+.g-major { stroke: var(--grid-major); stroke-width: 1.5; }
+.g-axis { stroke: var(--muted); stroke-width: 3; }
+.tick { font-family: var(--font-num); font-weight: 700; font-size: 22px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.tick.r { fill: var(--muted); }
+.curve { fill: none; stroke: var(--pt); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.yours { fill: none; stroke: var(--orange); stroke-width: 4; stroke-dasharray: 12 8; stroke-linecap: round; }
+.asym-true { stroke: var(--pt); stroke-width: 3; stroke-dasharray: 10 8; }
+.mid { stroke: var(--purple); stroke-width: 3; stroke-dasharray: 4 7; }
+.mid-lbl { font-family: var(--font-num); font-weight: 700; font-size: 22px; fill: var(--purple); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.key { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+.pt { fill: var(--orange); stroke: var(--sheet); stroke-width: 3; }
+.pt.ok { fill: var(--ok); } .pt.bad { fill: var(--bad); }
+.asym { stroke: var(--orange); stroke-width: 5; stroke-dasharray: 14 8; }
+.asym.ok { stroke: var(--ok); } .asym.bad { stroke: var(--bad); }
+.mark { font-family: var(--font-display); font-weight: 800; font-size: 26px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.mark.ok { fill: var(--ok); } .mark.bad { fill: var(--bad); }
+.board svg.place { cursor: crosshair; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Trig Function <span class="m">Generator</span></h1></div>
+    <div class="hdr-right">
+      <div class="seg-btns" role="group" aria-label="Task">
+        <button type="button" data-mode="sketch" aria-pressed="true">Sketch the graph</button>
+        <button type="button" data-mode="find" aria-pressed="false">Find the equation</button>
+      </div>
+      <div class="seg-btns fns" role="group" aria-label="Function">
+        <button type="button" data-fn="sin" aria-pressed="false">sin</button>
+        <button type="button" data-fn="cos" aria-pressed="false">cos</button>
+        <button type="button" data-fn="tan" aria-pressed="false">tan</button>
+        <button type="button" data-fn="mix" aria-pressed="true">Mix</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Angles in">
+        <button type="button" data-units="deg" aria-pressed="false">Degrees</button>
+        <button type="button" data-units="rad" aria-pressed="false">Radians</button>
+        <button type="button" data-units="both" aria-pressed="true">Both</button>
+      </div>
+      <button type="button" class="big go" id="newBtn">New function</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="0 0 1200 700" role="img" aria-label="Graph of a trigonometric function"></svg>
+    </div>
+    <div class="panel">
+      <div class="card">
+        <p class="label" id="qLabel">Sketch this function</p>
+        <div class="eqbig" id="qEq"></div>
+        <div class="eqbig alt" id="qEq2"></div>
+        <p class="instr" id="instr"></p>
+      </div>
+      <div class="seg-btns tools" id="tools" role="group" aria-label="Place" hidden>
+        <button type="button" data-tool="pt" aria-pressed="true">Point</button>
+        <button type="button" data-tool="asym" aria-pressed="false">Asymptote</button>
+      </div>
+      <div class="card" id="ansCard" hidden>
+        <div class="seg-btns fns" id="ansFn" role="group" aria-label="Your function">
+          <button type="button" data-afn="sin" aria-pressed="true">sin</button>
+          <button type="button" data-afn="cos" aria-pressed="false">cos</button>
+        </div>
+        <div class="params">
+          <label id="la"><span>a =</span><input id="ia" autocomplete="off" spellcheck="false" placeholder="1"></label>
+          <label id="lb"><span>b =</span><input id="ib" autocomplete="off" spellcheck="false" placeholder="1"></label>
+          <label id="lc"><span>c =</span><input id="ic" autocomplete="off" spellcheck="false" placeholder="0"></label>
+          <label id="ld"><span>d =</span><input id="id" autocomplete="off" spellcheck="false" placeholder="0"></label>
+        </div>
+        <div class="eqbig" id="yourEq"></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="big go" id="checkBtn">Check</button>
+        <button type="button" class="big" id="showBtn">Show answer</button>
+        <button type="button" class="big" id="clearBtn">Clear</button>
+      </div>
+      <div class="card msg" id="msg" hidden></div>
+      <div class="card" id="propCard" hidden>
+        <div class="props" id="props"></div>
+        <table class="keys" id="keys"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const MINUS = "−";
+  const near = (a, b, t = 1e-6) => Math.abs(a - b) < t;
+  const isInt = v => near(v, Math.round(v));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rad = d => d * Math.PI / 180;
+
+  // Board: 1200 × 700, y from −7 to 7 counting by 1. The x window depends on the period
+  // (q is a quarter period) so the 5 key points always land on grid lines.
+  const VW = 1200; let VH = 700; const PL = 64, PR = 24, PT = 18, PB = 18, YM = 7;
+  const WIN = {
+    sc: {
+      0.5: { q: 180, minor: 30, label: 90, lo: -180, hi: 900 },
+      1: { q: 90, minor: 15, label: 45, lo: -90, hi: 450 },
+      2: { q: 45, minor: 15, label: 45, lo: -225, hi: 315 },
+      3: { q: 30, minor: 10, label: 30, lo: -150, hi: 210 },
+    },
+    tan: {
+      0.5: { q: 90, minor: 30, label: 90, lo: -540, hi: 540 },
+      1: { q: 45, minor: 15, label: 45, lo: -270, hi: 270 },
+      2: { q: 22.5, minor: 7.5, label: 45, lo: -135, hi: 135 },
+      3: { q: 15, minor: 5, label: 15, lo: -90, hi: 90 },
+    },
+  };
+  const CS = { 0.5: [-180, -90, -60, 0, 60, 90, 180], 1: [-90, -60, -45, -30, 0, 30, 45, 60, 90], 2: [-45, -30, -15, 0, 15, 30, 45], 3: [-30, -20, -10, 0, 10, 20, 30] };
+
+  let mode = "sketch", fnChoice = "mix", units = "both", tool = "pt", ansFn = "sin";
+  let F = null, W = null;           // the function and its window
+  let pts = [], asyms = [];         // student's sketch
+  let checked = false, revealed = false, yours = null;
+
+  const X = x => PL + (x - W.lo) / (W.hi - W.lo) * (VW - PL - PR);
+  const Y = y => PT + (YM - y) / (2 * YM) * (VH - PT - PB);
+  const val = (f, x) => {
+    const t = rad(f.b * (x - f.c));
+    if (f.fn === "tan") return Math.tan(t);
+    return f.a * (f.fn === "sin" ? Math.sin(t) : Math.cos(t)) + f.d;
+  };
+
+  // ---------- number and angle text ----------
+  function fracParts(v, maxDen = 72) {
+    for (let den = 1; den <= maxDen; den++) if (isInt(v * den)) return { n: Math.round(v * den), den };
+    return null;
+  }
+  const fracHTML = (sign, top, bot) => bot ? `${sign}<span class="frac"><span>${top}</span><span>${bot}</span></span>` : sign + top;
+  function numHTML(v) {
+    if (isInt(v)) return String(Math.round(v)).replace("-", MINUS);
+    const p = fracParts(v, 12);
+    if (p) return fracHTML(p.n < 0 ? MINUS : "", Math.abs(p.n), p.den);
+    return (+v.toFixed(3)).toString().replace("-", MINUS);
+  }
+  const degText = d => (isInt(d) ? String(Math.round(d)) : (+d.toFixed(2)).toString()).replace("-", MINUS) + "°";
+  function radPieces(d) {
+    const p = fracParts(d / 180);
+    if (!p) return null;
+    if (p.n === 0) return { sign: "", top: "0", bot: "" };
+    const n = Math.abs(p.n);
+    return { sign: p.n < 0 ? MINUS : "", top: (n === 1 ? "" : n) + "π", bot: p.den === 1 ? "" : String(p.den) };
+  }
+  function radText(d) {
+    const r = radPieces(d);
+    if (!r) return (+(rad(d)).toFixed(3)).toString().replace("-", MINUS);
+    return r.sign + r.top + (r.bot ? "/" + r.bot : "");
+  }
+  function radHTML(d) {
+    const r = radPieces(d);
+    if (!r) return (+(rad(d)).toFixed(3)).toString().replace("-", MINUS);
+    return fracHTML(r.sign, r.top, r.bot);
+  }
+  const angHTML = (d, u) => (u === "rad" ? radHTML(d) : degText(d));
+
+  // Alberta Math 30-1 form: y = a sin b(x − c) + d, and y = tan bx.
+  // Missing values (null) show as their letter.
+  function eqHTML(f, u) {
+    const ph = s => `<span class="ph">${s}</span>`;
+    let s = "y = ";
+    if (f.fn === "tan") {
+      const b = f.b == null ? ph("b") : f.b === 1 ? "" : numHTML(f.b);
+      return s + `tan ${b}x`;
+    }
+    s += f.a == null ? ph("a") : f.a === 1 ? "" : f.a === -1 ? MINUS : numHTML(f.a);
+    s += ` ${f.fn} `;
+    const b = f.b == null ? ph("b") : f.b === 1 ? "" : numHTML(f.b);
+    if (f.c === 0) s += `${b}x`;
+    else if (f.c == null) s += `${b}(x − ${ph("c")})`;
+    else s += `${b}(x ${f.c > 0 ? "−" : "+"} ${angHTML(Math.abs(f.c), u)})`;
+    if (f.d == null) s += ` + ${ph("d")}`;
+    else if (f.d) s += ` ${f.d > 0 ? "+" : "−"} ${numHTML(Math.abs(f.d))}`;
+    return s;
+  }
+
+  // ---------- new function ----------
+  function newFunction() {
+    const fn = fnChoice === "mix" ? pick(["sin", "sin", "cos", "cos", "tan"]) : fnChoice;
+    let f;
+    for (let tries = 0; tries < 20; tries++) {
+      const b = pick([0.5, 1, 1, 2, 2, 3]);
+      if (fn === "tan") f = { fn, a: 1, b, c: 0, d: 0 };
+      else {
+        const a = pick([1, 2, 2, 3, 3, 4]) * pick([1, -1]);
+        const room = 6 - Math.abs(a);
+        const d = Math.floor(Math.random() * (2 * Math.min(room, 3) + 1)) - Math.min(room, 3);
+        f = { fn, a, b, c: pick(CS[b]), d };
+      }
+      if (!F || JSON.stringify(f) !== JSON.stringify(F)) break;
+    }
+    F = f;
+    W = WIN[fn === "tan" ? "tan" : "sc"][F.b];
+    pts = []; asyms = []; checked = false; revealed = false; yours = null;
+    ["ia", "ib", "ic", "id"].forEach(k => { $(k).value = ""; $(k).className = ""; });
+    setAnsFn("sin");
+    $("msg").hidden = true;
+    render();
+  }
+
+  // The 5 key points of one period, inside the window and nearest the y-axis.
+  function keyPoints() {
+    if (F.fn === "tan") {
+      const q = W.q, ys = [null, -1, 0, 1, null];
+      return ys.map((y, i) => ({ x: (i - 2) * q, y, asym: y === null }));
+    }
+    const P = 4 * W.q;
+    let best = null;
+    for (let k = -6; k <= 6; k++) {
+      const x0 = F.c + k * P;
+      if (x0 < W.lo - 1e-9 || x0 + P > W.hi + 1e-9) continue;
+      if (best === null || Math.abs(x0) < Math.abs(best)) best = x0;
+    }
+    const pat = F.fn === "sin" ? [0, 1, 0, -1, 0] : [1, 0, -1, 0, 1];
+    return pat.map((p, i) => ({ x: best + i * W.q, y: F.d + F.a * p }));
+  }
+
+  // ---------- drawing ----------
+  // The board's height follows its box so the grid fills the space on any screen.
+  function fitBoard() {
+    const r = svg.parentElement.getBoundingClientRect();
+    const fits = matchMedia("(min-width: 861px) and (min-height: 520px)").matches;
+    const h = fits && r.width > 0 && r.height > 0 ? Math.round(VW * (r.height - 18) / (r.width - 18)) : 700;
+    const nh = Math.max(560, Math.min(1000, h));
+    if (nh !== VH) { VH = nh; svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`); return true; }
+    return false;
+  }
+  function render() {
+    fitBoard();
+    svg.textContent = "";
+    const clip = el("clipPath", { id: "plotClip" }, el("defs", {}, svg));
+    el("rect", { x: X(W.lo), y: Y(YM), width: X(W.hi) - X(W.lo), height: Y(-YM) - Y(YM) }, clip);
+    svg.classList.toggle("place", mode === "sketch");
+    const g = el("g", {}, svg);
+    for (let x = W.lo; x <= W.hi + 1e-9; x += W.minor) {
+      const lab = isInt(x / W.label);
+      el("line", { x1: X(x), y1: Y(YM), x2: X(x), y2: Y(-YM), class: near(x, 0) ? "g-axis" : lab ? "g-major" : "g-minor" }, g);
+    }
+    for (let y = -YM; y <= YM; y++) el("line", { x1: X(W.lo), y1: Y(y), x2: X(W.hi), y2: Y(y), class: y === 0 ? "g-axis" : "g-minor" }, g);
+    for (let y = -YM; y <= YM; y++) {
+      if (!y) continue;
+      el("text", { x: X(0) - 8, y: Y(y) + 8, class: "tick", "text-anchor": "end" }, g).textContent = String(y).replace("-", MINUS);
+    }
+    for (let x = W.lo; x <= W.hi + 1e-9; x += W.label) {
+      if (near(x, 0) || near(x, W.lo) || near(x, W.hi)) continue;
+      const tx = X(x);
+      if (units !== "rad") el("text", { x: tx, y: Y(0) + 28, class: "tick", "text-anchor": "middle" }, g).textContent = degText(x);
+      if (units !== "deg") el("text", { x: tx, y: Y(0) + (units === "both" ? 54 : 28), class: "tick" + (units === "both" ? " r" : ""), "text-anchor": "middle" }, g).textContent = radText(x);
+    }
+    el("text", { x: X(W.hi) - 6, y: Y(0) - 10, class: "tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: X(0) + 10, y: Y(YM) + 22, class: "tick" }, g).textContent = "y";
+
+    const showTrue = mode === "find" || revealed;
+    if (showTrue) {
+      if (revealed && F.fn !== "tan") {
+        el("line", { x1: X(W.lo), y1: Y(F.d), x2: X(W.hi), y2: Y(F.d), class: "mid" }, svg);
+        el("text", { x: X(W.hi) - 6, y: Y(F.d) - 10, class: "mid-lbl", "text-anchor": "end" }, svg).textContent = "y = " + String(F.d).replace("-", MINUS);
+      }
+      if (F.fn === "tan") for (let x = -2 * W.q; x <= W.hi + 1e-9; x += 4 * W.q) for (const s of [x, -x]) {
+        if (s >= W.lo && s <= W.hi) el("line", { x1: X(s), y1: Y(YM), x2: X(s), y2: Y(-YM), class: "asym-true" }, svg);
+      }
+      el("path", { d: curvePath(F), class: "curve", "clip-path": "url(#plotClip)" }, svg);
+      keyPoints().forEach(k => { if (!k.asym) el("circle", { cx: X(k.x), cy: Y(k.y), r: 9, class: "key" }, svg); });
+    }
+    if (mode === "find" && yours) el("path", { d: curvePath(yours), class: "yours", "clip-path": "url(#plotClip)" }, svg);
+
+    if (mode === "sketch") {
+      if (F.fn !== "tan" && pts.length >= 2) el("path", { d: sketchPath(), class: "yours" }, svg);
+      asyms.forEach(a => {
+        el("line", { x1: X(a.x), y1: Y(YM), x2: X(a.x), y2: Y(-YM), class: "asym" + (checked ? (a.ok ? " ok" : " bad") : "") }, svg);
+        if (checked) mark(X(a.x) + 8, Y(YM) + 30, a.ok);
+      });
+      pts.forEach(p => {
+        el("circle", { cx: X(p.x), cy: Y(p.y), r: 12, class: "pt" + (checked ? (p.ok ? " ok" : " bad") : "") }, svg);
+        if (checked) mark(X(p.x) + 12, Y(p.y) - 14, p.ok);
+      });
+    }
+    renderPanel();
+  }
+  function mark(x, y, ok) {
+    el("text", { x, y, class: "mark " + (ok ? "ok" : "bad") }, svg).textContent = ok ? "✓" : "✗";
+  }
+  function curvePath(f) {
+    const N = 1200, out = [];
+    let pen = false, prev = null;
+    for (let i = 0; i <= N; i++) {
+      const x = W.lo + (W.hi - W.lo) * i / N;
+      let y = val(f, x);
+      if (f.fn === "tan" && prev !== null && Math.abs(y - prev) > 10) pen = false;
+      prev = y;
+      if (!isFinite(y) || Math.abs(y) > YM + 2) { pen = false; continue; }
+      out.push((pen ? "L" : "M") + X(x).toFixed(1) + "," + Y(y).toFixed(1));
+      pen = true;
+    }
+    return out.join("");
+  }
+  // A smooth curve through the student's points, left to right (Catmull-Rom).
+  function sketchPath() {
+    const p = pts.map(o => [X(o.x), Y(o.y)]).sort((a, b) => a[0] - b[0]);
+    let d = `M${p[0][0]},${p[0][1]}`;
+    for (let i = 0; i < p.length - 1; i++) {
+      const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += `C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${p2[0]},${p2[1]}`;
+    }
+    return d;
+  }
+
+  // ---------- panel ----------
+  function renderPanel() {
+    const sk = mode === "sketch";
+    $("qLabel").textContent = sk ? "Sketch this function" : "Write the equation of this graph";
+    $("qEq").hidden = !sk; $("qEq2").hidden = !sk || units !== "both";
+    $("qEq").innerHTML = eqHTML(F, units === "rad" ? "rad" : "deg");
+    $("qEq2").innerHTML = eqHTML(F, "rad");
+    if (F.fn === "tan" && sk) {
+      $("qEq").innerHTML = eqHTML(F, "deg"); $("qEq2").hidden = true;
+    }
+    $("instr").textContent = sk
+      ? (F.fn === "tan"
+        ? "Use the 5-point sketch: place 2 asymptotes and the 3 points between them. Drag to move, click to remove."
+        : "Use the 5-point sketch: click the grid to place the 5 key points of one period. Drag to move, click to remove.")
+      : (F.fn === "tan"
+        ? "Find b. Use the 5-point sketch: one period runs from asymptote to asymptote."
+        : "Find a, b, c and d. The blue dots are the 5 key points of one period. Empty boxes count as 1 for a and b, 0 for c and d.");
+    $("tools").hidden = !(sk && F.fn === "tan");
+    $("ansCard").hidden = sk;
+    $("clearBtn").hidden = !sk;
+    const tan = F.fn === "tan";
+    $("ansFn").hidden = tan;
+    ["la", "lc", "ld"].forEach(k => ($(k).hidden = tan));
+    $("ic").placeholder = units === "rad" ? "0 or π/6" : "0";
+    if (!sk) $("yourEq").innerHTML = eqHTML(readAns(true), units === "rad" ? "rad" : "deg");
+    $("propCard").hidden = !revealed;
+    if (revealed) renderProps();
+  }
+
+  function renderProps() {
+    const u = units, P = 4 * W.q;
+    const both = d => u === "both" ? `${degText(d)} <span style="color:var(--muted)">(${radHTML(d)})</span>` : angHTML(d, u);
+    let h;
+    if (F.fn === "tan") {
+      const as = v => `x = ${v(-2 * W.q)}, ${v(2 * W.q)}, …`;
+      h = `<div>Period<b>${both(P)}</b></div><div>Asymptotes at<b>${u === "rad" ? as(radHTML) : as(degText)}${u === "both" ? `<small>${as(radHTML)}</small>` : ""}</b></div>`;
+    } else {
+      h = `<div>Amplitude<b>${numHTML(Math.abs(F.a))}</b></div><div>Period<b>${both(P)}</b></div>` +
+        `<div>Phase shift<b>${F.c === 0 ? "none" : both(Math.abs(F.c)) + (F.c > 0 ? " right" : " left")}</b></div>` +
+        `<div>Vertical displacement<b>${F.d === 0 ? "none" : numHTML(Math.abs(F.d)) + (F.d > 0 ? " up" : " down")}</b></div>`;
+    }
+    $("props").innerHTML = h;
+    const ks = keyPoints();
+    const xc = k => u === "both" ? `${degText(k.x)}<small>${radHTML(k.x)}</small>` : angHTML(k.x, u);
+    $("keys").innerHTML = `<tr><th>x</th>${ks.map(k => `<td>${xc(k)}</td>`).join("")}</tr>` +
+      `<tr><th>y</th>${ks.map(k => `<td>${k.asym ? "asym." : numHTML(k.y)}</td>`).join("")}</tr>`;
+  }
+
+  // ---------- sketch mode: placing points ----------
+  function toPlane(evt) {
+    const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const x = W.lo + (p.x - PL) / (VW - PL - PR) * (W.hi - W.lo);
+    const y = YM - (p.y - PT) / (VH - PT - PB) * 2 * YM;
+    const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+    return { sx: p.x, sy: p.y, x: cl(Math.round(x / W.minor) * W.minor, W.lo, W.hi), y: cl(Math.round(y), -YM, YM) };
+  }
+  let drag = null;
+  svg.addEventListener("pointerdown", e => {
+    if (mode !== "sketch") return;
+    const p = toPlane(e);
+    const asymTool = F.fn === "tan" && tool === "asym";
+    let obj = null, isNew = false;
+    if (asymTool) {
+      obj = asyms.find(a => Math.abs(X(a.x) - p.sx) < 18);
+      if (!obj) {
+        if (asyms.length >= 2) return say("You have 2 asymptotes. Drag one, or click it to remove it.");
+        obj = { x: p.x }; asyms.push(obj); isNew = true;
+      }
+    } else {
+      obj = pts.find(o => Math.hypot(X(o.x) - p.sx, Y(o.y) - p.sy) < 22);
+      const max = F.fn === "tan" ? 3 : 5;
+      if (!obj) {
+        if (pts.length >= max) return say(`You have ${max} points. Drag one, or click it to remove it.`);
+        obj = { x: p.x, y: p.y }; pts.push(obj); isNew = true;
+      }
+    }
+    drag = { obj, isNew, moved: false, list: asymTool ? asyms : pts };
+    svg.setPointerCapture(e.pointerId);
+    changed();
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = toPlane(e), o = drag.obj;
+    if (o.x !== p.x || ("y" in o && o.y !== p.y)) {
+      o.x = p.x; if ("y" in o) o.y = p.y;
+      drag.moved = true; changed();
+    }
+  });
+  const end = () => {
+    if (!drag) return;
+    if (!drag.moved && !drag.isNew) drag.list.splice(drag.list.indexOf(drag.obj), 1);
+    drag = null; changed();
+  };
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", end);
+  function changed() {
+    if (checked) { checked = false; $("msg").hidden = true; }
+    render();
+  }
+  function say(html) { $("msg").innerHTML = html; $("msg").hidden = false; }
+
+  function checkSketch() {
+    const q = W.q;
+    if (F.fn === "tan") {
+      pts.forEach(p => { const k = p.x / q; p.ok = isInt(k) && ((Math.round(k) % 4) + 4) % 4 !== 2 && near(val(F, p.x), p.y, 1e-6); });
+      asyms.forEach(a => { const k = a.x / q; a.ok = isInt(k) && ((Math.round(k) % 4) + 4) % 4 === 2; });
+    } else {
+      pts.forEach(p => { p.ok = isInt((p.x - F.c) / q) && near(val(F, p.x), p.y, 1e-6); });
+    }
+    checked = true;
+    const need = F.fn === "tan" ? 3 : 5;
+    const good = pts.filter(p => p.ok), xs = good.map(p => p.x).sort((a, b) => a - b);
+    const distinct = new Set(xs.map(x => x.toFixed(3))).size === xs.length;
+    let period = false;
+    if (F.fn === "tan") {
+      const as = asyms.filter(a => a.ok).map(a => a.x).sort((a, b) => a - b);
+      period = good.length === 3 && distinct && as.length === 2 && near(as[1] - as[0], 4 * q) && xs[0] > as[0] && xs[2] < as[1];
+    } else period = good.length === 5 && distinct && near(xs[4] - xs[0], 4 * q);
+    let h;
+    if (period) {
+      h = F.fn === "tan" ? `<span class="yes">Yes! That is one full period.</span><br>The 2 asymptotes and 3 key points are all right.`
+        : `<span class="yes">Yes! All 5 key points are right.</span><br>That is one full period.`;
+      revealed = true;
+    } else {
+      const nOk = good.length + (F.fn === "tan" ? asyms.filter(a => a.ok).length : 0);
+      const total = need + (F.fn === "tan" ? 2 : 0);
+      const placed = pts.length + (F.fn === "tan" ? asyms.length : 0);
+      h = `<span class="no">${nOk} of ${total} right.</span>`;
+      const tips = [];
+      if (placed < total) tips.push(F.fn === "tan" ? `Place ${need} points and 2 asymptotes.` : `Place all ${need} key points.`);
+      if (pts.some(p => !p.ok) || asyms.some(a => !a.ok)) tips.push("The red ones are not key points of this graph.");
+      if (good.length === need && (!distinct || (F.fn !== "tan" && !near(xs[4] - xs[0], 4 * q)))) tips.push("The key points should be one period in a row, a quarter period apart.");
+      if (F.fn === "tan" && good.length === 3 && asyms.every(a => a.ok) && asyms.length === 2) tips.push("The 3 points belong between the 2 asymptotes.");
+      if (tips.length) h += `<ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul>`;
+    }
+    say(h);
+    render();
+  }
+
+  // ---------- find mode: reading the equation ----------
+  function parseNum(s) {
+    s = s.replace(/[−–]/g, "-").replace(/\s+/g, "");
+    if (s === "") return null;
+    if (s === "-") return -1;
+    if (s === "+") return 1;
+    let m = s.match(/^([+-]?)(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/);
+    if (m) return (m[1] === "-" ? -1 : 1) * +m[2] / +m[3];
+    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) return +s;
+    return NaN;
+  }
+  // c in degrees. "30", "30°", "-45", "π/6", "-5pi/6", "5/6π", "2.5 rad". A plain number is radians only in Radians view.
+  function parseAngle(s) {
+    s = s.replace(/[−–]/g, "-").replace(/\s+/g, "").toLowerCase().replace(/pi/g, "π");
+    if (s === "") return null;
+    if (s.includes("π")) {
+      let m = s.match(/^([+-]?)(\d*\.?\d*)π(?:\/(\d+))?$/);
+      if (m) return (m[1] === "-" ? -1 : 1) * (m[2] === "" ? 1 : +m[2]) / (m[3] ? +m[3] : 1) * 180;
+      m = s.match(/^([+-]?)(\d+)\/(\d+)π$/) || s.match(/^([+-]?)\((\d*)π\)\/(\d+)$/);
+      if (m) return (m[1] === "-" ? -1 : 1) * (m[2] === "" ? 1 : +m[2]) / +m[3] * 180;
+      return NaN;
+    }
+    let deg = s.endsWith("°") || s.endsWith("deg"), r = s.endsWith("rad");
+    s = s.replace(/°|deg|rad/g, "");
+    const n = parseNum(s);
+    if (n === null || isNaN(n)) return NaN;
+    if (r || (!deg && units === "rad")) return n * 180 / Math.PI;
+    return n;
+  }
+  function readAns(forDisplay) {
+    const f = { fn: F.fn === "tan" ? "tan" : ansFn };
+    const a = parseNum($("ia").value), b = parseNum($("ib").value), c = parseAngle($("ic").value), d = parseNum($("id").value);
+    if (forDisplay) {
+      f.a = a === null ? 1 : isNaN(a) ? null : a; f.b = b === null ? 1 : isNaN(b) ? null : b;
+      f.c = c === null ? 0 : isNaN(c) ? null : c; f.d = d === null ? 0 : isNaN(d) ? null : d;
+      return f;
+    }
+    f.a = a === null ? 1 : a; f.b = b === null ? 1 : b; f.c = c === null ? 0 : c; f.d = d === null ? 0 : d;
+    if (f.fn === "tan") { f.a = 1; f.c = 0; f.d = 0; }
+    return f;
+  }
+  function same(f, g) {
+    if (f.fn === "tan" || g.fn === "tan") return near(f.b, g.b, 1e-4);
+    for (let i = 0; i <= 120; i++) {
+      const x = W.lo + (W.hi - W.lo) * (i + 0.37) / 121;
+      if (Math.abs(val(f, x) - val(g, x)) > 0.03) return false;
+    }
+    return true;
+  }
+  function setMark(id, ok) { $(id).className = ok === null ? "" : ok ? "ok" : "bad"; }
+
+  function checkFind() {
+    const s = readAns(false);
+    const bad = ["ia", "ib", "ic", "id"].filter(k => (k === "ic" ? isNaN(parseAngle($(k).value)) : isNaN(parseNum($(k).value))) && $(k).value.trim() !== "");
+    if (bad.length) {
+      bad.forEach(k => setMark(k, false));
+      yours = null; render();
+      return say(`<span class="no">Check how you typed ${bad.map(k => k[1]).join(", ")}.</span><br>Use numbers like −2, 1/2, 30° or π/6.`);
+    }
+    if (s.b === 0) { setMark("ib", false); return say(`<span class="no">b can't be 0.</span>`); }
+    yours = s;
+    const tips = [], u = units === "rad" ? "rad" : "deg";
+    if (F.fn === "tan") {
+      const ok = near(s.b, F.b, 1e-4);
+      setMark("ib", ok);
+      if (!ok) tips.push(`The period of y = tan bx is ${u === "rad" ? "π" : "180°"} ÷ b. Measure from one asymptote to the next.`);
+    } else if (same(s, F)) {
+      ["ia", "ib", "ic", "id"].forEach(k => setMark(k, true));
+    } else {
+      const bOk = near(Math.abs(s.b), F.b, 1e-4), aOk = near(Math.abs(s.a), Math.abs(F.a), 1e-4), dOk = near(s.d, F.d, 1e-4);
+      const tryC = sign => same({ fn: s.fn, a: sign * Math.abs(F.a), b: F.b, c: s.c, d: F.d }, F);
+      const cOk = tryC(1) || tryC(-1);
+      const signOk = !cOk || tryC(Math.sign(s.a) || 1);
+      setMark("ia", aOk && signOk); setMark("ib", bOk); setMark("ic", cOk); setMark("id", dOk);
+      if (!aOk) tips.push("a: the amplitude is half the distance from a max to a min.");
+      else if (!signOk) tips.push("a: the graph goes the other way first, so try the other sign of a.");
+      if (!bOk) tips.push(`b: the period is ${u === "rad" ? "2π" : "360°"} ÷ b.`);
+      if (!cOk) tips.push(s.fn === "sin" ? "c: a sine period starts on the midline. Where does your 5-point pattern start?" : "c: a cosine period starts at a max (or a min when a is negative). Where does it start?");
+      if (!dOk) tips.push("d: the midline is halfway between the max and the min.");
+    }
+    if (tips.length) say(`<span class="no">Not yet.</span> Your graph is the dashed orange line.<ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul>`);
+    else {
+      revealed = true;
+      say(`<span class="yes">Yes! That equation matches the graph.</span>${altLine(s)}`);
+    }
+    render();
+  }
+  // Another right answer, written with the other function.
+  function altLine(s) {
+    if (F.fn === "tan") return "";
+    const fn = s.fn === "sin" ? "cos" : "sin", P = 4 * W.q;
+    const shift = 90 / s.b; // sin θ = cos(θ − 90°)
+    let c = s.fn === "sin" ? s.c + shift : s.c - shift;
+    c = ((c % P) + P) % P; if (c > P / 2) c -= P;
+    const g = { fn, a: s.a, b: s.b, c, d: s.d };
+    if (!same(g, F)) return "";
+    return `<div class="alt">Also right:</div><div class="eqbig alt">${eqHTML(g, units === "rad" ? "rad" : "deg")}</div>`;
+  }
+  function showAnswer() {
+    if (mode === "sketch") {
+      revealed = true;
+      say(F.fn === "tan" ? "The blue curve is the graph. The table shows the 5-point sketch: asymptote, 3 points, asymptote."
+        : "The blue curve is the graph. The table shows the 5 key points of one period.");
+      render();
+      return;
+    }
+    const u = units === "rad" ? "rad" : "deg";
+    if (F.fn !== "tan") setAnsFn(F.fn);
+    const txt = v => isInt(v) ? String(Math.round(v)).replace("-", MINUS) : (fracParts(v, 12) ? (v < 0 ? MINUS : "") + Math.abs(fracParts(v, 12).n) + "/" + fracParts(v, 12).den : String(v));
+    $("ia").value = txt(F.a); $("ib").value = txt(F.b);
+    $("ic").value = u === "rad" ? radText(F.c) : degText(F.c);
+    $("id").value = txt(F.d);
+    checkFind();
+  }
+  function setAnsFn(f) {
+    ansFn = f;
+    document.querySelectorAll("[data-afn]").forEach(b => b.setAttribute("aria-pressed", b.dataset.afn === f));
+  }
+
+  // ---------- controls ----------
+  const group = (attr, fn) => document.querySelectorAll(`[data-${attr}]`).forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(`[data-${attr}]`).forEach(o => o.setAttribute("aria-pressed", o === b));
+    fn(b.dataset[attr]);
+  }));
+  group("mode", v => { mode = v; newFunction(); });
+  group("fn", v => { fnChoice = v; newFunction(); });
+  group("units", v => { units = v; render(); });
+  group("tool", v => { tool = v; });
+  document.querySelectorAll("[data-afn]").forEach(b => b.addEventListener("click", () => { setAnsFn(b.dataset.afn); onEdit(); }));
+  function onEdit() {
+    if (yours || revealed) { yours = null; revealed = false; $("msg").hidden = true; ["ia", "ib", "ic", "id"].forEach(k => setMark(k, null)); render(); }
+    else renderPanel();
+  }
+  ["ia", "ib", "ic", "id"].forEach(k => {
+    $(k).addEventListener("input", onEdit);
+    $(k).addEventListener("keydown", e => { if (e.key === "Enter") checkFind(); });
+  });
+  $("newBtn").addEventListener("click", newFunction);
+  $("checkBtn").addEventListener("click", () => (mode === "sketch" ? checkSketch() : checkFind()));
+  $("showBtn").addEventListener("click", showAnswer);
+  $("clearBtn").addEventListener("click", () => { pts = []; asyms = []; checked = false; revealed = false; $("msg").hidden = true; render(); });
+
+  new ResizeObserver(() => { if (fitBoard()) render(); }).observe(svg.parentElement);
+  newFunction();
+})();
+</script>
+
+</body>
+</html>

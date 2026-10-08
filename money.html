@@ -204,6 +204,10 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 .max-picks button { font-family: var(--font-num); font-size: 1.05rem; min-height: 40px; }
 .max-picks button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .card .label + .max-picks, .card .label + .coin-picks { margin-bottom: 10px; }
+.many { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-weight: 700; font-size: 1.1rem; }
+.many span { font-family: var(--font-num); font-size: 1.8rem; color: var(--pt); }
+.many input { width: 4.2ch; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; padding: 2px 8px;
+  border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
 .toggles { margin-top: 4px; font-size: 1.05rem; }
 [data-show]:not(.on) { display: none !important; }
 </style>
@@ -229,6 +233,8 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       <div class="card" data-show="sort">
         <p class="task">Sort the coins</p>
         <p class="howto">Drag coins up from the bottom. Drop a coin on another coin to make a pile. Drag the blue tab to move a pile.</p>
+        <label class="many" for="many">Coins each drag: <span>×</span>
+          <input id="many" type="number" min="1" max="50" value="1" inputmode="numeric"></label>
       </div>
       <div class="card" data-show="sort">
         <p class="label">Total</p>
@@ -563,6 +569,18 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     e.preventDefault();
     const p = toSvg(e);
     const c = addCoin(kind, p.x, p.y);
+    // Sort coins: "× n" brings out a whole pile of n coins in one drag.
+    const n = mode === "sort" ? Math.min(50, Math.max(1, Math.round(+$("many").value) || 1)) : 1;
+    if (n > 1) {
+      const ids = [c.id];
+      for (let i = 1; i < n; i++) ids.push(addCoin(kind, p.x, p.y).id);
+      const pl = { id: nextId++, x: p.x, y: p.y, ids };
+      st().piles.set(pl.id, pl);
+      layoutPile(pl, false);
+      render();
+      startPileDrag(e, pl.id);
+      return;
+    }
     drag = { type: "coin", id: c.id, dx: 0, dy: 0 };
     coinEl(c).classList.add("drag");
     svg.setPointerCapture(e.pointerId);

@@ -145,7 +145,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* Written: shared look for Stacked Multiplication (stackmult.html) and Long Division (longdiv.html).
+/* Written: shared look for Stacked Multiplication (stackmult.html), Long Division (longdiv.html) and Stacked Addition and Subtraction (stackadd.html).
    A grid of digit boxes fills the board; written.js sizes it with --cs (one cell) so the digits stay as big as the window allows. */
 :root { --c1: var(--pt); --c2: #7a3fc0; --bd: #0f7f8c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c2: #b58cff; --bd: #4fd0dc; } }
@@ -241,10 +241,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .slot.next { border: max(3px, calc(var(--cs) * 0.05)) solid var(--orange); background: color-mix(in srgb, var(--orange) 18%, var(--sheet)); }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 0%, transparent); transform: scale(1); } 30% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .dg.bad, .dg.next { animation: none; } }
+
+/* A row that waits (the second carry row until the first row of work is done) keeps its space but is not shown. */
+.sheet .wait { visibility: hidden; }
+.sheet .done-row { opacity: 0.45; }
+/* A two-digit box for regrouping, and the top digit it replaces (struck out). */
+.dg.sm.w2 { width: calc(var(--cs) * 0.86); }
+.sheet .given.struck { color: var(--muted); text-decoration: line-through; text-decoration-thickness: max(3px, calc(var(--cs) * 0.06)); text-decoration-color: var(--warn); }
+.sheet .lab.times { padding-left: calc(var(--cs) * 0.4); font-family: var(--font-num); font-size: calc(var(--cs) * 0.42); color: var(--c1); }
 </style>
 <!-- Long Division (grades 3 to 7): type a question like 126 ÷ 4 or press New question, work it out in the digit boxes,
      then Check answer finds the first wrong box. The answer goes above the bracket (blue); each step has a row to
-     multiply (with −) and a row to subtract into, and the next digit is brought down beside it (teal boxes).
+     multiply (with −, and a statement like 4 × 3 = 12 beside it, from the answer digit written) and a row to subtract into, and the next digit is brought down beside it (teal boxes).
      When a step goes 0 times, write 0 in the answer and bring the next digit down into the same row.
      Remainders: the answer ends with R and the remainder. Decimals: the number may have a decimal point, and zeros
      are added after the point (grey) until it divides evenly, up to 3 decimal places; the student clicks where the
@@ -296,7 +304,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </div>
 
 <script>
-/* Written: shared work grid and checker for Stacked Multiplication (stackmult.html) and Long Division (longdiv.html).
+/* Written: shared work grid and checker for Stacked Multiplication (stackmult.html), Long Division (longdiv.html)
+   and Stacked Addition and Subtraction (stackadd.html).
 
    Written.page(cfg) wires the page: the question boxes (#qa, #qb), the #tabs switch, #level and #newq, #check,
    #explain, #clear, the #msg card and the #board with its #empty note.
@@ -325,7 +334,7 @@ window.Written = (() => {
     grid.className = "sheet";
     host.appendChild(grid);
     let cols = [], rows = [];
-    const cells = [], slots = [];
+    const cells = [], slots = [], watchers = [];
     const sum = a => a.reduce((s, u) => s + u, 0);
 
     function fit() {
@@ -363,8 +372,11 @@ window.Written = (() => {
     }
 
     return {
-      reset(c, r) { grid.replaceChildren(); cells.length = 0; slots.length = 0; cols = c; rows = r; fit(); },
-      clear() { grid.replaceChildren(); cells.length = 0; slots.length = 0; cols = []; rows = []; },
+      reset(c, r) { grid.replaceChildren(); cells.length = slots.length = watchers.length = 0; cols = c; rows = r; fit(); },
+      clear() { grid.replaceChildren(); cells.length = slots.length = watchers.length = 0; cols = []; rows = []; },
+      // watch(fn) runs fn now and after every edit (to show a row once the one before it is done, strike out a digit, ...).
+      watch(fn) { watchers.push(fn); fn(); },
+      changed() { watchers.forEach(f => f()); },
       given(r, c, text, cls = "") { return place(div("given " + cls, text), r, c); },
       lab(r, c, text, cls = "") { return place(div("lab " + cls, text), r, c); },
       rule(r, c0, c1, cls = "") { return place(div("rule " + cls), r, c0, c1 - c0 + 1); },
@@ -379,17 +391,20 @@ window.Written = (() => {
         grid.appendChild(s);
         return s;
       },
-      cell(r, c, cls = "", label = "Digit box") {
+      // max = 2 makes a box for a two-digit number (regrouping in subtraction): the first digit after clicking in
+      // replaces what is there, the next one is added on.
+      cell(r, c, cls = "", label = "Digit box", max = 1) {
         const el = document.createElement("input");
         el.type = "text"; el.inputMode = "numeric"; el.autocomplete = "off"; el.spellcheck = false;
-        el.maxLength = 2; el.placeholder = " "; el.className = "dg " + cls;
+        el.maxLength = max + 1; el.placeholder = " "; el.className = "dg " + cls;
         el.setAttribute("aria-label", label);
         const rec = { el, r, c };
         cells.push(rec);
-        el.addEventListener("focus", () => el.select());
+        let fresh = true;
+        el.addEventListener("focus", () => { fresh = true; el.select(); });
         el.addEventListener("keydown", e => {
           const k = e.key;
-          if (/^[0-9]$/.test(k)) { e.preventDefault(); el.value = k; hooks.edit(); return; }
+          if (/^[0-9]$/.test(k)) { e.preventDefault(); el.value = !fresh && el.value.length < max ? el.value + k : k; fresh = false; hooks.edit(); return; }
           if (k === "Backspace" || k === "Delete") { e.preventDefault(); if (el.value) { el.value = ""; hooks.edit(); } return; }
           const dir = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] }[k];
           if (dir) { e.preventDefault(); const t = near(rec, dir[0], dir[1]); if (t) t.el.focus(); return; }
@@ -397,7 +412,7 @@ window.Written = (() => {
           if (k.length === 1 && !e.ctrlKey && !e.metaKey) e.preventDefault();
         });
         // Touch keyboards may skip keydown: keep only the last digit typed.
-        el.addEventListener("input", () => { const m = el.value.match(/\d/g); el.value = m ? m[m.length - 1] : ""; hooks.edit(); });
+        el.addEventListener("input", () => { const m = el.value.match(/\d/g); el.value = m ? m.slice(-max).join("") : ""; hooks.edit(); });
         return place(el, r, c);
       },
       slot(r, c) {
@@ -455,11 +470,17 @@ window.Written = (() => {
     const board = $("board"), empty = $("empty"), qa = $("qa"), qb = $("qb"), err = $("err"), msg = $("msg"), explain = $("explain");
     const startNote = empty.innerHTML;
     let mode = cfg.mode, prob = null, items = [], result = null;
-    const sh = Sheet(board, { edit() { sh.unmark(); result = null; show(); }, enter: check });
+    const sh = Sheet(board, { edit() { sh.changed(); sh.unmark(); result = null; show(); }, enter: check });
 
     const tabs = [...document.querySelectorAll("#tabs button")];
     const setMode = m => { mode = m; tabs.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m))); };
-    tabs.forEach(b => b.addEventListener("click", () => { setMode(b.dataset.m); load(); }));
+    // Picking Whole numbers while a decimal question is typed starts over with empty boxes.
+    tabs.forEach(b => b.addEventListener("click", () => {
+      setMode(b.dataset.m);
+      const p = qa.value.trim() && qb.value.trim() ? cfg.parse(qa.value.trim(), qb.value.trim(), mode) : null;
+      if (p && !p.error && p.mode !== mode) { qa.value = ""; qb.value = ""; }
+      load();
+    }));
 
     function load() {
       const a = qa.value.trim(), b = qb.value.trim();
@@ -509,7 +530,7 @@ window.Written = (() => {
       load();
     });
     $("check").addEventListener("click", check);
-    $("clear").addEventListener("click", () => { sh.blank(); sh.unmark(); result = null; show(); });
+    $("clear").addEventListener("click", () => { sh.blank(); sh.changed(); sh.unmark(); result = null; show(); });
     explain.addEventListener("change", show);
     load();
   }
@@ -623,6 +644,10 @@ window.Written = (() => {
     const X = i => dl + 1 + i;
     const colUnits = [...Array(dl).fill(0.62), 0.6, ...Array(N).fill(1)];   // the divisor's digits sit close so 23 reads as one number
     if (rem) colUnits.push(0.35, 0.8, ...Array(rl).fill(1));
+    // Beside each multiply row, a multiplication statement (Shawn): "4 × 3 = 12", built from the answer digit the student wrote.
+    // It sits just right of the number (under R and the remainder, which use only the top row).
+    const room = rem ? 1.15 + rl : 0;
+    if (room < 3.8) colUnits.push(3.8 - room);
     const rowUnits = [1, 1];
     steps.forEach(() => rowUnits.push(1, 0.14, 1));
     sh.reset(colUnits, rowUnits);
@@ -647,6 +672,12 @@ window.Written = (() => {
       c.prow = row; c.drow = row + 2; row += 3;
       sh.given(c.prow, X(c.start) - 1, "−", "sign");
       sh.rule(c.prow, X(c.start) - 1, X(c.i));
+      const say = sh.lab(c.prow, X(N), "", "times");
+      say.style.gridColumn = `${X(N) + 1} / -1`;
+      sh.watch(() => {
+        const v = qCells[c.i].value;
+        say.textContent = v === "" ? `${d} × ? = ?` : `${d} × ${v} = ${d * +v}`;
+      });
       c.pc = []; c.dc = [];
       for (let i = c.start; i <= c.i; i++) {
         c.pc[i] = sh.cell(c.prow, X(i), "", "Multiply box");

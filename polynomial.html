@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Reading Polynomial Graphs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; --ok: #1f7a5a; --ok-bg: #e3f4ec; --bad: #c0263c; --bad-bg: #fbe7ea; --shown-bg: #e6eefc; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --ok: #4cc49a; --ok-bg: #12352a; --bad: #ff7d93; --bad-bg: #3a1820; --shown-bg: #1a2a4a; } }
+:root[data-theme="dark"] { --purple: #b98cff; --ok: #4cc49a; --ok-bg: #12352a; --bad: #ff7d93; --bad-bg: #3a1820; --shown-bg: #1a2a4a; }
+.main { grid-template-columns: minmax(0, 1fr) clamp(430px, 36vw, 720px); gap: 14px; }
+.card.row, .row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-weight: 700; font-size: 1.1rem; }
+.ql { font-weight: 800; }
+.ql.gap { margin-left: auto; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+h1 .m { color: var(--pt); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.tools .lbl { font-weight: 700; color: var(--muted); }
+.seg { display: inline-flex; flex: none; }
+.seg button { border-radius: 0; padding: 8px 14px; font-size: 1.05rem; }
+.seg button:first-child { border-radius: 8px 0 0 8px; }
+.seg button:last-child { border-radius: 0 8px 8px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.seg.bad button { border-color: var(--bad); }
+.seg.bad button[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); }
+.seg.ok button[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); }
+.seg.shown button[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); }
+.new-btn { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-size: 1.1rem; padding: 10px 18px; }
+.new-btn:hover { background: var(--sheet); color: var(--pt); }
+.panel { gap: 8px; }
+.card { padding: 8px 14px; }
+.label { margin-bottom: 4px; }
+.q { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 1.15rem; font-weight: 700; }
+.q + .q { margin-top: 8px; }
+input.ans { font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; width: 3.6em; padding: 2px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+input.ans.wide { width: 100%; flex: 1 1 auto; min-width: 0; }
+input.ans.ok, .mrow.ok input { border-color: var(--ok); background: var(--ok-bg); }
+input.ans.bad { border-color: var(--bad); background: var(--bad-bg); }
+input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
+.same { margin: 0 0 6px; font-size: 0.95rem; color: var(--muted); }
+.same b { color: var(--ink); }
+.zrows { display: flex; flex-direction: column; gap: 6px; }
+.zrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-weight: 700; font-size: 1.15rem; }
+.zrow .x { font-family: var(--font-num); font-style: italic; }
+.zrow .del { padding: 4px 10px; font-size: 1rem; color: var(--muted); }
+.zfoot { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.zfoot button { font-size: 0.95rem; padding: 6px 10px; white-space: nowrap; flex: none; }
+.mult-lbl { color: var(--muted); font-size: 0.95rem; }
+.seg.small button { padding: 4px 13px; min-width: 2.4em; font-size: 1.05rem; font-family: var(--font-num); }
+.eqrow { white-space: nowrap; display: flex; align-items: center; gap: 8px; font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.actions { display: flex; gap: 8px; flex: none; position: sticky; bottom: 0; z-index: 2; background: var(--paper); padding-top: 2px; box-shadow: 0 -8px 8px -4px var(--paper); }
+.actions + .fb { margin-top: 0; }
+.actions button { font-size: 1.15rem; padding: 10px 16px; }
+.check-btn { background: var(--orange); color: var(--sheet); border-color: var(--orange); flex: 1 1 auto; }
+.check-btn:hover { background: var(--sheet); color: var(--orange); border-color: var(--orange); }
+.fb { display: none; }
+.fb.on { display: block; }
+.score { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; margin: 0 0 4px; }
+.tips { margin: 0; padding-left: 1.1em; font-size: 0.98rem; line-height: 1.35; }
+.tips li + li { margin-top: 4px; }
+.tips .good { color: var(--ok); list-style: "✓  "; }
+.tips .miss { color: var(--ink); list-style: "✗  "; }
+.tips .miss::marker { color: var(--bad); }
+.tips .good::marker { color: var(--ok); }
+.trio { color: var(--ink); }
+.trio .g { color: var(--orange); }
+/* Board drawing */
+.g-minor { stroke: var(--grid); stroke-width: 1; }
+.g-axis { stroke: var(--muted); stroke-width: 2.5; }
+.g-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.g-ax { font-family: var(--font-num); font-weight: 700; font-style: italic; font-size: 22px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; }
+.curve { fill: none; stroke: var(--pt); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.curve-arrow { fill: var(--pt); }
+.f-dot { stroke: var(--sheet); stroke-width: 3; }
+.f-dot.zero { fill: var(--orange); }
+.f-dot.yint { fill: var(--green); }
+.f-dot.turn { fill: var(--purple); }
+.f-dot.given { fill: var(--ink); }
+.f-ring { fill: none; stroke: var(--orange); stroke-width: 3; stroke-dasharray: 5 4; }
+.f-lbl { font-family: var(--font-num); font-weight: 700; font-size: 19px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.f-lbl.zero { fill: var(--orange); } .f-lbl.yint { fill: var(--green); } .f-lbl.turn { fill: var(--purple); } .f-lbl.given { fill: var(--ink); font-size: 21px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Reading <span class="m">Polynomial</span> Graphs</h1></div>
+    <div class="tools">
+      <span class="lbl">Degree</span>
+      <div class="seg" id="degSeg" role="group" aria-label="Degree of the next graph">
+        <button data-d="0" aria-pressed="true">Any</button><button data-d="2" aria-pressed="false">2</button><button data-d="3" aria-pressed="false">3</button><button data-d="4" aria-pressed="false">4</button><button data-d="5" aria-pressed="false">5</button>
+      </div>
+      <button class="new-btn" id="newBtn">New graph</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" role="img" aria-label="Graph of a polynomial function"></svg>
+    </div>
+    <div class="panel">
+      <div class="card row">
+        <span class="ql">Degree</span><input class="ans" id="aDeg" autocomplete="off" aria-label="Degree">
+        <span class="ql gap">Leading coefficient</span>
+        <div class="seg small" id="aLc" role="group" aria-label="Sign of the leading coefficient"><button data-v="1" aria-pressed="false">+</button><button data-v="-1" aria-pressed="false">−</button></div>
+      </div>
+      <div class="card">
+        <p class="label">End behaviour</p>
+        <div class="row">
+          <span>quadrant</span>
+          <div class="seg small" id="aFrom" role="group" aria-label="Extends from quadrant"><button data-v="2" aria-pressed="false">II</button><button data-v="3" aria-pressed="false">III</button></div>
+          <span>to quadrant</span>
+          <div class="seg small" id="aTo" role="group" aria-label="To quadrant"><button data-v="1" aria-pressed="false">I</button><button data-v="4" aria-pressed="false">IV</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="label" id="zLabel">x-intercepts</p>
+        <p class="same"><b>x-intercepts</b> of the graph = <b>zeros</b> of P(x) = <b>roots</b> of P(x) = 0</p>
+        <div class="zrows" id="zrows"></div>
+        <div class="zfoot"><button id="addZero">+ Add another</button><span class="mult-lbl">multiplicity: 1 crosses · 2 touches · 3 flattens</span></div>
+      </div>
+      <div class="card row">
+        <span class="ql">y-intercept</span><input class="ans" id="aY" autocomplete="off" aria-label="y-intercept">
+        <span class="ql gap">Turning points</span><input class="ans" id="aTurn" autocomplete="off" aria-label="Number of turning points">
+      </div>
+      <div class="card row">
+        <span class="ql">Local max</span><input class="ans" id="aMax" autocomplete="off" aria-label="How many local maximums">
+        <span class="ql gap">Local min</span><input class="ans" id="aMin" autocomplete="off" aria-label="How many local minimums">
+      </div>
+      <div class="card">
+        <p class="label">Equation in factored form</p>
+        <div class="eqrow"><span>P(x)&nbsp;=</span><input class="ans wide" id="aEq" autocomplete="off" spellcheck="false" placeholder="−2(x + 1)²(x − 3)" aria-label="Equation in factored form"></div>
+      </div>
+      <div class="actions">
+        <button class="check-btn" id="checkBtn">Check</button>
+        <button id="showBtn">Show answers</button>
+      </div>
+      <div class="card fb" id="fb">
+        <p class="score" id="score"></p>
+        <ul class="tips" id="tips"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = arr => arr[rnd(arr.length)];
+  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = rnd(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+  const SUP = { 2: "²", 3: "³", 4: "⁴", 5: "⁵" };
+
+  /* ---------- Making a polynomial ---------- */
+  // P(x) = a(x − r₁)^m₁ ... with whole-number zeros, multiplicity 1 to 3, degree 2 to 5.
+  const PARTS = { 2: [[1, 1], [2]], 3: [[1, 1, 1], [2, 1], [3]], 4: [[1, 1, 1, 1], [2, 1, 1], [2, 2], [3, 1]], 5: [[1, 1, 1, 1, 1], [2, 1, 1, 1], [2, 2, 1], [3, 1, 1], [3, 2]] };
+  const AS = [[1, 1], [1, 1], [1, 1], [2, 1], [1, 2], [1, 2], [1, 4], [3, 1], [1, 3]];
+  const SCALES = [1, 2, 5, 10, 20, 50];
+  const XMIN = -7, XMAX = 7, YLINES = 10;
+
+  function makeP(roots, a) {
+    const raw = x => roots.reduce((p, r) => p * Math.pow(x - r.x, r.m), 1);
+    return { roots, a, raw, f: x => raw(x) * a[0] / a[1] };
+  }
+  function golden(g, lo, hi) { // x in (lo, hi) where g is largest
+    const k = (Math.sqrt(5) - 1) / 2;
+    let c = hi - k * (hi - lo), d = lo + k * (hi - lo);
+    for (let i = 0; i < 80; i++) {
+      if (g(c) > g(d)) { hi = d; } else { lo = c; }
+      c = hi - k * (hi - lo); d = lo + k * (hi - lo);
+    }
+    return (lo + hi) / 2;
+  }
+  function turningPoints(P) {
+    const rs = P.roots, out = [];
+    rs.forEach((r, i) => {
+      if (r.m % 2 === 0) out.push({ x: r.x, y: 0, max: P.f(r.x + 1e-3) < 0 });
+      if (i < rs.length - 1) {
+        const x = golden(t => Math.abs(P.f(t)), r.x, rs[i + 1].x), y = P.f(x);
+        out.push({ x, y, max: y > 0 });
+      }
+    });
+    return out.sort((p, q) => p.x - q.x);
+  }
+
+  function generate(degWanted) {
+    for (let tries = 0; tries < 4000; tries++) {
+      const d = degWanted || pick([2, 3, 3, 4, 4, 5, 5]);
+      const mults = shuffle(pick(PARTS[d]).slice());
+      const k = mults.length;
+      const xs = new Set();
+      while (xs.size < k) xs.add(rnd(11) - 5);
+      const sorted = [...xs].sort((p, q) => p - q);
+      if (sorted[k - 1] - sorted[0] > 8) continue;
+      const roots = sorted.map((x, i) => ({ x, m: mults[i] }));
+      const base = makeP(roots, [1, 1]);
+      const tp = turningPoints(base);
+      const lo = sorted[0], hi = sorted[k - 1];
+      const has0 = xs.has(0);
+      const options = [];
+      for (const [p, q] of AS) {
+        for (const sign of [1, -1]) {
+          const a = [sign * p, q], P = makeP(roots, a);
+          const peak = Math.max(0, ...tp.map(t => Math.abs(t.y * p / q)));
+          const tail = Math.max(Math.abs(P.f(lo - 1.5)), Math.abs(P.f(hi + 1.5)));
+          for (const s of SCALES) {
+            if (peak > 9 * s) continue;
+            if (Math.max(peak, tail) < 3 * s) continue;
+            if (tp.some(t => t.y !== 0 && Math.abs(t.y * p / q) < 1.2 * s)) continue;
+            // Each zero must be easy to see: the graph moves clearly off the axis on both sides.
+            if (roots.some((r, i) => [-1, 1].some(side => {
+              const nb = roots[i + side], h = nb ? Math.min(1, Math.abs(nb.x - r.x) / 2) : 1;
+              return Math.abs(P.f(r.x + side * h)) < 0.6 * s;
+            }))) continue;
+            const y0r = base.raw(0) * p;
+            let given = null;
+            if (!has0) {
+              if (y0r % q) continue;
+              const y0 = y0r / q;
+              if (y0 % s || Math.abs(y0) > 9 * s) continue;
+            } else {
+              const cand = [];
+              for (let x = lo - 1; x <= hi + 1; x++) {
+                if (xs.has(x) || x < XMIN + 1 || x > XMAX - 1) continue;
+                const vr = base.raw(x) * p;
+                if (vr % q) continue;
+                const v = vr / q;
+                if (Math.abs(v) < s || Math.abs(v) > 7 * s) continue;
+                cand.push({ x, y: v, onLine: v % s === 0 });
+              }
+              const onLine = cand.filter(c => c.onLine);
+              if (!cand.length) continue;
+              given = pick(onLine.length ? onLine : cand);
+            }
+            options.push({ a, s, given, weight: p === 1 && q === 1 ? 3 : 1 });
+            break; // smallest scale that works for this a
+          }
+        }
+      }
+      if (!options.length) continue;
+      const bag = options.flatMap(o => Array(o.weight).fill(o));
+      const o = pick(bag);
+      const P = makeP(roots, o.a);
+      P.deg = d; P.s = o.s; P.given = o.given; P.tp = turningPoints(P);
+      P.y0 = Math.round(P.f(0) * 1e6) / 1e6;
+      return P;
+    }
+    return null;
+  }
+
+  /* ---------- Writing answers ---------- */
+  function aText(a) {
+    const [p, q] = a, sg = p < 0 ? "−" : "";
+    if (q === 1) return Math.abs(p) === 1 ? sg : sg + Math.abs(p);
+    return sg + ({ 2: "½", 3: "⅓", 4: "¼" }[q] || `(1/${q})`);
+  }
+  function factorText(r) {
+    const inner = r.x === 0 ? "x" : `(x ${r.x > 0 ? "−" : "+"} ${Math.abs(r.x)})`;
+    return inner + (r.m > 1 ? SUP[r.m] : "");
+  }
+  function eqText(P) {
+    const head = aText(P.a);
+    const fs = P.roots.slice().sort((p, q) => (p.x === 0 ? -1 : q.x === 0 ? 1 : 0)).map(factorText);
+    // x comes first: x(x − 2)
+    return head + fs.join("");
+  }
+
+  /* ---------- Reading what was typed ---------- */
+  function clean(s) {
+    return s.replace(/[−–—]/g, "-").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/\s+/g, "")
+      .replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4").replace(/⁵/g, "^5").replace(/¹/g, "^1")
+      .replace(/½/g, "(1/2)").replace(/⅓/g, "(1/3)").replace(/¼/g, "(1/4)").replace(/[\[{]/g, "(").replace(/[\]}]/g, ")").replace(/X/g, "x");
+  }
+  function readNumber(s) { // 3, −2, 1/2, 2.5, (−3, 0)
+    s = clean(s);
+    if (!s) return null;
+    let m = s.match(/^\((-?[\d.\/]+),(-?[\d.\/]+)\)$/);
+    if (m) return { x: num(m[1]), y: num(m[2]), point: true };
+    const v = num(s);
+    return v === null ? null : { v };
+  }
+  function num(s) {
+    let m = s.match(/^(-?\d*\.?\d+)\/(\d*\.?\d+)$/);
+    if (m) return +m[2] ? +m[1] / +m[2] : null;
+    m = s.match(/^-?(\d+\.?\d*|\.\d+)$/);
+    return m ? +s : null;
+  }
+  // Polynomials as coefficient arrays, constant first.
+  const padd = (p, q) => { const r = []; for (let i = 0; i < Math.max(p.length, q.length); i++) r.push((p[i] || 0) + (q[i] || 0)); return r; };
+  const pscale = (p, k) => p.map(c => c * k);
+  const pmul = (p, q) => { const r = Array(p.length + q.length - 1).fill(0); p.forEach((a, i) => q.forEach((b, j) => (r[i + j] += a * b))); return r; };
+  const pdeg = p => { for (let i = p.length - 1; i >= 0; i--) if (Math.abs(p[i]) > 1e-9) return i; return -1; };
+  function parseEq(str) {
+    let s = clean(str);
+    const eq = s.lastIndexOf("=");
+    if (eq >= 0) s = s.slice(eq + 1);
+    const toks = s.match(/\d*\.?\d+|[x+\-*\/^()]|./g) || [];
+    let i = 0;
+    const peek = () => toks[i], next = () => toks[i++];
+    function expr() {
+      let n = term();
+      while (peek() === "+" || peek() === "-") { const op = next(); n = { t: op === "+" ? "add" : "sub", a: n, b: term() }; }
+      return n;
+    }
+    function term() {
+      let n = unary();
+      for (;;) {
+        const t = peek();
+        if (t === "*" || t === "/") { next(); n = { t: t === "*" ? "mul" : "div", a: n, b: unary() }; }
+        else if (t === "(" || t === "x" || (t && /\d|\./.test(t[0]))) n = { t: "mul", a: n, b: power() };
+        else return n;
+      }
+    }
+    function unary() {
+      if (peek() === "-") { next(); return { t: "neg", a: unary() }; }
+      if (peek() === "+") { next(); return unary(); }
+      return power();
+    }
+    function power() {
+      const b = atom();
+      if (peek() === "^") {
+        next();
+        let e = next();
+        if (e === "(") { e = next(); if (next() !== ")") throw 0; }
+        if (!/^\d+$/.test(e) || +e > 12) throw 0;
+        return { t: "pow", a: b, n: +e };
+      }
+      return b;
+    }
+    function atom() {
+      const t = next();
+      if (t === "x") return { t: "x" };
+      if (t === "(") { const n = expr(); if (next() !== ")") throw 0; return { t: "grp", a: n }; }
+      if (t && /^\d*\.?\d+$/.test(t)) return { t: "num", v: +t };
+      throw 0;
+    }
+    function poly(n) {
+      switch (n.t) {
+        case "num": return [n.v];
+        case "x": return [0, 1];
+        case "grp": return poly(n.a);
+        case "neg": return pscale(poly(n.a), -1);
+        case "add": return padd(poly(n.a), poly(n.b));
+        case "sub": return padd(poly(n.a), pscale(poly(n.b), -1));
+        case "mul": return pmul(poly(n.a), poly(n.b));
+        case "div": { const d = poly(n.b); if (pdeg(d) > 0 || !d[0]) throw 0; return pscale(poly(n.a), 1 / d[0]); }
+        case "pow": { let r = [1]; const b = poly(n.a); for (let k = 0; k < n.n; k++) r = pmul(r, b); return r; }
+      }
+    }
+    function factored(n) {
+      switch (n.t) {
+        case "neg": case "grp": return factored(n.a);
+        case "mul": case "div": return factored(n.a) && factored(n.b);
+        case "pow": return pdeg(poly(n.a)) <= 1;
+        default: return pdeg(poly(n)) <= 1;
+      }
+    }
+    try {
+      if (!toks.length) return null;
+      const tree = expr();
+      if (i < toks.length) return null;
+      return { poly: poly(tree), factored: factored(tree) };
+    } catch (e) { return null; }
+  }
+  function truePoly(P) {
+    let r = [P.a[0] / P.a[1]];
+    P.roots.forEach(z => { for (let k = 0; k < z.m; k++) r = pmul(r, [-z.x, 1]); });
+    return r;
+  }
+  const same = (p, q) => { for (let i = 0; i < Math.max(p.length, q.length); i++) { const a = p[i] || 0, b = q[i] || 0; if (Math.abs(a - b) > 1e-6 * Math.max(1, Math.abs(b))) return false; } return true; };
+
+  /* ---------- Board ---------- */
+  const svg = $("svg");
+  const UX = 52, UY = 30, PAD = 34;
+  const W = (XMAX - XMIN) * UX + PAD * 2, H = YLINES * 2 * UY + PAD * 2;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const sx = x => PAD + (x - XMIN) * UX;
+  let P = null, layers = {}, revealed = {};
+  const sy = y => PAD + (YLINES - y / P.s) * UY;
+
+  function drawBoard() {
+    svg.textContent = "";
+    const defs = el("defs", {}, svg);
+    const mk = el("marker", { id: "cArrow", viewBox: "0 0 10 10", refX: 6, refY: 5, markerWidth: 3.6, markerHeight: 3.6, orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", class: "curve-arrow" }, mk);
+    ["grid", "curve", "marks", "labels"].forEach(n => (layers[n] = el("g", {}, svg)));
+    const g = layers.grid;
+    for (let i = XMIN; i <= XMAX; i++) el("line", { x1: sx(i), y1: sy(-YLINES * P.s), x2: sx(i), y2: sy(YLINES * P.s), class: i === 0 ? "g-axis" : "g-minor" }, g);
+    for (let j = -YLINES; j <= YLINES; j++) el("line", { x1: sx(XMIN), y1: sy(j * P.s), x2: sx(XMAX), y2: sy(j * P.s), class: j === 0 ? "g-axis" : "g-minor" }, g);
+    for (let i = XMIN; i <= XMAX; i++) if (i) el("text", { x: sx(i), y: sy(0) + 21, class: "g-tick", "text-anchor": "middle" }, g).textContent = fmt(i);
+    for (let j = -YLINES; j <= YLINES; j++) if (j) el("text", { x: sx(0) - 6, y: sy(j * P.s) + 6, class: "g-tick", "text-anchor": "end" }, g).textContent = fmt(j * P.s);
+    el("text", { x: sx(XMAX) - 4, y: sy(0) - 9, class: "g-ax", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: sx(0) + 9, y: sy(YLINES * P.s) + 20, class: "g-ax" }, g).textContent = "y";
+
+    // The curve: sampled, cut off where it leaves the grid, with arrows on both ends.
+    const top = YLINES * P.s, pts = [];
+    let prev = null;
+    for (let k = 0; k <= 1400; k++) {
+      const x = XMIN + (XMAX - XMIN) * k / 1400, y = P.f(x);
+      const inside = Math.abs(y) <= top;
+      if (prev && inside !== prev.inside) {
+        const lim = (Math.abs(y) > top ? y : prev.y) > 0 ? top : -top;
+        const t = (lim - prev.y) / (y - prev.y);
+        pts.push([prev.x + t * (x - prev.x), lim]);
+      }
+      if (inside) pts.push([x, y]);
+      prev = { x, y, inside };
+    }
+    el("path", { d: "M" + pts.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join("L"), class: "curve", "marker-start": "url(#cArrow)", "marker-end": "url(#cArrow)" }, layers.curve);
+
+    if (P.given) {
+      el("circle", { cx: sx(P.given.x), cy: sy(P.given.y), r: 8, class: "f-dot given" }, layers.marks);
+      const gl = label(P.given.x, P.given.y, `(${fmt(P.given.x)}, ${fmt(P.given.y)})`, "given", 7, P.given.x < 0 ? "end" : "start");
+      gl.setAttribute("x", sx(P.given.x) + (P.given.x < 0 ? -14 : 14));
+    }
+    drawReveals();
+  }
+  function label(x, y, text, cls, dy, anchor) {
+    let X = sx(x), a = anchor || "middle";
+    if (X > W - 90 && !anchor) a = "end";
+    if (X < 90 && !anchor) a = "start";
+    const t = el("text", { x: X, y: sy(y) + dy, class: `f-lbl ${cls}`, "text-anchor": a }, layers.labels);
+    t.textContent = text;
+    return t;
+  }
+  // Nudge labels up or down until they stop overlapping each other.
+  function spread() {
+    const placed = [];
+    layers.labels.querySelectorAll("text").forEach(t => {
+      const y0 = +t.getAttribute("y");
+      for (const d of [0, 24, -24, 48, -48, 72, -72]) {
+        t.setAttribute("y", y0 + d);
+        const b = t.getBBox();
+        if (!placed.some(p => b.x < p.x + p.width + 4 && p.x < b.x + b.width + 4 && b.y < p.y + p.height && p.y < b.y + b.height)) break;
+        if (d === -72) t.setAttribute("y", y0);
+      }
+      placed.push(t.getBBox());
+    });
+  }
+  const r1 = v => { const r = Math.round(v * 10) / 10; return fmt(Object.is(r, -0) ? 0 : r); };
+  function drawReveals() {
+    if (!layers.marks) return;
+    layers.marks.querySelectorAll(".rv").forEach(n => n.remove());
+    layers.labels.querySelectorAll(".rv").forEach(n => n.remove());
+    const mark = (n) => (n.classList.add("rv"), n);
+    if (revealed.zeros) {
+      P.roots.forEach(r => {
+        if (r.m === 3) mark(el("circle", { cx: sx(r.x), cy: sy(0), r: 17, class: "f-ring" }, layers.marks));
+        mark(el("circle", { cx: sx(r.x), cy: sy(0), r: 9, class: "f-dot zero" }, layers.marks));
+        const words = r.m === 1 ? "crosses" : r.m === 2 ? "touches" : "inflection";
+        // Put the label where the graph is not: under a bounce from above, or on the empty side of a crossing.
+        const up = r.m % 2 ? P.f(r.x + 0.2) > 0 : P.f(r.x + 0.2) < 0;
+        const t = mark(label(r.x, 0, `m=${r.m} ${words}`, "zero", up ? 32 : -16, "start"));
+        t.setAttribute("x", sx(r.x) + (r.m % 2 ? 12 : -24));
+        if (sx(r.x) > W - 170) { t.setAttribute("text-anchor", "end"); t.setAttribute("x", sx(r.x) - 12); }
+      });
+    }
+    if (revealed.y && P.y0 !== 0) {
+      mark(el("circle", { cx: sx(0), cy: sy(P.y0), r: 9, class: "f-dot yint" }, layers.marks));
+      mark(label(0, P.y0, `(0, ${fmt(P.y0)})`, "yint", 6, "start")).setAttribute("x", sx(0) + 16);
+    }
+    if (revealed.turn) {
+      P.tp.forEach(t => {
+        mark(el("circle", { cx: sx(t.x), cy: sy(t.y), r: 8, class: "f-dot turn" }, layers.marks));
+        if (t.y === 0) return; // a touching zero: its label already says touches
+        mark(label(t.x, t.y, `local ${t.max ? "max" : "min"} (${r1(t.x)}, ${r1(t.y)})`, "turn", t.max ? -18 : 32));
+      });
+    }
+    spread();
+  }
+
+  /* ---------- Answer area ---------- */
+  const zrows = $("zrows");
+  const ZWORDS = [
+    { label: "x-intercepts", word: "x-intercept" },
+    { label: "Zeros of P(x)", word: "zero" },
+    { label: "Roots of P(x) = 0", word: "root" },
+  ];
+  let zword = ZWORDS[0];
+  function addZeroRow() {
+    if (zrows.children.length >= 5) return;
+    const row = document.createElement("div");
+    row.className = "zrow";
+    row.innerHTML = `<span class="x">x =</span><input class="ans zx" autocomplete="off" aria-label="${zword.word}"><span class="mult-lbl">multiplicity</span>
+      <div class="seg small zm" role="group" aria-label="Multiplicity"><button data-v="1" aria-pressed="false">1</button><button data-v="2" aria-pressed="false">2</button><button data-v="3" aria-pressed="false">3</button></div>
+      <button class="del" aria-label="Remove this row">✕</button>`;
+    zrows.appendChild(row);
+    row.querySelector(".del").onclick = () => { if (zrows.children.length > 1) row.remove(); else { row.querySelector(".zx").value = ""; setSeg(row.querySelector(".zm"), null); } syncAdd(); };
+    wireSeg(row.querySelector(".zm"));
+    row.querySelector(".zx").addEventListener("keydown", enterChecks);
+    syncAdd();
+    return row;
+  }
+  function syncAdd() { $("addZero").disabled = zrows.children.length >= 5; }
+  $("addZero").onclick = () => { const r = addZeroRow(); if (r) r.querySelector(".zx").focus(); };
+
+  function wireSeg(seg) {
+    seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { setSeg(seg, b.dataset.v); seg.classList.remove("ok", "bad", "shown"); }));
+  }
+  function setSeg(seg, v) { seg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === String(v)))); }
+  const segVal = seg => { const b = seg.querySelector('[aria-pressed="true"]'); return b ? +b.dataset.v : null; };
+  ["aLc", "aFrom", "aTo"].forEach(id => wireSeg($(id)));
+  function enterChecks(e) { if (e.key === "Enter") check(); }
+  document.querySelectorAll(".panel input.ans").forEach(i => i.addEventListener("keydown", enterChecks));
+  document.querySelector(".panel").addEventListener("input", e => { if (e.target.matches("input.ans")) { e.target.classList.remove("ok", "bad", "shown"); } });
+
+  function mark(node, ok) { node.classList.remove("ok", "bad", "shown"); node.classList.add(ok ? "ok" : "bad"); }
+
+  function resetAnswers() {
+    document.querySelectorAll(".panel input.ans").forEach(i => { i.value = ""; i.classList.remove("ok", "bad", "shown"); });
+    document.querySelectorAll(".panel .seg").forEach(s => { setSeg(s, null); s.classList.remove("ok", "bad", "shown"); });
+    zrows.textContent = "";
+    addZeroRow();
+    $("fb").classList.remove("on");
+  }
+
+  /* ---------- Checking ---------- */
+  function trio() {
+    const xs = P.roots.map(r => r.x);
+    return `<span class="trio">x-intercepts <span class="g">${xs.map(x => `(${fmt(x)}, 0)`).join(", ")}</span> · zeros of P(x): <span class="g">${xs.map(fmt).join(", ")}</span> · roots of P(x) = 0: <span class="g">${xs.map(x => "x = " + fmt(x)).join(", ")}</span></span>`;
+  }
+  function check() {
+    const tips = [];
+    let right = 0, total = 0;
+    const item = (ok, good, miss) => { total++; if (ok) right++; tips.push(ok ? (good ? { ok, t: good } : null) : { ok, t: miss }); };
+    const posLead = P.a[0] > 0, odd = P.deg % 2 === 1;
+
+    // Degree
+    const dIn = readNumber($("aDeg").value), dOk = !!dIn && dIn.v === P.deg;
+    mark($("aDeg"), dOk);
+    item(dOk, null, "Degree: add up the multiplicities of the zeros. Odd degree: the ends go opposite ways. Even degree: the ends go the same way.");
+
+    // Leading coefficient
+    const lc = segVal($("aLc")), lcOk = lc === (posLead ? 1 : -1);
+    $("aLc").classList.remove("ok", "bad", "shown"); $("aLc").classList.add(lcOk ? "ok" : "bad");
+    item(lcOk, null, "Leading coefficient: when it is positive, the graph rises to the right (ends in quadrant I).");
+
+    // End behaviour
+    const from = odd ? (posLead ? 3 : 2) : (posLead ? 2 : 3), to = posLead ? 1 : 4;
+    const fOk = segVal($("aFrom")) === from, tOk = segVal($("aTo")) === to;
+    [["aFrom", fOk], ["aTo", tOk]].forEach(([id, ok]) => { $(id).classList.remove("ok", "bad", "shown"); $(id).classList.add(ok ? "ok" : "bad"); });
+    item(fOk && tOk, null, "End behaviour: follow the left arrow to see the quadrant the graph comes from, and the right arrow for the quadrant it goes to.");
+
+    // Zeros and multiplicity
+    const want = new Map(P.roots.map(r => [r.x, r.m]));
+    const seen = new Set();
+    let zOk = true, mOk = true, extra = false;
+    [...zrows.children].forEach(row => {
+      const inp = row.querySelector(".zx"), seg = row.querySelector(".zm");
+      const v = readNumber(inp.value);
+      const x = v ? (v.point ? (v.y === 0 ? v.x : NaN) : v.v) : null;
+      if (x === null && !inp.value.trim() && segVal(seg) === null) { if (zrows.children.length > 1) row.remove(); return; }
+      const good = want.has(x) && !seen.has(x);
+      if (good) seen.add(x); else { zOk = false; extra = true; }
+      mark(inp, good);
+      const m = segVal(seg), mGood = good && m === want.get(x);
+      if (!mGood) mOk = false;
+      seg.classList.remove("ok", "bad", "shown"); seg.classList.add(mGood ? "ok" : "bad");
+    });
+    if (!zrows.children.length) addZeroRow();
+    const missing = P.roots.length - seen.size;
+    if (missing) zOk = false;
+    item(zOk, `${trio()}`, extra ? `${zword.label}: a red one is not where the graph meets the x-axis.` : `${zword.label}: there ${missing === 1 ? "is 1 more" : `are ${missing} more`}. Use + Add another.`);
+    item(zOk && mOk, null, "Multiplicity: crosses straight through = 1, touches the x-axis and turns back = 2, flattens out as it crosses (a point of inflection) = 3.");
+
+    // y-intercept
+    const yIn = readNumber($("aY").value);
+    const yv = yIn ? (yIn.point ? (yIn.x === 0 ? yIn.y : NaN) : yIn.v) : null;
+    const yOk = yv !== null && Math.abs(yv - P.y0) < 1e-6;
+    mark($("aY"), yOk);
+    item(yOk, null, "y-intercept: where the graph crosses the y-axis, which is P(0).");
+
+    // Turning points
+    const nMax = P.tp.filter(t => t.max).length, nMin = P.tp.length - nMax;
+    const tIn = readNumber($("aTurn").value), xIn = readNumber($("aMax").value), nIn = readNumber($("aMin").value);
+    const tpOk = !!tIn && tIn.v === P.tp.length, mxOk = !!xIn && xIn.v === nMax, mnOk = !!nIn && nIn.v === nMin;
+    mark($("aTurn"), tpOk); mark($("aMax"), mxOk); mark($("aMin"), mnOk);
+    item(tpOk && mxOk && mnOk, null, `Turning points: where the graph changes from going up to going down (local max) or down to up (local min). A degree ${P.deg} graph has at most ${P.deg - 1}.`);
+
+    // Equation
+    const e = parseEq($("aEq").value), tp = truePoly(P);
+    let eOk = false, eTip = "Equation: write (x − r) for each zero r, use its multiplicity as the exponent, then use the y-intercept to find a.";
+    if (!$("aEq").value.trim()) eTip = "Equation: start with a(x − r) for each zero r.";
+    else if (!e) eTip = "Equation: I can't read that. Try something like −2(x + 1)²(x − 3).";
+    else if (same(e.poly, tp)) { eOk = e.factored; if (!eOk) eTip = "Equation: that is the right function. Now write it in factored form."; }
+    else {
+      const lead = e.poly[pdeg(e.poly)] || 1, tl = tp[tp.length - 1];
+      if (pdeg(e.poly) === pdeg(tp) && same(pscale(e.poly, tl / lead), tp)) {
+        const pt = P.given ? `(${fmt(P.given.x)}, ${fmt(P.given.y)})` : `(0, ${fmt(P.y0)})`;
+        eTip = `Equation: your factors are right. Put the point ${pt} into the equation and solve for a.`;
+      }
+    }
+    mark($("aEq"), eOk);
+    item(eOk, null, eTip);
+
+    revealed = { zeros: zOk && mOk || revealed.zeros, y: yOk || revealed.y, turn: tpOk || revealed.turn };
+    drawReveals();
+    $("score").textContent = right === total ? `All ${total} right!` : `${right} of ${total} right`;
+    $("tips").innerHTML = tips.filter(Boolean).map(t => `<li class="${t.ok ? "good" : "miss"}">${t.t}</li>`).join("");
+    $("fb").classList.add("on");
+    $("fb").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function showAnswers() {
+    const show = (id, v) => { $(id).value = v; $(id).classList.remove("ok", "bad"); $(id).classList.add("shown"); };
+    const seg = (id, v) => { setSeg($(id), v); $(id).classList.remove("ok", "bad"); $(id).classList.add("shown"); };
+    const posLead = P.a[0] > 0, odd = P.deg % 2 === 1;
+    show("aDeg", P.deg);
+    seg("aLc", posLead ? 1 : -1);
+    seg("aFrom", odd ? (posLead ? 3 : 2) : (posLead ? 2 : 3));
+    seg("aTo", posLead ? 1 : 4);
+    zrows.textContent = "";
+    P.roots.forEach(r => {
+      const row = addZeroRow();
+      const i = row.querySelector(".zx"); i.value = fmt(r.x); i.classList.add("shown");
+      const s = row.querySelector(".zm"); setSeg(s, r.m); s.classList.add("shown");
+    });
+    show("aY", fmt(P.y0));
+    show("aTurn", P.tp.length);
+    show("aMax", P.tp.filter(t => t.max).length);
+    show("aMin", P.tp.filter(t => !t.max).length);
+    show("aEq", eqText(P));
+    revealed = { zeros: true, y: true, turn: true };
+    drawReveals();
+    $("score").textContent = "Answers";
+    $("tips").innerHTML = `<li class="good">${trio()}</li>` +
+      P.roots.map(r => `<li class="good">x = ${fmt(r.x)} has multiplicity ${r.m}: the graph ${r.m === 1 ? "crosses the x-axis" : r.m === 2 ? "touches the x-axis and turns back" : "flattens out as it crosses (point of inflection)"}.</li>`).join("");
+    $("fb").classList.add("on");
+  }
+
+  let degWanted = 0;
+  $("degSeg").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    degWanted = +b.dataset.d;
+    $("degSeg").querySelectorAll("button").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+    newGraph();
+  }));
+  function newGraph() {
+    P = generate(degWanted);
+    revealed = {};
+    zword = pick(ZWORDS);
+    $("zLabel").textContent = zword.label;
+    resetAnswers();
+    drawBoard();
+  }
+  $("newBtn").onclick = newGraph;
+  $("checkBtn").onclick = check;
+  $("showBtn").onclick = showAnswers;
+  window.__poly = { get P() { return P; }, parseEq, truePoly, eqText, generate };
+  newGraph();
+})();
+</script>
+
+</body>
+</html>
