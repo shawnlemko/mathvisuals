@@ -249,6 +249,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .dg.sm.w2 { width: calc(var(--cs) * 0.86); }
 .sheet .given.struck { color: var(--muted); text-decoration: line-through; text-decoration-thickness: max(3px, calc(var(--cs) * 0.06)); text-decoration-color: var(--warn); }
 .sheet .lab.times { padding-left: calc(var(--cs) * 0.4); font-family: var(--font-num); font-size: calc(var(--cs) * 0.42); color: var(--c1); }
+.msg .eqn .eq { display: flex; align-items: center; gap: 12px; font-size: 1.6rem; }
+.msg .eqn .eq + .eq { margin-top: 10px; }
+.msg .eqn .frac { font-size: 1.35rem; }
+.msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
 </style>
 <!-- Long Division (grades 3 to 7): type a question like 126 ÷ 4 or press New question, work it out in the digit boxes,
      then Check answer finds the first wrong box. The answer goes above the bracket (blue); each step has a row to
@@ -503,7 +507,7 @@ window.Written = (() => {
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
       if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
-      if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><p class="eqn">${cfg.done(prob)}</p>`; return; }
+      if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
       const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
         : it.point ? "Next, put in the decimal point: click one of the orange dots."
@@ -749,13 +753,21 @@ window.Written = (() => {
     return items;
   }
 
+  // The finished statement is written as a fraction, not with ÷ (Shawn). With a remainder it is shown two ways:
+  // 126/4 = 31 R 2, and 126/4 = 31 2/4 (the remainder divided by the divisor).
+  const fr = (top, bot) => `<span class="frac"><span>${top}</span><span>${bot}</span></span>`;
   function done(P) {
     const { Q, R, fdp, endless } = P.ans;
-    const q = withPoint(Q, fdp);
-    if (P.mode === "rem") return `${P.A.S} ÷ ${P.d} = ${q}${R ? ` R ${R}` : ""}`;
+    const q = withPoint(Q, fdp), lhs = fr(P.A.S, P.d);
+    const line = rhs => `<span class="eq">${lhs} <span>=</span> ${rhs}</span>`;
+    if (P.mode === "rem") {
+      if (!R) return line(q);
+      const whole = +q ? q : "";
+      return line(`${q} R ${R}`) + line(`${whole} ${fr(R, P.d)}`) + `<span class="lead">The remainder ${R} is divided by the divisor ${P.d}.</span>`;
+    }
     return endless
-      ? `${P.A.S} ÷ ${P.d} ≈ ${q}… <span class="lead">The digits keep going forever, so we stopped after ${s(fdp, "decimal place")}.</span>`
-      : `${P.A.S} ÷ ${P.d} = ${q}`;
+      ? line(`${q}…`) + `<span class="lead">The digits keep going forever, so we stopped after ${s(fdp, "decimal place")}.</span>`
+      : line(q);
   }
 
   Written.page({ mode: "rem", parse, generate, build, done,
