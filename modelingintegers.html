@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Modeling Integers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Modeling Integers (grades 6-7). Green chips are +1, red chips are -1, like integers.html and algebra tiles.
+   Playground: tap or drag chips in, drag a green onto a red (or a group onto a group) and each touching pair vanishes as a zero pair.
+   Add and subtract: a question puts the first number's chips on the mat; students act out the operation with the same tools.
+   Challenge: start chips and a goal, with a rule (only add, only take away, or either). */
+:root { --pos: rgb(92,191,122); --neg: rgb(239,107,107); --chip-ink: #1b2733; --good-bg: #e3f4ec; --nope-bg: #fbeee6; --mat: #fbfcfd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --good-bg: #16352a; --nope-bg: #3a2416; --mat: #121b24; } }
+:root[data-theme="dark"] { --good-bg: #16352a; --nope-bg: #3a2416; --mat: #121b24; }
+
+.main { grid-template-columns: minmax(0, 2.2fr) minmax(300px, 1fr); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 10px; }
+.card { padding: 12px 14px; }
+.label { font-size: 0.85rem; }
+
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns.small button { font-size: 1.05rem; min-height: 44px; padding: 4px 14px; }
+
+/* Board */
+.mat { fill: var(--mat); stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 10 7; }
+.mat-tip { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 30px; text-anchor: middle; opacity: .55; pointer-events: none; }
+.tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 1.5; }
+.tray-lbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; pointer-events: none; }
+.tray-chip { cursor: grab; }
+.tray-chip.off, .trash.off { opacity: .25; }
+.chip { cursor: grab; }
+.chip circle.face { stroke: var(--chip-ink); stroke-width: 3; }
+.chip.p circle.face, .tray-chip.p circle { fill: var(--pos); }
+.chip.n circle.face, .tray-chip.n circle { fill: var(--neg); }
+.tray-chip circle { stroke: var(--chip-ink); stroke-width: 3; }
+.chip text, .tray-chip text { fill: var(--chip-ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.chip .sel { fill: none; stroke: var(--pt); stroke-width: 5; opacity: 0; }
+.chip.on .sel { opacity: 1; }
+.chip.drag { cursor: grabbing; }
+.box { fill: var(--pt); fill-opacity: .08; stroke: var(--pt); stroke-width: 2; stroke-dasharray: 8 6; pointer-events: none; }
+.trash .body { fill: var(--chip); stroke: var(--muted); stroke-width: 4; stroke-linejoin: round; }
+.trash .lid, .trash .stripe { stroke: var(--muted); stroke-width: 4; stroke-linecap: round; fill: none; }
+.trash.hot .body { fill: var(--nope-bg); stroke: var(--orange); stroke-width: 6; }
+.trash.hot .lid { stroke: var(--orange); }
+.trash text { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 24px; text-anchor: middle; }
+.zp-lbl { fill: var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 34px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; pointer-events: none; }
+.zp-zero { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 44px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+/* Panel */
+.big { font-family: var(--font-num); font-weight: 700; font-size: 3.2rem; line-height: 1.1; margin: 2px 0 4px; white-space: nowrap; }
+.big.hidden { color: var(--muted); font-size: 2rem; font-family: var(--font-display); }
+.pos { color: var(--green); } .neg { color: var(--warn); }
+.words { margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
+.words .pos, .words .neg { font-weight: 800; }
+.counts { margin: 0; font-size: 1.15rem; color: var(--muted); }
+button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; padding: 8px 18px; min-height: 50px; }
+button.go:hover { background: var(--sheet); color: var(--pt); }
+.btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn-row + .btn-row, .label + .btn-row { margin-top: 0; }
+.btn-row button { font-size: 1.1rem; min-height: 46px; }
+.btn-row button:disabled { opacity: .35; cursor: not-allowed; }
+.type-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.type-row input { width: calc(3ch + 16px); font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; padding: 2px 6px; text-align: center;
+  border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+.type-row .seg-btns button { font-family: var(--font-num); font-size: 2rem; min-height: 54px; padding: 0 16px; }
+.tools { padding-top: 10px; border-top: 1px dashed var(--grid-major); }
+.big .op { margin: 0 .25em; }
+.or { margin: 6px 0 4px; color: var(--muted); font-weight: 700; }
+.feedback { margin: 0; padding: 10px 12px; border-radius: 10px; font-size: 1.25rem; font-weight: 700; line-height: 1.3; background: var(--chip); }
+.feedback:empty { display: none; }
+.feedback.good { background: var(--good-bg); color: var(--green); }
+.feedback.nope { background: var(--nope-bg); color: var(--orange); }
+.feedback .num { font-family: var(--font-num); white-space: nowrap; }
+.solved { margin: 6px 0 0; color: var(--muted); font-weight: 700; }
+[data-show]:not(.on) { display: none !important; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Modeling Integers</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="play" class="on" aria-pressed="true">Playground</button>
+      <button type="button" data-mode="calc" aria-pressed="false">Add and Subtract</button>
+      <button type="button" data-mode="game" aria-pressed="false">Challenge</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="0 0 1000 620" role="img" aria-label="Integer chips: green chips are plus one, red chips are minus one"></svg>
+    </div>
+    <div class="panel">
+      <!-- Playground -->
+      <div class="card" data-show="play">
+        <p class="label">Total</p>
+        <div class="big hidden" id="total">Hidden</div>
+        <p class="counts" id="counts"></p>
+        <div class="btn-row" style="margin-top:10px"><button type="button" class="go" id="totalBtn">Show total</button></div>
+      </div>
+
+      <!-- Add and subtract -->
+      <div class="card" data-show="calc">
+        <p class="label">Question</p>
+        <div class="btn-row"><button type="button" class="go" id="newQ">New question</button></div>
+        <p class="or">or type your own</p>
+        <div class="type-row">
+          <input id="qa" inputmode="numeric" maxlength="3" aria-label="First number" value="3">
+          <div class="seg-btns" role="group" aria-label="Add or subtract">
+            <button type="button" data-op="+" class="on" aria-pressed="true" aria-label="add">+</button>
+            <button type="button" data-op="-" aria-pressed="false" aria-label="subtract">−</button>
+          </div>
+          <input id="qb" inputmode="numeric" maxlength="3" aria-label="Second number" value="-5">
+          <button type="button" class="go" id="goQ">Go</button>
+        </div>
+      </div>
+      <div class="card" data-show="calc">
+        <div class="big" id="qText"></div>
+        <p class="words" id="qWords"></p>
+      </div>
+
+      <!-- Challenge -->
+      <div class="card" data-show="game">
+        <p class="label">You can</p>
+        <div class="seg-btns small" role="group" aria-label="Rule" id="rules">
+          <button type="button" data-rule="add" class="on" aria-pressed="true">Only add</button>
+          <button type="button" data-rule="take" aria-pressed="false">Only take away</button>
+          <button type="button" data-rule="any" aria-pressed="false">Either</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px"><button type="button" class="go" id="newC">New challenge</button></div>
+      </div>
+      <div class="card" data-show="game">
+        <div class="big" id="cText"></div>
+        <p class="words" id="cWords"></p>
+        <p class="solved" id="solved"></p>
+      </div>
+
+      <div class="btn-row" data-show="calc game">
+        <button type="button" class="go" id="check">Check</button>
+        <button type="button" id="hint">Show hint</button>
+        <button type="button" id="restart">Start over</button>
+      </div>
+      <p class="feedback" id="msg" aria-live="polite"></p>
+
+      <div class="btn-row tools" aria-label="Tools">
+        <button type="button" id="zp">Add a zero pair</button>
+        <button type="button" id="dup">Copy</button>
+        <button type="button" id="del">Delete</button>
+        <button type="button" id="clear" data-show="play">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("svg");
+  const $ = id => document.getElementById(id);
+  const R = 32;                                   // chip radius
+  const MAT = { x: 180, y: 12, w: 808, h: 596 };
+  const TRASH = { x: 40, y: 420, w: 100, h: 150 };
+  const STEP = 74;                                // spacing of the free-spot grid
+  const MAX_CHIPS = 88;
+  const slow = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = n => (n < 0 ? "−" + -n : String(n));
+  const paren = n => (n < 0 ? "(−" + -n + ")" : String(n));
+  const cls = n => (n > 0 ? "pos" : n < 0 ? "neg" : "");
+  const span = (n, f = fmt) => `<span class="${cls(n)}">${f(n)}</span>`;
+  const chipWord = (n, sign) => `${n} ${sign > 0 ? '<span class="pos">green</span>' : '<span class="neg">red</span>'} chip${n === 1 ? "" : "s"}`;
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+  // ---- Board ----
+  const trayBg = el("rect", { x: 10, y: 12, width: 160, height: 596, rx: 12, class: "tray-bg" }, svg);
+  const matBg = el("rect", { x: MAT.x, y: MAT.y, width: MAT.w, height: MAT.h, rx: 14, class: "mat" }, svg);
+  const tip = el("text", { x: MAT.x + MAT.w / 2, y: MAT.y + MAT.h / 2, class: "mat-tip" }, svg);
+  [["Tap or drag a chip to put it here", 0], ["Tap a chip to pick it. Drag across the mat to pick many.", 46]].forEach(([t, dy], i) => {
+    const ts = el("tspan", { x: MAT.x + MAT.w / 2, dy: i ? dy : 0 }, tip); ts.textContent = t; if (i) ts.setAttribute("font-size", 22);
+  });
+  const tray = {};
+  [[1, 110], [-1, 270]].forEach(([v, y]) => {
+    const g = el("g", { class: "tray-chip " + (v > 0 ? "p" : "n"), transform: `translate(90,${y})`, "data-tray": v, tabindex: 0, role: "button",
+      "aria-label": v > 0 ? "Add a positive chip" : "Add a negative chip" }, svg);
+    el("circle", { r: 40 }, g);
+    el("text", { "font-size": 46 }, g).textContent = v > 0 ? "+" : "−";
+    el("text", { x: 90, y: y + 76, class: "tray-lbl" }, svg).textContent = v > 0 ? "+1" : "−1";
+    tray[v] = g;
+  });
+  const trash = el("g", { class: "trash" }, svg);
+  const trashArt = el("g", {}, trash);
+  el("path", { class: "body", d: "M52 450 L128 450 L120 560 L60 560 Z" }, trashArt);
+  el("path", { class: "lid", d: "M44 438 L136 438 M76 438 L78 426 L102 426 L104 438" }, trashArt);
+  el("path", { class: "stripe", d: "M76 468 L78 542 M90 468 L90 542 M104 468 L102 542" }, trashArt);
+  el("text", { x: 90, y: 596 }, trashArt).textContent = "Trash";
+  const chipLayer = el("g", {}, svg);
+  const fxLayer = el("g", {}, svg);
+  const boxEl = el("rect", { class: "box", visibility: "hidden" }, svg);
+
+  // ---- State: each mode keeps its own mat ----
+  let mode = "play", nextId = 1;
+  const S = {
+    play: { chips: [], showTotal: false },
+    calc: { chips: [], q: null, added: { 1: 0, "-1": 0 }, removed: { 1: 0, "-1": 0 } },
+    game: { chips: [], c: null, rule: "add", solved: 0, added: { 1: 0, "-1": 0 }, removed: { 1: 0, "-1": 0 }, done: false },
+  };
+  const st = () => S[mode];
+  const chips = () => S[mode].chips;
+  const canAdd = () => !(mode === "game" && S.game.rule === "take");
+  const canRemove = () => !(mode === "game" && S.game.rule === "add");
+
+  function makeChip(v, x, y) {
+    const c = { id: nextId++, v, x, y, on: false };
+    c.el = el("g", { class: "chip " + (v > 0 ? "p" : "n"), "data-chip": c.id }, chipLayer);
+    c.inner = el("g", {}, c.el);
+    el("circle", { r: R + 6, class: "sel" }, c.inner);
+    el("circle", { r: R, class: "face" }, c.inner);
+    el("text", { "font-size": 38 }, c.inner).textContent = v > 0 ? "+" : "−";
+    place(c);
+    chips().push(c);
+    return c;
+  }
+  const place = c => c.el.setAttribute("transform", `translate(${c.x},${c.y})`);
+  const setOn = (c, on) => { c.on = on; c.el.classList.toggle("on", on); };
+  const selected = () => chips().filter(c => c.on);
+
+  // Free spots: a 72-unit grid on the mat. Green chips fill from the top, red chips from the bottom, so they start apart.
+  const COLS = [], ROWS = [];
+  for (let x = MAT.x + 50; x <= MAT.x + MAT.w - 40; x += STEP) COLS.push(x);
+
+  // The board is as tall as the space it gets (the width stays 1000), so the mat fills the screen on any window shape.
+  let H = 620;
+  function layout() {
+    const box = svg.parentElement.getBoundingClientRect();
+    const fit = window.innerWidth > 860 && window.innerHeight >= 520 && box.width > 0;
+    const h = fit ? Math.round(Math.min(Math.max(1000 * (box.height - 18) / (box.width - 18), 560), 1000)) : 620;
+    if (h === H && ROWS.length) return;
+    H = h;
+    svg.setAttribute("viewBox", `0 0 1000 ${H}`);
+    MAT.h = H - 24;
+    trayBg.setAttribute("height", MAT.h); matBg.setAttribute("height", MAT.h);
+    tip.setAttribute("y", MAT.y + MAT.h / 2);
+    trashArt.setAttribute("transform", `translate(0,${H - 620})`);
+    TRASH.y = 420 + H - 620;
+    ROWS.length = 0;
+    for (let y = MAT.y + 48; y <= MAT.y + MAT.h - 40; y += STEP) ROWS.push(y);
+    Object.values(S).forEach(m => m.chips.forEach(c => { c.y = clampY(c.y); place(c); }));
+  }
+  const isFree = (x, y) => chips().every(c => Math.hypot(c.x - x, c.y - y) > 2 * R + 4);
+  function freeSpot(v, near) {
+    const spots = [];
+    for (const y of ROWS) for (const x of COLS) if (isFree(x, y)) spots.push({ x, y });
+    if (!spots.length) return null;
+    if (near) return spots.sort((a, b) => Math.hypot(a.x - near.x, a.y - near.y) - Math.hypot(b.x - near.x, b.y - near.y))[0];
+    return v > 0 ? spots[0] : spots.sort((a, b) => b.y - a.y || a.x - b.x)[0];
+  }
+  function addChip(v, near, counted = true) {
+    if (chips().length >= MAX_CHIPS) { say("The mat is full. Make zero pairs or clear some chips.", "nope"); return null; }
+    const s = freeSpot(v, near); if (!s) return null;
+    const c = makeChip(v, s.x, s.y);
+    if (counted) countAdd(v);
+    if (slow) pop(c);
+    return c;
+  }
+  const countAdd = v => { if (st().added) st().added[v]++; };
+  const countRemove = v => { if (st().removed) st().removed[v]++; };
+  function removeChip(c) { c.el.remove(); const a = chips(); a.splice(a.indexOf(c), 1); }
+
+  // ---- Animation ----
+  function tween(ms, fn, done) {
+    if (!slow) { fn(1); done && done(); return; }
+    const t0 = performance.now();
+    const step = t => { const k = Math.min(1, (t - t0) / ms); fn(k < .5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2); if (k < 1) requestAnimationFrame(step); else done && done(); };
+    requestAnimationFrame(step);
+  }
+  function pop(c) { tween(260, k => c.inner.setAttribute("transform", `scale(${0.4 + 0.6 * k})`), () => c.inner.removeAttribute("transform")); }
+
+  // Touching chips of opposite colour vanish together. Every moved chip looks for its own partner, so groups pair many at once.
+  function findPairs(moved) {
+    const used = new Set(), pairs = [];
+    for (const m of moved) {
+      if (used.has(m)) continue;
+      let best = null, bd = 2 * R * 0.95;
+      for (const c of chips()) {
+        if (c === m || c.v === m.v || used.has(c)) continue;
+        const d = Math.hypot(c.x - m.x, c.y - m.y);
+        if (d < bd) { bd = d; best = c; }
+      }
+      if (best) { used.add(m); used.add(best); pairs.push([m, best]); }
+    }
+    return pairs;
+  }
+  function vanish(pairs) {
+    if (!pairs.length) return;
+    pairs.forEach(([a, b]) => { removeChip(a); removeChip(b); fxLayer.append(a.el, b.el); setOn(a, false); setOn(b, false); });
+    let lx = 0, ly = 0;
+    pairs.forEach(([a, b]) => {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, ax = a.x, ay = a.y, bx = b.x, by = b.y;
+      lx += mx; ly += my;
+      tween(380, k => {
+        a.el.setAttribute("transform", `translate(${ax + (mx - R * .8 - ax) * k},${ay + (my - ay) * k})`);
+        b.el.setAttribute("transform", `translate(${bx + (mx + R * .8 - bx) * k},${by + (my - by) * k})`);
+      }, () => {
+        const z = el("text", { x: mx, y: my, class: "zp-zero" }, fxLayer); z.textContent = "0";
+        tween(650, k => {
+          const s = 1 - k;
+          a.inner.setAttribute("transform", `scale(${s})`); b.inner.setAttribute("transform", `scale(${s})`);
+          z.setAttribute("opacity", 1 - k); z.setAttribute("font-size", 44 + 30 * k);
+        }, () => { a.el.remove(); b.el.remove(); z.remove(); });
+      });
+    });
+    lx /= pairs.length; ly /= pairs.length;
+    const t = el("text", { x: Math.min(Math.max(lx, MAT.x + 120), MAT.x + MAT.w - 120), y: ly - 50 < MAT.y + 40 ? ly + 80 : ly - 50, class: "zp-lbl" }, fxLayer);
+    t.textContent = pairs.length === 1 ? "Zero pair!" : `${pairs.length} zero pairs!`;
+    const ty = +t.getAttribute("y");
+    tween(1500, k => { t.setAttribute("y", ty - 30 * k); t.setAttribute("opacity", k < .6 ? 1 : 1 - (k - .6) / .4); }, () => t.remove());
+  }
+
+  // ---- Pointer: drag chips, drag from the tray, box select, drop on the trash ----
+  let drag = null;
+  const pt = e => { const m = svg.getScreenCTM().inverse(); return { x: e.clientX * m.a + e.clientY * m.c + m.e, y: e.clientX * m.b + e.clientY * m.d + m.f }; };
+  const inTrash = p => p.x >= TRASH.x - 10 && p.x <= TRASH.x + TRASH.w + 10 && p.y >= TRASH.y - 10 && p.y <= TRASH.y + TRASH.h + 20;
+  const clampX = x => Math.min(Math.max(x, MAT.x + R + 4), MAT.x + MAT.w - R - 4);
+  const clampY = y => Math.min(Math.max(y, MAT.y + R + 4), MAT.y + MAT.h - R - 4);
+
+  svg.addEventListener("pointerdown", e => {
+    if (drag) return;
+    const p = pt(e);
+    const t = e.target.closest("[data-tray]"), ce = e.target.closest("[data-chip]");
+    if (t) {
+      const v = +t.dataset.tray;
+      if (!canAdd()) { say("In this challenge you can only take away chips.", "nope"); return; }
+      if (chips().length >= MAX_CHIPS) { say("The mat is full. Make zero pairs or clear some chips.", "nope"); return; }
+      const c = makeChip(v, p.x, p.y);
+      drag = { kind: "chips", list: [c], start: [{ x: p.x, y: p.y }], p0: p, moved: false, fromTray: true };
+    } else if (ce) {
+      const c = chips().find(k => k.id === +ce.dataset.chip); if (!c) return;
+      const list = c.on ? selected() : [c];
+      list.forEach(k => chipLayer.appendChild(k.el));
+      drag = { kind: "chips", list, start: list.map(k => ({ x: k.x, y: k.y })), p0: p, moved: false, hit: c };
+    } else {
+      drag = { kind: "box", p0: p, moved: false };
+    }
+    svg.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = pt(e), dx = p.x - drag.p0.x, dy = p.y - drag.p0.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+    drag.moved = true;
+    if (drag.kind === "chips") {
+      drag.list.forEach((c, i) => { c.x = drag.start[i].x + dx; c.y = drag.start[i].y + dy; place(c); c.el.classList.add("drag"); });
+      trash.classList.toggle("hot", inTrash(p) && canRemove());
+    } else {
+      const x = Math.min(p.x, drag.p0.x), y = Math.min(p.y, drag.p0.y);
+      Object.entries({ x, y, width: Math.abs(dx), height: Math.abs(dy), visibility: "visible" }).forEach(([k, v]) => boxEl.setAttribute(k, v));
+    }
+  });
+  const endDrag = e => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    const p = pt(e);
+    trash.classList.remove("hot");
+    if (d.kind === "box") {
+      boxEl.setAttribute("visibility", "hidden");
+      if (!d.moved) { chips().forEach(c => setOn(c, false)); return; }
+      const x0 = Math.min(p.x, d.p0.x), x1 = Math.max(p.x, d.p0.x), y0 = Math.min(p.y, d.p0.y), y1 = Math.max(p.y, d.p0.y);
+      chips().forEach(c => setOn(c, c.x >= x0 - R / 2 && c.x <= x1 + R / 2 && c.y >= y0 - R / 2 && c.y <= y1 + R / 2));
+      return;
+    }
+    d.list.forEach(c => c.el.classList.remove("drag"));
+    if (!d.moved) {
+      if (d.fromTray) {                       // a tap on the tray adds one chip in the next free spot
+        const c = d.list[0]; removeChip(c);
+        addChip(c.v);
+        changed();
+      } else setOn(d.hit, !d.hit.on);         // a tap on a chip picks it (or un-picks it)
+      return;
+    }
+    if (inTrash(p)) {
+      if (d.fromTray) { removeChip(d.list[0]); return; }
+      if (!canRemove()) {
+        say("In this challenge you can only add chips. The trash is closed.", "nope");
+        d.list.forEach((c, i) => { c.x = d.start[i].x; c.y = d.start[i].y; place(c); });
+        return;
+      }
+      d.list.forEach(c => { removeChip(c); countRemove(c.v); });
+      changed();
+      return;
+    }
+    d.list.forEach(c => { c.x = clampX(c.x); c.y = clampY(c.y); place(c); });
+    if (d.fromTray) countAdd(d.list[0].v);
+    vanish(findPairs(d.list));
+    changed();
+  };
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("keydown", e => {
+    const t = e.target.closest && e.target.closest("[data-tray]");
+    if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (canAdd()) { addChip(+t.dataset.tray); changed(); } }
+  });
+  document.addEventListener("keydown", e => {
+    if ((e.key === "Delete" || e.key === "Backspace") && !/INPUT/.test(document.activeElement.tagName)) { e.preventDefault(); delSelected(); }
+  });
+
+  // ---- Tools ----
+  $("zp").onclick = () => {
+    if (chips().length + 2 > MAX_CHIPS) { say("The mat is full. Make zero pairs or clear some chips.", "nope"); return; }
+    // a green and a red side by side (not touching), so they stay until a student pushes them together
+    for (const y of ROWS.slice().sort((a, b) => Math.abs(a - H / 2) - Math.abs(b - H / 2)))
+      for (let i = 0; i + 1 < COLS.length; i++)
+        if (isFree(COLS[i], y) && isFree(COLS[i + 1], y)) {
+          const a = makeChip(1, COLS[i], y), b = makeChip(-1, COLS[i + 1], y);
+          if (slow) { pop(a); pop(b); }
+          say("A zero pair is worth 0. The total stays the same.");
+          changed(); return;
+        }
+    say("There is no room. Make zero pairs or clear some chips.", "nope");
+  };
+  $("dup").onclick = () => {
+    if (!canAdd()) { say("In this challenge you can only take away chips.", "nope"); return; }
+    const sel = selected();
+    if (!sel.length) { say("Tap chips to pick them first, then press Copy."); return; }
+    const made = [];
+    sel.forEach(c => { setOn(c, false); const k = addChip(c.v, { x: c.x + STEP, y: c.y }); if (k) made.push(k); });
+    made.forEach(k => setOn(k, true));
+    changed();
+  };
+  function delSelected() {
+    const sel = selected();
+    if (!sel.length) { say("Tap chips to pick them first, then press Delete."); return; }
+    if (!canRemove()) { say("In this challenge you can only add chips.", "nope"); return; }
+    sel.forEach(c => { removeChip(c); countRemove(c.v); });
+    changed();
+  }
+  $("del").onclick = delSelected;
+  $("clear").onclick = () => { chips().slice().forEach(removeChip); say(""); changed(); };
+
+  // ---- Readouts ----
+  const total = () => chips().reduce((s, c) => s + c.v, 0);
+  const nPos = () => chips().filter(c => c.v > 0).length;
+  const nNeg = () => chips().filter(c => c.v < 0).length;
+  // Big questions shrink to fit the panel (−10 − (−10) is the longest).
+  function fitBig(e) { e.style.fontSize = ""; let f = parseFloat(getComputedStyle(e).fontSize); while (e.scrollWidth > e.clientWidth && f > 20) { f -= 2; e.style.fontSize = f + "px"; } }
+  window.addEventListener("resize", () => ["qText", "cText"].forEach(id => fitBig($(id))));
+  function say(html, kind = "") { const m = $("msg"); m.innerHTML = html; m.className = "feedback " + kind; }
+  function changed() {
+    tip.style.display = chips().length ? "none" : "";
+    if (mode === "play") {
+      const t = $("total");
+      t.className = "big " + (S.play.showTotal ? cls(total()) : "hidden");
+      t.textContent = S.play.showTotal ? fmt(total()) : "Hidden";
+      $("counts").innerHTML = S.play.showTotal ? `${chipWord(nPos(), 1)} and ${chipWord(nNeg(), -1)}` : "";
+      $("totalBtn").textContent = S.play.showTotal ? "Hide total" : "Show total";
+    }
+    tray[1].classList.toggle("off", !canAdd()); tray[-1].classList.toggle("off", !canAdd());
+    trash.classList.toggle("off", !canRemove());
+    $("dup").disabled = !canAdd(); $("del").disabled = !canRemove();
+  }
+  $("totalBtn").onclick = () => { S.play.showTotal = !S.play.showTotal; changed(); };
+
+  // ---- Add and subtract ----
+  let op = "+";
+  document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => {
+    op = b.dataset.op;
+    document.querySelectorAll("[data-op]").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+  });
+  const readNum = s => { s = s.trim().replace(/[−–]/g, "-").replace(/^\+/, ""); return /^-?\d+$/.test(s) ? +s : NaN; };
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const nz = (a, b) => { let n; do n = rnd(a, b); while (n === 0); return n; };
+  function setChips(n) {
+    chips().slice().forEach(removeChip);
+    for (let i = 0; i < Math.abs(n); i++) addChip(Math.sign(n), null, false);
+  }
+  function startQ(a, o, b) {
+    const s = S.calc;
+    s.q = { a, op: o, b, ans: o === "+" ? a + b : a - b };
+    s.added = { 1: 0, "-1": 0 }; s.removed = { 1: 0, "-1": 0 };
+    setChips(a);
+    $("qText").innerHTML = `${span(a)}<span class="op">${o === "+" ? "+" : "−"}</span>${span(b, paren)}<span class="op">=</span>?`;
+    const start = a === 0 ? "Start with no chips." : `Start with ${chipWord(Math.abs(a), Math.sign(a))}.`;
+    const act = b === 0 ? (o === "+" ? "Add nothing." : "Take away nothing.") : `${o === "+" ? "Add" : "Take away"} ${chipWord(Math.abs(b), Math.sign(b))}.`;
+    fitBig($("qText"));
+    $("qWords").innerHTML = `${start}<br>${act}`;
+    say("");
+    changed();
+  }
+  $("newQ").onclick = () => {
+    const o = Math.random() < .5 ? "+" : "-";
+    let a = nz(-6, 6), b = nz(-6, 6);
+    // about half the take-away questions need zero pairs (not enough chips of that colour to take)
+    if (o === "-" && Math.random() < .5) { b = Math.sign(b) * rnd(1, 5); a = Math.sign(a) === Math.sign(b) ? Math.sign(b) * rnd(0, Math.abs(b) - 1) : a; }
+    $("qa").value = fmt(a).replace("−", "-"); $("qb").value = fmt(b).replace("−", "-");
+    document.querySelector(`[data-op="${o}"]`).click();
+    startQ(a, o, b);
+  };
+  $("goQ").onclick = () => {
+    const a = readNum($("qa").value), b = readNum($("qb").value);
+    if (isNaN(a) || isNaN(b) || Math.abs(a) > 10 || Math.abs(b) > 10) { say("Type two numbers from −10 to 10.", "nope"); return; }
+    startQ(a, op, b);
+  };
+  ["qa", "qb"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("goQ").click(); }));
+
+  function calcHint() {
+    const { a, op: o, b } = S.calc.q, s = S.calc, sg = Math.sign(b), k = Math.abs(b);
+    const both = nPos() && nNeg();
+    const finish = both ? "Now make zero pairs. Drag a green chip onto a red chip." : "Count the chips. That is your answer. Press Check.";
+    if (o === "+") {
+      const left = k - (b ? s.added[sg] - s.removed[sg] : 0);
+      if (left > 0) return `Put in ${chipWord(left, sg).replace(" ", " more ")}.`;
+      if (left < 0) return `That is too many. Drag ${chipWord(-left, sg)} to the trash.`;
+      return finish;
+    }
+    const left = k - (b ? s.removed[sg] : 0);
+    if (left > 0) {
+      const have = sg > 0 ? nPos() : nNeg();
+      if (have >= left) return `Take away ${chipWord(left, sg)}. Drag ${left === 1 ? "it" : "them"} to the trash.`;
+      const need = left - have;
+      return `You need to take away ${chipWord(left, sg)}, but there ${have === 1 ? "is" : "are"} only ${have}. Add ${need} zero pair${need === 1 ? "" : "s"} first. A zero pair is worth 0.`;
+    }
+    return finish;
+  }
+
+  // ---- Challenge ----
+  document.querySelectorAll("[data-rule]").forEach(b => b.onclick = () => {
+    S.game.rule = b.dataset.rule;
+    document.querySelectorAll("[data-rule]").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+    newChallenge();
+  });
+  const RULE_WORDS = { add: "You can only <b>add</b> chips.", take: "You can only <b>take away</b> chips.", any: "You can <b>add</b> or <b>take away</b> chips." };
+  function startChallenge() {
+    const g = S.game;
+    g.added = { 1: 0, "-1": 0 }; g.removed = { 1: 0, "-1": 0 }; g.done = false;
+    setChips(g.c.start);
+    $("cText").innerHTML = `${span(g.c.start)}<span class="op" style="color:var(--muted)">→</span>${span(g.c.goal)}`;
+    $("cWords").innerHTML = `Start with ${g.c.start ? chipWord(Math.abs(g.c.start), Math.sign(g.c.start)) : "no chips"}. Make ${span(g.c.goal)}.<br>${RULE_WORDS[g.rule]}`;
+    $("solved").textContent = g.solved ? `Solved: ${g.solved}` : "";
+    say("");
+    changed();
+  }
+  function newChallenge() {
+    let s, t;
+    do { s = rnd(-6, 6); t = rnd(-6, 6); } while (s === t || s === 0 || Math.abs(s - t) > 8);
+    S.game.c = { start: s, goal: t };
+    startChallenge();
+  }
+  $("newC").onclick = newChallenge;
+  function gameHint() {
+    const g = S.game, need = g.c.goal - total(), k = Math.abs(need), both = nPos() && nNeg();
+    if (need === 0) return both ? "You have it! Make the zero pairs vanish to see it, or press Check." : "You have it! Press Check.";
+    const sg = Math.sign(need);
+    const addTip = `Add ${chipWord(k, sg)}.` + ((sg > 0 ? nNeg() : nPos()) ? " They will make zero pairs." : "");
+    const opp = -sg, have = opp > 0 ? nPos() : nNeg();
+    const takeTip = have >= k ? `Take away ${chipWord(k, opp)}.` + (opp < 0 ? " Taking away a negative makes the number bigger!" : "")
+      : `Take away ${chipWord(k, opp)}. There ${have === 1 ? "is" : "are"} only ${have}, so add ${k - have} zero pair${k - have === 1 ? "" : "s"} first.`;
+    return `You need ${sg > 0 ? k + " more" : k + " less"}. ` + (g.rule === "add" ? addTip : g.rule === "take" ? takeTip
+      : have >= k ? `Add ${chipWord(k, sg)}, or take away ${chipWord(k, opp)}.` : addTip);
+  }
+  // The number sentence the student acted out: start + (what was added) − (what was taken away).
+  function gameSentence() {
+    const g = S.game, add = g.added[1] - g.added[-1], take = g.removed[1] - g.removed[-1];
+    let s = span(g.c.start);
+    if (g.added[1] || g.added[-1]) s += ` + ${span(add, paren)}`;
+    if (g.removed[1] || g.removed[-1]) s += ` − ${span(take, paren)}`;
+    return `<span class="num">${s} = ${span(g.c.goal)}</span>`;
+  }
+
+  // ---- Check, hint, start over ----
+  $("hint").onclick = () => {
+    if (mode === "calc") say(S.calc.q ? calcHint() : "Press New question or type one.");
+    else say(gameHint());
+  };
+  $("check").onclick = () => {
+    const t = total();
+    if (mode === "calc") {
+      const q = S.calc.q;
+      if (t === q.ans) say(`Yes! <span class="num">${span(q.a)} ${q.op === "+" ? "+" : "−"} ${span(q.b, paren)} = ${span(q.ans)}</span>`, "good");
+      else say(`Not yet. Your chips make <span class="num">${span(t)}</span>. Try Show hint.`, "nope");
+    } else {
+      const g = S.game;
+      if (t === g.c.goal) {
+        if (!g.done) { g.done = true; g.solved++; $("solved").textContent = `Solved: ${g.solved}`; }
+        say(`Yes! ${gameSentence()}`, "good");
+      } else say(`Not yet. Your chips make <span class="num">${span(t)}</span>. You want ${span(g.c.goal)}.`, "nope");
+    }
+  };
+  $("restart").onclick = () => { if (mode === "calc") startQ(S.calc.q.a, S.calc.q.op, S.calc.q.b); else startChallenge(); };
+
+  // ---- Modes ----
+  function setMode(m) {
+    mode = m;
+    chipLayer.replaceChildren();
+    chips().forEach(c => { setOn(c, false); chipLayer.appendChild(c.el); });
+    document.querySelectorAll("[data-mode]").forEach(b => { const on = b.dataset.mode === m; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    document.querySelectorAll("[data-show]").forEach(n => n.classList.toggle("on", n.dataset.show.split(" ").includes(m)));
+    say("");
+    changed();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { setMode(b.dataset.mode); ["qText", "cText"].forEach(id => fitBig($(id))); });
+
+  // First visit: an empty playground (its tip shows how to start), a question and a challenge ready.
+  layout();
+  new ResizeObserver(layout).observe(svg.parentElement);
+  mode = "calc"; startQ(3, "+", -5);
+  mode = "game"; S.game.c = { start: 5, goal: 3 }; startChallenge();
+  mode = "play";
+  setMode("play");
+})();
+</script>
+
+</body>
+</html>
