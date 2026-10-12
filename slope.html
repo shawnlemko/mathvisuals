@@ -148,6 +148,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .hide-btn { margin-left: auto; font-family: var(--font-display); font-size: 1.05rem; padding: 10px 16px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .hide-btn:hover { background: var(--sheet); color: var(--pt); }
 h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 12px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+.grid-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
 @media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 </style>
 
@@ -174,8 +179,8 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
         </div>
         <div class="eq">
           <span>=</span>
-          <span class="frac"><span class="c-green" id="subRise"></span><span class="c-orange" id="subRun"></span></span><span>=</span>
-          <span class="frac"><span class="c-green" id="fRise"></span><span class="c-orange" id="fRun"></span></span>
+          <span id="work" style="display: contents"><span class="frac"><span class="c-green" id="subRise"></span><span class="c-orange" id="subRun"></span></span><span>=</span>
+          <span class="frac"><span class="c-green" id="fRise"></span><span class="c-orange" id="fRun"></span></span></span>
           <span id="ansWrap"></span>
           <button type="button" id="hideBtn" class="hide-btn" aria-pressed="false">Hide slope</button>
         </div>
@@ -190,6 +195,10 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
         <div class="toggles">
           <label><input type="checkbox" id="tTri" checked> Show rise and run</label>
           <label><input type="checkbox" id="tCoord" checked> Show coordinates</label>
+        </div>
+        <div class="grid-row">
+          <span>Grid</span>
+          <span class="seg" id="quad" role="group" aria-label="Grid"><button type="button" data-v="1" aria-pressed="false">Quadrant I</button><button type="button" data-v="4" aria-pressed="true">All four quadrants</button></span>
         </div>
       </section>
 
@@ -361,18 +370,29 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
   const { fmt, gcd } = MathBoard;
   const $ = id => document.getElementById(id);
   const paren = n => (n < 0 ? "(" + fmt(n) + ")" : String(n));
-  const b = MathBoard.create($("plane"), { min: -10, max: 10 });
-
-  // Drawing order: fill, line, run/rise segments, labels, points.
-  const tri = b.fill("green");
-  const ln = b.line();
-  const segRun = b.segment("orange"), segRise = b.segment("green");
-  const lblRun = b.label("orange"), lblRise = b.label("green");
-  let A, B;
+  let b, tri, ln, segRun, segRise, lblRun, lblRise, A, B;
   let hidden = false; // "Hide slope" button: students predict before the answer shows
   const differs = other => (x, y) => !(x === other().x && y === other().y); // the two points must differ
-  A = b.point({ name: "A", x: 2, y: 2, onMove: render, allow: differs(() => B) });
-  B = b.point({ name: "B", x: 8, y: 6, onMove: render, allow: differs(() => A) });
+
+  // Builds the plane for Quadrant I (0 to 10) or all four quadrants (−10 to 10), keeping A and B where they fit.
+  // Quadrant I uses bigger squares so the board stays the same size on screen.
+  function setup(quads) {
+    const svg = $("plane"), a = A ? { x: A.x, y: A.y } : { x: 2, y: 2 }, bb = B ? { x: B.x, y: B.y } : { x: 8, y: 6 };
+    svg.replaceChildren();
+    b = quads === 1 ? MathBoard.create(svg, { min: 0, max: 10, unit: 58, pad: 40 }) : MathBoard.create(svg, { min: -10, max: 10 });
+    // Drawing order: fill, line, run/rise segments, labels, points.
+    tri = b.fill("green");
+    ln = b.line();
+    segRun = b.segment("orange"); segRise = b.segment("green");
+    lblRun = b.label("orange"); lblRise = b.label("green");
+    let ax = b.clamp(a.x), ay = b.clamp(a.y), bx = b.clamp(bb.x), by = b.clamp(bb.y);
+    if (ax === bx && ay === by) { ax = 2; ay = 2; bx = 8; by = 6; }
+    A = b.point({ name: "A", x: ax, y: ay, onMove: render, allow: differs(() => B) });
+    B = b.point({ name: "B", x: bx, y: by, onMove: render, allow: differs(() => A) });
+    svg.setAttribute("aria-label", (quads === 1 ? "First-quadrant grid" : "Coordinate plane") + " with a line through points A and B");
+    document.querySelectorAll("#quad button").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.v === quads)));
+  }
+  setup(4);
 
   function render() {
     const rise = B.y - A.y, run = B.x - A.x;
@@ -390,9 +410,9 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
     b.show(segRun, show && run !== 0);
     b.show(segRise, show && rise !== 0);
     b.show(tri, show && rise !== 0 && run !== 0);
-    if (show && run !== 0) lblRun.set("run = " + fmt(run), (b.sx(A.x) + b.sx(C.x)) / 2, b.sy(A.y) + (rise > 0 ? 32 : -14));
+    if (show && !hidden && run !== 0) lblRun.set("run = " + fmt(run), (b.sx(A.x) + b.sx(C.x)) / 2, b.sy(A.y) + (rise > 0 ? 32 : -14));
     else lblRun.hide();
-    if (show && rise !== 0) {
+    if (show && !hidden && rise !== 0) {
       // Label sits outside the triangle unless that would run off the grid edge.
       const right = run >= 0 ? C.x <= b.max - 4 : C.x < b.min + 4;
       lblRise.set("rise = " + fmt(rise), b.sx(C.x) + (right ? 12 : -12), (b.sy(C.y) + b.sy(B.y)) / 2 + 8, right ? "start" : "end");
@@ -432,13 +452,14 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
       }
     }
     if (hidden) {
-      ans.innerHTML = `<span>=</span> <span class="answer hidden">?</span>`;
-      $("fRise").textContent = "?"; $("fRun").textContent = "?";
+      ans.innerHTML = `<span class="answer hidden">?</span>`; // the line's leading "=" already sits before it
     } else { pill.textContent = kind; pill.style.color = color; note.textContent = text; }
     $("verdict").hidden = hidden; // the verdict would give the answer away
+    // Hiding also hides the work (substitution, rise and run values) so students do it themselves.
+    $("work").style.display = hidden ? "none" : "contents";
 
-    $("rise").value = rise; $("riseOut").textContent = fmt(rise);
-    $("run").value = run; $("runOut").textContent = fmt(run);
+    $("rise").value = rise; $("riseOut").textContent = hidden ? "?" : fmt(rise);
+    $("run").value = run; $("runOut").textContent = hidden ? "?" : fmt(run);
   }
 
   function place(ax, ay, bx, by) { A.x = ax; A.y = ay; B.x = bx; B.y = by; render(); }
@@ -459,6 +480,7 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
   $("run").addEventListener("input", () => fromSliders("run"));
 
   ["tTri", "tCoord"].forEach(id => $(id).addEventListener("change", render));
+  document.querySelectorAll("#quad button").forEach(x => x.addEventListener("click", () => { setup(+x.dataset.v); render(); }));
   $("hideBtn").addEventListener("click", () => {
     hidden = !hidden;
     $("hideBtn").textContent = hidden ? "Show slope" : "Hide slope";

@@ -180,6 +180,28 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
 .g-fit { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
 .g-pt.hit { fill: var(--green); transform-box: fill-box; transform-origin: center; }
 .g-pair.hit { fill: var(--green); }
+/* Build function: the start value (green) and the rate of change (orange) build y = mx + b one step at a time. */
+.fit button.alt { margin-top: 10px; background: var(--sheet); color: var(--pt); }
+.fit button.alt:hover { background: var(--chip); }
+.fn { margin-top: 12px; text-align: left; }
+.fn-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 2px; }
+.fn-cap { font-weight: 700; color: var(--muted); font-size: 1rem; }
+.fn-val { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.fn-row.start .fn-val { color: var(--green); } .fn-row.rate .fn-val { color: var(--orange); }
+.fn-row.bad .fn-val, .fn-row.bad .fn-cap { color: var(--warn); }
+.fn-eq { margin-top: 8px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 10px; overflow-wrap: anywhere; }
+.fn-eq.long { font-size: 1.4rem; }
+.fn-eq i { font-style: italic; color: var(--pt); }
+.e-rate { color: var(--orange); } .e-start { color: var(--green); }
+.e-blank { display: inline-block; width: 1.4em; height: 1em; vertical-align: -0.1em; border: 2px dashed var(--muted); border-radius: 6px; }
+.g-run, .g-rise { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.g-back { stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 10 8; }
+.g-run.bad, .g-rise.bad { stroke: var(--warn); }
+.mk-rate { fill: var(--orange); } .mk-back { fill: var(--green); } .mk-bad { fill: var(--warn); }
+.g-dlab { font-family: var(--font-num); font-size: 24px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.g-dlab.rate { fill: var(--orange); } .g-dlab.back { fill: var(--green); } .g-dlab.bad { fill: var(--warn); }
+.g-start { fill: none; stroke: var(--green); stroke-width: 5; transform-box: fill-box; transform-origin: center; }
+.g-startpt { fill: var(--green); stroke: var(--sheet); stroke-width: 3; }
 .g-pair { fill: var(--pt); font-family: var(--font-num); font-size: 22px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
 </style>
 
@@ -201,6 +223,8 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
       <div class="fit">
         <button type="button" id="fitBtn" aria-pressed="false">Draw line</button>
         <p id="fitNote" aria-live="polite" hidden>Not linear</p>
+        <button type="button" id="buildBtn" class="alt">Build function</button>
+        <div class="fn" id="fn" aria-live="polite" hidden></div>
       </div>
     </div>
     <div class="board" id="board">
@@ -278,16 +302,179 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     return Math.max(1, Math.ceil(v / step - 1e-9), Math.ceil(maxV / step + 1 - 1e-9) * (maxV > v ? 1 : 0));
   }
 
-  function render() {
-    tidyRows();
+  // ---- Build function (Shawn): animate how the start value and the rate of change make the function ----
+  // build = how many steps are showing. With n = 0 in the table the start value comes first;
+  // otherwise the rate comes first, then the table is walked back to n = 0 to find the start value.
+  let build = 0, animStep = null;
+  const MINUS = "−";
+  // Numbers as written on the board: up to 4 decimals, otherwise a fraction like 1/3; a real minus sign.
+  function fmt(v) {
+    let s = null;
+    if (Math.abs(v * 1e4 - Math.round(v * 1e4)) < 1e-6) s = num(v);
+    else for (let q = 2; q <= 12 && s == null; q++) if (Math.abs(v * q - Math.round(v * q)) < 1e-6) s = `${Math.round(v * q)}/${q}`;
+    return (s ?? num(+v.toFixed(3))).replace("-", MINUS);
+  }
+  const signed = v => (v > 0 ? "+" : "") + fmt(v);
+  const paren = v => v < 0 ? `(${fmt(v)})` : fmt(v);
+  const same = (a, b) => Math.abs(a - b) <= 1e-6 * (1 + Math.abs(a) + Math.abs(b));
+
+  // Table sorted by x; the change between each row and the next; linear when every change has the same rate.
+  function model(pts) {
+    const rowsX = [];
+    let twoValues = null;
+    for (const p of [...pts].sort((a, b) => a.x - b.x)) {
+      const q = rowsX[rowsX.length - 1];
+      if (q && same(q.x, p.x)) { if (!same(q.y, p.y)) twoValues = p.x; continue; }
+      rowsX.push(p);
+    }
+    const pairs = rowsX.slice(1).map((p, i) => ({ a: rowsX[i], b: p, run: p.x - rowsX[i].x, rise: p.y - rowsX[i].y }));
+    pairs.forEach(q => q.rate = q.rise / q.run);
+    const m = pairs.length ? pairs[0].rate : 0;
+    const linear = pairs.length > 0 && twoValues == null && pairs.every(q => same(q.rate, m));
+    const first = rowsX[0], b = first ? first.y - m * first.x : 0, hasZero = !!first && same(first.x, 0);
+    let steps = [];
+    if (pairs.length && twoValues == null) steps = hasZero ? ["start", "rate", "fn"] : ["rate", "start", "fn"];
+    if (!linear) steps = steps.slice(0, steps.indexOf("rate") + 1);
+    return { rowsX, pairs, m, b, first, linear, hasZero, twoValues, steps };
+  }
+
+  // Draws the steps on the board. Only the step just added (animStep) animates.
+  function drawBuild(g, md, shown, X, Y) {
+    const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const defs = el("defs", {}, g);
+    for (const k of ["rate", "back", "bad"]) {
+      const mk = el("marker", { id: "mk-" + k, viewBox: "0 0 10 10", refX: 7, refY: 5, markerWidth: 4.5, markerHeight: 4.5, orient: "auto" }, defs);
+      el("path", { d: "M0 0L10 5L0 10z", class: "mk-" + k }, mk);
+    }
+    const clip = el("clipPath", { id: "buildClip" }, defs);
+    el("rect", { x: L - 4, y: T - 4, width: PW + 8, height: PH + 8 }, clip);
+    const arrows = el("g", { "clip-path": "url(#buildClip)" }, g);
+    // An arrow grows out of its start; a label fades in once its arrow is drawn.
+    const arrow = (x1, y1, x2, y2, cls, mk, play, delay, dur) => {
+      const a = el("line", { x1, y1, x2, y2, class: cls, "marker-end": `url(#mk-${mk})` }, arrows);
+      if (play && motion) {
+        a.style.transformBox = "view-box"; a.style.transformOrigin = `${x1}px ${y1}px`;
+        const k = Math.abs(x2 - x1) > Math.abs(y2 - y1) ? "scaleX(0)" : "scaleY(0)";
+        a.animate([{ transform: k }, { transform: "none" }], { duration: dur, delay, easing: "ease-out", fill: "backwards" });
+      }
+    };
+    const label = (x, y, txt, cls, anchor, play, delay) => {
+      const t = el("text", { x, y, class: "g-dlab " + cls, "text-anchor": anchor }, g, txt);
+      if (play && motion) t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay, fill: "backwards" });
+    };
+    const DOT = 15; // arrows stop short of the dots so the arrowheads show
+
+    if (shown.has("rate")) {
+      // A staircase between each row and the next: run across, then rise up (or down).
+      const play = animStep === "rate", per = Math.min(1100, 6000 / md.pairs.length);
+      md.pairs.forEach((q, i) => {
+        const ok = same(q.rate, md.m), cls = ok ? "rate" : "bad";
+        const px = X(q.a.x), py = Y(q.a.y), cx = X(q.b.x), qy = Y(q.b.y), d = i * per;
+        const up = qy <= py, wide = cx - px;
+        if (wide > DOT + 8) arrow(px + DOT, py, cx, py, "g-run" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d, per * 0.4);
+        if (Math.abs(qy - py) > DOT + 8) arrow(cx, py, cx, qy + (up ? DOT : -DOT), "g-rise" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d + per * 0.45, per * 0.4);
+        if (wide >= 44 || i === 0) {
+          label((px + cx) / 2, py + (up ? 30 : -14), signed(q.run), cls, "middle", play, d + per * 0.3);
+          const right = cx < L + PW - 90;
+          label(cx + (right ? 12 : -12), (py + qy) / 2 + 8, signed(q.rise), cls, right ? "start" : "end", play, d + per * 0.75);
+        }
+      });
+    }
+    if (shown.has("start")) {
+      const play = animStep === "start", sx0 = X(0), sy0 = Y(md.b);
+      let wait = 0;
+      if (!md.hasZero) {
+        // Walk back from the first row to n = 0 at the same rate (dashed: it is not in the table).
+        const f = md.first, px = X(f.x), py = Y(f.y), up = sy0 < py, dur = 700;
+        if (px - sx0 > DOT + 8) arrow(px - DOT, py, sx0, py, "g-back", "back", play, 0, dur);
+        if (Math.abs(sy0 - py) > 12) arrow(sx0, py, sx0, sy0, "g-back", "back", play, dur, dur);
+        label((px + sx0) / 2, py + (up ? 30 : -14), signed(-f.x), "back", "middle", play, dur * 0.6);
+        label(sx0 + 12, (py + sy0) / 2 + 8, signed(-f.x * md.m), "back", "start", play, dur * 1.6);
+        wait = dur * 2;
+        el("circle", { cx: sx0, cy: sy0, r: 11, class: "g-startpt" }, g);
+      }
+      const ring = el("circle", { cx: sx0, cy: sy0, r: 22, class: "g-start" }, g);
+      if (play && motion) ring.animate([{ transform: "scale(0)" }, { transform: "scale(1.6)", offset: 0.5 }, { transform: "scale(1)" }], { duration: 800, delay: wait, easing: "ease-out", fill: "backwards" });
+      if (!md.hasZero) label(sx0 + 16, sy0 + (sy0 < T + 40 ? 34 : -14), `(0, ${fmt(md.b)})`, "back", "start", play, wait + 300);
+    }
+  }
+
+  // The side panel: one row per step and the function filling in as each part is found.
+  function showPanel(md, shown) {
+    const box = $("fn");
+    box.hidden = !build && !buildMsg;
+    box.textContent = "";
+    if (buildMsg) { const r = document.createElement("div"); r.className = "fn-row bad"; r.innerHTML = `<span class="fn-cap"></span>`; r.firstChild.textContent = buildMsg; box.appendChild(r); }
+    const hx = $("hx").value.trim() || "x", hy = $("hy").value.trim() || "y";
+    const row = (cls, cap, val) => {
+      const r = document.createElement("div"); r.className = "fn-row " + cls;
+      const c = document.createElement("span"); c.className = "fn-cap"; c.textContent = cap;
+      const v = document.createElement("span"); v.className = "fn-val"; v.textContent = val;
+      r.append(c, v); box.appendChild(r);
+    };
+    for (const s of md.steps) {
+      if (!shown.has(s)) continue;
+      if (s === "start") {
+        if (md.hasZero) row("start", `Start value (${hx} = 0)`, fmt(md.b));
+        else row("start", "Start value", `${fmt(md.first.y)} ${MINUS} ${fmt(md.first.x)} × ${paren(md.m)} = ${fmt(md.b)}`);
+      } else if (s === "rate") {
+        const q = md.pairs[0];
+        if (md.linear) row("rate", "Rate of change", `${fmt(q.rise)} ÷ ${fmt(q.run)} = ${fmt(md.m)}`);
+        else {
+          const rates = md.pairs.map(p => fmt(p.rate)).filter((r, i, a) => a.indexOf(r) === i).slice(0, 3);
+          row("rate bad", "Rate changes: not linear", rates.join(", "));
+        }
+      }
+    }
+    if (!build || !md.linear) return;
+    // y = mx + b with blanks for the parts not found yet; a multi-letter heading reads "5 × hours".
+    const eq = document.createElement("div"); eq.className = "fn-eq";
+    const put = (txt, cls, tag = "span") => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; eq.appendChild(e); return e; };
+    const knowM = shown.has("rate"), knowB = shown.has("start"), m = md.m, b = md.b;
+    put(hy, "", "i"); put(" = ");
+    const short = hx.length === 1;
+    if (!knowM) { put("", "e-blank"); short ? put(hx, "", "i") : (put(" × "), put(hx, "", "i")); }
+    else if (!same(m, 0) || !knowB) {
+      const coef = short && same(m, 1) ? "" : short && same(m, -1) ? MINUS : short && fmt(m).includes("/") ? `(${fmt(m)})` : fmt(m);
+      if (coef) put(coef, "e-rate");
+      if (!short && coef) put(" × ");
+      put(hx, "", "i");
+    }
+    if (!knowB) { put(" + "); put("", "e-blank"); }
+    else if (knowM && same(m, 0)) put(fmt(b), "e-start");
+    else if (!same(b, 0)) { put(b < 0 ? ` ${MINUS} ` : " + "); put(fmt(Math.abs(b)), "e-start"); }
+    eq.classList.toggle("long", eq.textContent.length > 12);
+    box.appendChild(eq);
+    if (animStep && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // The part just found pops into the function; the last step pops the whole function.
+      const pops = animStep === "fn" ? [eq] : eq.querySelectorAll(animStep === "rate" ? ".e-rate" : ".e-start");
+      const late = animStep === "fn" ? 1200 : animStep === "start" && !md.hasZero ? 1500 : 700;
+      pops.forEach(e => { if (e !== eq) e.style.display = "inline-block"; e.animate([{ transform: "scale(0.4)", opacity: 0 }, { transform: "scale(1.3)", opacity: 1, offset: 0.6 }, { transform: "scale(1)" }], { duration: 600, delay: late, easing: "ease-out", fill: "backwards" }); });
+    }
+  }
+  let buildMsg = "";
+
+  function currentPts() {
     const pts = [];
     for (const tr of rows.children) {
       const [a, b] = tr.querySelectorAll("input");
       const x = parse(a), y = parse(b);
       if (x != null && y != null) pts.push({ x, y });
     }
+    return pts;
+  }
+
+  function render() {
+    tidyRows();
+    const pts = currentPts();
+    const md = model(pts), steps = md.steps;
+    if (build > steps.length) build = steps.length;
+    if (!animStep) setBuildBtn(steps);
+    const shown = new Set(steps.slice(0, build)), fnShown = shown.has("fn");
     const sx = scaleOf("sx"), sy = scaleOf("sy");
-    const maxX = Math.max(0, ...pts.map(p => p.x)), maxY = Math.max(0, ...pts.map(p => p.y));
+    const maxX = Math.max(0, ...pts.map(p => p.x));
+    // While building, the grid also reaches the start value so the work-back can land on the axis.
+    const maxY = Math.max(0, ...pts.map(p => p.y), build && md.linear ? md.b : 0);
     const nx = Math.min(400, squaresWith("mx", maxX, sx)), ny = Math.min(400, squaresWith("my", maxY, sy));
     const cw = PW / nx, ch = PH / ny;
     const X = v => L + v / sx * cw, Y = v => T + PH - v / sy * ch;
@@ -316,7 +503,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     // Drawing order: points, then the line over them, then the ordered-pair labels on top.
     let fit = null, missed = false;
     const onLine = new Set();
-    if (showFit && pts.length >= 2) {
+    if ((showFit || fnShown) && pts.length >= 2) {
       const n = pts.length, mx = pts.reduce((a, p) => a + p.x, 0) / n, my = pts.reduce((a, p) => a + p.y, 0) / n;
       const sxx = pts.reduce((a, p) => a + (p.x - mx) ** 2, 0), sxy = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0);
       if (sxx < 1e-9 * (1 + maxX)) { // every x is the same: a vertical line through all of them
@@ -338,6 +525,8 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
       el("rect", { x: L, y: T, width: PW, height: PH }, clip);
       line = el("line", { ...fit, class: "g-fit", "clip-path": "url(#plotClip)", pathLength: 1 }, g);
     }
+    if (build) drawBuild(g, md, shown, X, Y);
+    showPanel(md, shown);
     // Labels flip left or below near the right and top edges.
     for (const p of pts) {
       const px = X(p.x), py = Y(p.y);
@@ -346,7 +535,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     }
 
     // On a button press, the line sweeps across and each point it hits pops into green as the line reaches it.
-    if (animate && line && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if ((animate || animStep === "fn") && line && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const DUR = 1400, css = getComputedStyle(svg), blue = css.getPropertyValue("--pt").trim(), green = css.getPropertyValue("--green").trim();
       line.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: DUR, easing: "ease-in-out", fill: "backwards" });
       line.style.strokeDasharray = "1";
@@ -379,10 +568,28 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     showFit = !showFit;
     $("fitBtn").textContent = showFit ? "Hide line" : "Draw line";
     $("fitBtn").setAttribute("aria-pressed", String(showFit));
+    build = 0; buildMsg = ""; setBuildBtn();
     animate = showFit; render(); animate = false;
   });
+  // Build function walks one step per press; the label names the next step.
+  const NAMES = { start: "start value", rate: "rate of change", fn: "the function" };
+  function setBuildBtn(steps) {
+    const btn = $("buildBtn");
+    if (!build) btn.textContent = "Build function";
+    else btn.textContent = build < steps.length ? `Next: ${NAMES[steps[build]]}` : "Clear";
+  }
+  $("buildBtn").addEventListener("click", () => {
+    const pts = currentPts(), steps = model(pts).steps;
+    buildMsg = "";
+    if (!build && !steps.length) buildMsg = pts.length < 2 ? "Type at least two rows." : "One input has two outputs: not a function.";
+    else if (build >= steps.length) build = 0;
+    else { build++; animStep = steps[build - 1]; }
+    if (showFit) { showFit = false; $("fitBtn").textContent = "Draw line"; $("fitBtn").setAttribute("aria-pressed", "false"); }
+    render(); animStep = null;
+    setBuildBtn(steps);
+  });
   let animate = false;
-  document.addEventListener("input", render);
+  document.addEventListener("input", () => { buildMsg = ""; render(); });
   render();
 })();
 </script>

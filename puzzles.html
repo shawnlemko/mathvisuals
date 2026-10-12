@@ -163,7 +163,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 @media (max-width: 860px) { #board { min-height: 60vh; } }
 .side { display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 14px); }
 .side > * { flex: none; }
-.rule { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.3; margin: 0; }
+/* Instructions sit at the top, above the puzzle (Shawn). */
+.rule { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 3.4vh, 2rem); line-height: 1.25; margin: 0 0 clamp(8px, 1.4vh, 14px); }
 .rule em { font-style: normal; color: var(--green); }
 .prog { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; margin: 0; color: var(--muted); }
 .prog b { font-family: var(--font-num); color: var(--ink); }
@@ -184,7 +185,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .tile.part { border-color: var(--pt); color: var(--pt); background: var(--chip); }
 .tile.ans { border-color: var(--green); background: var(--green); color: var(--sheet); }
 .tile.miss { border-color: var(--bad); color: var(--bad); animation: shake 0.4s; }
-.krow.done .tile:not(.part):not(.ans) { opacity: 0.35; }
+.tile.x { border-color: var(--bad); color: var(--bad); text-decoration: line-through; text-decoration-thickness: 3px; }
+.tile.reveal { border-color: var(--orange); color: var(--orange); border-width: 4px; }
+.krow.done .tile:not(.part):not(.ans):not(.reveal) { opacity: 0.35; }
+.slot.filled.missed { border-style: solid; border-color: var(--orange); color: var(--orange); }
+.eqn .left { color: var(--bad); font-family: var(--font-display); font-size: 1.1em; }
 .arrow { font-size: calc(var(--t) * 0.4); color: var(--muted); width: calc(var(--t) * 0.5); text-align: center; flex: none; }
 .slot { border: 3px dashed var(--grid-major); background: transparent; color: var(--green); cursor: default; }
 .slot.filled { border-style: solid; border-color: var(--green); }
@@ -192,6 +197,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .kak.final .slot.filled:hover { background: var(--chip); }
 .slot.fpart { border-color: var(--pt) !important; color: var(--pt) !important; }
 .slot.fans { border-color: var(--purple) !important; background: var(--purple) !important; color: var(--sheet) !important; }
+.slot.x { border-color: var(--bad) !important; color: var(--bad) !important; text-decoration: line-through; }
+.slot.freveal { border-color: var(--orange) !important; color: var(--orange) !important; border-width: 4px; }
 .slot.miss { border-color: var(--bad) !important; color: var(--bad) !important; animation: shake 0.4s; }
 .eqn { width: calc(var(--t) * 3.4); flex: none; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--t) * 0.3); line-height: 1.25; padding-left: calc(var(--t) * 0.15); }
 .narrow .eqn { display: none; }
@@ -231,10 +238,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     </div>
   </header>
 
+  <p class="rule" id="rule"></p>
   <div class="stage">
     <div id="board"></div>
     <div class="side">
-      <p class="rule" id="rule"></p>
       <p class="prog" id="prog"></p>
       <p class="msg" id="msg" aria-live="polite"></p>
       <div class="pad" id="pad" aria-label="Number keys" hidden></div>
@@ -280,8 +287,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // On Medium and Hard the row answers then make one last puzzle of the same kind.
   const KAK = {
     as: { easy: { rows: 4, k: 4, max: 10, final: false }, med: { rows: 4, k: 5, max: 20, final: true }, hard: { rows: 5, k: 6, max: 50, final: true } },
-    md: { easy: { rows: 4, k: 4, max: 30, final: false }, med: { rows: 4, k: 5, max: 100, final: true }, hard: { rows: 5, k: 6, max: 144, final: true } },
+    // Multiplying sticks to times-table facts (Shawn): every pair of factors is at most f.
+    md: { easy: { rows: 4, k: 4, f: 5, final: false }, med: { rows: 4, k: 5, f: 10, final: true }, hard: { rows: 5, k: 6, f: 12, final: true } },
   };
+  const GUESSES = 2;
   const combine = (a, b) => st.fam === "as" ? a + b : a * b;
   const low = () => st.fam === "as" ? 1 : 2;
   // Ways to make t from two different numbers in range.
@@ -289,7 +298,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const out = [];
     for (let a = low(); a * 2 < t || (st.fam === "md" && a * a < t); a++) {
       if (st.fam === "as") { const b = t - a; if (b > a) out.push([a, b]); }
-      else if (t % a === 0 && t / a > a) out.push([a, t / a]);
+      else if (t % a === 0 && t / a > a && t / a <= KAK.md[st.level].f) out.push([a, t / a]);
     }
     return out;
   }
@@ -318,7 +327,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function genKak() {
     const c = KAK[st.fam][st.level];
     const all = [];
-    for (let x = low(); x <= c.max; x++) all.push(x);
+    // Multiplying uses only factors up to f and their products.
+    if (st.fam === "md") { for (let x = 2; x <= c.f * c.f; x++) if (x <= c.f || pairsFor(x).length) all.push(x); }
+    else for (let x = low(); x <= c.max; x++) all.push(x);
     const targets = all.filter(t => pairsFor(t).length);
     for (let tries = 0; tries < 500; tries++) {
       let answers, final = null;
@@ -342,7 +353,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function startKak() {
     kak = genKak();
     kak.solved = kak.rows.map(() => false);
-    kak.finalDone = false;
+    kak.missed = kak.rows.map(() => false);
+    kak.wrong = kak.rows.map(() => []);
+    kak.finalDone = false; kak.finalMissed = false; kak.finalWrong = [];
     drawKak();
     say("");
   }
@@ -351,8 +364,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     $("rule").innerHTML = finalTime
       ? `Last step: which <em>answer</em> is the ${word()} of two other answers?`
       : `In each row, find the number that is the <em>${word()}</em> of two others.`;
-    const n = kak.solved.filter(Boolean).length;
+    const n = kak.solved.filter((d, i) => d && !kak.missed[i]).length;
     $("prog").innerHTML = `Rows found: <b>${n}</b> of <b>${kak.rows.length}</b>` + (kak.final ? `<br>Last step: <b>${kak.finalDone ? kakLines(kak.answers[kak.final.p], kak.answers[kak.final.q], kak.answers[kak.final.i])[0] : "—"}</b>` : "");
+    if (finalTime && kak.finalWrong.length) $("prog").innerHTML += `<br><span class="c-orange">1 guess left</span>`;
   }
   function drawKak() {
     const box = el("div", "kak");
@@ -363,7 +377,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       r.nums.forEach((x, i) => {
         const b = el("button", "tile", x);
         b.type = "button";
-        if (kak.solved[ri]) { if (i === r.i) b.classList.add("ans"); else if (i === r.p || i === r.q) b.classList.add("part"); }
+        if (kak.solved[ri] && (i === r.i || i === r.p || i === r.q)) b.classList.add(i !== r.i ? "part" : kak.missed[ri] ? "reveal" : "ans");
+        else if (kak.wrong[ri].includes(i)) b.classList.add("x");
         b.onclick = () => tapTile(ri, i, b);
         row.append(b);
       });
@@ -371,14 +386,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const slot = el("button", "slot", kak.solved[ri] ? r.nums[r.i] : "");
       slot.type = "button";
       if (kak.solved[ri]) slot.classList.add("filled");
+      if (kak.missed[ri]) slot.classList.add("missed");
+      if (kak.finalWrong.includes(ri)) slot.classList.add("x");
       if (kak.finalDone) {
-        if (ri === kak.final.i) slot.classList.add("fans");
+        if (ri === kak.final.i) slot.classList.add(kak.finalMissed ? "freveal" : "fans");
         else if (ri === kak.final.p || ri === kak.final.q) slot.classList.add("fpart");
       }
       slot.onclick = () => tapSlot(ri, slot);
       row.append(slot);
       const eqn = el("div", "eqn");
       if (kak.solved[ri]) kakLines(r.nums[r.p], r.nums[r.q], r.nums[r.i]).forEach(t => eqn.append(el("span", "", t)));
+      else if (kak.wrong[ri].length) eqn.append(el("span", "left", `${GUESSES - kak.wrong[ri].length} guess left`));
       row.append(eqn);
       box.append(row);
     });
@@ -389,27 +407,38 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function shake(b) { b.classList.remove("miss"); void b.offsetWidth; b.classList.add("miss"); setTimeout(() => b.classList.remove("miss"), 600); }
   function tapTile(ri, i, b) {
     const r = kak.rows[ri];
-    if (kak.solved[ri]) return;
-    if (i === r.i) {
+    if (kak.solved[ri] || kak.wrong[ri].includes(i)) return;
+    // Two guesses per row: after a second miss the row shows its answer in orange.
+    const right = i === r.i;
+    if (!right) kak.wrong[ri].push(i);
+    if (right || kak.wrong[ri].length >= GUESSES) {
       kak.solved[ri] = true;
+      kak.missed[ri] = !right;
       drawKak();
-      if (kak.solved.every(Boolean)) say(kak.final ? `All rows found! Now look at the answers.` : "Puzzle solved! 🎉", "right");
-      else say(`Yes! ${kakLines(r.nums[r.p], r.nums[r.q], r.nums[r.i])[0]}`, "right");
+      const fact = kakLines(r.nums[r.p], r.nums[r.q], r.nums[r.i])[0];
+      if (kak.solved.every(Boolean)) say(kak.final ? `All rows done! Now look at the answers.` : "Puzzle done! 🎉", "right");
+      else if (right) say(`Yes! ${fact}`, "right");
+      else say(`It was ${r.nums[r.i]}: ${fact}`, "wrong");
     } else {
-      shake(b);
-      say(`${r.nums[i]} is not the ${word()} of two others in that row.`, "wrong");
+      drawKak();
+      shake($("board").querySelectorAll(".krow")[ri].children[i]);
+      say(`${r.nums[i]} is not the ${word()} of two others. 1 guess left.`, "wrong");
     }
   }
   function tapSlot(ri, b) {
-    if (!kak.final || kak.finalDone || !kak.solved.every(Boolean)) return;
-    const f = kak.final;
-    if (ri === f.i) {
+    if (!kak.final || kak.finalDone || !kak.solved.every(Boolean) || kak.finalWrong.includes(ri)) return;
+    const f = kak.final, right = ri === f.i;
+    if (!right) kak.finalWrong.push(ri);
+    if (right || kak.finalWrong.length >= GUESSES) {
       kak.finalDone = true;
+      kak.finalMissed = !right;
       drawKak();
-      say("Puzzle solved! 🎉", "right");
+      if (right) say("Puzzle solved! 🎉", "right");
+      else say(`It was ${kak.answers[f.i]}.`, "wrong");
     } else {
-      shake(b);
-      say(`${kak.answers[ri]} is not the ${word()} of two other answers.`, "wrong");
+      drawKak();
+      shake($("board").querySelectorAll(".slot")[ri]);
+      say(`${kak.answers[ri]} is not the ${word()} of two other answers. 1 guess left.`, "wrong");
     }
   }
   function showKak() {
@@ -677,5 +706,210 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

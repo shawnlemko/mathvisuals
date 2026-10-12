@@ -149,6 +149,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    Factor Tree splits each number into primes and lines matching primes up. The GCF is the primes every number
    has in common (green); the LCM uses each prime the most times any one number has it (orange). Explanations use
    the math (shared primes, most copies, powers), never the column layout (Shawn).
+   Practice tab: students type each number's primes (Factor Tree) or the prime to divide by and the new row (Ladder),
+   then the GCF and LCM; each Check gives a short hint, never the answer.
    Ladder divides by primes the numbers share; GCF = the left side, LCM = the L (left side and bottom row).
    With 3 numbers the ladder keeps going for the LCM with primes that go into two of them, bringing the other down.
    The ladder sits on the left; the white space on the right coaches each step: the answer to the last question,
@@ -233,6 +235,41 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .coach .tight { gap: 10px; }
 .coach .box .op { font-weight: 700; font-size: 30px; color: var(--c); margin-bottom: 6px; }
 .coach .boxes { margin-top: auto; display: flex; flex-direction: column; gap: 14px; }
+/* Practice */
+body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.practicing #ansCard { display: none; }
+.board > svg[hidden] { display: none; }
+.practice { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 22px; display: flex; flex-direction: column; gap: 10px; }
+.ptop { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-weight: 700; color: var(--muted); }
+.tabs.sm button { font-size: 1rem; min-height: 44px; padding: 6px 14px; }
+.pq { margin: 6px 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1.25; color: var(--pt); text-wrap: balance; }
+.phint { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.prow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 8px; }
+.pl { font-family: var(--font-num); font-weight: 700; font-size: 2rem; min-width: 4.2em; text-align: right; }
+.pl.g { color: var(--green); font-family: var(--font-display); } .pl.l { color: var(--orange); font-family: var(--font-display); }
+.pin { width: 6.5rem; height: 3.4rem; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; text-align: center; }
+.pin.wide { width: min(22rem, 100%); text-align: left; padding: 0 12px; }
+.pin.good { border-color: var(--green); }
+.pin.bad { border-color: var(--warn); }
+.chk { font-size: 1.1rem; min-height: 3.2rem; padding: 6px 18px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.chk:hover { background: var(--sheet); color: var(--pt); }
+#pstop { font-size: 1.05rem; min-height: 3.2rem; }
+.fb { margin: 0; font-weight: 700; font-size: 1.2rem; min-height: 1.5em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); }
+.lwrap { display: flex; flex-wrap: wrap; gap: 24px 36px; align-items: flex-start; }
+.lwrap .lside { flex: 1 1 18rem; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.lad { display: grid; align-items: center; font-family: var(--font-num); font-weight: 700; font-size: 2.3rem; }
+.lad .ld { text-align: center; padding: 6px 4px; min-height: 4.2rem; display: flex; align-items: center; justify-content: center; }
+.lad .ld span { color: var(--c); }
+.lad .ln { text-align: center; padding: 6px 8px; min-height: 4.2rem; display: flex; align-items: center; justify-content: center; }
+.lad .ln.bar { border-bottom: 4px solid var(--ink); }
+.lad .ln.first { border-left: 4px solid var(--ink); }
+.lad .ln.dn { color: var(--muted); }
+.lad .pin { width: 100%; max-width: 5.6rem; }
+.lad .pin.d { width: 4rem; }
+.lad .ing { background: color-mix(in srgb, var(--green) 18%, transparent); }
+.lad .inl { box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--orange) 12%, transparent); }
+.pdone { font-family: var(--font-display); font-weight: 800; font-size: 2rem; }
+.pdone.g { color: var(--green); } .pdone.l { color: var(--orange); }
 .fresh { animation: pop 0.5s ease-out both; transform-box: fill-box; transform-origin: center; }
 @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fresh { animation: none; } }
@@ -245,11 +282,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="tabs" id="tabs" role="group" aria-label="Strategy">
       <button type="button" data-m="tree" aria-pressed="true">Factor Tree</button>
       <button type="button" data-m="ladder" aria-pressed="false">Ladder</button>
+      <button type="button" data-m="practice" aria-pressed="false">Practice</button>
     </div>
   </header>
 
   <div class="main">
-    <div class="board"><svg id="svg" viewBox="0 0 1200 860" role="img" aria-label="GCF and LCM steps"></svg></div>
+    <div class="board"><svg id="svg" viewBox="0 0 1200 860" role="img" aria-label="GCF and LCM steps"></svg><div class="practice" id="prac" hidden></div></div>
     <div class="panel">
       <section class="card">
         <p class="label">Numbers</p>
@@ -266,7 +304,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         </div>
       </section>
       <section class="card steps" id="stepsCard"><p class="label">Steps</p><ol id="say"></ol></section>
-      <section class="card">
+      <section class="card" id="ansCard">
         <div class="arow"><span class="alab g">GCF</span><span class="aval" id="gcf"></span></div>
         <div class="arow"><span class="alab l">LCM</span><span class="aval" id="lcm"></span></div>
         <button type="button" id="hide" aria-pressed="false">Hide answers</button>
@@ -532,6 +570,208 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     return { steps, draw, gcfAt: G, lcmAt: LC };
   }
 
+  // ---------- Practice ----------
+  // Students do the work: type each number's primes (Factor Tree) or the prime to divide by and the new row (Ladder),
+  // then the GCF and LCM. Every check gives a short hint instead of the answer.
+  let pm = "tree", pr = null;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const readInt = s => { s = String(s).trim().replace(/,/g, ""); return /^\d+$/.test(s) ? +s : NaN; };
+  function parseFactors(s) {
+    s = s.trim().replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, t => "^" + [...t].map(c => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(c)).join("")).replace(/\s*\^\s*/g, "^");
+    if (!s) return [];
+    const out = [];
+    for (const part of s.split(/\s*[×xX*·•,]\s*|\s+/).filter(Boolean)) {
+      const mm = /^(\d+)(?:\^(\d+))?$/.exec(part);
+      if (!mm || +(mm[2] || 1) > 20) return null;
+      for (let e = 0; e < +(mm[2] || 1); e++) out.push(+mm[1]);
+    }
+    return out;
+  }
+  const say = (el0, ok, html) => { el0.className = "fb " + (ok ? "ok" : "no"); el0.innerHTML = (ok ? "✓ " : "") + html; };
+  const allOf = ns => ns.length === 2 ? `both ${list(ns)}` : `all of ${list(ns)}`;
+
+  function checkGcf(v, ns, g, why) {
+    if (!Number.isInteger(v)) return [false, "Type a whole number."];
+    if (v === g) return [true, why];
+    const miss = ns.find(n => n % v);
+    if (miss !== undefined) return [false, `${v} does not go into ${miss}.`];
+    return [false, `${v} goes into ${list(ns)}, but it is not the greatest. Did you use every prime they share?`];
+  }
+  function checkLcm(v, ns, L, why, hint) {
+    if (!Number.isInteger(v)) return [false, "Type a whole number."];
+    if (v === L) return [true, why];
+    const miss = ns.find(n => v % n);
+    if (miss !== undefined) return [false, `${miss} does not go into ${fmt(v)}. ${hint}`];
+    return [false, `${list(ns)} ${ns.length === 2 ? "both" : "all"} go into ${fmt(v)}, but there is a smaller one. ${hint}`];
+  }
+
+  function pracStart() {
+    const box = $("prac");
+    if (!nums.length) { box.innerHTML = '<p class="pq">Type two or three numbers.</p>'; return; }
+    const ns = nums, g = ns.reduce(gcd), L = ns.reduce(lcm);
+    pr = { ns, g, L };
+    const top = `<div class="ptop"><span>Practice with</span><div class="tabs sm" id="pmTabs">` +
+      `<button type="button" data-p="tree" aria-pressed="${pm === "tree"}">Factor Tree</button>` +
+      `<button type="button" data-p="ladder" aria-pressed="${pm === "ladder"}">Ladder</button></div></div>`;
+    box.innerHTML = top + '<div id="pbody"></div>';
+    $("pmTabs").onclick = e => { const b = e.target.closest("button"); if (b) { pm = b.dataset.p; pracStart(); } };
+    (pm === "tree" ? treePractice : ladderPractice)($("pbody"));
+  }
+  // Enter in a practice box presses the Check button on its row.
+  const onEnter = (inp, fn) => inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); fn(); } });
+
+  function treePractice(body) {
+    const { ns, g, L } = pr;
+    body.innerHTML = '<p class="pq">Write each number as a product of primes.</p><p class="phint">Use × or x between primes. Powers like 2^2 work too.</p>' +
+      ns.map((n, i) => `<div class="prow"><span class="pl">${n} =</span><input class="pin wide" id="pf${i}" autocomplete="off" aria-label="Primes of ${n}"><button type="button" class="chk" data-i="${i}">Check</button><span class="fb" id="pff${i}"></span></div>`).join("") +
+      `<div id="pgl" hidden>
+        <p class="pq">Which primes do ${ns.length === 2 ? "both" : "all the"} numbers have in common? Multiply them.</p>
+        <div class="prow"><span class="pl g">GCF =</span><input class="pin" id="pg" inputmode="numeric" autocomplete="off" aria-label="GCF"><button type="button" class="chk" id="pgc">Check</button><span class="fb" id="pgf"></span></div>
+        <div id="pll" hidden>
+          <p class="pq">For each prime, what is the most times any one number has it? Multiply those.</p>
+          <div class="prow"><span class="pl l">LCM =</span><input class="pin" id="pl" inputmode="numeric" autocomplete="off" aria-label="LCM"><button type="button" class="chk" id="plc">Check</button><span class="fb" id="plf"></span></div>
+        </div>
+      </div>`;
+    const good = ns.map(() => false);
+    const counts = ns.map(n => { const c = {}; factor(n).forEach(p => c[p] = (c[p] || 0) + 1); return c; });
+    const primes = [...new Set(ns.flatMap(factor))].sort((a, b) => a - b);
+    const gP = [], lP = [];
+    primes.forEach(p => { const lo = Math.min(...counts.map(c => c[p] || 0)), hi = Math.max(...counts.map(c => c[p] || 0));
+      for (let j = 0; j < lo; j++) gP.push(p); for (let j = 0; j < hi; j++) lP.push(p); });
+    const checkRow = i => {
+      const n = ns[i], inp = $("pf" + i), fb = $("pff" + i), f = parseFactors(inp.value);
+      let ok = false, msg;
+      if (f === null) msg = "Type primes with × between them, like 2 × 2 × 3.";
+      else if (!f.length) msg = `Type the primes that multiply to ${n}.`;
+      else if (f.includes(1) || f.includes(0)) msg = "Leave out 1. It is not prime.";
+      else if (f.some(p => !isPrime(p))) { const c = f.find(p => !isPrime(p)); msg = `${c} is not prime. Split it into primes.`; }
+      else { const pv = f.reduce((a, b) => a * b, 1);
+        if (pv !== n) msg = `Those multiply to ${fmt(pv)}, not ${n}.`;
+        else { ok = true; msg = `${n} = ${pw(f.slice().sort((a, b) => a - b))}`; } }
+      say(fb, ok, msg); inp.classList.toggle("good", ok); inp.classList.toggle("bad", !ok);
+      good[i] = ok;
+      if (good.every(Boolean)) $("pgl").hidden = false;
+      const next = good.findIndex(x => !x);
+      if (ok) (next >= 0 ? $("pf" + next) : $("pg")).focus();
+    };
+    ns.forEach((n, i) => onEnter($("pf" + i), () => checkRow(i)));
+    body.querySelectorAll("button.chk[data-i]").forEach(b => b.onclick = () => checkRow(+b.dataset.i));
+    const checkG = () => {
+      const why = gP.length ? `${list(ns)} ${ns.length === 2 ? "both" : "all"} have ${pw(gP)} inside them.` : "No prime is in all of them, so the GCF is 1.";
+      const [ok, msg] = checkGcf(readInt($("pg").value), ns, g, why);
+      say($("pgf"), ok, msg); $("pg").classList.toggle("good", ok); $("pg").classList.toggle("bad", !ok);
+      if (ok) { $("pll").hidden = false; $("pl").focus(); }
+    };
+    const checkL = () => {
+      const [ok, msg] = checkLcm(readInt($("pl").value), ns, L, `${pw(lP)} = ${fmt(L)}`, "Use each prime the most times any one number has it.");
+      say($("plf"), ok, msg); $("pl").classList.toggle("good", ok); $("pl").classList.toggle("bad", !ok);
+    };
+    $("pgc").onclick = checkG; onEnter($("pg"), checkG);
+    $("plc").onclick = checkL; onEnter($("pl"), checkL);
+    $("pf0").focus();
+  }
+
+  function ladderPractice(body) {
+    const { ns, g, L } = pr, n = ns.length;
+    const st = { rows: [ns.slice()], divs: [], downs: [ns.map(() => false)], phase: 1, p1: 0, stage: "div", gOk: false, lOk: false, msg: null };
+    const cur = () => st.rows[st.rows.length - 1];
+    const anyAll = () => cur().some(() => true) && (() => { for (let p = 2; p <= Math.max(...cur()); p++) if (isPrime(p) && cur().every(v => v % p === 0)) return true; return false; })();
+    const anyTwo = () => { for (let p = 2; p <= Math.max(...cur()); p++) if (isPrime(p) && cur().filter(v => v % p === 0).length >= 2) return true; return false; };
+    const stopLabel = () => st.phase === 1 ? (n === 2 ? "No prime goes into both" : "No prime goes into all three") : "No prime goes into two";
+
+    function draw() {
+      const R = st.rows.length;
+      let grid = `<div class="lad" style="grid-template-columns: 4.2rem repeat(${n}, minmax(4.6rem, 6.5rem))">`;
+      for (let i = 0; i < R; i++) {
+        const last = i === R - 1, hasDiv = i < st.divs.length, active = last && st.stage === "div";
+        const inG = st.gOk && i < st.p1, inL = st.lOk && (hasDiv || last);
+        grid += `<div class="ld${inG ? " ing" : ""}${inL ? " inl" : ""}">` + (hasDiv ? `<span class="${pc(st.divs[i])}">${st.divs[i]}</span>` : active ? `<input class="pin d" id="pd" inputmode="numeric" autocomplete="off" aria-label="Prime to divide by">` : "") + "</div>";
+        st.rows[i].forEach((v, j) => {
+          grid += `<div class="ln${hasDiv || active ? " bar" : ""}${j === 0 && (hasDiv || active) ? " first" : ""}${st.downs[i][j] ? " dn" : ""}${st.lOk && last ? " inl" : ""}">${st.downs[i][j] ? "↓ " : ""}${fmt(v)}</div>`;
+        });
+        if (active) {
+          grid += '<div class="ld"></div>';
+          st.rows[i].forEach((v, j) => { grid += `<div class="ln"><input class="pin q" id="pq${j}" inputmode="numeric" autocomplete="off" aria-label="New number under ${v}"></div>`; });
+        }
+      }
+      grid += "</div>";
+      let side = "";
+      if (st.stage === "div") {
+        side = `<p class="pq">${st.phase === 1 ? `What prime number can ${n === 2 ? `${cur()[0]} and ${cur()[1]} both` : `${list(cur())} all`} be divided by?`
+          : `What prime number can at least two of ${list(cur())} be divided by?`}</p>` +
+          `<p class="phint">${st.phase === 1 ? "Type it on the left, then divide each number and write the new row." : "Divide the ones it goes into. Bring the other number down."}</p>` +
+          `<div class="prow"><button type="button" class="chk" id="pdc">Check</button><button type="button" id="pstop">${stopLabel()}</button></div>`;
+      } else if (st.stage === "gcf") {
+        side = `<p class="pq">What do you get when you multiply the left side?</p>
+          <div class="prow"><span class="pl g">GCF =</span><input class="pin" id="pg" inputmode="numeric" autocomplete="off" aria-label="GCF"><button type="button" class="chk" id="pgc">Check</button></div>`;
+      } else if (st.stage === "lcm") {
+        side = `<p class="pq">What do you get when you multiply the L, the left side and the bottom row?</p>
+          <div class="prow"><span class="pl l">LCM =</span><input class="pin" id="pl" inputmode="numeric" autocomplete="off" aria-label="LCM"><button type="button" class="chk" id="plc">Check</button></div>`;
+      }
+      const done = [];
+      if (st.gOk) done.push(`<div class="pdone g">GCF = ${fmt(g)}</div>`);
+      if (st.lOk) done.push(`<div class="pdone l">LCM = ${fmt(L)}</div><p class="phint">${fmt(L)} is the first number you reach when you count by ${list(ns.map(v => v + "s"))}.</p>`);
+      body.innerHTML = `<div class="lwrap">${grid}<div class="lside">${side}<p class="fb" id="pfb"></p>${done.join("")}</div></div>`;
+      if (st.msg) say($("pfb"), st.msg[0], st.msg[1]);
+      wire();
+    }
+
+    function wire() {
+      if (st.stage === "div") {
+        const check = () => {
+          const p = readInt($("pd").value), row = cur();
+          const qs = row.map((v, j) => $("pq" + j));
+          qs.forEach(q => q.classList.remove("bad"));
+          $("pd").classList.remove("bad");
+          const bad = (el0, msg) => { if (el0) el0.classList.add("bad"); say($("pfb"), false, msg); (el0 || $("pd")).focus(); };
+          if (!Number.isInteger(p)) return bad($("pd"), "Type a prime number on the left to divide by.");
+          if (!isPrime(p)) return bad($("pd"), `${p} is not prime. Try 2, 3, 5, 7 …`);
+          if (st.phase === 1) { const miss = row.find(v => v % p); if (miss !== undefined) return bad($("pd"), `${p} does not go into ${miss}.`); }
+          else { const c = row.filter(v => v % p === 0).length; if (c < 2) return bad($("pd"), `${p} goes into ${c ? "only one" : "none"} of them. It needs to go into two.`); }
+          for (let j = 0; j < row.length; j++) {
+            const v = row[j], want = v % p ? v : v / p, q = readInt(qs[j].value);
+            if (qs[j].value.trim() === "") return bad(qs[j], `Now write the new row: divide each number by ${p}.`);
+            if (q !== want) return bad(qs[j], v % p ? `${p} does not go into ${v}, so bring ${v} down.` : `${v} ÷ ${p} is not ${esc(qs[j].value.trim())}.`);
+          }
+          st.divs.push(p); st.downs.push(row.map(v => v % p !== 0)); st.rows.push(row.map(v => v % p ? v : v / p));
+          if (st.phase === 1) st.p1 = st.divs.length;
+          st.msg = [true, `${p} works. ${row.map((v, j) => v % p ? `${v} comes down` : `${v} ÷ ${p} = ${v / p}`).join(", ")}.`];
+          draw(); $("pd").focus();
+        };
+        const stop = () => {
+          if (st.phase === 1 ? anyAll() : anyTwo()) { say($("pfb"), false, `Not yet. A prime still goes into ${st.phase === 1 ? allOf(cur()) : "two of " + list(cur())}.`); return; }
+          st.msg = [true, st.phase === 1 ? `Right, nothing but 1 goes into ${allOf(cur())}. Stop.` : `Right, no prime goes into two of ${list(cur())}. Stop.`];
+          st.stage = st.phase === 1 ? "gcf" : "lcm"; draw(); (st.stage === "gcf" ? $("pg") : $("pl")).focus();
+        };
+        $("pdc").onclick = check; $("pstop").onclick = stop;
+        body.querySelectorAll(".lad input").forEach(i => onEnter(i, check));
+      } else if (st.stage === "gcf") {
+        const check = () => {
+          const left = st.divs.slice(0, st.p1);
+          const why = left.length ? `${left.join(" × ")} = ${fmt(g)}. It is the greatest number that divides into ${list(ns)}.` : "Nothing is on the left, so the GCF is 1.";
+          const [ok, msg] = checkGcf(readInt($("pg").value), ns, g, why);
+          if (!ok) { say($("pfb"), false, msg + (left.length ? " Multiply the numbers on the left side." : "")); $("pg").classList.add("bad"); return; }
+          st.gOk = true; st.msg = [true, why + (n > 2 ? " For the LCM, keep going with primes that go into two of them." : "")];
+          if (n > 2) { st.phase = 2; st.stage = "div"; } else st.stage = "lcm";
+          draw(); (st.stage === "div" ? $("pd") : $("pl")).focus();
+        };
+        $("pgc").onclick = check; onEnter($("pg"), check);
+      } else if (st.stage === "lcm") {
+        const check = () => {
+          const v = readInt($("pl").value), bottom = cur().filter(x => x > 1), Lf = st.divs.concat(bottom);
+          const leftOnly = st.divs.reduce((a, b) => a * b, 1);
+          if (v === leftOnly && v !== L) { say($("pfb"), false, "That is only the left side. Multiply the bottom row too."); $("pl").classList.add("bad"); return; }
+          const [ok, msg] = checkLcm(v, ns, L, "", "Multiply every number in the L.");
+          if (!ok) { say($("pfb"), false, msg); $("pl").classList.add("bad"); return; }
+          st.lOk = true; st.stage = "done"; st.msg = [true, `${Lf.join(" × ")} = ${fmt(L)}`]; draw();
+        };
+        $("plc").onclick = check; onEnter($("pl"), check);
+      }
+    }
+    draw();
+    $("pd").focus();
+  }
+
   // ---------- page ----------
   function readNums() {
     const vals = ["n1", "n2", "n3"].map(id => $(id).value.trim()).filter(s => s);
@@ -548,6 +788,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (r.err) { plan = null; nums = []; }
     else nums = r.ns;
     const L = nums.length ? nums.reduce(lcm) : 0, g = nums.length ? nums.reduce(gcd) : 0;
+    const prac = mode === "practice";
+    document.body.classList.toggle("practicing", prac);
+    svg.hidden = prac; $("prac").hidden = !prac;
+    if (prac) { plan = null; pracStart(); return; }
     if (nums.length) plan = (mode === "tree" ? treePlan : ladderPlan)(nums, g, L);
     step = 0; fwd = false;
     render();
@@ -600,7 +844,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   };
   $("next").onclick = () => go(1);
   $("back").onclick = () => go(-1);
-  $("again").onclick = () => { step = 0; fwd = false; shown = { gcf: false, lcm: false }; render(); };
+  $("again").onclick = () => { if (mode === "practice") return pracStart(); step = 0; fwd = false; shown = { gcf: false, lcm: false }; render(); };
   $("hide").onclick = () => {
     hideAns = !hideAns; shown = { gcf: false, lcm: false };
     $("hide").setAttribute("aria-pressed", String(hideAns));
@@ -617,5 +861,210 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

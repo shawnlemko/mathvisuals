@@ -698,9 +698,9 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
   function clearSP(S, m, P) {
     const k = lcm(m.d, P.y.d), km = m.n * (k / m.d), ky1 = mul(P.y, R(k)).n;
     const [L, Rt] = splitEq(S.cur);
-    const kL = [tk(String(k), "kL", "opk"), tk("(", "q1")], kR = tk(`${k}${op("·")}`, "kR", "opk");
-    const f1 = [...kL, ...L, tk(")", "q2"), EQ(), kR, ...Rt];
-    const f2 = [...kL, ...L, tk(")", "q2"), EQ(), tk(`<span class="cancel">${k}</span>${op("·")}`, "kR", "opk"), ...mark(Rt.map(t => t.k === "m" ? tk(mH(m, "cancel"), "m") : t), [], "")];
+    const kL = [tk(String(k), "kL", "opk"), tk("(", "q1")], kR = tk(`${k}(`, "kR", "opk"), kRc = tk(")", "kRc", "opk");
+    const f1 = [...kL, ...L, tk(")", "q2"), EQ(), kR, Rt[0], kRc, ...Rt.slice(1)];
+    const f2 = [...kL, ...L, tk(")", "q2"), EQ(), tk(`<span class="cancel">${k}</span>(`, "kR", "opk"), tk(mH(m, "cancel"), "m"), kRc, ...Rt.slice(1)];
     const f3 = [tk(String(k), "kL"), tk("(", "q1"), ...L, tk(")", "q2"), EQ(), tk(fmt(km), "m", "new"), ...Rt.filter(t => t.k !== "m")];
     S.add(`Multiply both sides by <b>${k}</b>, so there are no fractions.`, [F(S.cur, 500), F(f1, 1100), F(f2, 1100), F(f3, 700)]);
     const rc = -km * P.x.n;
@@ -824,12 +824,12 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
       const k = lcm(m.d, yi.d), w = r => mul(r, R(k)).n;
       if (k > 1) {
         const [Lt, Rt] = splitEq(S.cur);
-        const kk = key => tk(`${k}${op("·")}`, key, "opk");
+        const kk = key => tk(`${k}(`, key, "opk"), kc = key => tk(")", key + "c", "opk"); // brackets read better than dots (Shawn)
         const signOf = t => t.k === "c" ? [tk(op(yi.n < 0 ? "−" : "+"), "sc"), tk(body(yi, "", "c-orange"), "c")] : [t];
-        const lead = (t, key) => (t.k === "x" ? [kk("kX"), t] : t.k === "c" ? (Rt[0].k === "c" ? [kk("kC"), t] : [signOf(t)[0], kk("kC"), signOf(t)[1]]) : [kk(key), t]);
-        const f1 = [kk("kY"), ...Lt, EQ(), ...Rt.flatMap(t => lead(t))];
+        const lead = t => (t.k === "x" ? [kk("kX"), t, kc("kX")] : t.k === "c" ? (Rt[0].k === "c" ? [kk("kC"), t, kc("kC")] : [signOf(t)[0], kk("kC"), signOf(t)[1], kc("kC")]) : [t]);
+        const f1 = [kk("kY"), ...Lt, kc("kY"), EQ(), ...Rt.flatMap(t => lead(t))];
         const strike = f1.map(t => {
-          if ((t.k === "kX" && m.d > 1) || (t.k === "kC" && yi.d > 1)) return { ...t, h: `<span class="cancel">${k}</span>${op("·")}` };
+          if ((t.k === "kX" && m.d > 1) || (t.k === "kC" && yi.d > 1)) return { ...t, h: `<span class="cancel">${k}</span>(` };
           if (t.k === "x" && m.d > 1) return { ...t, h: (m.n < 0 ? "−" : "") + body(m, "x", "c-green", "cancel") };
           if (t.k === "c" && yi.d > 1) return { ...t, h: (Rt[0].k === "c" && yi.n < 0 ? "−" : "") + body(yi, "", "c-orange", "cancel") };
           return t;

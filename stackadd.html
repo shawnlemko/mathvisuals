@@ -253,6 +253,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .msg .eqn .eq + .eq { margin-top: 10px; }
 .msg .eqn .frac { font-size: 1.35rem; }
 .msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
+.msg .why .big { display: block; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.3; }
+.msg .why .do { display: block; margin-top: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; }
+.msg .why .tag { vertical-align: middle; }
 </style>
 <!-- Stacked Addition and Subtraction (grades 3 to 7; Shawn 2026-10-08): the same tool as Stacked Multiplication, with an
      Add / Subtract switch at the top. Type a question like 456 + 278 or press New question, work it out in the boxes,
@@ -513,15 +516,15 @@ window.Written = (() => {
 
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
-      if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
+      if (!result) { msg.innerHTML = `<p class="lead">Fill in the boxes. Press <b>Check answer</b> any time.</p>`; return; }
       if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
-      const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
-        : it.point ? "Next, put in the decimal point: click one of the orange dots."
-        : result.okCount ? "So far, so good! Next, fill in the orange box." : "Start with the orange box.";
+      const head = !result.empty ? (it.point ? "Oops! Look at the red dot." : "Oops! Look at the red box.")
+        : it.point ? "Next: put in the dot."
+        : result.okCount ? "Good! Next: the orange box." : "Start here: the orange box.";
       const why = typeof it.why === "function" ? it.why(result.v) : it.why;
       msg.innerHTML = `<p class="res ${result.empty ? "next" : "bad"}">${head}</p>` +
-        (explain.checked ? `<p class="why">${why}</p>` : `<p class="lead">Tick <b>Show explanation</b> for help with this one.</p>`);
+        (explain.checked ? `<div class="why">${why}</div>` : `<p class="lead">Tick <b>Show explanation</b> for help.</p>`);
     }
 
     function check() {
@@ -569,22 +572,23 @@ window.Written = (() => {
     s = s.padStart(dp + 1, "0");
     return (s.slice(0, -dp).replace(/^0+(?=\d)/, "") || "0") + "." + s.slice(-dp);
   }
+  // A kid-sized explanation (Shawn): one big math line (or a few), then one short thing to do.
+  const say = (math, action) => (math ? `<span class="big">${[].concat(math).join("<br>")}</span>` : "") + `<span class="do">${action}</span>`;
   const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const s = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-  return { page, want, pointItem, num, norm, withPoint, rnd, s };
+  return { page, want, pointItem, num, norm, withPoint, rnd, s, say };
 })();
 </script>
 <script>
 (() => {
-  const { want, pointItem, num, withPoint, rnd, s } = Written;
+  const { want, pointItem, num, withPoint, rnd, s, say } = Written;
   const m = x => `<span class="m">${x}</span>`;
   const $ = id => document.getElementById(id);
   let op = "+";
 
   // Place names, by place: 0 = ones; -1 = tenths.
   const PLACE = { 4: "ten thousands", 3: "thousands", 2: "hundreds", 1: "tens", 0: "ones", [-1]: "tenths", [-2]: "hundredths", [-3]: "thousandths" };
-  const ONE = { 5: "hundred thousand", 4: "ten thousand", 3: "thousand", 2: "hundred", 1: "ten", 0: "one", [-1]: "tenth", [-2]: "hundredth" };
 
   // Line the two numbers up on the decimal point: digit strings of the same length, dp places after the point.
   function align(A, B) {
@@ -670,6 +674,8 @@ window.Written = (() => {
     const need = p => p < String(T).length || p <= dp;   // places that must hold a digit
     const items = [];
 
+    // Explanations are kid-sized (Shawn): a math line, then one short thing to do.
+    const empty = say("", "Leave this box empty.");
     if (add) {
       sh.lab(R.small, LAB, "carry");
       const carry = [];
@@ -681,18 +687,11 @@ window.Written = (() => {
         if (inB(p)) terms.push(dy(p));
         if (c) terms.push(c);
         const t = terms.reduce((u, v) => u + v, 0), d = t % 10, co = Math.floor(t / 10);
-        const sum = terms.length > 1 ? `${m(terms.join(" + ") + " = " + t)}${c ? " (the last 1 is the one you carried)" : ""}`
-          : terms.length ? `only ${m(terms[0])}${c && !inA(p) && !inB(p) ? " (the 1 you carried)" : ""}, so ${m(t)}` : "";
+        const math = terms.length > 1 ? `${terms.join(" + ")} = ${t}` : String(t);
         const lastCol = p === L.N - 1;
-        const say = `Add the ${place(p)}: ${sum}.`;
-        items.push(want(ans[p], d, need(p) ? "req" : "opt", !terms.length
-          ? "Nothing is left to add here, so this box stays empty."
-          : say + (co ? (lastCol ? ` Write ${m(t)}: the ${m(d)} here and the ${m(co)} in the box to its left.` : ` That makes ${co} ${ONE[p - dp + 1]}, so write the ${m(d)} here and carry the ${m(co)}.`) : ` Write ${m(t)} here.`)));
-        if (carry[p + 1]) {
-          items.push(want(carry[p + 1], co, "opt", co
-            ? `${say} That is ${m(co)} ${ONE[p - dp + 1]} and ${m(d)} ${PLACE[p - dp]}: carry the ${m(co)} into this small box, at the top of the ${place(p + 1)}.`
-            : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
-        }
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", !terms.length ? empty
+          : say(math, co ? (lastCol ? `Write ${t}: the ${d} here, the ${co} next to it.` : `Write ${d}. Carry ${co}.`) : `Write ${t}.`)));
+        if (carry[p + 1]) items.push(want(carry[p + 1], co, "opt", say(math, co ? `Carry ${co}. Put it in the little box.` : "Nothing to carry. Leave it empty.")));
         c = co;
       }
     } else {
@@ -705,26 +704,17 @@ window.Written = (() => {
       for (let p = 0; p < L.N; p++) {
         const a = dx(p), b = dy(p), cur = a - gave, takes = cur < b, now = takes ? cur + 10 : cur;
         const changed = gave || takes;
-        let why;
-        if (cur < 0) {
-          why = `The ${place(p)} column has 0, so it had to regroup too: it got 10 ${PLACE[p - dp]} from the ${place(p + 1)}, then gave 1 to the column on its right. ${m("10 − 1 = 9")}. Write ${m(9)} in this small box.`;
-        } else if (takes) {
-          why = `In the ${place(p)}, ${m(cur)} is less than ${m(b)}, so regroup: take 1 ${ONE[p - dp + 1]} from the next column and trade it for 10 ${PLACE[p - dp]}. ${m(`${cur} + 10 = ${now}`)}${gave ? ` (this column already gave 1 away, so it had ${cur})` : ""}. Write ${m(now)} in this small box.`;
-        } else if (gave) {
-          why = `You took 1 from the ${place(p)} for the column on its right, so ${m(a)} becomes ${m(`${a} − 1 = ${now}`)}. Write ${m(now)} in this small box.`;
-        } else {
-          why = `Nothing was regrouped in the ${place(p)}, so leave this small box empty.`;
-        }
+        const why = cur < 0 ? say("10 − 1 = 9", "This 0 borrows 10, then gives 1 away. Write 9 up top.")
+          : takes ? say(`${cur} + 10 = ${now}`, `${cur} is too small to take away ${b}. Borrow 10. Write ${now} up top.`)
+          : gave ? say(`${a} − 1 = ${now}`, `You borrowed 1 from here. Write ${now} up top.`)
+          : say("", "Nothing changed here. Leave it empty.");
         if (box[p]) items.push({ el: box[p], why, ok: v => v === "" || v === String(changed ? now : a) });
         const d = now - b;
-        const top = changed ? `${m(now)} (after regrouping)` : m(now);
-        items.push(want(ans[p], d, need(p) ? "req" : "opt", inA(p)
-          ? `Subtract the ${place(p)}: ${top} − ${m(b)} = ${m(d)}.` + (takes ? ` ${m(cur)} was too small to take ${m(b)} away, so it had to regroup first.` : "") + (need(p) ? ` Write ${m(d)} here.` : " Nothing is left here, so this box stays empty (or write 0).")
-          : "Nothing is left here, so this box stays empty."));
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", inA(p) && need(p) ? say(changed ? [`${a} → ${now}`, `${now} − ${b} = ${d}`] : `${now} − ${b} = ${d}`, changed ? `The ${a} became ${now}. Write ${d}.` : `Write ${d}.`) : empty));
         gave = takes ? 1 : 0;
       }
     }
-    if (slots) items.push(pointItem(slots, dp, `The numbers are lined up on their decimal points, so the point in the answer goes straight down from them. Click the dot under the other points.`));
+    if (slots) items.push(pointItem(slots, dp, say("", "Put the dot right under the other dots.")));
     return items;
   }
 

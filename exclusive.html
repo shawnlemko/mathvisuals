@@ -168,10 +168,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .board { gap: 6px; }
 .caption { margin: 2px 6px 0; font-size: 1.3rem; line-height: 1.3; min-height: 2.6em; font-weight: 700; text-wrap: balance; }
 .caption .warn { color: var(--warn); }
+.caption .one { color: var(--warn); }
+.caption .yes { color: var(--green); } .caption .no { color: var(--warn); }
+/* One draw: the drawn outcome lifts out, grows and the rest fade. */
+.board-top { display: flex; align-items: flex-start; gap: 12px; }
+.board-top .caption { flex: 1 1 auto; }
+.draw { flex: none; font-family: var(--font-display); font-size: 1.2rem; padding: 10px 18px; background: var(--orange); color: #fff; border-color: var(--orange); }
+.draw:hover { background: var(--sheet); color: var(--orange); }
+.it.drawn .face { stroke: var(--ink); stroke-width: 3; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .35)); }
+.it.faded { opacity: .18; }
 
 /* Venn diagram */
 .space { fill: var(--paper); stroke: var(--grid-major); stroke-width: 2; }
-.space-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--muted); }
+.space-lbl { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--ink); }
 .circ { stroke-width: 4; fill-opacity: .07; transition: opacity .5s, fill-opacity .4s; }
 .circ.a { stroke: var(--pt); fill: var(--pt); } .circ.b { stroke: var(--orange); fill: var(--orange); }
 .circ.lit { fill-opacity: .2; }
@@ -232,6 +241,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .why { font-size: .95rem; line-height: 1.25; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 8px; }
 .why b { color: var(--ink); font-family: var(--font-num); }
 .why .warn { color: var(--warn); font-weight: 700; }
+.eq .strike { text-decoration: line-through; text-decoration-color: var(--warn); text-decoration-thickness: 3px; color: var(--muted); }
+.eq .zero { color: var(--warn); font-weight: 700; }
+.eq .overlap { background: color-mix(in srgb, var(--purple) 14%, transparent); border-radius: 6px; padding: 0 4px; }
+.eqrow.formula { border-bottom: 2px dashed var(--grid-major); padding-bottom: 8px; }
+.summary { margin: 4px 0 0; padding: 6px 12px; border-radius: 10px; background: var(--chip); border: 2px solid var(--green); font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.summary .ans { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; white-space: nowrap; font-family: var(--font-num); }
 .lines .hint { color: var(--muted); font-size: 1.1rem; margin: 4px 0 0; }
 .verdict-big { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; margin: 0; }
 </style>
@@ -265,7 +280,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   <div class="main">
     <div class="board">
-      <p class="caption" id="caption" aria-live="polite"></p>
+      <div class="board-top">
+        <p class="caption" id="caption" aria-live="polite"></p>
+        <button type="button" class="draw" id="draw">Draw one card</button>
+      </div>
       <svg id="venn" viewBox="0 0 1000 640" role="img" aria-label="Venn diagram of the two events"></svg>
     </div>
 
@@ -307,7 +325,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const COLOURS = ["red", "blue", "green", "yellow"], SHAPES = ["circle", "square", "triangle", "star"];
   const SPACES = {
     die: {
-      unit: "roll", total: "6 outcomes",
+      unit: "roll", total: "Roll ONE die: 6 outcomes", draw: "Roll the die",
       items: [1, 2, 3, 4, 5, 6].map(v => ({ v, label: String(v) })),
       events: [
         ["even", "Even", "be even", "Even", o => o.v % 2 === 0],
@@ -322,7 +340,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       defaults: ["even", "gt4"],
     },
     cards: {
-      unit: "card", total: "52 cards",
+      unit: "card", total: "Draw ONE card from 52", draw: "Draw one card",
       items: SUITS.flatMap(([s, c], si) => RANKS.map((r, ri) => ({ r, ri, s, si, c, label: r + s }))),
       events: [
         ["heart", "Heart ♥", "be a Heart", "Heart", o => o.s === "♥"],
@@ -337,7 +355,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       defaults: ["heart", "king"],
     },
     shapes: {
-      unit: "shape", total: "16 shapes",
+      unit: "shape", total: "Pick ONE of 16 shapes", draw: "Pick one shape",
       items: COLOURS.flatMap((c, ci) => SHAPES.map((sh, shi) => ({ c, ci, sh, shi, label: c + " " + sh }))),
       events: [
         ["blue", "Blue", "be blue", "Blue", o => o.c === "blue"],
@@ -352,7 +370,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       defaults: ["blue", "star"],
     },
     numbers: {
-      unit: "number", total: "numbers 1 to 20", text: true, size: [58, 54], cols: 10,
+      unit: "number", total: "Pick ONE number from 1 to 20", draw: "Pick one number", text: true, size: [58, 54], cols: 10,
       items: Array.from({ length: 20 }, (_, i) => ({ v: i + 1, label: String(i + 1), word: String(i + 1) })),
       events: [
         ["nEven", "Even", "be even", "Even", o => o.v % 2 === 0],
@@ -367,7 +385,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       defaults: ["nEven", "m5"],
     },
     months: {
-      unit: "month", total: "12 months", text: true, size: [80, 54], cols: 6,
+      unit: "month", total: "Pick ONE of 12 months", draw: "Pick one month", text: true, size: [80, 54], cols: 6,
       items: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
         .map((m, i) => ({ v: i + 1, label: m, word: m.slice(0, 3) })),
       events: [
@@ -381,7 +399,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       defaults: ["d31", "startJ"],
     },
     names: {
-      unit: "name", total: "12 names", text: true, size: [104, 54], cols: 4,
+      unit: "name", total: "Pull ONE of 12 names", draw: "Pull one name", text: true, size: [104, 54], cols: 4,
       items: ["Ava", "Ben", "Chloe", "Daniel", "Emma", "Jack", "Liam", "Mia", "Noah", "Olivia", "Sam", "Zoe"]
         .map(n => ({ label: n, word: n })),
       events: [
@@ -495,7 +513,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ---------- State ----------
-  let space = "cards", evA, evB, step = 0;
+  let space = "cards", evA, evB, step = 0, drawn = null;
   let items = [], groups, apart, vennPos, startPos;
   const LAST = 5;
 
@@ -517,7 +535,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     } else if (space === "shapes") items.forEach(o => startPos.set(o, [500 + (o.shi - 1.5) * 105, CY + (o.ci - 1.5) * 105, 1.3]));
     else if (space === "die") items.forEach((o, i) => startPos.set(o, [500 + (i - 2.5) * 130, CY, 1.4]));
     else items.forEach(o => startPos.set(o, [500 + (o.ri - 6) * 70, CY - 150 + o.si * 100, 1.12]));
-    spaceLbl.textContent = "Sample space: " + S.total;
+    spaceLbl.textContent = S.total;
+    $("draw").textContent = S.draw;
     $("selSpace").value = space;
     setupEvents();
   }
@@ -543,7 +562,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     gapLbl.setAttribute("y", CY + R * 0.82);
     gapLbl.innerHTML = `<tspan x="500" dy="-14">Nothing</tspan><tspan x="500" dy="30">in both</tspan>`;
     vennPos = packVenn(space, groups, apart);
-    step = 0;
+    step = 0; drawn = null;
     render();
   }
 
@@ -559,7 +578,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const [x, y, s] = sorted ? vennPos.get(o) : startPos.get(o);
       place(o, x, y, s);
       const g = o.g;
-      g.classList.remove("dim", "inA", "inB", "both", "twice", "once");
+      g.classList.remove("dim", "inA", "inB", "both", "twice", "once", "drawn", "faded");
+      if (drawn) {
+        if (o !== drawn) { g.classList.add("faded"); continue; }
+        const [w, h] = S.size || (space === "cards" ? [CW, CH] : [DIE, DIE]), big = 2.2 * Math.min(s, 1);
+        const cx = Math.min(Math.max(x, RX0 + w * big / 2 + 8), RX1 - w * big / 2 - 8), cy = Math.min(Math.max(y - 20, RY0 + h * big / 2 + 8), RY1 - h * big / 2 - 8);
+        place(o, cx, cy, big);
+        g.classList.add("drawn", o.A && o.B ? "both" : o.A ? "inA" : o.B ? "inB" : "dim");
+        g.classList.remove("dim");
+        itemLayer.appendChild(g);
+        continue;
+      }
       // Steps: 0 predict, 1 sort, 2 count A and B, 3 the overlap, 4 add (overlap counted twice), 5 take it away once.
       if (step === 3) g.classList.add(o.A && o.B ? "both" : "dim");
       else if (step >= 2) {
@@ -586,7 +615,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const Both = bothList.charAt(0).toUpperCase() + bothList.slice(1), isAre = k === 1 ? "is" : "are";
     const units = S.unit + "s";
     const caps = [
-      `Predict: can one ${S.unit} ${nA} <u>and</u> ${nB} at the same time?`,
+      `Pick <span class="one">ONE</span> ${S.unit}. Predict: can that one ${S.unit} ${nA} <u>and</u> ${nB}?`,
       apart
         ? `No! Nothing is in both circles. These events are <span class="c-both">mutually exclusive</span>.`
         : `Yes! ${Both} ${isAre} in both circles. These events are <span class="c-both">not mutually exclusive</span>.`,
@@ -598,7 +627,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       apart ? `Nothing to take away. Just add.`
             : `Take the overlap away once. ${union} out of ${N}.`,
     ];
-    $("caption").innerHTML = caps[step];
+    $("caption").innerHTML = drawn ? drawCaption(S, sorted) : caps[step];
     $("stepno").textContent = step === 0 ? "Predict first" : `Step ${step} of ${LAST}`;
     $("back").disabled = step === 0;
     $("next").textContent = step === 0 ? "Sort into circles" : step === LAST ? "Start over" : "Next step";
@@ -607,35 +636,64 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Lines name the real events (P(Heart), not P(A)), coloured to match circles A and B.
     const A = `<span class="c-a ev">${evA[3]}</span>`, B = `<span class="c-b ev">${evB[3]}</span>`, P = (x) => `<span>P(${x})</span>`;
     const cnt = n => n === 0 ? `${frac(0, N)} = 0` : frac(n, N);
+    // Formula first, then each line under it (Shawn): values, the sum, the answer, then a sentence.
     const lines = [];
+    // A line appears at step `at`; `why` maps the steps where it is the current line to its quick note.
     const row = (at, html, why, cls = "") => {
       if (step < at) return;
-      const now = step === at;
-      lines.push(`<div class="eqrow${now ? " lit" : ""} ${cls}"><div class="eq">${html}</div>${now ? `<div class="why">${why}</div>` : ""}</div>`);
+      const note = typeof why === "string" ? (step === at ? why : null) : why[step];
+      lines.push(`<div class="eqrow${note ? " lit" : ""} ${cls}"><div class="eq">${html}</div>${note ? `<div class="why">${note}</div>` : ""}</div>`);
     };
-    row(2, `${P(A)} = ${cnt(a)}<span class="gap"></span>${P(B)} = ${cnt(b)}`, `<b>P( )</b> means the chance of`);
-    row(3, `${P(`${A} and ${B}`)} = ${cnt(k)}`, `<b>and</b> means in both circles`);
-    row(4, `${P(A)} + ${P(B)} = ${frac(a, N)} + ${frac(b, N)} = ${apart ? frac(a + b, N) : `<span class="twice-note">${frac(a + b, N)}</span>`}`,
-      `<b>+</b> adds both circles` + (apart ? "" : `. <span class="warn">The overlap counts twice!</span>`));
-    const orWhy = `<b>or</b> means in A, in B, or in both`;
+    const AB = P(`${A} and ${B}`);
+    const overlapTerm = step >= 1 && apart
+      ? `<span class="strike">− ${AB}</span> <span class="zero">= 0</span>`
+      : `<span class="${step >= 1 ? "c-both overlap" : ""}">− ${AB}</span>`;
+    row(0, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} ${overlapTerm}`, {
+      0: `<b>or</b> means in A, in B, or in both. <b>and</b> means in both`,
+      1: apart ? `Mutually exclusive: no overlap, so <span class="warn">cross out</span> P(A and B)`
+               : `Not mutually exclusive: there is an overlap, so <b>− P(A and B)</b> stays`,
+    }, "formula");
+    const ov = step >= 3 ? `<span class="c-both">${frac(k, N)}</span>` : `<span class="q">?</span>`;
+    row(2, `= ${frac(a, N)} + ${frac(b, N)}${apart ? "" : ` − ${ov}`}`, {
+      2: `Count each circle: <b>P( )</b> is the chance, out of ${N}`,
+      3: apart ? `The overlap is empty, so nothing to fill in` : `Count the overlap: P(A and B)`,
+    });
     if (apart) {
-      row(5, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">0</span>`, `${orWhy}. <b>− 0</b>: nothing to take away`, "final rule");
-      row(5, `= ${frac(a, N)} + ${frac(b, N)} = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
+      row(4, `= ${fullAndSimp(a + b, N)}`, `<b>+</b> adds the circles. Nothing is counted twice`);
     } else {
-      row(5, `${P(`${A} or ${B}`)} = ${P(A)} + ${P(B)} − <span class="c-both">${P(`${A} and ${B}`)}</span>`, `${orWhy}. <b>−</b> takes the overlap away once`, "final rule");
-      row(5, `= ${frac(a, N)} + ${frac(b, N)} − <span class="c-both">${frac(k, N)}</span> = ${fullAndSimp(union, N)}`, `Put in the numbers and simplify`);
+      row(4, `= <span class="twice-note">${frac(a + b, N)}</span> − <span class="c-both">${frac(k, N)}</span>`, `<b>+</b> adds both circles. <span class="warn">The overlap counts twice!</span>`);
+      row(5, `= ${fullAndSimp(union, N)}`, `<b>−</b> takes the overlap away once`);
+    }
+    if (step >= 5) {
+      const ing = ph => { const [v, ...rest] = ph.split(" "); return [v === "be" ? "being" : v.endsWith("e") ? v.slice(0, -1) + "ing" : v + "ing", rest.join(" ")]; };
+      const [va, ra] = ing(evA[2]), [vb, rb] = ing(evB[2]);
+      const both = va === vb ? `${va} <span class="c-a">${ra}</span> or <span class="c-b">${rb}</span>` : `<span class="c-a">${va} ${ra}</span> or <span class="c-b">${vb} ${rb}</span>`;
+      lines.push(`<p class="summary">The probability of one ${S.unit} ${both} is <span class="ans">${fullAndSimp(union, N)}</span></p>`);
     }
     // Long event names: a slightly smaller font keeps each line on one row.
     $("lines").classList.toggle("long", (evA[3] + evB[3]).replace(/&\w+;/g, "x").length > 13);
-    $("lines").innerHTML = lines.length ? lines.join("") : `<p class="hint">The math shows up here, one step at a time.</p>`;
+    $("lines").innerHTML = lines.length ? lines.join("") : "";
+  }
+
+  // One draw: name the outcome and check it against A and B.
+  function drawCaption(S, sorted) {
+    const o = drawn, yn = v => v ? `<span class="yes">yes</span>` : `<span class="no">no</span>`;
+    const where = o.A && o.B ? "both circles" : o.A ? "circle A only" : o.B ? "circle B only" : "neither circle";
+    return `ONE ${S.unit}: <b>${o.label}</b>. <span class="c-a">${evA[1]}</span>? ${yn(o.A)}. <span class="c-b">${evB[1]}</span>? ${yn(o.B)}.` +
+      (sorted ? ` It goes in ${where}.` : o.A && o.B ? ` This one ${S.unit} is both!` : "");
   }
 
   // ---------- Controls ----------
   $("selSpace").addEventListener("change", () => { space = $("selSpace").value; setupSpace(); });
   $("selA").addEventListener("change", setupEvents);
   $("selB").addEventListener("change", setupEvents);
-  $("next").addEventListener("click", () => { step = step === LAST ? 0 : step + 1; render(); });
-  $("back").addEventListener("click", () => { if (step > 0) { step--; render(); } });
+  $("next").addEventListener("click", () => { drawn = null; step = step === LAST ? 0 : step + 1; render(); });
+  $("back").addEventListener("click", () => { if (drawn) { drawn = null; render(); } else if (step > 0) { step--; render(); } });
+  $("draw").addEventListener("click", () => {
+    const pool = items.filter(o => o !== drawn);
+    drawn = pool[Math.floor(Math.random() * pool.length)];
+    render();
+  });
   document.addEventListener("keydown", e => {
     if (e.target.tagName === "SELECT") return;  // arrow keys change the dropdowns there
     if (e.key === "ArrowRight") $("next").click();
@@ -646,5 +704,210 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

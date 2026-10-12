@@ -934,78 +934,86 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const tn = n => n ? " " + (n < 0 ? MINUS : "+") + " " + Math.abs(n) : ""; // + 5 / − 5 / nothing
   const X2 = "x" + sup2;
 
-  // The words and the algebra for step i of the typed expression.
+  // Show steps (Shawn 2026-10-08): only the algebra from trinomial to vertex form, one line per click.
+  // Kinds: "start" (tiles into the area model), "factor" (a > 1: one model per x²),
+  // "pairs" (zero pairs: + inside the bracket and − after it, together), "read" (vertex form).
+  const stepKinds = () => target.a > 1 ? ["start", "factor", "pairs", "read"] : ["start", "pairs", "read"];
   function stepText(i) {
-    const { a, b, c } = target, h = b / (2 * a), N = a * h * h, d = c - N, A = a > 1 ? a : "";
-    const have = Math.max(0, c), pairs = Math.max(0, N - have);
-    const inner = (body, group) => a > 1 ? `${a}(${body})` : group ? `(${body})` : body;
-    return [
-      ["Start with the tiles", poly(a, b, c)],
-      a > 1 ? [`Make ${a} area models, one for each x²`, `${inner(`${X2} ${tx(b / a)}`)}${tn(c)}`]
-            : ["Put x² in the corner", poly(a, b, c)],
-      [`Split ${sx(b / a)} in half: ${sx(h)} on top, ${sx(h)} down the side`, `${inner(`${X2} ${tx(h)} ${tx(h)}`)}${tn(c)}`],
-      [`The corner needs ${Math.abs(h)} × ${Math.abs(h)} = ${h * h} ${h * h === 1 ? "one" : "ones"}` + (a > 1 ? ` in each, ${N} in all` : "") +
-        (pairs ? `. Add ${pairs} zero pair${pairs === 1 ? "" : "s"}: green ones in, red ones out` : ""),
-        `${inner(`${X2} ${tx(b / a)} + ${h * h}`, true)}${tn(c)} ${MINUS} ${N}`],
-      ["Read the sides", `${A}${binom(h)}${sup2}${tn(d)}`]
-    ][i];
+    const { a, b, c } = target, h = b / (2 * a), N = a * h * h, A = a > 1 ? a : "";
+    const br = body => a > 1 ? `${a}(${body})` : `(${body})`;
+    return {
+      start: poly(a, b, c),
+      factor: `= ${br(`${X2} ${tx(b / a)}`)}${tn(c)}`,
+      pairs: `= ${br(`${X2} ${tx(b / a)} + ${h * h}`)}${tn(c)} ${MINUS} ${N}`,
+      read: `= ${A}${binom(h)}${sup2}${tn(c - N)}`
+    }[stepKinds()[i]];
   }
-  // Move the tiles for step i.
+  // Put x² in the corner and split the x tiles along the top and side (making the a models first if needed).
+  function arrange() {
+    const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
+    if (!mats.length) {
+      const S = matSize(h);
+      for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
+      drawMats(); split = true; splitBtn.hidden = true;
+    }
+    const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));
+    const xt = tiles.filter(t => /^-?x$/.test(t.k.id)), slots = [];
+    mats.forEach(m => { for (let k = 1; k < n; k++) slots.push(at(m, 0, k)); });
+    mats.forEach(m => { for (let r = 1; r < n; r++) slots.push(at(m, r, 0)); });
+    slots.forEach((c, j) => xt[j] && moves.push(moveTo(xt[j], c)));
+    const moving = moves.map(m => m.t);
+    // Ones and anything else sitting where the area models are move out of the way.
+    for (const t of tiles) if (!moving.includes(t) && mats.some(m => overlap(t, m))) {
+      const spot = findSpot(t.w, t.h, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD });
+      if (spot) moves.push({ t, x: spot.x, y: spot.y });
+    }
+    return animate(moves);
+  }
   async function stepMoves(i) {
     const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
-    if (i === 1) {
-      if (!mats.length) {
-        const S = matSize(h);
-        for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
-        drawMats(); split = true; splitBtn.hidden = true;
-      }
-      const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));
-      // Anything else sitting where the area models now are moves out of the way.
-      for (const t of tiles) if (!big.includes(t) && mats.some(m => overlap(t, m))) {
-        const spot = findSpot(t.w, t.h, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD });
-        if (spot) moves.push({ t, x: spot.x, y: spot.y });
-      }
-      return animate(moves);
-    }
-    if (i === 2) {
-      const xt = tiles.filter(t => /^-?x$/.test(t.k.id) && !inCell(t)), slots = [];
-      mats.forEach(m => { for (let k = 1; k < n; k++) slots.push(at(m, 0, k)); });
-      mats.forEach(m => { for (let r = 1; r < n; r++) slots.push(at(m, r, 0)); });
-      return animate(slots.map((c, j) => xt[j] && moveTo(xt[j], c)).filter(Boolean));
-    }
-    if (i === 3) {
+    const kind_ = stepKinds()[i];
+    if (kind_ === "start") return a > 1 ? undefined : arrange();
+    if (kind_ === "factor") return arrange();
+    if (kind_ === "pairs") {
+      // Every corner cell gets a green one; its red partner lands outside at the same moment.
       const slots = [];
       mats.forEach(m => { for (let r = 1; r < n; r++) for (let k = 1; k < n; k++) slots.push(at(m, r, k)); });
-      const ones = tiles.filter(t => t.k.id === "1" && !inCell(t)), moves = [];
-      slots.forEach((c, j) => {
-        let t = ones[j];
-        if (!t) { // a zero pair: the green one fills the corner, the red one stays outside
-          const spot = pairSpot();
-          if (!spot) return;
-          t = newTile(kind("1"), spot.x, spot.y);
-          newTile(kind("-1"), spot.x + U, spot.y);
-        }
-        moves.push(moveTo(t, c));
+      const moves = [];
+      slots.forEach(c => {
+        const spot = pairSpot();
+        if (!spot) return;
+        const g = newTile(kind("1"), spot.x, spot.y);
+        newTile(kind("-1"), spot.x + U, spot.y);
+        moves.push(moveTo(g, c));
       });
       return animate(moves, 1100);
     }
-    if (i === 4) { dimsOn = true; refresh(); }
+    if (kind_ === "read") {
+      // Ones outside the models cancel: each green one slides onto a red one and both go.
+      const out = tiles.filter(t => /^-?1$/.test(t.k.id) && !inCell(t));
+      const gr = out.filter(t => t.k.id === "1"), rd = out.filter(t => t.k.id === "-1");
+      const k = Math.min(gr.length, rd.length), moves = [];
+      for (let j = 0; j < k; j++) moves.push({ t: gr[j], x: rd[j].x, y: rd[j].y });
+      await animate(moves, 900);
+      for (let j = 0; j < k; j++) { removeTile(gr[j]); removeTile(rd[j]); }
+      dimsOn = true; refresh();
+    }
   }
   stepsBtn.addEventListener("click", async () => {
     if (busy || drag || !target) return;
-    if (!stepNo || stepNo > 4) makeTiles(target);
+    const last = stepKinds().length - 1;
+    if (!stepNo || stepNo > last) { makeTiles(target); stepNo = 0; }
     stepsCard.hidden = false;
     stepsBtn.disabled = true;
     clearSel();
     await stepMoves(stepNo);
     stepList.querySelectorAll("li").forEach(li => li.classList.remove("now"));
-    const [say, math] = stepText(stepNo);
     const li = document.createElement("li");
     li.className = "now";
-    li.innerHTML = `<span class="say">${say}</span><span class="math">${math}</span>`;
+    li.innerHTML = `<span class="math">${stepText(stepNo)}</span>`;
     stepList.appendChild(li);
     stepNo++;
-    stepsBtn.textContent = stepNo > 4 ? "Show steps again" : "Next step";
+    stepsBtn.textContent = stepNo > last ? "Show steps again" : "Next step";
     stepsBtn.disabled = false;
     refresh();
   });

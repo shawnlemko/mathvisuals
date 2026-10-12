@@ -180,7 +180,20 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 .params input.ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--sheet)); }
 .params input.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--sheet)); }
 .params .unit { flex: none; font-size: 1rem; color: var(--muted); }
-.params label[hidden] { display: none; }
+.params label[hidden], .work label[hidden] { display: none; }
+.gridset { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 6px 8px; align-items: center; }
+.gridset span { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.gridset b { font-family: var(--font-num); font-style: italic; font-size: 1.3rem; }
+.gridset input { width: 100%; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; color: var(--ink); padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); }
+.gridset input.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--sheet)); }
+.gridfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
+.gridfoot span { color: var(--muted); font-size: 0.9rem; }
+#gridBtn[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.work { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.work label { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-weight: 700; font-size: 0.9rem; color: var(--muted); }
+.work input { width: 100%; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; color: var(--ink); padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); }
+.work input.ok { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, var(--sheet)); }
+.work input.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--sheet)); }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .actions button { flex: 1 1 auto; }
 .msg { font-size: 1.15rem; line-height: 1.35; }
@@ -217,6 +230,12 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 .mark { font-family: var(--font-display); font-weight: 800; font-size: 26px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
 .mark.ok { fill: var(--ok); } .mark.bad { fill: var(--bad); }
 .board svg.place { cursor: crosshair; }
+.drawn { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.drawn-end { fill: var(--ink); }
+.wline { stroke-width: 3; stroke-dasharray: 16 8; }
+.wline.max { stroke: var(--green); } .wline.min { stroke: var(--orange); } .wline.mid { stroke: var(--purple); }
+.wlbl { font-family: var(--font-num); font-weight: 700; font-size: 22px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.wlbl.max { fill: var(--green); } .wlbl.min { fill: var(--orange); } .wlbl.mid { fill: var(--purple); }
 </style>
 
 <div class="wrap">
@@ -239,6 +258,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
         <button type="button" data-units="rad" aria-pressed="false">Radians</button>
         <button type="button" data-units="both" aria-pressed="true">Both</button>
       </div>
+      <button type="button" class="big" id="gridBtn" aria-pressed="false">Grid</button>
       <button type="button" class="big go" id="newBtn">New function</button>
     </div>
   </header>
@@ -248,15 +268,34 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       <svg id="svg" viewBox="0 0 1200 700" role="img" aria-label="Graph of a trigonometric function"></svg>
     </div>
     <div class="panel">
+      <div class="card" id="gridCard" hidden>
+        <p class="label">Grid</p>
+        <div class="gridset">
+          <span></span><span>min</span><span>max</span><span>scale</span>
+          <b>x</b><input id="gxlo" aria-label="x min" autocomplete="off" spellcheck="false"><input id="gxhi" aria-label="x max" autocomplete="off" spellcheck="false"><input id="gxst" aria-label="x scale" autocomplete="off" spellcheck="false">
+          <b>y</b><input id="gylo" aria-label="y min" autocomplete="off" spellcheck="false"><input id="gyhi" aria-label="y max" autocomplete="off" spellcheck="false"><input id="gyst" aria-label="y scale" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="gridfoot"><button type="button" id="gridAuto">Auto grid</button><span>New function goes back to the auto grid.</span></div>
+      </div>
       <div class="card">
         <p class="label" id="qLabel">Sketch this function</p>
         <div class="eqbig" id="qEq"></div>
         <div class="eqbig alt" id="qEq2"></div>
         <p class="instr" id="instr"></p>
       </div>
+      <div class="card" id="workCard">
+        <p class="label">Workspace</p>
+        <div class="work">
+          <label id="wlmax">Max<input id="wmax" autocomplete="off" spellcheck="false"></label>
+          <label id="wlmin">Min<input id="wmin" autocomplete="off" spellcheck="false"></label>
+          <label id="wlmid">Midline y =<input id="wmid" autocomplete="off" spellcheck="false"></label>
+          <label id="wlper">Period<input id="wper" autocomplete="off" spellcheck="false"></label>
+        </div>
+      </div>
       <div class="seg-btns tools" id="tools" role="group" aria-label="Place" hidden>
         <button type="button" data-tool="pt" aria-pressed="true">Point</button>
         <button type="button" data-tool="asym" aria-pressed="false">Asymptote</button>
+        <button type="button" data-tool="line" aria-pressed="false">Line</button>
       </div>
       <div class="card" id="ansCard" hidden>
         <div class="seg-btns fns" id="ansFn" role="group" aria-label="Your function">
@@ -324,10 +363,12 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   let mode = "sketch", fnChoice = "mix", units = "both", tool = "pt", ansFn = "sin";
   let F = null, W = null;           // the function and its window
   let pts = [], asyms = [];         // student's sketch
+  let lines = [];                   // lines drawn with the Line tool
   let checked = false, revealed = false, yours = null;
 
-  const X = x => PL + (x - W.lo) / (W.hi - W.lo) * (VW - PL - PR);
-  const Y = y => PT + (YM - y) / (2 * YM) * (VH - PT - PB);
+  let G = null;                     // the grid: x and y min, max and scale (auto from W, or the teacher's own)
+  const X = x => PL + (x - G.xlo) / (G.xhi - G.xlo) * (VW - PL - PR);
+  const Y = y => PT + (G.yhi - y) / (G.yhi - G.ylo) * (VH - PT - PB);
   const val = (f, x) => {
     const t = rad(f.b * (x - f.c));
     if (f.fn === "tan") return Math.tan(t);
@@ -403,7 +444,9 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     F = f;
     W = WIN[fn === "tan" ? "tan" : "sc"][F.b];
-    pts = []; asyms = []; checked = false; revealed = false; yours = null;
+    autoGrid();
+    pts = []; asyms = []; lines = []; checked = false; revealed = false; yours = null;
+    WORK.forEach(k => { $(k).value = ""; $(k).className = ""; });
     ["ia", "ib", "ic", "id"].forEach(k => { $(k).value = ""; $(k).className = ""; });
     setAnsFn("sin");
     $("msg").hidden = true;
@@ -420,9 +463,10 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     let best = null;
     for (let k = -6; k <= 6; k++) {
       const x0 = F.c + k * P;
-      if (x0 < W.lo - 1e-9 || x0 + P > W.hi + 1e-9) continue;
+      if (x0 < G.xlo - 1e-9 || x0 + P > G.xhi + 1e-9) continue;
       if (best === null || Math.abs(x0) < Math.abs(best)) best = x0;
     }
+    if (best === null) best = F.c;
     const pat = F.fn === "sin" ? [0, 1, 0, -1, 0] : [1, 0, -1, 0, 1];
     return pat.map((p, i) => ({ x: best + i * W.q, y: F.d + F.a * p }));
   }
@@ -437,50 +481,99 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     if (nh !== VH) { VH = nh; svg.setAttribute("viewBox", `0 0 ${VW} ${VH}`); return true; }
     return false;
   }
+  // ---------- grid settings ----------
+  const GRID = ["gxlo", "gxhi", "gxst", "gylo", "gyhi", "gyst"];
+  function labelStep(st, lo, hi, base) {
+    let lab = base && isInt(base / st) ? base : st;
+    while ((hi - lo) / lab > 16) lab *= 2;
+    return lab;
+  }
+  function autoGrid() {
+    G = { xlo: W.lo, xhi: W.hi, xstep: W.minor, xlabel: W.label, ylo: -7, yhi: 7, ystep: 1 };
+    fillGrid();
+  }
+  function fillGrid() {
+    const a = v => (units === "rad" ? radText(v) : degText(v));
+    const vals = [a(G.xlo), a(G.xhi), a(G.xstep), numText(G.ylo), numText(G.yhi), numText(G.ystep)];
+    GRID.forEach((k, i) => { if (document.activeElement !== $(k)) { $(k).value = vals[i]; $(k).className = ""; } });
+  }
+  function readGrid() {
+    const v = GRID.map((k, i) => (i < 3 ? parseAngle($(k).value) : parseNum($(k).value)));
+    const [xlo, xhi, xst, ylo, yhi, yst] = v;
+    const okNum = v.map(n => n !== null && !isNaN(n));
+    const bad = new Set();
+    v.forEach((n, i) => { if (!okNum[i]) bad.add(i); });
+    if (okNum[0] && okNum[1] && xlo >= xhi) { bad.add(0); bad.add(1); }
+    if (okNum[3] && okNum[4] && ylo >= yhi) { bad.add(3); bad.add(4); }
+    if (okNum[2] && (xst <= 0 || (okNum[0] && okNum[1] && (xhi - xlo) / xst > 150))) bad.add(2);
+    if (okNum[5] && (yst <= 0 || (okNum[3] && okNum[4] && (yhi - ylo) / yst > 60))) bad.add(5);
+    GRID.forEach((k, i) => ($(k).className = bad.has(i) ? "bad" : ""));
+    if (bad.size) return;
+    G = { xlo, xhi, xstep: xst, xlabel: labelStep(xst, xlo, xhi, W.label), ylo, yhi, ystep: yst };
+    render();
+  }
+
   function render() {
     fitBoard();
     svg.textContent = "";
     const clip = el("clipPath", { id: "plotClip" }, el("defs", {}, svg));
-    el("rect", { x: X(W.lo), y: Y(YM), width: X(W.hi) - X(W.lo), height: Y(-YM) - Y(YM) }, clip);
-    svg.classList.toggle("place", mode === "sketch");
+    el("rect", { x: X(G.xlo), y: Y(G.yhi), width: X(G.xhi) - X(G.xlo), height: Y(G.ylo) - Y(G.yhi) }, clip);
+    svg.classList.add("place");
     const g = el("g", {}, svg);
-    for (let x = W.lo; x <= W.hi + 1e-9; x += W.minor) {
-      const lab = isInt(x / W.label);
-      el("line", { x1: X(x), y1: Y(YM), x2: X(x), y2: Y(-YM), class: near(x, 0) ? "g-axis" : lab ? "g-major" : "g-minor" }, g);
-    }
-    for (let y = -YM; y <= YM; y++) el("line", { x1: X(W.lo), y1: Y(y), x2: X(W.hi), y2: Y(y), class: y === 0 ? "g-axis" : "g-minor" }, g);
-    for (let y = -YM; y <= YM; y++) {
-      if (!y) continue;
-      el("text", { x: X(0) - 8, y: Y(y) + 8, class: "tick", "text-anchor": "end" }, g).textContent = String(y).replace("-", MINUS);
-    }
-    for (let x = W.lo; x <= W.hi + 1e-9; x += W.label) {
-      if (near(x, 0) || near(x, W.lo) || near(x, W.hi)) continue;
+    // Grid lines every step; axes at 0, or along the edge when 0 is off the grid.
+    const ax = Math.max(G.xlo, Math.min(G.xhi, 0)), ay = Math.max(G.ylo, Math.min(G.yhi, 0));
+    const steps = (lo, hi, st) => { const out = []; for (let i = Math.ceil(lo / st - 1e-9); i * st <= hi + 1e-9; i++) out.push(i * st); return out; };
+    const xs = steps(G.xlo, G.xhi, G.xstep), ys = steps(G.ylo, G.yhi, G.ystep);
+    xs.forEach(x => el("line", { x1: X(x), y1: Y(G.yhi), x2: X(x), y2: Y(G.ylo), class: near(x, 0) ? "g-axis" : isInt(x / G.xlabel) ? "g-major" : "g-minor" }, g));
+    ys.forEach(y => el("line", { x1: X(G.xlo), y1: Y(y), x2: X(G.xhi), y2: Y(y), class: near(y, 0) ? "g-axis" : "g-minor" }, g));
+    if (G.xlo > 0 || G.xhi < 0) el("line", { x1: X(ax), y1: Y(G.yhi), x2: X(ax), y2: Y(G.ylo), class: "g-axis" }, g);
+    if (G.ylo > 0 || G.yhi < 0) el("line", { x1: X(G.xlo), y1: Y(ay), x2: X(G.xhi), y2: Y(ay), class: "g-axis" }, g);
+    const yEvery = Math.max(1, Math.ceil(ys.length / 16));
+    ys.forEach((y, i) => {
+      if (near(y, 0) || Math.round(y / G.ystep) % yEvery) return;
+      el("text", { x: X(ax) - 8, y: Y(y) + 8, class: "tick", "text-anchor": "end" }, g).textContent = numText(y);
+    });
+    const below = Y(ay) + 28 > VH - 4 ? -40 : 0; // x labels go above the axis when it sits on the bottom edge
+    steps(G.xlo, G.xhi, G.xlabel).forEach(x => {
+      if (near(x, 0) || near(x, G.xlo) || near(x, G.xhi)) return;
       const tx = X(x);
-      if (units !== "rad") el("text", { x: tx, y: Y(0) + 28, class: "tick", "text-anchor": "middle" }, g).textContent = degText(x);
-      if (units !== "deg") el("text", { x: tx, y: Y(0) + (units === "both" ? 54 : 28), class: "tick" + (units === "both" ? " r" : ""), "text-anchor": "middle" }, g).textContent = radText(x);
-    }
-    el("text", { x: X(W.hi) - 6, y: Y(0) - 10, class: "tick", "text-anchor": "end" }, g).textContent = "x";
-    el("text", { x: X(0) + 10, y: Y(YM) + 22, class: "tick" }, g).textContent = "y";
+      if (units !== "rad") el("text", { x: tx, y: Y(ay) + 28 + below, class: "tick", "text-anchor": "middle" }, g).textContent = degText(x);
+      if (units !== "deg") el("text", { x: tx, y: Y(ay) + (units === "both" ? 54 : 28) + below, class: "tick" + (units === "both" ? " r" : ""), "text-anchor": "middle" }, g).textContent = radText(x);
+    });
+    el("text", { x: X(G.xhi) - 6, y: Y(ay) - 10, class: "tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: X(ax) + 10, y: Y(G.yhi) + 22, class: "tick" }, g).textContent = "y";
 
     const showTrue = mode === "find" || revealed;
     if (showTrue) {
       if (revealed && F.fn !== "tan") {
-        el("line", { x1: X(W.lo), y1: Y(F.d), x2: X(W.hi), y2: Y(F.d), class: "mid" }, svg);
-        el("text", { x: X(W.hi) - 6, y: Y(F.d) - 10, class: "mid-lbl", "text-anchor": "end" }, svg).textContent = "y = " + String(F.d).replace("-", MINUS);
+        el("line", { x1: X(G.xlo), y1: Y(F.d), x2: X(G.xhi), y2: Y(F.d), class: "mid" }, svg);
+        el("text", { x: X(G.xhi) - 6, y: Y(F.d) - 10, class: "mid-lbl", "text-anchor": "end" }, svg).textContent = "y = " + String(F.d).replace("-", MINUS);
       }
-      if (F.fn === "tan") for (let x = -2 * W.q; x <= W.hi + 1e-9; x += 4 * W.q) for (const s of [x, -x]) {
-        if (s >= W.lo && s <= W.hi) el("line", { x1: X(s), y1: Y(YM), x2: X(s), y2: Y(-YM), class: "asym-true" }, svg);
+      if (F.fn === "tan") for (let x = -2 * W.q; x <= Math.max(G.xhi, -G.xlo) + 1e-9; x += 4 * W.q) for (const s of [x, -x]) {
+        if (s >= G.xlo && s <= G.xhi) el("line", { x1: X(s), y1: Y(G.yhi), x2: X(s), y2: Y(G.ylo), class: "asym-true" }, svg);
       }
       el("path", { d: curvePath(F), class: "curve", "clip-path": "url(#plotClip)" }, svg);
       keyPoints().forEach(k => { if (!k.asym) el("circle", { cx: X(k.x), cy: Y(k.y), r: 9, class: "key" }, svg); });
     }
     if (mode === "find" && yours) el("path", { d: curvePath(yours), class: "yours", "clip-path": "url(#plotClip)" }, svg);
 
+    // Workspace values show as labeled dashed lines.
+    if (F.fn !== "tan") [["wmax", "max", "max"], ["wmin", "min", "min"], ["wmid", "mid", "midline"]].forEach(([id, cls, name]) => {
+      const v = parseNum($(id).value);
+      if (v === null || isNaN(v) || v > G.yhi || v < G.ylo) return;
+      el("line", { x1: X(G.xlo), y1: Y(v), x2: X(G.xhi), y2: Y(v), class: "wline " + cls }, svg);
+      el("text", { x: X(G.xlo) + 8, y: Y(v) - 8, class: "wlbl " + cls }, svg).textContent = name;
+    });
+    lines.forEach(l => {
+      el("line", { x1: X(l.x1), y1: Y(l.y1), x2: X(l.x2), y2: Y(l.y2), class: "drawn" }, svg);
+      [[l.x1, l.y1], [l.x2, l.y2]].forEach(([x, y]) => el("circle", { cx: X(x), cy: Y(y), r: 6, class: "drawn-end" }, svg));
+    });
+
     if (mode === "sketch") {
       if (F.fn !== "tan" && pts.length >= 2) el("path", { d: sketchPath(), class: "yours" }, svg);
       asyms.forEach(a => {
-        el("line", { x1: X(a.x), y1: Y(YM), x2: X(a.x), y2: Y(-YM), class: "asym" + (checked ? (a.ok ? " ok" : " bad") : "") }, svg);
-        if (checked) mark(X(a.x) + 8, Y(YM) + 30, a.ok);
+        el("line", { x1: X(a.x), y1: Y(G.yhi), x2: X(a.x), y2: Y(G.ylo), class: "asym" + (checked ? (a.ok ? " ok" : " bad") : "") }, svg);
+        if (checked) mark(X(a.x) + 8, Y(G.yhi) + 30, a.ok);
       });
       pts.forEach(p => {
         el("circle", { cx: X(p.x), cy: Y(p.y), r: 12, class: "pt" + (checked ? (p.ok ? " ok" : " bad") : "") }, svg);
@@ -496,11 +589,11 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     const N = 1200, out = [];
     let pen = false, prev = null;
     for (let i = 0; i <= N; i++) {
-      const x = W.lo + (W.hi - W.lo) * i / N;
+      const x = G.xlo + (G.xhi - G.xlo) * i / N;
       let y = val(f, x);
       if (f.fn === "tan" && prev !== null && Math.abs(y - prev) > 10) pen = false;
       prev = y;
-      if (!isFinite(y) || Math.abs(y) > YM + 2) { pen = false; continue; }
+      if (!isFinite(y) || y > 2 * G.yhi - G.ylo || y < 2 * G.ylo - G.yhi) { pen = false; continue; }
       out.push((pen ? "L" : "M") + X(x).toFixed(1) + "," + Y(y).toFixed(1));
       pen = true;
     }
@@ -531,14 +624,16 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     $("instr").textContent = sk
       ? (F.fn === "tan"
-        ? "Use the 5-point sketch: place 2 asymptotes and the 3 points between them. Drag to move, click to remove."
-        : "Use the 5-point sketch: click the grid to place the 5 key points of one period. Drag to move, click to remove.")
+        ? "5-point sketch: place 2 asymptotes and the 3 points between them. Drag to move, click to remove."
+        : "5-point sketch: place the 5 key points of one period. Drag to move, click to remove.")
       : (F.fn === "tan"
-        ? "Find b. Use the 5-point sketch: one period runs from asymptote to asymptote."
-        : "Find a, b, c and d. The blue dots are the 5 key points of one period. Empty boxes count as 1 for a and b, 0 for c and d.");
-    $("tools").hidden = !(sk && F.fn === "tan");
+        ? "Find b. Drag on the grid to draw a line, click a line to remove it."
+        : "Find a, b, c and d. Blue dots: the 5 key points. Drag on the grid to draw a line, click a line to remove it.");
+    $("tools").hidden = !sk;
+    document.querySelector('[data-tool="asym"]').hidden = F.fn !== "tan";
+    ["wlmax", "wlmin", "wlmid"].forEach(k => ($(k).hidden = F.fn === "tan"));
+    $("wper").placeholder = units === "rad" ? "π" : "°";
     $("ansCard").hidden = sk;
-    $("clearBtn").hidden = !sk;
     const tan = F.fn === "tan";
     $("ansFn").hidden = tan;
     ["la", "lc", "ld"].forEach(k => ($(k).hidden = tan));
@@ -571,16 +666,30 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   function toPlane(evt) {
     const pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-    const x = W.lo + (p.x - PL) / (VW - PL - PR) * (W.hi - W.lo);
-    const y = YM - (p.y - PT) / (VH - PT - PB) * 2 * YM;
-    const cl = (v, a, b) => Math.max(a, Math.min(b, v));
-    return { sx: p.x, sy: p.y, x: cl(Math.round(x / W.minor) * W.minor, W.lo, W.hi), y: cl(Math.round(y), -YM, YM) };
+    const x = G.xlo + (p.x - PL) / (VW - PL - PR) * (G.xhi - G.xlo);
+    const y = G.yhi - (p.y - PT) / (VH - PT - PB) * (G.yhi - G.ylo);
+    const sn = (v, st, a, b) => { let r = Math.round(v / st) * st; if (r < a - 1e-9) r += st; if (r > b + 1e-9) r -= st; return +r.toFixed(9); };
+    return { sx: p.x, sy: p.y, x: sn(x, G.xstep, G.xlo, G.xhi), y: sn(y, G.ystep, G.ylo, G.yhi) };
   }
   let drag = null;
+  // Distance in board units from (px, py) to a drawn line.
+  function lineDist(l, px, py) {
+    const ax = X(l.x1), ay = Y(l.y1), bx = X(l.x2), by = Y(l.y2), dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
+    return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+  }
   svg.addEventListener("pointerdown", e => {
-    if (mode !== "sketch") return;
     const p = toPlane(e);
-    const asymTool = F.fn === "tan" && tool === "asym";
+    const t = mode === "find" ? "line" : tool === "asym" && F.fn !== "tan" ? "pt" : tool;
+    if (t === "line") {
+      const hit = lines.find(l => lineDist(l, p.sx, p.sy) < 14);
+      const obj = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+      lines.push(obj);
+      drag = { line: obj, hit, moved: false };
+      svg.setPointerCapture(e.pointerId);
+      return render();
+    }
+    const asymTool = t === "asym";
     let obj = null, isNew = false;
     if (asymTool) {
       obj = asyms.find(a => Math.abs(X(a.x) - p.sx) < 18);
@@ -602,6 +711,11 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   });
   svg.addEventListener("pointermove", e => {
     if (!drag) return;
+    if (drag.line) {
+      const p = toPlane(e), l = drag.line;
+      if (l.x2 !== p.x || l.y2 !== p.y) { l.x2 = p.x; l.y2 = p.y; drag.moved = true; render(); }
+      return;
+    }
     const p = toPlane(e), o = drag.obj;
     if (o.x !== p.x || ("y" in o && o.y !== p.y)) {
       o.x = p.x; if ("y" in o) o.y = p.y;
@@ -610,6 +724,14 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   });
   const end = () => {
     if (!drag) return;
+    if (drag.line) {
+      const l = drag.line;
+      if (l.x1 === l.x2 && l.y1 === l.y2) {
+        lines.splice(lines.indexOf(l), 1);
+        if (drag.hit) lines.splice(lines.indexOf(drag.hit), 1); // a click on a line removes it
+      }
+      drag = null; return render();
+    }
     if (!drag.moved && !drag.isNew) drag.list.splice(drag.list.indexOf(drag.obj), 1);
     drag = null; changed();
   };
@@ -619,7 +741,39 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     if (checked) { checked = false; $("msg").hidden = true; }
     render();
   }
-  function say(html) { $("msg").innerHTML = html; $("msg").hidden = false; }
+  function say(html) { $("msg").innerHTML = html; $("msg").hidden = false; $("msg").scrollIntoView({ block: "nearest" }); }
+
+  // ---------- workspace ----------
+  const WORK = ["wmax", "wmin", "wmid", "wper"];
+  function workTruth() {
+    return { wmax: F.d + Math.abs(F.a), wmin: F.d - Math.abs(F.a), wmid: F.d, wper: 4 * W.q };
+  }
+  // Checks the boxes that have something in them; returns tips for the wrong ones.
+  function checkWork() {
+    const T = workTruth(), sk = mode === "sketch", tips = [];
+    const rd = units === "rad", full = F.fn === "tan" ? (rd ? "π" : "180°") : (rd ? "2π" : "360°");
+    const help = {
+      wmax: sk ? "Max: start at the midline and go up the amplitude, d + |a|." : "Max: the highest y-value the graph reaches.",
+      wmin: sk ? "Min: start at the midline and go down the amplitude, d − |a|." : "Min: the lowest y-value the graph reaches.",
+      wmid: sk ? "Midline: y = d." : "Midline: halfway between the max and the min.",
+      wper: sk ? `Period: ${full} ÷ b.` : (F.fn === "tan" ? "Period: the distance from one asymptote to the next." : "Period: the distance across one full cycle, like from one max to the next."),
+    };
+    WORK.forEach(k => {
+      if ($(k).closest("label").hidden || $(k).value.trim() === "") return setMark(k, null);
+      const v = k === "wper" ? parseAngle($(k).value) : parseNum($(k).value);
+      const ok = v !== null && !isNaN(v) && near(v, T[k], k === "wper" && rd ? 0.5 : 1e-4);
+      setMark(k, ok);
+      if (!ok) tips.push(help[k]);
+    });
+    return tips;
+  }
+  const workHTML = tips => tips.length ? `<div style="margin-top:6px"><b>Workspace</b><ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul></div>` : "";
+  function fillWork() {
+    const T = workTruth();
+    $("wmax").value = numText(T.wmax); $("wmin").value = numText(T.wmin); $("wmid").value = numText(T.wmid);
+    $("wper").value = units === "rad" ? radText(T.wper) : degText(T.wper);
+  }
+  const numText = v => isInt(v) ? String(Math.round(v)).replace("-", MINUS) : (fracParts(v, 12) ? (v < 0 ? MINUS : "") + Math.abs(fracParts(v, 12).n) + "/" + fracParts(v, 12).den : String(v));
 
   function checkSketch() {
     const q = W.q;
@@ -630,6 +784,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       pts.forEach(p => { p.ok = isInt((p.x - F.c) / q) && near(val(F, p.x), p.y, 1e-6); });
     }
     checked = true;
+    const wt = checkWork();
     const need = F.fn === "tan" ? 3 : 5;
     const good = pts.filter(p => p.ok), xs = good.map(p => p.x).sort((a, b) => a - b);
     const distinct = new Set(xs.map(x => x.toFixed(3))).size === xs.length;
@@ -655,7 +810,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       if (F.fn === "tan" && good.length === 3 && asyms.every(a => a.ok) && asyms.length === 2) tips.push("The 3 points belong between the 2 asymptotes.");
       if (tips.length) h += `<ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul>`;
     }
-    say(h);
+    say(h + workHTML(wt));
     render();
   }
 
@@ -720,6 +875,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     if (s.b === 0) { setMark("ib", false); return say(`<span class="no">b can't be 0.</span>`); }
     yours = s;
+    const wt = checkWork();
     const tips = [], u = units === "rad" ? "rad" : "deg";
     if (F.fn === "tan") {
       const ok = near(s.b, F.b, 1e-4);
@@ -739,10 +895,10 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       if (!cOk) tips.push(s.fn === "sin" ? "c: a sine period starts on the midline. Where does your 5-point pattern start?" : "c: a cosine period starts at a max (or a min when a is negative). Where does it start?");
       if (!dOk) tips.push("d: the midline is halfway between the max and the min.");
     }
-    if (tips.length) say(`<span class="no">Not yet.</span> Your graph is the dashed orange line.<ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul>`);
+    if (tips.length) say(`<span class="no">Not yet.</span> Your graph is the dashed orange line.<ul>${tips.map(t => `<li>${t}</li>`).join("")}</ul>${workHTML(wt)}`);
     else {
       revealed = true;
-      say(`<span class="yes">Yes! That equation matches the graph.</span>${altLine(s)}`);
+      say(`<span class="yes">Yes! That equation matches the graph.</span>${altLine(s)}${workHTML(wt)}`);
     }
     render();
   }
@@ -758,8 +914,10 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     return `<div class="alt">Also right:</div><div class="eqbig alt">${eqHTML(g, units === "rad" ? "rad" : "deg")}</div>`;
   }
   function showAnswer() {
+    fillWork();
     if (mode === "sketch") {
       revealed = true;
+      checkWork();
       say(F.fn === "tan" ? "The blue curve is the graph. The table shows the 5-point sketch: asymptote, 3 points, asymptote."
         : "The blue curve is the graph. The table shows the 5 key points of one period.");
       render();
@@ -767,7 +925,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     const u = units === "rad" ? "rad" : "deg";
     if (F.fn !== "tan") setAnsFn(F.fn);
-    const txt = v => isInt(v) ? String(Math.round(v)).replace("-", MINUS) : (fracParts(v, 12) ? (v < 0 ? MINUS : "") + Math.abs(fracParts(v, 12).n) + "/" + fracParts(v, 12).den : String(v));
+    const txt = numText;
     $("ia").value = txt(F.a); $("ib").value = txt(F.b);
     $("ic").value = u === "rad" ? radText(F.c) : degText(F.c);
     $("id").value = txt(F.d);
@@ -785,7 +943,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   }));
   group("mode", v => { mode = v; newFunction(); });
   group("fn", v => { fnChoice = v; newFunction(); });
-  group("units", v => { units = v; render(); });
+  group("units", v => { units = v; fillGrid(); render(); });
   group("tool", v => { tool = v; });
   document.querySelectorAll("[data-afn]").forEach(b => b.addEventListener("click", () => { setAnsFn(b.dataset.afn); onEdit(); }));
   function onEdit() {
@@ -797,14 +955,230 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     $(k).addEventListener("keydown", e => { if (e.key === "Enter") checkFind(); });
   });
   $("newBtn").addEventListener("click", newFunction);
+  $("gridBtn").addEventListener("click", () => {
+    const on = $("gridCard").hidden;
+    $("gridCard").hidden = !on; $("gridBtn").setAttribute("aria-pressed", on);
+    if (on) fillGrid();
+  });
+  $("gridAuto").addEventListener("click", () => { autoGrid(); render(); });
+  GRID.forEach(k => $(k).addEventListener("input", readGrid));
   $("checkBtn").addEventListener("click", () => (mode === "sketch" ? checkSketch() : checkFind()));
   $("showBtn").addEventListener("click", showAnswer);
-  $("clearBtn").addEventListener("click", () => { pts = []; asyms = []; checked = false; revealed = false; $("msg").hidden = true; render(); });
+  $("clearBtn").addEventListener("click", () => { pts = []; asyms = []; lines = []; checked = false; if (mode === "sketch") revealed = false; $("msg").hidden = true; render(); });
+  WORK.forEach(k => {
+    $(k).addEventListener("input", () => { setMark(k, null); render(); });
+    $(k).addEventListener("keydown", e => { if (e.key === "Enter") $("checkBtn").click(); });
+  });
 
   new ResizeObserver(() => { if (fitBoard()) render(); }).observe(svg.parentElement);
   newFunction();
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

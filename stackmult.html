@@ -253,6 +253,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .msg .eqn .eq + .eq { margin-top: 10px; }
 .msg .eqn .frac { font-size: 1.35rem; }
 .msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
+.msg .why .big { display: block; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.3; }
+.msg .why .do { display: block; margin-top: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; }
+.msg .why .tag { vertical-align: middle; }
 </style>
 <!-- Stacked Multiplication (grades 3 to 7): type a question like 124 × 6 or press New question, work it out in the
      digit boxes, then Check answer finds the first wrong box. Carries get their own small row for each digit of the
@@ -506,15 +509,15 @@ window.Written = (() => {
 
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
-      if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
+      if (!result) { msg.innerHTML = `<p class="lead">Fill in the boxes. Press <b>Check answer</b> any time.</p>`; return; }
       if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
-      const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
-        : it.point ? "Next, put in the decimal point: click one of the orange dots."
-        : result.okCount ? "So far, so good! Next, fill in the orange box." : "Start with the orange box.";
+      const head = !result.empty ? (it.point ? "Oops! Look at the red dot." : "Oops! Look at the red box.")
+        : it.point ? "Next: put in the dot."
+        : result.okCount ? "Good! Next: the orange box." : "Start here: the orange box.";
       const why = typeof it.why === "function" ? it.why(result.v) : it.why;
       msg.innerHTML = `<p class="res ${result.empty ? "next" : "bad"}">${head}</p>` +
-        (explain.checked ? `<p class="why">${why}</p>` : `<p class="lead">Tick <b>Show explanation</b> for help with this one.</p>`);
+        (explain.checked ? `<div class="why">${why}</div>` : `<p class="lead">Tick <b>Show explanation</b> for help.</p>`);
     }
 
     function check() {
@@ -562,15 +565,17 @@ window.Written = (() => {
     s = s.padStart(dp + 1, "0");
     return (s.slice(0, -dp).replace(/^0+(?=\d)/, "") || "0") + "." + s.slice(-dp);
   }
+  // A kid-sized explanation (Shawn): one big math line (or a few), then one short thing to do.
+  const say = (math, action) => (math ? `<span class="big">${[].concat(math).join("<br>")}</span>` : "") + `<span class="do">${action}</span>`;
   const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const s = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-  return { page, want, pointItem, num, norm, withPoint, rnd, s };
+  return { page, want, pointItem, num, norm, withPoint, rnd, s, say };
 })();
 </script>
 <script>
 (() => {
-  const { want, pointItem, num, withPoint, rnd, s } = Written;
+  const { want, pointItem, num, withPoint, rnd, s, say } = Written;
   const m = x => `<span class="m">${x}</span>`;
 
   function parse(a, b, mode) {
@@ -667,43 +672,32 @@ window.Written = (() => {
     let slots = null;
     if (dpT) { slots = []; for (let p = 1; p < F; p++) slots.push(sh.slot(R.sum, col(p))); }
 
-    // What goes in each box, in the order a student works.
+    // What goes in each box, in the order a student works. Explanations are kid-sized: a math line, then what to do.
     const items = [];
-    const rowTag = j => nb === 1 ? "" : `<span class="tag ${tint(j)}">× ${times(j)} row</span> `;
+    const rowTag = j => nb === 1 ? "" : `<span class="tag ${tint(j)}">× ${times(j)} row</span>`;
+    const zero = say("", `Put a 0 here.`);
+    const empty = say("", "Leave this box empty.");
     for (let j = 0; j < nb; j++) {
       const row = parts[j], V = Ai * b[j], vlen = String(V).length + j;
       // Places past the end of this row's number may stay empty (or hold 0), except decimal places in a final answer.
       const kind = p => p < vlen || (nb === 1 && p < dpT) ? "req" : "opt";
       const put = (p, d, why) => items.push(want(row[p], d, kind(p), why));
-      for (let p = 0; p < j; p++) {
-        items.push(want(row[p], 0, "req", `${rowTag(j)}Now multiply by the ${b[j]} in the tens place. It is really ${b[j] * 10}, so first write a ${m(0)} here to hold the ones place.`));
-      }
+      for (let p = 0; p < j; p++) items.push(want(row[p], 0, "req", rowTag(j) + say(`× ${b[j] * 10}`, `We are multiplying by tens now. Put a 0 here first.`)));
       let cin = 0;
       for (let i = 0; i < n; i++) {
-        const t = a[i] * b[j] + cin;
-        const say = rowTag(j) + (cin ? `${m(`${a[i]} × ${b[j]} = ${a[i] * b[j]}`)}, plus the ${cin} you carried makes ${m(t)}.` : `${m(`${a[i]} × ${b[j]} = ${t}`)}.`);
+        const t = a[i] * b[j] + cin, d = t % 10, co = Math.floor(t / 10);
+        const math = cin ? [`${a[i]} × ${b[j]} = ${a[i] * b[j]}`, `${a[i] * b[j]} + ${cin} = ${t}`] : `${a[i]} × ${b[j]} = ${t}`;
+        const tell = act => rowTag(j) + say(math, act);
         if (i < n - 1) {
-          const d = t % 10, co = Math.floor(t / 10);
-          put(i + j, d, say + (co ? ` Write the ${m(d)} here and carry the ${m(co)}.` : ` Write ${m(t)} here.`));
-          const where = nb === 1 ? "" : ` Carries for × ${times(j)} go in the ${j ? "purple" : "blue"} row.`;
-          items.push(want(carry[j][i + 1], co, "opt", co
-            ? `${say} Carry the ${m(co)}: write it in this small box, above the next digit.${where}`
-            : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
+          put(i + j, d, tell(co ? `Write ${d}. Carry ${co}.` : `Write ${t}.`));
+          items.push(want(carry[j][i + 1], co, "opt", tell(co ? `Carry ${co}. Put it in the little box.` : "Nothing to carry. Leave it empty.")));
           cin = co;
         } else {
-          const d = t % 10, co = Math.floor(t / 10);
-          put(i + j, d, say + (co ? ` That was the last digit on top, so write all of ${m(t)}: the ${m(d)} here and the ${m(co)} to its left.` : ` Write ${m(t)} here.`));
-          put(i + j + 1, co, co
-            ? `${say} That was the last digit on top, so the ${m(co)} from ${m(t)} goes here.`
-            : kind(i + j + 1) === "req" ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-            : `${say} That was the last digit on top and ${m(t)} has one digit, so this box stays empty.`);
+          put(i + j, d, tell(co ? `Write ${t}: the ${d} here, the ${co} next to it.` : `Write ${t}.`));
+          put(i + j + 1, co, co ? tell(`The ${co} goes here.`) : kind(i + j + 1) === "req" ? zero : empty);
         }
       }
-      for (let p = n + j + 1; p < row.length; p++) {
-        put(p, 0, kind(p) === "req"
-          ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-          : "Nothing goes in this box. Leave it empty.");
-      }
+      for (let p = n + j + 1; p < row.length; p++) put(p, 0, kind(p) === "req" ? zero : empty);
     }
     if (nb === 2) {
       const P0 = Ai * b[0], P1 = Ai * b[1] * 10, l0 = String(P0).length, l1 = String(P1).length;
@@ -715,27 +709,16 @@ window.Written = (() => {
         if (p < l0) terms.push(x);
         if (p < l1) terms.push(y);
         if (cin) terms.push(cin);
-        const say = terms.length > 1
-          ? `Add this column: ${m(terms.join(" + ") + " = " + t)}${cin ? ` (the last ${cin} is the one you carried)` : ""}.`
-          : terms.length ? `Only ${m(terms[0])} is in this column${cin && terms[0] === cin ? " (the one you carried)" : ""}.` : "";
+        const math = terms.length > 1 ? `${terms.join(" + ")} = ${t}` : String(t);
         const need = p < Tlen || p < dpT;
-        items.push(want(sum[p], d, need ? "req" : "opt", !terms.length
-          ? "Nothing is left to add here, so this box stays empty."
-          : need && p >= Tlen ? `The answer needs ${s(dpT, "digit")} after the decimal point, so put a ${m(0)} in this place.`
-          : say + (co ? ` Write the ${m(d)} here and carry the ${m(co)}.` : ` Write ${m(t)} here.`)));
-        if (p + 1 <= n + 1) {
-          items.push(want(addc[p + 1], co, "opt", co
-            ? `${say} Carry the ${m(co)}: write it in the small box above the next column.`
-            : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
-        }
+        items.push(want(sum[p], d, need ? "req" : "opt", !terms.length ? empty
+          : need && p >= Tlen ? zero
+          : say(math, co ? `Add down. Write ${d}. Carry ${co}.` : `Add down. Write ${t}.`)));
+        if (p + 1 <= n + 1) items.push(want(addc[p + 1], co, "opt", say(math, co ? `Carry ${co}. Put it in the little box.` : "Nothing to carry. Leave it empty.")));
         cin = co;
       }
     }
-    if (slots) {
-      const how = A.dp && B.dp ? `${m(A.S)} has ${s(A.dp, "digit")} after the point and ${m(B.S)} has ${B.dp}. ${m(`${A.dp} + ${B.dp} = ${dpT}`)}`
-        : `${m(A.dp ? A.S : B.S)} has ${s(dpT, "digit")} after the point${A.dp ? ` and ${m(B.S)} has none` : ` and ${m(A.S)} has none`}`;
-      items.push(pointItem(slots, dpT, `Count the digits after the decimal points: ${how}. So the answer needs ${s(dpT, "digit")} after its decimal point. Count ${dpT} from the right and click the dot there.`));
-    }
+    if (slots) items.push(pointItem(slots, dpT, say(`${A.dp} + ${B.dp} = ${dpT}`, `Count the digits after the dots. Count ${dpT} from the right and put the dot there.`)));
     return items;
   }
 

@@ -235,6 +235,8 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
             <button type="button" data-v="mixed">Stay mixed</button>
             <button type="button" data-v="improper">Improper fractions</button>
           </div></div>
+        <div class="opt" id="sizeOpt" hidden><p class="label">Common denominator</p>
+          <div class="seg" id="sizeSeg" role="group" aria-label="Common denominator"></div></div>
       </div>
     </div>
     <p class="err" id="err" hidden></p>
@@ -290,11 +292,13 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     "elevenths", "twelfths", "thirteenths", "fourteenths", "fifteenths", "sixteenths", "seventeenths", "eighteenths", "nineteenths", "twentieths"];
   const ONE = [, "whole", "half", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
     "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"];
-  const pl = d => NAMES[d] || `pieces of size 1/${d}`;
-  const pc = (n, d) => (d < NAMES.length ? `${n} ${n === 1 ? ONE[d] : NAMES[d]}` : `${n} pieces of size 1/${d}`);
+  const pl = d => NAMES[d] || `${d}${d % 100 >= 11 && d % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" })[d % 10] || "th"}s`;
+  const pc = (n, d) => (d < NAMES.length ? `${n} ${n === 1 ? ONE[d] : NAMES[d]}` : `${n} ${n === 1 ? pl(d).slice(0, -1) : pl(d)}`);
   const SHAPE = { strips: "strip", circles: "circle", squares: "square" };
+  const MAXL = 48;   // largest common denominator offered
 
-  const st = { op: "+", model: "strips", strat: "mixed", step: 0 };
+  const st = { op: "+", model: "strips", strat: "mixed", step: 0, mult: 1 };
+  let sizeOpts = { L0: 1, diff: false };   // the smallest common denominator, and whether the denominators differ
 
   // Reads the three boxes for one mixed number. Returns {w, n, d} or an error message.
   function read(p, label) {
@@ -359,7 +363,11 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     if (typeof A === "string") return A;
     if (typeof B === "string") return B;
     const add = st.op === "+", sgn = add ? "+" : "−", tB = st.model === "squares", shape = SHAPE[st.model];
-    const L = lcm(A.d, B.d), kA = L / A.d, kB = L / B.d, NA = A.n * kA, NB = B.n * kB;
+    // The person picks the size of the matching pieces: the smallest common denominator or a multiple of it.
+    const L0 = lcm(A.d, B.d), diff = A.d !== B.d;
+    if (!diff || L0 * st.mult > MAXL) st.mult = 1;
+    sizeOpts = { L0, diff };
+    const L = L0 * st.mult, kA = L / A.d, kB = L / B.d, NA = A.n * kA, NB = B.n * kB;
     const IA = A.w * A.d + A.n, IB = B.w * B.d + B.n, PA = IA * kA, PB = IB * kB;
     if (!add && PA < PB) return "For subtraction, make the first number at least as big as the second.";
     const total = add ? PA + PB : PA - PB, W = Math.floor(total / L), r = total % L, g = gcd(r, L) || 1;
@@ -376,7 +384,7 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
 
     const sameText = A.d === B.d
       ? `Both fractions are already in ${pl(L)}. The pieces are the same size, so no new cuts are needed.`
-      : `${cap(pl(A.d))} and ${pl(B.d)} are different sizes. ${L} is the smallest number both ${A.d} and ${B.d} go into, so cut the pieces into ${pl(L)}. The blue cuts are new: the pieces get smaller, but the amount stays the same.`;
+      : `${cap(pl(A.d))} and ${pl(B.d)} are different sizes. ${L} is ${L === L0 ? "the smallest number" : "a number"} both ${A.d} and ${B.d} go into, so cut the pieces into ${pl(L)}. The blue cuts are new: the pieces get smaller, but the amount stays the same.`;
     const matchLine = (F, k, cls, num, base) => (k > 1
       ? `${mx(base.w, base.n, base.d, cls)}${O("=")}${base.w ? `<span class="mx ${cls}"><span class="w">${base.w}</span>${frX(base.n, base.d, k)}</span>` : `<span class="mx ${cls}">${frX(base.n, base.d, k)}</span>`}${O("=")}${mx(base.w, base.n * k, L, cls, { n: 1, d: 1 })}`
       : `${mx(base.w, base.n, base.d, cls)}<span class="say">already uses ${pl(L)}</span>`);
@@ -657,6 +665,12 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     });
     $("opSign").textContent = st.op === "+" ? "+" : "−";
     const S = build();
+    // Common denominator choices: the smallest one and its multiples, while the pieces stay countable.
+    $("sizeOpt").hidden = typeof S === "string" || !sizeOpts.diff;
+    if (!$("sizeOpt").hidden) {
+      const ms = [1, 2, 3, 4].filter(m => m === 1 || sizeOpts.L0 * m <= MAXL).slice(0, 3);
+      $("sizeSeg").innerHTML = ms.map(m => `<button type="button" data-m="${m}" aria-pressed="${st.mult === m}">${sizeOpts.L0 * m}</button>`).join("");
+    }
     const err = typeof S === "string" ? S : "";
     $("err").hidden = !err;
     $("err").textContent = err;
@@ -693,7 +707,13 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
       if (key !== "model") st.step = 0;   // a new model keeps the step; a new question or strategy starts over
       render(key === "model");
     }));
-  ["aw", "an", "ad", "bw", "bn", "bd"].forEach(id => $(id).addEventListener("input", () => { st.step = 0; render(); }));
+  ["aw", "an", "ad", "bw", "bn", "bd"].forEach(id => $(id).addEventListener("input", () => { st.step = 0; st.mult = 1; render(); }));
+  $("sizeSeg").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    st.mult = +b.dataset.m;
+    render(true);   // keeps the step, so the new cuts draw in
+  });
 
   function setInputs(v) {
     // A whole part of 0 leaves the box empty, so proper fractions read as proper fractions.

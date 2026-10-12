@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Ratios and Scale Factors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Ratios and Scale Factors (grades 7-9, Shawn 2026-10-08): the two big proportional reasoning skills.
+   Find the scale factor between two ratios, or use a ratio and a scale factor to find the new ratio.
+   Ratios show in words, with a colon or as a fraction. The board has the two ratios with green × arcs joining
+   first terms (top) and second terms (bottom), over a picture: the smaller ratio is one group of blue and orange squares,
+   the bigger one is that group repeated, one row per group, so the scale factor is the number of groups.
+   Explore (teacher) steps through it; Practice asks questions and plays the same steps after an answer. */
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 44px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns .num { font-family: var(--font-num); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.row + .row, .label + .row, .row + .label { margin-top: 10px; }
+.card .label { margin-bottom: 6px; }
+
+.ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; }
+.ask input { font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; height: 56px; width: 3.6ch; text-align: center; padding: 0 4px; }
+.ask input.t1 { border-color: var(--pt); color: var(--pt); }
+.ask input.t2 { border-color: var(--orange); color: var(--orange); }
+.ask input.k { border-color: var(--green); color: var(--green); width: 4.4ch; }
+.ask .word { font-family: var(--font-body); font-size: 1.1rem; color: var(--muted); font-weight: 700; }
+.ask .stack { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; }
+.ask .stack hr { width: 100%; border: 0; border-top: 3px solid var(--ink); margin: 0; }
+.names input { font: inherit; font-weight: 700; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 44px; width: 9em; padding: 0 8px; }
+.names .t1 { border-color: var(--pt); } .names .t2 { border-color: var(--orange); }
+.sq-key { display: inline-block; width: 16px; height: 16px; border-radius: 3px; vertical-align: -2px; }
+.stepper { display: inline-flex; align-items: center; gap: 6px; }
+.stepper button { min-width: 44px; min-height: 44px; font-size: 1.3rem; padding: 0; }
+.stepper output { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--green); min-width: 2ch; text-align: center; }
+.say { font-size: 1.25rem; font-weight: 700; margin: 0; min-height: 3em; }
+.say .n { font-family: var(--font-num); }
+.err { margin: 8px 0 0; color: var(--warn); font-weight: 700; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btns button { font-size: 1.1rem; min-height: 52px; padding: 10px 16px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.prompt { margin: 0 0 10px; font-size: 1.15rem; font-weight: 700; }
+.fb { margin: 10px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.score { font-size: 1.1rem; color: var(--muted); margin: 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.4rem; }
+
+/* Board drawing */
+.rt { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.rt.t1 { fill: var(--pt); } .rt.t2 { fill: var(--orange); }
+.rt.q { fill: var(--muted); }
+.rt.word { font-family: var(--font-body); fill: var(--ink); }
+.fbar { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.eqsign { font-family: var(--font-num); font-weight: 700; fill: var(--muted); text-anchor: middle; }
+.arc { fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round; }
+.arc.q { stroke: var(--grid-major); stroke-dasharray: 10 8; }
+.arrowhead { fill: var(--green); }
+.arrowhead.q { fill: var(--grid-major); }
+.k-lbl { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 36px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.k-lbl.q { fill: var(--muted); }
+.sq { stroke: var(--sheet); stroke-width: 2; }
+.sq.a { fill: var(--pt); } .sq.b { fill: var(--orange); }
+.sq.ghost { fill: none; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 5 4; }
+.grp { fill: none; stroke: var(--grid-major); stroke-width: 2; }
+.rownum { fill: var(--green); font-family: var(--font-num); font-weight: 700; text-anchor: end; }
+.hidebox { fill: none; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 10 8; }
+.hideq { fill: var(--muted); font-family: var(--font-num); font-weight: 700; font-size: 64px; text-anchor: middle; }
+.cap { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 28px; text-anchor: middle; }
+.divider { stroke: var(--grid); stroke-width: 2; }
+@media (max-width: 600px) { .ask { font-size: 1.3rem; } .ask input { height: 48px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Ratios and Scale Factors</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="explore" class="on">Explore</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1200 750" role="img" aria-label="Two equivalent ratios joined by scale factor arrows, over a picture of the ratio as groups of blue and orange squares."></svg></div>
+
+    <div class="panel" id="explore">
+      <section class="card">
+        <p class="label">Skill</p>
+        <div class="seg-btns" role="group" aria-label="Skill">
+          <button type="button" data-skill="sf" class="on">Find the scale factor</button><button type="button" data-skill="nr">Find the new ratio</button>
+        </div>
+        <p class="label" style="margin-top: 12px">Write ratios</p>
+        <div class="seg-btns" role="group" aria-label="Ratio form">
+          <button type="button" data-form="words">Words</button><button type="button" class="num on" data-form="colon">2 : 3</button><button type="button" class="num" data-form="frac">2/3</button>
+        </div>
+      </section>
+      <section class="card">
+        <div class="row">
+          <div class="ask">
+            <input id="a" class="t1" type="text" inputmode="numeric" autocomplete="off" aria-label="First term" value="2">
+            <span>:</span>
+            <input id="b" class="t2" type="text" inputmode="numeric" autocomplete="off" aria-label="Second term" value="3">
+          </div>
+          <div class="seg-btns" role="group" aria-label="Multiply or divide">
+            <button type="button" class="num on" data-op="×">×</button><button type="button" class="num" data-op="÷">÷</button>
+          </div>
+          <div class="stepper">
+            <button type="button" id="kDown" aria-label="Smaller scale factor">−</button><output id="k">3</output><button type="button" id="kUp" aria-label="Bigger scale factor">+</button>
+          </div>
+        </div>
+        <div class="row names" id="names" hidden>
+          <span class="sq-key" style="background: var(--pt)"></span><input id="n1" class="t1" type="text" autocomplete="off" aria-label="First thing" value="cats">
+          <span class="sq-key" style="background: var(--orange)"></span><input id="n2" class="t2" type="text" autocomplete="off" aria-label="Second thing" value="dogs">
+        </div>
+        <p class="err" id="err" hidden></p>
+      </section>
+      <section class="card">
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+        <button type="button" id="rand">New example</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <p class="label">Skill</p>
+        <div class="seg-btns" role="group" aria-label="Practice skill">
+          <button type="button" data-pskill="sf">Scale factor</button><button type="button" data-pskill="nr">New ratio</button><button type="button" data-pskill="mix" class="on">Mixed</button>
+        </div>
+        <p class="label" style="margin-top: 12px">Write ratios</p>
+        <div class="seg-btns" role="group" aria-label="Practice ratio form">
+          <button type="button" data-pform="words">Words</button><button type="button" class="num" data-pform="colon">2 : 3</button><button type="button" class="num" data-pform="frac">2/3</button><button type="button" data-pform="mix" class="on">Mixed</button>
+        </div>
+      </section>
+      <section class="card">
+        <p class="prompt" id="prompt"></p>
+        <div class="ask" id="ans"></div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="check">Check</button>
+        <button type="button" id="showme">Show me</button>
+        <button type="button" id="newq">New question</button>
+      </div>
+      <p class="score">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const LAST = 3;   // steps: 0 the question, 1 first terms, 2 second terms, 3 the answer
+
+  // One problem: ratio a : b and a scale factor (× k or ÷ k). The other ratio follows from them.
+  // skill "sf": both ratios are given, find the factor. skill "nr": ratio and factor given, find the new ratio.
+  let mode = "explore";
+  let ex = { a: 2, b: 3, op: "×", k: 3, names: ["cats", "dogs"], skill: "sf", f1: "colon", f2: "colon", step: 0 };
+  let pq = null;
+  const other = p => p.op === "×" ? [p.a * p.k, p.b * p.k] : [p.a / p.k, p.b / p.k];
+  const cur = () => mode === "explore" ? ex : pq;
+
+  // ---------- drawing ----------
+  // Draws one ratio centred at (cx, cy). Returns where its first and second terms are, for the arcs.
+  function drawRatio(cx, cy, form, t1, t2, names) {
+    const g = el("g", {});
+    const num = (t, cls, x, y, size, anchor = "middle") => {
+      const e = el("text", { class: `rt ${t === "?" ? "q" : cls}`, x, y, "font-size": size, "text-anchor": anchor }, g);
+      e.textContent = t; return e;
+    };
+    if (form === "frac") {
+      const S = 76;
+      const top = num(t1, "t1", cx, cy - 18, S), bot = num(t2, "t2", cx, cy + 18 + S * 0.72, S);
+      const w = Math.max(top.getComputedTextLength(), bot.getComputedTextLength(), S * 0.7);
+      el("line", { class: "fbar", x1: cx - w / 2 - 12, x2: cx + w / 2 + 12, y1: cy, y2: cy }, g);
+      return { p1: { x: cx, y: cy - 18 - S * 0.72 }, p2: { x: cx, y: cy + 18 + S * 0.72 + 8 } };
+    }
+    if (form === "colon") {
+      const S = 84, base = cy + S * 0.36;
+      const parts = [[t1, "t1"], [" : ", ""], [t2, "t2"]].map(([t, c]) => num(t, c, 0, base, S, "start"));
+      const ws = parts.map(p => p.getComputedTextLength()), tot = ws.reduce((s, w) => s + w, 0);
+      let x = cx - tot / 2; const mids = [];
+      parts.forEach((p, i) => { p.setAttribute("x", x); mids.push(x + ws[i] / 2); x += ws[i]; });
+      return { p1: { x: mids[0], y: cy - S * 0.42 }, p2: { x: mids[2], y: cy + S * 0.48 } };
+    }
+    // Words: two lines, "2 cats" over "to 3 dogs", shrunk to fit half the board.
+    let S = 56;
+    const line = (bits, y) => {
+      const parts = bits.map(([t, c]) => { const e = num(t, c || "word", 0, y, S, "start"); if (!c) e.setAttribute("class", "rt word"); return e; });
+      return parts;
+    };
+    const l1 = line([[t1, "t1"], [" " + names[0]]], 0), l2 = line([["to "], [t2, "t2"], [" " + names[1]]], 0);
+    const width = ps => ps.reduce((s, p) => s + p.getComputedTextLength(), 0);
+    const widest = Math.max(width(l1), width(l2));
+    const f = Math.min(1, 500 / widest);
+    S *= f;
+    const y1 = cy - S * 0.22, y2 = cy + S * 1.0;
+    const place = (ps, y) => {
+      ps.forEach(p => p.setAttribute("font-size", S));
+      const ws = ps.map(p => p.getComputedTextLength()), tot = ws.reduce((s, w) => s + w, 0);
+      let x = cx - tot / 2; const mids = [];
+      ps.forEach((p, i) => { p.setAttribute("x", x); p.setAttribute("y", y); mids.push(x + ws[i] / 2); x += ws[i]; });
+      return mids;
+    };
+    const m1 = place(l1, y1), m2 = place(l2, y2);
+    return { p1: { x: m1[0], y: y1 - S * 0.82 }, p2: { x: m2[1], y: y2 + S * 0.32 } };
+  }
+
+  function arc(p, q, up, label, known) {
+    const y = up ? Math.min(p.y, q.y) - 8 : Math.max(p.y, q.y) + 8;
+    const ctrl = up ? y - 112 : y + 112, mx = (p.x + q.x) / 2;
+    const ax = p.x + 26, bx = q.x - 26;
+    el("path", { class: "arc" + (known ? "" : " q"), d: `M${ax},${y} Q${mx},${ctrl} ${bx},${y}` });
+    // arrowhead pointing along the curve at its end
+    const dx = bx - mx, dy = y - ctrl, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, px = -uy, py = ux, s = 11;
+    el("path", { class: "arrowhead" + (known ? "" : " q"), d: `M${bx},${y} L${bx - ux * s * 1.6 + px * s},${y - uy * s * 1.6 + py * s} L${bx - ux * s * 1.6 - px * s},${y - uy * s * 1.6 - py * s}Z` });
+    const apex = (y + ctrl) / 2;
+    el("text", { class: "k-lbl" + (known ? "" : " q"), x: mx, y: up ? apex - 10 : apex + 36 }).textContent = known ? label : "?";
+  }
+
+  function draw() {
+    svg.replaceChildren();
+    const p = cur(); if (!p) return;
+    const r2 = other(p), s = p.step;
+    const fac = `${p.op} ${p.k}`;
+    // What shows: in "find the new ratio" the new terms appear one step at a time; in "find the scale factor" the factor does.
+    const nr = p.skill === "nr";
+    const R1 = [String(p.a), String(p.b)];
+    const R2 = [nr && s < 1 ? "?" : String(r2[0]), nr && s < 2 ? "?" : String(r2[1])];
+    const k1 = nr || s >= 1, k2 = nr || s >= 2;
+
+    const CY = p.f1 === "frac" || p.f2 === "frac" ? 178 : 176;
+    const L = drawRatio(300, CY, p.f1, R1[0], R1[1], p.names);
+    const R = drawRatio(900, CY, p.f2, R2[0], R2[1], p.names);
+    el("text", { class: "eqsign", x: 600, y: CY + 28, "font-size": 80 }).textContent = "=";
+    arc(L.p1, R.p1, true, fac, k1);
+    arc(L.p2, R.p2, false, fac, k2);
+
+    // Picture: the smaller ratio is one group; the bigger one is k groups, one row each.
+    el("line", { class: "divider", x1: 600, x2: 600, y1: 392, y2: 735 });
+    const up = p.op === "×";
+    const grp = up ? [p.a, p.b] : r2;
+    const n = grp[0] + grp[1];
+    const top = 396, avail = 300;
+    const u = Math.min(50, 470 / n, avail / (p.k * 1.3));
+    const side = (cx, rows, given) => {
+      // given: this side's ratio is part of the question, so its picture always shows.
+      const shown = given ? 2 : s;
+      const w = n * u, x0 = cx - w / 2;
+      if (shown === 0) {
+        const h = Math.min(avail, rows * u * 1.3);
+        el("rect", { class: "hidebox", x: x0 - 10, y: top, width: w + 20, height: h, rx: 10 });
+        el("text", { class: "hideq", x: cx, y: top + h / 2 + 22 }).textContent = "?";
+        return;
+      }
+      for (let r = 0; r < rows; r++) {
+        const y = top + r * u * 1.3;
+        el("rect", { class: "grp", x: x0 - 4, y: y - 4, width: w + 8, height: u + 8, rx: 6 });
+        for (let i = 0; i < n; i++) {
+          const isA = i < grp[0];
+          const ghost = !isA && shown < 2;
+          el("rect", { class: "sq " + (ghost ? "ghost" : isA ? "a" : "b"), x: x0 + i * u + 1, y: y + 1, width: u - 2, height: u - 2, rx: Math.min(5, u / 6) });
+        }
+        if (rows > 1 && s >= 1) el("text", { class: "rownum", x: x0 - 14, y: y + u * 0.72, "font-size": Math.max(16, Math.min(28, u * 0.8)) }).textContent = r + 1;
+      }
+      if (s >= LAST) el("text", { class: "cap", x: cx, y: Math.min(742, top + rows * u * 1.3 + 30) }).textContent = rows === 1 ? "1 group" : `${rows} groups`;
+    };
+    side(300, up ? 1 : p.k, true);
+    side(900, up ? p.k : 1, false);
+  }
+
+  // ---------- step words ----------
+  const colon = (x, y) => `${x} : ${y}`;
+  function say(p) {
+    const [A, B] = other(p), k = p.k, up = p.op === "×", s = p.step;
+    const c1 = colon(p.a, p.b), c2 = colon(A, B);
+    if (p.skill === "nr") {
+      return [
+        `${up ? "Multiply" : "Divide"} both terms by ${k}.`,
+        `First term: ${p.a} ${p.op} ${k} = ${A}`,
+        `Second term: ${p.b} ${p.op} ${k} = ${B}`,
+        up ? `New ratio: ${c2}. It is ${k} groups of ${c1}.` : `New ratio: ${c2}. ${c1} is ${k} groups of ${c2}.`,
+      ][s];
+    }
+    return [
+      `How do you get from ${c1} to ${c2}?`,
+      up ? `First terms: ${A} ÷ ${p.a} = ${k}, so × ${k}` : `First terms: ${p.a} ÷ ${A} = ${k}, so ÷ ${k}`,
+      up ? `Second terms: ${B} ÷ ${p.b} = ${k}. Same factor both times.` : `Second terms: ${p.b} ÷ ${B} = ${k}. Same factor both times.`,
+      up ? `Scale factor: × ${k}` : `Scale factor: ÷ ${k} (the same as × 1/${k})`,
+    ][s];
+  }
+
+  // ---------- explore ----------
+  const int = v => /^\s*\d+\s*$/.test(v) ? parseInt(v, 10) : NaN;
+  function exCheck() {
+    const a = int($("a").value), b = int($("b").value);
+    let msg = "";
+    if (!(a >= 1 && b >= 1)) msg = "Type two whole numbers, like 2 and 3.";
+    else if (a > 60 || b > 60) msg = "Keep each term 60 or less.";
+    else if (ex.op === "÷" && (a % ex.k || b % ex.k)) msg = `${a} and ${b} can't both be divided by ${ex.k}. Pick another factor or ratio.`;
+    else if (ex.op === "×" && (a + b) * ex.k > 400) msg = "That makes a very big ratio. Try a smaller factor.";
+    $("err").hidden = !msg; $("err").textContent = msg;
+    if (msg) return false;
+    ex.a = a; ex.b = b; return true;
+  }
+  function exRender() {
+    $("k").textContent = ex.k;
+    $("kDown").disabled = ex.k <= 2; $("kUp").disabled = ex.k >= 10;
+    if (!exCheck()) { svg.replaceChildren(); $("say").textContent = ""; $("next").disabled = $("back").disabled = true; return; }
+    draw();
+    $("say").textContent = say(ex);
+    $("next").disabled = ex.step >= LAST; $("back").disabled = ex.step <= 0;
+  }
+  const restart = () => { ex.step = 0; exRender(); };
+  ["a", "b"].forEach(id => $(id).addEventListener("input", restart));
+  $("n1").addEventListener("input", () => { ex.names[0] = $("n1").value.trim() || "first"; exRender(); });
+  $("n2").addEventListener("input", () => { ex.names[1] = $("n2").value.trim() || "second"; exRender(); });
+  $("kDown").addEventListener("click", () => { ex.k = Math.max(2, ex.k - 1); restart(); });
+  $("kUp").addEventListener("click", () => { ex.k = Math.min(10, ex.k + 1); restart(); });
+  const seg = (sel, on) => document.querySelectorAll(sel).forEach(on);
+  seg("[data-op]", b => b.addEventListener("click", () => {
+    ex.op = b.dataset.op; seg("[data-op]", x => x.classList.toggle("on", x === b)); restart();
+  }));
+  seg("[data-skill]", b => b.addEventListener("click", () => {
+    ex.skill = b.dataset.skill; seg("[data-skill]", x => x.classList.toggle("on", x === b)); restart();
+  }));
+  seg("[data-form]", b => b.addEventListener("click", () => {
+    ex.f1 = ex.f2 = b.dataset.form; seg("[data-form]", x => x.classList.toggle("on", x === b));
+    $("names").hidden = ex.f1 !== "words"; exRender();
+  }));
+  $("next").addEventListener("click", () => { if (ex.step < LAST) { ex.step++; exRender(); } });
+  $("back").addEventListener("click", () => { if (ex.step > 0) { ex.step--; exRender(); } });
+  $("again").addEventListener("click", restart);
+  $("rand").addEventListener("click", () => {
+    const q = makeProblem(ex.skill);
+    Object.assign(ex, { a: q.a, b: q.b, op: q.op, k: q.k, step: 0 });
+    $("a").value = q.a; $("b").value = q.b;
+    seg("[data-op]", x => x.classList.toggle("on", x.dataset.op === ex.op));
+    exRender();
+  });
+  addEventListener("keydown", e => {
+    if (mode !== "explore" || e.target.matches("input")) return;
+    if (e.key === "ArrowRight") $("next").click();
+    if (e.key === "ArrowLeft") $("back").click();
+  });
+
+  // ---------- practice ----------
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+  const CONTEXTS = [["cats", "dogs"], ["boys", "girls"], ["cups of flour", "cups of sugar"], ["apples", "oranges"],
+    ["wins", "losses"], ["laps walked", "laps run"], ["red cars", "blue cars"], ["teachers", "students"], ["cups of juice", "cups of water"]];
+  function makeProblem(skill) {
+    let a0, b0, k;
+    do { a0 = rnd(1, 9); b0 = rnd(1, 10); } while (a0 === b0 || gcd(a0, b0) > 1 && Math.random() < 0.7);
+    do { k = Math.random() < 0.8 ? rnd(2, 6) : rnd(7, 10); } while ((a0 + b0) * k > 120);
+    const op = Math.random() < 0.65 ? "×" : "÷";
+    const [a, b] = op === "×" ? [a0, b0] : [a0 * k, b0 * k];
+    return { a, b, op, k, skill, names: pick(CONTEXTS), step: 0 };
+  }
+  let pSkill = "mix", pForm = "mix", right = 0, tried = 0, timer = null;
+  function newQuestion() {
+    clearTimeout(timer);
+    pq = makeProblem(pSkill === "mix" ? pick(["sf", "nr"]) : pSkill);
+    const forms = ["words", "colon", "frac"];
+    pq.f1 = pForm === "mix" ? pick(forms) : pForm;
+    pq.f2 = pForm === "mix" ? pick(forms) : pForm;
+    pq.done = false; pq.counted = false;
+    const [A, B] = other(pq);
+    const fmt = (f, x, y) => f === "words" ? `${x} ${pq.names[0]} to ${y} ${pq.names[1]}` : f === "frac" ? `${x}/${y}` : `${x} : ${y}`;
+    if (pq.skill === "sf") {
+      $("prompt").textContent = `What is the scale factor from ${fmt(pq.f1, pq.a, pq.b)} to ${fmt(pq.f2, A, B)}?`;
+      $("ans").innerHTML = `<div class="seg-btns" role="group" aria-label="Multiply or divide"><button type="button" class="num on" data-pop="×">×</button><button type="button" class="num" data-pop="÷">÷</button></div>
+        <input id="pk" class="k" type="text" inputmode="numeric" autocomplete="off" aria-label="Scale factor">`;
+      pq.pop = "×";
+      seg("[data-pop]", b => b.addEventListener("click", () => { pq.pop = b.dataset.pop; seg("[data-pop]", x => x.classList.toggle("on", x === b)); }));
+    } else {
+      $("prompt").textContent = `${pq.op === "×" ? "Multiply" : "Divide"} ${fmt(pq.f1, pq.a, pq.b)} by ${pq.k}. What is the new ratio?`;
+      const i1 = `<input id="p1" class="t1" type="text" inputmode="numeric" autocomplete="off" aria-label="First term">`;
+      const i2 = `<input id="p2" class="t2" type="text" inputmode="numeric" autocomplete="off" aria-label="Second term">`;
+      const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+      $("ans").innerHTML = pq.f2 === "frac" ? `<span class="stack">${i1}<hr>${i2}</span>`
+        : pq.f2 === "words" ? `${i1}<span class="word">${esc(pq.names[0])} to</span>${i2}<span class="word">${esc(pq.names[1])}</span>`
+        : `${i1}<span>:</span>${i2}`;
+    }
+    $("ans").querySelectorAll("input").forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
+    $("fb").textContent = ""; $("fb").className = "fb";
+    draw(); pButtons();
+  }
+  function pButtons() { $("check").disabled = $("showme").disabled = pq.done; }
+  function tally(ok) {
+    if (pq.counted) return;
+    pq.counted = true; tried++; if (ok) right++;
+    $("right").textContent = right; $("tried").textContent = tried;
+  }
+  function play() {
+    pq.done = true; pButtons();
+    const tick = () => { if (pq.step < LAST) { pq.step++; draw(); timer = setTimeout(tick, 900); } };
+    timer = setTimeout(tick, 300);
+  }
+  function no(msg) { tally(false); $("fb").className = "fb no"; $("fb").textContent = msg; }
+  function check() {
+    if (pq.done) return;
+    const [A, B] = other(pq);
+    if (pq.skill === "sf") {
+      const raw = $("pk").value.replace(/\s/g, "");
+      let op = pq.pop, n = int(raw);
+      const unit = raw.match(/^1\/(\d+)$/);
+      if (unit) { n = +unit[1]; op = op === "×" ? "÷" : "×"; }
+      if (!(n >= 1)) { $("fb").className = "fb no"; $("fb").textContent = "Type a whole number in the box."; return; }
+      if (n === pq.k && op === pq.op) return ok();
+      if (n === pq.k) return no("Right number, wrong way. Is the new ratio bigger or smaller?");
+      return no(`Not yet. Compare the first terms: ${pq.a} and ${A}.`);
+    }
+    const g1 = int($("p1").value), g2 = int($("p2").value);
+    if (!(g1 >= 0 && g2 >= 0)) { $("fb").className = "fb no"; $("fb").textContent = "Type a number in each box."; return; }
+    if (g1 === A && g2 === B) return ok();
+    if (g1 - pq.a === g2 - pq.b && g1 !== pq.a) return no("That adds the same amount to each term. A scale factor multiplies or divides each term.");
+    if (g1 === A) return no("The first term is right. Check the second term.");
+    if (g2 === B) return no("The second term is right. Check the first term.");
+    if (g1 * B === g2 * A) return no(`That is equivalent, but not ${pq.op} ${pq.k}. ${pq.op === "×" ? "Multiply" : "Divide"} each term by ${pq.k}.`);
+    return no(`Not yet. ${pq.op === "×" ? "Multiply" : "Divide"} each term by ${pq.k}.`);
+  }
+  function ok() { tally(true); $("fb").className = "fb ok"; $("fb").textContent = "Correct!"; play(); }
+  $("check").addEventListener("click", check);
+  $("showme").addEventListener("click", () => { if (pq.done) return; tally(false); $("fb").className = "fb"; $("fb").textContent = ""; play(); });
+  $("newq").addEventListener("click", newQuestion);
+  seg("[data-pskill]", b => b.addEventListener("click", () => {
+    pSkill = b.dataset.pskill; seg("[data-pskill]", x => x.classList.toggle("on", x === b)); newQuestion();
+  }));
+  seg("[data-pform]", b => b.addEventListener("click", () => {
+    pForm = b.dataset.pform; seg("[data-pform]", x => x.classList.toggle("on", x === b)); newQuestion();
+  }));
+
+  // ---------- mode switch ----------
+  seg("[data-mode]", b => b.addEventListener("click", () => {
+    if (b.dataset.mode === mode) return;
+    mode = b.dataset.mode;
+    seg("[data-mode]", x => x.classList.toggle("on", x === b));
+    $("explore").hidden = mode !== "explore";
+    $("practice").hidden = mode !== "practice";
+    if (mode === "practice") { if (!pq) newQuestion(); else draw(); }
+    else { clearTimeout(timer); if (pq && pq.done) pq.step = LAST; exRender(); }
+  }));
+
+  exRender();
+  // Text widths are measured, so redraw once the fonts arrive.
+  if (document.fonts) document.fonts.ready.then(() => draw());
+})();
+</script>
+
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

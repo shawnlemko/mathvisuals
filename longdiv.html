@@ -253,6 +253,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .msg .eqn .eq + .eq { margin-top: 10px; }
 .msg .eqn .frac { font-size: 1.35rem; }
 .msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
+.msg .why .big { display: block; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.3; }
+.msg .why .do { display: block; margin-top: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; }
+.msg .why .tag { vertical-align: middle; }
 </style>
 <!-- Long Division (grades 3 to 7): type a question like 126 ÷ 4 or press New question, work it out in the digit boxes,
      then Check answer finds the first wrong box. The answer goes above the bracket (blue); each step has a row to
@@ -506,15 +509,15 @@ window.Written = (() => {
 
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
-      if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
+      if (!result) { msg.innerHTML = `<p class="lead">Fill in the boxes. Press <b>Check answer</b> any time.</p>`; return; }
       if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
-      const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
-        : it.point ? "Next, put in the decimal point: click one of the orange dots."
-        : result.okCount ? "So far, so good! Next, fill in the orange box." : "Start with the orange box.";
+      const head = !result.empty ? (it.point ? "Oops! Look at the red dot." : "Oops! Look at the red box.")
+        : it.point ? "Next: put in the dot."
+        : result.okCount ? "Good! Next: the orange box." : "Start here: the orange box.";
       const why = typeof it.why === "function" ? it.why(result.v) : it.why;
       msg.innerHTML = `<p class="res ${result.empty ? "next" : "bad"}">${head}</p>` +
-        (explain.checked ? `<p class="why">${why}</p>` : `<p class="lead">Tick <b>Show explanation</b> for help with this one.</p>`);
+        (explain.checked ? `<div class="why">${why}</div>` : `<p class="lead">Tick <b>Show explanation</b> for help.</p>`);
     }
 
     function check() {
@@ -562,10 +565,12 @@ window.Written = (() => {
     s = s.padStart(dp + 1, "0");
     return (s.slice(0, -dp).replace(/^0+(?=\d)/, "") || "0") + "." + s.slice(-dp);
   }
+  // A kid-sized explanation (Shawn): one big math line (or a few), then one short thing to do.
+  const say = (math, action) => (math ? `<span class="big">${[].concat(math).join("<br>")}</span>` : "") + `<span class="do">${action}</span>`;
   const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const s = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-  return { page, want, pointItem, num, norm, withPoint, rnd, s };
+  return { page, want, pointItem, num, norm, withPoint, rnd, s, say };
 })();
 </script>
 <script>

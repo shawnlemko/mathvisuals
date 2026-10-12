@@ -6,7 +6,7 @@
 <style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Mean as a Center of Gravity</title>
+<title>Mean, Median, Mode and Outliers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
@@ -145,27 +145,49 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-.main { grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); }
+:root { --purple: #7a4cc2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b49cff; } }
+:root[data-theme="dark"] { --purple: #b49cff; }
+.main { grid-template-columns: minmax(0, 1fr) minmax(250px, 310px); }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
-h1 .m { color: var(--pt); }
+h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var(--purple); } h1 .o { color: var(--warn); }
 .board svg { cursor: crosshair; }
-.stat { display: flex; flex-direction: column; gap: 2px; }
-.stat .big { font-family: var(--font-num); font-weight: 700; font-size: 3rem; line-height: 1.1; }
-.stat.mean .big, .stat.mean .label { color: var(--pt); }
-.stat.median .big, .stat.median .label { color: var(--orange); }
-.count { margin: 0 0 8px; font-family: var(--font-num); font-size: 1.4rem; }
-.count b { font-size: 1.8rem; }
-.hint { margin: 0; font-size: 1rem; }
-#clear { font-size: 1.1rem; padding: 10px 16px; align-self: flex-start; }
+.panel { gap: 12px; }
+.panel .card { padding: 12px 14px; }
+/* Measures table: all the dots beside the same dots with the outliers left out */
+.stats { width: 100%; border-collapse: collapse; font-family: var(--font-num); }
+.stats th { font-family: var(--font-body); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; text-align: right; padding: 0 0 4px 8px; }
+.stats th:first-child { text-align: left; padding-left: 0; }
+.stats td { font-weight: 700; font-size: 1.5rem; line-height: 1.25; text-align: right; padding: 2px 0 2px 8px; white-space: nowrap; }
+.stats td:first-child { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; text-align: left; padding-left: 0; }
+.stats tr.mean td { color: var(--pt); } .stats tr.median td { color: var(--orange); } .stats tr.mode td { color: var(--purple); }
+.stats td.off { color: var(--muted) !important; font-weight: 500; }
+.stats td.moved { text-decoration: underline 3px var(--warn); text-underline-offset: 5px; }
+.stats tr + tr td { border-top: 1px solid var(--grid); }
+.outl h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; margin: 0 0 4px; color: var(--warn); }
+.outl h2.none { color: var(--muted); }
+.outl p { margin: 0; font-size: 0.95rem; line-height: 1.4; }
+.outl p + p { margin-top: 4px; }
+.outl .rule { color: var(--muted); font-size: 0.85rem; }
+.hint { margin: 0; font-size: 0.95rem; line-height: 1.4; }
+.hint b { font-family: var(--font-num); }
+.key { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 50%; vertical-align: -0.05em; margin-right: 3px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; padding: 9px 14px; }
 /* Board drawing */
 .beam { fill: var(--muted); }
 .tick { stroke: var(--sheet); stroke-width: 2; }
 .num { font-family: var(--font-num); font-weight: 700; font-size: 28px; fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
 .dot { fill: var(--green); stroke: var(--sheet); stroke-width: 3; cursor: grab; }
-.dot.drag { cursor: grabbing; }
+.dot.mode { fill: var(--purple); }
+.dot.out { fill: var(--warn); }
+.dot.drag { cursor: grabbing; fill: var(--green); }
 .dot.gone { fill: var(--warn); opacity: 0.55; }
 .ghost { fill: none; stroke: var(--green); stroke-width: 3; stroke-dasharray: 6 5; }
 .fulcrum { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; stroke-linejoin: round; }
+.fulcrum-was { fill: none; stroke: var(--pt); stroke-width: 3; stroke-dasharray: 8 6; stroke-linejoin: round; opacity: 0.8; }
+.pull { stroke: var(--warn); stroke-width: 4; fill: none; }
+.pull-head { fill: var(--warn); }
 .ground { stroke: var(--grid-major); stroke-width: 4; stroke-linecap: round; }
 .mean-lbl { font-family: var(--font-display); font-weight: 800; font-size: 34px; fill: var(--pt); text-anchor: middle; }
 .med-line { stroke: var(--orange); stroke-width: 4; stroke-dasharray: 10 7; }
@@ -176,7 +198,7 @@ h1 .m { color: var(--pt); }
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
-    <h1>The <span class="m">Mean</span> as a Center of Gravity</h1></div>
+    <h1><span class="m">Mean</span>, <span class="md">Median</span>, <span class="mo">Mode</span> and <span class="o">Outliers</span></h1></div>
   </header>
 
   <div class="main">
@@ -184,11 +206,30 @@ h1 .m { color: var(--pt); }
       <svg id="svg" viewBox="0 0 1200 600" role="img" aria-label="Seesaw number line from 0 to 20 with dots resting on it and a balance point underneath"></svg>
     </div>
     <div class="panel">
-      <div class="card stat mean"><p class="label">Mean (balance point)</p><span class="big" id="meanOut" aria-live="polite">–</span></div>
-      <div class="card stat median"><p class="label">Median (middle dot)</p><span class="big" id="medOut" aria-live="polite">–</span></div>
-      <div class="card"><p class="count"><b id="countOut">0</b> dots</p>
-        <p class="hint">Click the line to drop a dot. Drag a dot off the line to take it away.</p></div>
-      <button type="button" id="clear">Clear all dots</button>
+      <div class="card">
+        <table class="stats" aria-live="polite">
+          <thead><tr><th></th><th>All dots</th><th>No outliers</th></tr></thead>
+          <tbody>
+            <tr class="mean"><td>Mean</td><td id="meanOut">–</td><td id="meanIn">–</td></tr>
+            <tr class="median"><td>Median</td><td id="medOut">–</td><td id="medIn">–</td></tr>
+            <tr class="mode"><td>Mode</td><td id="modeOut">–</td><td id="modeIn">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card outl" aria-live="polite">
+        <h2 id="outTitle">No outliers</h2>
+        <p id="outSay"></p>
+        <p class="rule">Outlier: more than 1.5 × IQR below Q1 or above Q3.</p>
+      </div>
+      <div class="card">
+        <p class="hint"><b id="countOut">0</b> dots. Click the line to drop a dot. Drag a dot to move it, or off the line to take it away.</p>
+        <p class="hint"><span class="key" style="background: var(--purple)"></span>mode <span class="key" style="background: var(--warn); margin-left: 8px"></span>outlier</p>
+      </div>
+      <div class="btns">
+        <button type="button" id="addOut">Add an outlier</button>
+        <button type="button" id="dropOut">Remove outliers</button>
+        <button type="button" id="clear">Clear all</button>
+      </div>
     </div>
   </div>
 </div>
@@ -197,6 +238,7 @@ h1 .m { color: var(--pt); }
 (() => {
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.getElementById("svg");
+  const $ = id => document.getElementById(id);
   const el = (tag, attrs, parent) => {
     const e = document.createElementNS(NS, tag);
     for (const k in attrs) e.setAttribute(k, attrs[k]);
@@ -210,15 +252,20 @@ h1 .m { color: var(--pt); }
   const MAX_DOTS = 60;
   const px = v => X0 + v * UNIT;
 
-  // Start with a small, balanced set so the first drag shows the idea right away.
-  let dots = [3, 4, 5, 5, 8];
-  let drag = null;           // { value: whole number or null (taking it away), x, y }
-  let fCur = 5, angle = 0;   // fulcrum position (in number-line units) and beam tilt (degrees)
+  // Start with one outlier so the first look already shows it pulling the mean (6, or 4.7 without it) away from the median and mode (5).
+  const BASE = [2, 3, 4, 4, 5, 5, 5, 6, 6, 7];
+  let dots = BASE.concat([19]);
+  let drag = null;           // { value: whole number or null (taking it away) }
+  let fCur = 4.7, angle = 0;   // fulcrum position (in number-line units) and beam tilt (degrees)
 
-  // Layers: ground and fulcrum stay level; the beam group tilts around the fulcrum tip.
+  // Layers: ground and fulcrums stay level; the beam group tilts around the fulcrum tip.
   el("line", { class: "ground", x1: 20, y1: GROUND_Y, x2: 1180, y2: GROUND_Y }, svg);
+  const wasG = el("g", {}, svg);   // dashed fulcrum where the mean would be without the outliers, and the pull arrow
+  const fulcrumWas = el("polygon", { class: "fulcrum-was" }, wasG);
+  const pull = el("line", { class: "pull", y1: GROUND_Y + 16, y2: GROUND_Y + 16 }, wasG);
+  const pullHead = el("polygon", { class: "pull-head" }, wasG);
   const fulcrum = el("polygon", { class: "fulcrum" }, svg);
-  const meanLbl = el("text", { class: "mean-lbl", y: GROUND_Y + 54 }, svg);
+  const meanLbl = el("text", { class: "mean-lbl", y: GROUND_Y + 62 }, svg);
   const beamG = el("g", {}, svg);
   el("rect", { class: "beam", x: X0 - 24, y: BEAM_Y - BEAM_H / 2, width: X1 - X0 + 48, height: BEAM_H, rx: 7 }, beamG);
   for (let v = 0; v <= MAX; v++) {
@@ -234,44 +281,95 @@ h1 .m { color: var(--pt); }
   const dragDot = el("circle", { class: "dot drag", r: R + 2, visibility: "hidden" }, svg);
 
   const live = () => dots.concat(drag && drag.value !== null ? [drag.value] : []);
+  const sorted = a => a.slice().sort((p, q) => p - q);
   const meanOf = a => a.reduce((s, v) => s + v, 0) / a.length;
   const medianOf = a => {
-    const s = a.slice().sort((p, q) => p - q), n = s.length;
+    const s = sorted(a), n = s.length;
     return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
   };
+  // Mode: the value(s) that show up most. If every value shows up once (and there is more than one), there is no mode.
+  const modesOf = a => {
+    const c = new Map();
+    a.forEach(v => c.set(v, (c.get(v) || 0) + 1));
+    const top = Math.max(...c.values());
+    if (top === 1 && c.size > 1) return [];
+    return [...c].filter(([, k]) => k === top).map(([v]) => v).sort((p, q) => p - q);
+  };
+  // Outliers use the 1.5 × IQR rule with median-of-halves quartiles (same method as the box plot page).
+  const outliersOf = a => {
+    if (a.length < 4) return { lo: -Infinity, hi: Infinity };
+    const s = sorted(a), n = s.length, h = Math.floor(n / 2);
+    const q1 = medianOf(s.slice(0, h)), q3 = medianOf(s.slice(n - h));
+    const iqr = q3 - q1;
+    return { lo: q1 - 1.5 * iqr, hi: q3 + 1.5 * iqr };
+  };
+  const isOut = (v, f) => v < f.lo || v > f.hi;
   const exact = v => Math.abs(v * 10 - Math.round(v * 10)) < 1e-9;
   const fmt = v => (Math.round(v * 10) / 10).toString();
   const meanText = v => (exact(v) ? "= " : "≈ ") + fmt(v);
+  const modeText = m => (m.length ? (m.length > 3 ? "many" : m.join(", ")) : "none");
+  const listText = a => (a.length === 1 ? String(a[0]) : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]);
 
   function drawDots() {
     dotsG.replaceChildren();
+    const f = outliersOf(dots), modes = modesOf(dots);
     const stacks = new Map();
     dots.forEach((v, i) => { if (!stacks.has(v)) stacks.set(v, []); stacks.get(v).push(i); });
     const tallest = Math.max(1, ...[...stacks.values()].map(s => s.length));
     const step = Math.min(2 * R + 2, (BEAM_Y - BEAM_H / 2 - R - 80) / Math.max(1, tallest - 1));
     for (const [v, idx] of stacks) {
+      const cls = isOut(v, f) ? "dot out" : modes.includes(v) && modes.length <= 3 ? "dot mode" : "dot";
       idx.forEach((i, k) => {
-        const c = el("circle", { class: "dot", cx: px(v), cy: BEAM_Y - BEAM_H / 2 - R - 1 - k * step, r: R }, dotsG);
+        const c = el("circle", { class: cls, cx: px(v), cy: BEAM_Y - BEAM_H / 2 - R - 1 - k * step, r: R }, dotsG);
         c.dataset.i = i;
       });
     }
   }
 
+  function setCell(id, text, off, moved) {
+    const c = $(id);
+    c.textContent = text;
+    c.classList.toggle("off", !!off);
+    c.classList.toggle("moved", !!moved);
+  }
+
   function drawStats() {
     const a = live();
-    document.getElementById("countOut").textContent = a.length;
+    $("countOut").textContent = a.length;
     if (!a.length) {
-      document.getElementById("meanOut").textContent = "–";
-      document.getElementById("medOut").textContent = "–";
+      ["meanOut", "medOut", "modeOut", "meanIn", "medIn", "modeIn"].forEach(id => setCell(id, "–", true));
       medG.setAttribute("visibility", "hidden");
+      $("outTitle").textContent = "No dots yet"; $("outTitle").className = "none";
+      $("outSay").textContent = "Click the line to drop some dots.";
       return;
     }
-    const m = meanOf(a), md = medianOf(a);
-    document.getElementById("meanOut").textContent = fmt(m);
-    document.getElementById("medOut").textContent = fmt(md);
+    const f = outliersOf(a);
+    const outs = sorted(a.filter(v => isOut(v, f)));
+    const rest = a.filter(v => !isOut(v, f));
+    const m = meanOf(a), md = medianOf(a), mo = modesOf(a);
+    setCell("meanOut", fmt(m)); setCell("medOut", fmt(md)); setCell("modeOut", modeText(mo));
+
+    if (outs.length && rest.length) {
+      const m2 = meanOf(rest), md2 = medianOf(rest), mo2 = modesOf(rest);
+      const dm = Math.abs(m - m2), dmd = Math.abs(md - md2), sameMode = modeText(mo) === modeText(mo2);
+      setCell("meanIn", fmt(m2), false, dm > 1e-9); setCell("medIn", fmt(md2), false, dmd > 1e-9); setCell("modeIn", modeText(mo2), false, !sameMode);
+      $("outTitle").className = "";
+      $("outTitle").textContent = (outs.length === 1 ? "Outlier: " : "Outliers: ") + listText(outs);
+      const who = outs.length === 1 ? "The outlier" : "The outliers";
+      const dir = m > m2 ? "up" : "down";
+      const meanSay = dm < 1e-9 ? `${who} did not move the mean.` : `${who} pulled the mean ${dir} from ${fmt(m2)} to ${fmt(m)}, a change of ${fmt(dm)}.`;
+      const medSay = dmd < 1e-9 ? `The median stayed at ${fmt(md)}.` : `The median only moved ${fmt(dmd)}.`;
+      const modeSay = sameMode ? (mo.length ? "The mode did not change." : "") : "The mode changed.";
+      $("outSay").textContent = `${meanSay} ${medSay} ${modeSay}`.trim();
+    } else {
+      ["meanIn", "medIn", "modeIn"].forEach(id => setCell(id, "same", true));
+      $("outTitle").className = "none";
+      $("outTitle").textContent = "No outliers";
+      $("outSay").textContent = a.length < 4 ? "Drop at least 4 dots to look for outliers." : "Drag a dot far from the others, or press Add an outlier, and watch which measure moves.";
+    }
+
     medG.setAttribute("visibility", "visible");
     medLine.setAttribute("x1", px(md)); medLine.setAttribute("x2", px(md));
-    medLbl.setAttribute("x", px(md));
     medLbl.textContent = "Median = " + fmt(md);
     const w = medLbl.getComputedTextLength() + 28;
     const cx = Math.min(Math.max(px(md), w / 2 + 4), 1196 - w / 2);
@@ -279,7 +377,15 @@ h1 .m { color: var(--pt); }
     medBg.setAttribute("x", cx - w / 2); medBg.setAttribute("width", w);
   }
 
-  function update() { drawDots(); drawStats(); }
+  function update() {
+    drawDots(); drawStats();
+    // When the dots are too spread out (or too few after the outliers) no spot on the line can be an outlier.
+    const ok = dots.length < 4 || outlierSpot(dots) !== undefined;
+    $("addOut").disabled = !ok || dots.length >= MAX_DOTS;
+    $("addOut").title = ok ? "" : "No spot on this line would be an outlier. Add more dots near the middle first.";
+  }
+
+  const tri = x => `${x},${BEAM_Y + BEAM_H / 2} ${x - TRI_W / 2},${GROUND_Y} ${x + TRI_W / 2},${GROUND_Y}`;
 
   // Animation: the fulcrum slides toward the mean; while it is off balance the beam tips toward the heavy side.
   let last = performance.now();
@@ -296,13 +402,27 @@ h1 .m { color: var(--pt); }
     } else {
       angle += (0 - angle) * Math.min(1, dt * 10);
     }
-    const fx = px(fCur), tipY = BEAM_Y + BEAM_H / 2;
-    beamG.setAttribute("transform", `rotate(${angle.toFixed(3)} ${fx} ${tipY})`);
-    fulcrum.setAttribute("points", `${fx},${tipY} ${fx - TRI_W / 2},${GROUND_Y} ${fx + TRI_W / 2},${GROUND_Y}`);
+    const fx = px(fCur);
+    beamG.setAttribute("transform", `rotate(${angle.toFixed(3)} ${fx} ${BEAM_Y + BEAM_H / 2})`);
+    fulcrum.setAttribute("points", tri(fx));
+
+    // Where the balance point would sit without the outliers, with an arrow showing how far they pulled it.
+    const f = outliersOf(a), rest = a.filter(v => !isOut(v, f));
+    if (rest.length && rest.length < a.length) {
+      const wx = px(meanOf(rest)), gap = fx - wx;
+      wasG.style.display = "";
+      fulcrumWas.setAttribute("points", tri(wx));
+      if (Math.abs(gap) > 20) {
+        const s = Math.sign(gap), tip = fx - s * 4, y = GROUND_Y + 16;
+        pull.setAttribute("x1", wx); pull.setAttribute("x2", tip - s * 14);
+        pullHead.setAttribute("points", `${tip},${y} ${tip - s * 18},${y - 10} ${tip - s * 18},${y + 10}`);
+        pull.setAttribute("visibility", "visible"); pullHead.setAttribute("visibility", "visible");
+      } else { pull.setAttribute("visibility", "hidden"); pullHead.setAttribute("visibility", "hidden"); }
+    } else wasG.style.display = "none";
+
     if (a.length) {
       meanLbl.setAttribute("visibility", "visible");
-      const m = meanOf(a);
-      meanLbl.textContent = "Mean " + meanText(m);
+      meanLbl.textContent = "Mean " + meanText(meanOf(a));
       meanLbl.setAttribute("x", Math.min(Math.max(fx, 120), 1080));
     } else meanLbl.setAttribute("visibility", "hidden");
     requestAnimationFrame(frame);
@@ -358,12 +478,237 @@ h1 .m { color: var(--pt); }
   svg.addEventListener("pointerup", end);
   svg.addEventListener("pointercancel", end);
 
-  document.getElementById("clear").addEventListener("click", () => { dots = []; update(); });
+  function outlierSpot(d) {
+    const up = medianOf(d) <= MAX / 2, tries = [];
+    for (let k = 0; k <= MAX; k++) tries.push(up ? MAX - k : k);
+    for (let k = 0; k <= MAX; k++) tries.push(up ? k : MAX - k);
+    return tries.find(t => isOut(t, outliersOf(d.concat([t]))));
+  }
+  // Add an outlier: a dot at the end of the line far from the middle of the data. Two dots at the same far value
+  // can stop being outliers, so each spot is checked, moving inward and then trying the other end.
+  $("addOut").addEventListener("click", () => {
+    if (dots.length >= MAX_DOTS) return;
+    if (dots.length < 4) dots = BASE.slice();   // too few dots for the outlier rule: start from a typical set
+    const v = outlierSpot(dots);
+    if (v !== undefined) dots.push(v);
+    update();
+  });
+  $("dropOut").addEventListener("click", () => {
+    const f = outliersOf(dots);
+    dots = dots.filter(v => !isOut(v, f));
+    update();
+  });
+  $("clear").addEventListener("click", () => { dots = []; update(); });
 
   update();
   requestAnimationFrame(frame);
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

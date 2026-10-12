@@ -145,9 +145,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-:root { --bad: #c8323c; --purple: #7a3fc0; --teal: #0f7f86; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; } }
-:root[data-theme="dark"] { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; }
+:root { --bad: #c8323c; --purple: #7a3fc0; --teal: #0f7f86; --gold: #e0a300; --gold-ink: #9a6b00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; --gold: #f5c542; --gold-ink: #f5c542; } }
+:root[data-theme="dark"] { --bad: #ff6b74; --purple: #b994ff; --teal: #4fd1c5; --gold: #f5c542; --gold-ink: #f5c542; }
 
 /* Segmented toggles: one choice pressed at a time. */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--chip); border: 1px solid var(--grid-major); border-radius: 12px; }
@@ -184,7 +184,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 
 /* Logic method: the expression on top, four boxes under it (factors of the first term under it,
    factors of the constant under it, each row in brackets), a line, the two cross products, and their sum to the right. */
-.lg { display: grid; grid-template-columns: auto auto minmax(3.4em, auto) auto auto auto auto; justify-content: center; align-items: center; justify-items: center; column-gap: 0.25em; max-width: 100%; font-size: 1.2em; }
+.lg { display: grid; grid-template-columns: auto auto minmax(3.4em, auto) auto auto auto auto; justify-content: center; align-items: center; justify-items: center; column-gap: 0.25em; max-width: 100%; font-size: 1.1em; }
 .lg .t { grid-row: 1; font-family: var(--font-num); font-weight: 700; font-size: 1.45em; line-height: 1.15; white-space: nowrap; margin-bottom: 0.15em; }
 .lg .t1 { grid-column: 2; } .lg .t2 { grid-column: 3; } .lg .t3 { grid-column: 4; }
 .lg .t2.match { color: var(--green); }
@@ -194,10 +194,29 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 .par.r1 { color: var(--pt); } .par.r2 { color: var(--orange); }
 .par.k1 { grid-column: 1; } .par.k5 { grid-column: 5; }
 .lg.read .par { color: var(--green); font-weight: 700; }
-.lg .xw { grid-column: 3; grid-row: 2 / 4; align-self: stretch; justify-self: stretch; position: relative; }
-.lg .x { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.x line { stroke-width: 4; stroke-linecap: round; }
-.x .l1 { stroke: var(--purple); } .x .l2 { stroke: var(--teal); }
+.lg { position: relative; }
+.lg .xw { grid-column: 3; grid-row: 2 / 4; }
+/* The two diagonals, drawn in pixels from box to box so the arrowheads keep their shape. */
+.lg .x { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.x .l1 { stroke: var(--purple); fill: var(--purple); } .x .l2 { stroke: var(--teal); fill: var(--teal); }
+.x line { stroke-width: 4; stroke-linecap: round; transition: stroke-width 0.2s; }
+.x g.hl line { stroke-width: 8; }
+/* Verify highlights. */
+.hl { box-shadow: 0 0 0 0.14em var(--gold); border-radius: 0.2em; }
+input.bx.hl { box-shadow: 0 0 0 0.14em var(--gold); }
+.lg .t.hl { background: color-mix(in srgb, var(--gold) 25%, transparent); box-shadow: none; }
+/* The answer: the two rows, flown down and multiplied. */
+.ans { grid-row: 6; grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 0.15em; margin-top: 0.45em; visibility: hidden; }
+.ans.show { visibility: visible; }
+.ansbox { font-family: var(--font-num); font-weight: 700; font-size: 1.15em; padding: 0.1em 0.45em; border: 0.12em solid transparent; border-radius: 0.25em; white-space: nowrap; transition: border-color 0.4s, background 0.4s; }
+.ans.boxed .ansbox { border-color: var(--green); background: color-mix(in srgb, var(--green) 10%, transparent); }
+.ansbox .ta, .ansbox .tb { border-radius: 0.15em; padding: 0 0.05em; }
+.ansbox .hlt { background: color-mix(in srgb, var(--gold) 35%, transparent); }
+.remind { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 0.62em; color: var(--green); opacity: 0; transition: opacity 0.4s; }
+.ans.boxed .remind { opacity: 1; }
+.foil { min-height: 1.3em; font-family: var(--font-num); font-weight: 700; font-size: 0.72em; text-align: center; }
+.foil b { color: var(--gold-ink); }
+.fly { position: fixed; z-index: 50; margin: 0; font-family: var(--font-num); font-weight: 700; white-space: nowrap; pointer-events: none; }
 .lg .hr { grid-row: 4; grid-column: 1 / 6; justify-self: stretch; border-top: 0.1em solid var(--ink); margin: 0.3em 0 0.15em; }
 .lg .r5 { grid-row: 5; }
 .lg .k3 { grid-column: 3; } .lg .k6 { grid-column: 6; } .lg .k7 { grid-column: 7; }
@@ -209,6 +228,8 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 .sn.blank { visibility: hidden; }
 .sn.now { background: var(--pt); color: var(--sheet); } .sn.done { background: var(--green); color: var(--sheet); }
 .grp { color: var(--muted); }
+.task { margin-left: 0.7em; font-family: var(--font-body); font-weight: 700; font-size: max(0.95rem, 0.52em); color: var(--muted); white-space: nowrap; }
+.task b { color: var(--pt); font-family: var(--font-num); }
 .dtri { font-family: var(--font-num); font-weight: 700; font-size: 1.3em; line-height: 1.15; margin-bottom: 0.1em; }
 .fin.done { color: var(--green); }
 
@@ -224,6 +245,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 .steps .m { color: inherit; }
 .msg { flex: 1 1 auto; border-top: 1px dashed var(--grid-major); padding-top: clamp(8px, 1.6vh, 14px); font-size: clamp(1.05rem, min(3vh, 1.65vw), 1.6rem); line-height: 1.35; font-weight: 700; }
 .msg p { margin: 0 0 0.5em; }
+.steps[hidden] + .msg { border-top: 0; padding-top: 0; }
 .msg .m { color: var(--pt); }
 .msg.good { color: var(--green); }
 .msg.good .m { color: var(--green); }
@@ -232,6 +254,8 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 .cbtns button { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; padding: 8px 12px; min-height: 48px; border-radius: 10px; background: var(--sheet); }
 .cbtns .chk { background: var(--pt); border-color: var(--pt); color: var(--sheet); font-size: 1.25rem; padding: 8px 20px; }
 .cbtns .chk:hover { background: var(--sheet); color: var(--pt); }
+.cbtns .ver { background: var(--gold); border-color: var(--gold); color: #1b2733; }
+.cbtns .ver:hover { background: var(--sheet); color: var(--ink); }
 </style>
 
 <div class="wrap">
@@ -248,6 +272,11 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     <div class="seg lvl" id="level" role="group" aria-label="Kind of question">
       <button type="button" data-v="1">x² + bx + c</button>
       <button type="button" data-v="2">ax² + bx + c</button>
+    </div>
+    <div class="seg" id="diff" role="group" aria-label="Difficulty: signs and number size">
+      <button type="button" data-v="1" title="Level 1: all positive, small numbers">+ small</button>
+      <button type="button" data-v="2" title="Level 2: positive and negative, small numbers">± small</button>
+      <button type="button" data-v="3" title="Level 3: positive and negative, bigger numbers">± big</button>
     </div>
     <button type="button" class="new" id="newQ">New question</button>
     <form class="typed" id="typedForm">
@@ -268,27 +297,26 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
         <input class="bx r2 k2 row2" data-k="f2" placeholder="?x" aria-label="Second factor of the first term, bottom row">
         <input class="bx r2 k4 row2" data-k="c2" placeholder="?" aria-label="Second factor of the constant, bottom row">
         <span class="par r2 k5">)</span>
-        <div class="xw"><svg class="x" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <line class="l1" x1="4" y1="25" x2="96" y2="75" vector-effect="non-scaling-stroke"/>
-          <line class="l2" x1="4" y1="75" x2="96" y2="25" vector-effect="non-scaling-stroke"/>
-        </svg></div>
+        <div class="xw"></div>
+        <svg class="x" id="xs" aria-hidden="true"></svg>
         <div class="hr"></div>
-        <input class="bx mid r5 k2 dg1" data-k="d1" placeholder="×" aria-label="Cross product along the purple diagonal">
+        <input class="bx mid r5 k2 dg2" data-k="d1" placeholder="×" aria-label="Cross product along the teal arrow, bottom left times top right">
         <span class="op r5 k3">+</span>
-        <input class="bx mid r5 k4 dg2" data-k="d2" placeholder="×" aria-label="Cross product along the teal diagonal">
+        <input class="bx mid r5 k4 dg1" data-k="d2" placeholder="×" aria-label="Cross product along the purple arrow, top left times bottom right">
         <span class="op r5 k6">=</span>
         <input class="bx mid r5 k7" data-k="sum" placeholder="+" aria-label="Sum of the cross products">
+        <div class="ans" id="ans"><div class="ansbox" id="ansbox"></div><p class="remind">Don't forget to write the answer!</p><div class="foil" id="foil"></div></div>
       </div>
     </section>
 
     <section class="work" id="workDec" hidden>
       <div class="ex"><span class="sn blank">0</span><span class="dtri" id="dtri"></span></div>
-      <div class="ex"><span class="sn">1</span><span id="acText"></span><span>=</span><input class="bx" data-k="ac" placeholder="a × c" aria-label="a times c"></div>
-      <div class="ex"><span class="sn">2</span><input class="bx" data-k="n1" placeholder="?" aria-label="First number"><span>,</span><input class="bx" data-k="n2" placeholder="?" aria-label="Second number"></div>
-      <div class="ex"><span class="sn">3</span><span id="sFirst"></span><input class="bx mid" data-k="s1" placeholder="± ?x" aria-label="First x term"><input class="bx mid" data-k="s2" placeholder="± ?x" aria-label="Second x term"><span id="sLast"></span></div>
-      <div class="ex grp"><span class="sn">4</span><span id="grpLine"></span></div>
-      <div class="ex"><span class="sn blank">4</span><input class="bx" data-k="g1" placeholder="factor" aria-label="Common factor of the first group">(<input class="bx wide" data-k="i1" placeholder="bracket" aria-label="First bracket">)<input class="bx mid" data-k="g2" placeholder="± factor" aria-label="Common factor of the second group">(<input class="bx wide" data-k="i2" placeholder="bracket" aria-label="Second bracket">)</div>
-      <div class="ex fin" id="finD"><span class="sn">5</span><span class="pre"></span>(<input class="bx wide" data-k="A" placeholder="bracket" aria-label="Matching bracket">)(<input class="bx wide" data-k="B" placeholder="outside" aria-label="Outside terms">)</div>
+      <div class="ex"><span class="sn">1</span><span id="acText"></span><span>=</span><input class="bx" data-k="ac" placeholder="a × c" aria-label="a times c"><span class="task">a × c</span></div>
+      <div class="ex"><span class="sn">2</span><input class="bx" data-k="n1" placeholder="?" aria-label="First number"><span>,</span><input class="bx" data-k="n2" placeholder="?" aria-label="Second number"><span class="task" id="task2"></span></div>
+      <div class="ex"><span class="sn">3</span><span id="sFirst"></span><input class="bx mid" data-k="s1" placeholder="± ?x" aria-label="First x term"><input class="bx mid" data-k="s2" placeholder="± ?x" aria-label="Second x term"><span id="sLast"></span><span class="task" id="task3"></span></div>
+      <div class="ex grp"><span class="sn">4</span><span id="grpLine"></span><span class="task">group in pairs</span></div>
+      <div class="ex"><span class="sn blank">4</span><input class="bx" data-k="g1" placeholder="factor" aria-label="Common factor of the first group">(<input class="bx wide" data-k="i1" placeholder="bracket" aria-label="First bracket">)<input class="bx mid" data-k="g2" placeholder="± factor" aria-label="Common factor of the second group">(<input class="bx wide" data-k="i2" placeholder="bracket" aria-label="Second bracket">)<span class="task">factor each group</span></div>
+      <div class="ex fin" id="finD"><span class="sn">5</span><span class="pre"></span>(<input class="bx wide" data-k="A" placeholder="bracket" aria-label="Matching bracket">)(<input class="bx wide" data-k="B" placeholder="outside" aria-label="Outside terms">)<span class="task">write the two factors</span></div>
     </section>
 
     <aside class="coach">
@@ -298,6 +326,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
       <div class="cbtns">
         <button type="button" class="chk" id="check">Check</button>
         <button type="button" id="show">Show answer</button>
+        <button type="button" class="ver" id="verify" hidden>Verify</button>
         <button type="button" id="clear">Clear</button>
       </div>
     </aside>
@@ -307,7 +336,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const st = { method: "dec", level: 1, q: null };
+  const st = { method: "dec", level: 1, diff: 1, q: null };
 
   // ---------- Polynomials as [constant, x, x²] ----------
   const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
@@ -372,20 +401,31 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
   }
   const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const rndNz = k => { let v = 0; while (!v) v = rnd(-k, k); return v; };
+  // Difficulty: 1 = all positive, small; 2 = mixed signs, small; 3 = mixed signs, bigger numbers.
+  const DIFF = {
+    1: { k: [7, 5], c: 40, signs: false, mn: 6 },
+    2: { k: [9, 7], c: 60, signs: true, mn: 12 },
+    3: { k: [15, 12], c: 150, signs: true, mn: 24 },
+  };
   function generate() {
-    for (let tries = 0; tries < 500; tries++) {
+    const D = DIFF[st.diff];
+    for (let tries = 0; tries < 2000; tries++) {
       let m = 1, n = 1;
-      if (st.level === 2) { m = rnd(1, 5); n = rnd(1, 4); if (m * n < 2 || m * n > 12) continue; }
-      const p = rndNz(st.level === 1 ? 9 : 7), q = rndNz(st.level === 1 ? 9 : 7);
+      if (st.level === 2) { m = rnd(1, 6); n = rnd(1, 6); if (m * n < 2 || m * n > D.mn) continue; }
+      const K = D.k[st.level - 1], lo = st.diff === 3 ? 2 : 1;
+      let p = rnd(lo, K), q = rnd(lo, K);
+      if (D.signs) { if (Math.random() < 0.5) p = -p; if (Math.random() < 0.5) q = -q; if (p > 0 && q > 0) continue; }
       if (gcd(m, p) !== 1 || gcd(n, q) !== 1) continue;
       const a = m * n, b = m * q + n * p, c = p * q;
-      if (gcd(gcd(a, b), c) !== 1 || Math.abs(c) > 40) continue;
+      if (gcd(gcd(a, b), c) !== 1 || Math.abs(c) > D.c) continue;
+      if (st.diff === 3 && Math.abs(c) < 20) continue;
       if (b === 0 && Math.random() < 0.85) continue;
       const prev = st.q && st.q.orig;
       if (prev && prev[0] === c && prev[1] === b && prev[2] === a) continue;
       if (setQuestion(a, b, c)) return;
     }
   }
+
 
   // ---------- Boxes ----------
   const boxes = {};
@@ -411,6 +451,8 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     $("acText").textContent = `${fmt([a])} × ${c < 0 ? `(${fmt([c])})` : fmt([c])}`;
     $("sFirst").textContent = fmt([0, 0, a]);
     $("sLast").textContent = signed([c]);
+    $("task2").innerHTML = `multiply to <b>${fmt([a * c])}</b>, add to <b>${fmt([b])}</b>`;
+    $("task3").innerHTML = `split <b>${fmt([0, b])}</b>`;
     clearAll();
   }
 
@@ -418,6 +460,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     for (const w in boxes) for (const k in boxes[w]) { boxes[w][k].value = ""; boxes[w][k].className = boxes[w][k].className.replace(/\b(ok|bad|todo|try)\b/g, "").trim(); }
     $("finD").classList.remove("done");
     $("lg").classList.remove("read"); $("lt2").classList.remove("match");
+    hideAns();
     live();
     setMsg(startMsg(), false);
     steps(0);
@@ -425,26 +468,27 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
   function startMsg() {
     const [c, , a] = st.q.r;
     return st.method === "logic"
-      ? `<p>What two terms multiply to make ${html(fmt([0, 0, a]))}? Write them one above the other under it.</p><p>Then do the same for ${html(fmt([c]))}.</p>`
-      : `<p>Start by multiplying the first number by the last number: ${html(`${a} × ${fmt([c])}`)}.</p>`;
+      ? `<p>What times what makes ${html(fmt([0, 0, a]))}?</p>`
+      : `<p>Multiply ${html(`${a} × ${fmt([c])}`)}.</p>`;
   }
   // The numbered steps in the box on the right; the current one is highlighted, finished ones turn green.
   function steps(now) {
     const [c, b, a] = st.q.r;
     const A2 = html(fmt([0, 0, a])), C = html(fmt([c])), Bx = html(fmt([0, b]));
     const list = st.method === "logic" ? [
-      `Factors of ${A2}: write them one above the other under ${A2}.`,
-      `Factors of ${C}: write them one above the other under ${C}.`,
-      "Cross multiply along each diagonal. Write the products under the line.",
-      `Add the cross products. The sum must equal the middle term, ${Bx}.`,
-      "The answer is the horizontal terms: (top row)(bottom row).",
+      `Factors of ${A2}`,
+      `Factors of ${C}`,
+      "Cross multiply: follow the arrows",
+      `Add: must equal ${Bx}`,
+      "Answer: read across the rows",
     ] : [
-      "Multiply a × c.",
-      `Find two numbers that multiply to ${html(fmt([a * c]))} and add to ${html(fmt([b]))}.`,
-      `Split the middle term ${Bx} into two x terms using those numbers.`,
-      "Group in pairs. Take out the common factor of each group.",
-      "The matching bracket is one factor. The terms outside make the other.",
+      "a × c",
+      `Two numbers: × ${html(fmt([a * c]))}, + ${html(fmt([b]))}`,
+      `Split ${Bx}`,
+      "Common factor of each group",
+      "(bracket)(outside terms)",
     ];
+    $("steps").hidden = st.method === "dec"; // decomposition shows its tasks beside each line instead
     $("steps").innerHTML = list.map((t, i) => `<li class="${i < now ? "done" : i === now ? "now" : ""}"><b>${i < now ? "✓" : i + 1}</b><span>${t}</span></li>`).join("");
     document.querySelectorAll("#workDec .sn:not(.blank)").forEach((el, i) => { el.className = `sn${i < now ? " done" : i === now ? " now" : ""}`; });
   }
@@ -457,14 +501,15 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     const L = boxes.workLogic, v = k => parse(L[k].value);
     const f1 = v("f1"), f2 = v("f2"), c1 = v("c1"), c2 = v("c2");
     const tag = (a, b) => (a && b ? `${fmt(a)} × ${fmt(b)}` : "↘ ×");
-    L.d1.placeholder = f1 && c2 ? tag(f1, c2) : "×";
-    L.d2.placeholder = f2 && c1 ? tag(f2, c1) : "×";
+    L.d1.placeholder = f2 && c1 ? tag(f2, c1) : "×";
+    L.d2.placeholder = f1 && c2 ? tag(f1, c2) : "×";
     const D = boxes.workDec;
     const [c, , a] = st.q.r, s1 = parse(D.s1.value), s2 = parse(D.s2.value);
     const t = p => (p && isMono(p, 1) ? p : null);
     const g1 = t(s1) ? `${fmt([0, 0, a])} ${signed(s1)}` : `${fmt([0, 0, a])} + ?`;
     const g2 = t(s2) ? `${fmt(s2)} ${signed([c])}` : `? ${signed([c])}`;
     $("grpLine").textContent = `(${g1}) + (${g2})`;
+    drawX();
   }
 
   // ---------- Checking ----------
@@ -475,6 +520,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     for (const k of ORDER[st.method]) mark(k, res.marks[k] || "");
     setMsg(res.msg, res.done);
     steps(res.step);
+    if (st.method === "logic") { if (res.rows) showAnswerRows(res.rows); else hideAns(); }
     if (st.method === "dec") $("finD").classList.toggle("done", !!res.done);
     if (res.focus) cur()[res.focus].focus();
     return res;
@@ -510,7 +556,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     } else {
       fOk.forEach((ok, i) => { if (ok) marks[["f1", "f2"][i]] = a % f[i][1] ? "bad" : "ok"; if (ok && a % f[i][1]) first(`<p>${html(Math.abs(f[i][1]))} does not go into ${html(a)}.</p>`, ["f1", "f2"][i]); });
       const k = f[0] === null ? "f1" : "f2";
-      if (f[0] === null || f[1] === null) { marks[k] = "todo"; first(`<p>What two terms multiply to make ${ax2}? Write them one above the other under ${ax2}.</p>`, k); }
+      if (f[0] === null || f[1] === null) { marks[k] = "todo"; first(`<p>What times what makes ${ax2}?</p>`, k); }
     }
     // Factors of the constant.
     const cv = ["c1", "c2"].map(k => v(k)), cOk = cv.map(p => isMono(p, 0));
@@ -521,26 +567,33 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     } else {
       cOk.forEach((ok, i) => { if (ok) marks[["c1", "c2"][i]] = c % cv[i][0] ? "bad" : "ok"; if (ok && c % cv[i][0]) first(`<p>${html(fmt([Math.abs(cv[i][0])]))} does not go into ${cc}.</p>`, ["c1", "c2"][i]); });
       const k = cv[0] === null ? "c1" : "c2";
-      if (cv[0] === null || cv[1] === null) { marks[k] = "todo"; first(`<p>What two numbers multiply to make ${cc}? Write them one above the other under ${cc}.</p>`, k); }
+      if (cv[0] === null || cv[1] === null) { marks[k] = "todo"; first(`<p>What times what makes ${cc}?</p>`, k); }
     }
     // Diagonal products and their sum.
     const ready = marks.f1 === "ok" && marks.f2 === "ok" && marks.c1 === "ok" && marks.c2 === "ok";
-    const want = { d1: ready && mul(f[0], cv[1]), d2: ready && mul(f[1], cv[0]) };
+    // Left box: bottom left × top right (teal arrow). Right box: top left × bottom right (purple arrow).
+    const want = { d1: ready && mul(f[1], cv[0]), d2: ready && mul(f[0], cv[1]) };
     const d = { d1: v("d1"), d2: v("d2") };
     for (const k of ["d1", "d2"]) {
-      const [x, y] = k === "d1" ? [f[0], cv[1]] : [f[1], cv[0]];
-      const col = k === "d1" ? "purple" : "teal";
-      if (d[k] === null) { if (ready) { marks[k] = "todo"; first(`<p>Multiply along the ${col} diagonal: ${html(`${fmt(x)} × ${fmt(y)}`)}.</p>`, k); } continue; }
+      const [x, y] = k === "d1" ? [f[1], cv[0]] : [f[0], cv[1]];
+      const col = k === "d1" ? "teal" : "purple";
+      if (d[k] === null) { if (ready) { marks[k] = "todo"; first(`<p>Follow the ${col} arrow: ${html(`${fmt(x)} × ${fmt(y)}`)}.</p>`, k); } continue; }
       if (!ready) { first("<p>Fill in the factors above first.</p>", "f1"); continue; }
       if (same(d[k], want[k])) marks[k] = "ok";
-      else { marks[k] = "bad"; first(`<p>${html(`${fmt(x)} × ${fmt(y)}`)} is not ${html(d[k] ? fmt(d[k]) : "?")}. Multiply the numbers and keep the x.</p>`, k); }
+      else {
+        marks[k] = "bad";
+        const other = want[k === "d1" ? "d2" : "d1"];
+        first(d[k] && same(d[k], other)
+          ? `<p>That product belongs in the other box. This box is the ${col} arrow: ${html(`${fmt(x)} × ${fmt(y)}`)}.</p>`
+          : `<p>${html(`${fmt(x)} × ${fmt(y)}`)} is not ${html(d[k] ? fmt(d[k]) : "?")}.</p>`, k);
+      }
     }
     const sum = v("sum");
     let matched = false;
     $("lt2").classList.remove("match"); $("lg").classList.remove("read");
     if (marks.d1 === "ok" && marks.d2 === "ok") {
       const s = want.d1[1] + want.d2[1];
-      if (sum === null) { marks.sum = "todo"; first(`<p>Add the two diagonal products: ${html(`${fmt(want.d1)} ${signed(want.d2)}`)}.</p>`, "sum"); }
+      if (sum === null) { marks.sum = "todo"; first("<p>Add the two cross products.</p>", "sum"); }
       else if (!same(sum, [0, s])) { marks.sum = "bad"; first(`<p>${html(`${fmt(want.d1)} ${signed(want.d2)}`)} is not ${html(sum ? fmt(sum) : "?")}.</p>`, "sum"); }
       else if (s === b) {
         marks.sum = "ok"; matched = true;
@@ -549,14 +602,14 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
         marks.sum = "try";
         const swap = `switch ${html(fmt(cv[0]))} and ${html(fmt(cv[1]))}`;
         first(s === -b
-          ? `<p>Right size, wrong sign: ${html(fmt([0, s]))} but the middle term is ${html(fmt([0, b]))}.</p><p>Change the signs of both numbers under ${cc}.</p>`
-          : `<p>${html(fmt([0, s]))} does not match the middle term ${html(fmt([0, b]))}.</p><p>Try to ${swap}, or try a different pair of factors.</p>`, "c1");
+          ? `<p>Wrong sign: ${html(fmt([0, s]))}, not ${html(fmt([0, b]))}. Change both signs under ${cc}.</p>`
+          : `<p>${html(fmt([0, s]))} is not ${html(fmt([0, b]))}. Try to ${swap}, or other factors.</p>`, "c1");
       }
     } else if (sum !== null) marks.sum = "";
     // The answer: the horizontal terms, read across each row.
     if (matched) {
       const A = [cv[0][0], f[0][1]], Bp = [cv[1][0], f[1][1]];
-      return { marks, step: 5, done: true, msg: `<p>Yes! ${html(fmt([0, b]))} matches the middle term.</p><p>The answer is the horizontal terms:</p><p>${html(fmt(st.q.orig))}<br>${html(`= ${lead(st.q.g)}(${fmt(A)})(${fmt(Bp)})`)}</p>` };
+      return { marks, step: 5, done: true, rows: [A, Bp], msg: `<p>Yes! ${html(fmt([0, b]))} matches the middle term.</p><p>The answer is the rows: their product.</p>` };
     }
     const ok = (...ks) => ks.every(k => marks[k] === "ok");
     const step = !ok("f1", "f2") ? 0 : !ok("c1", "c2") ? 1 : !ok("d1", "d2") ? 2 : 3;
@@ -646,7 +699,7 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     const L = boxes.workLogic;
     const put = (el, poly) => { el.value = fmt(poly); };
     put(L.f1, [0, m]); put(L.f2, [0, n]); put(L.c1, [p]); put(L.c2, [q]);
-    put(L.d1, [0, m * q]); put(L.d2, [0, n * p]); put(L.sum, [0, b]);
+    put(L.d1, [0, n * p]); put(L.d2, [0, m * q]); put(L.sum, [0, b]);
     const D = boxes.workDec;
     const N1 = m * q, N2 = n * p, k1 = gcd(a, N1);
     put(D.ac, [a * c]); put(D.n1, [N1]); put(D.n2, [N2]);
@@ -659,16 +712,114 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
     check();
   }
 
+  // ---------- Diagonals with arrows ----------
+  // Each arrow points the way the product is carried down: teal from top right to bottom left
+  // (its product goes in the left box), purple from top left to bottom right (right box).
+  function drawX() {
+    const svg = $("xs"), lg = $("lg");
+    if (!lg.offsetParent) return;
+    const o = lg.getBoundingClientRect(), L = boxes.workLogic;
+    svg.setAttribute("viewBox", `0 0 ${o.width} ${o.height}`);
+    const pt = (el, side) => { const r = el.getBoundingClientRect(); return [(side === "r" ? r.right : r.left) - o.left, r.top + r.height / 2 - o.top]; };
+    const arrow = (cls, from, to) => {
+      const gap = 8, dx = to[0] - from[0], dy = to[1] - from[1], len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+      const a = [from[0] + ux * gap, from[1] + uy * gap], b = [to[0] - ux * gap, to[1] - uy * gap];
+      const h = 15, w = 7, base = [b[0] - ux * h, b[1] - uy * h];
+      const tri = [b, [base[0] - uy * w, base[1] + ux * w], [base[0] + uy * w, base[1] - ux * w]].map(q => q.map(v => v.toFixed(1)).join(",")).join(" ");
+      return `<g class="${cls}" id="${cls}"><line x1="${a[0]}" y1="${a[1]}" x2="${base[0]}" y2="${base[1]}"/><polygon points="${tri}"/></g>`;
+    };
+    svg.innerHTML = arrow("l1", pt(L.f1, "r"), pt(L.c2, "l")) + arrow("l2", pt(L.c1, "l"), pt(L.f2, "r"));
+  }
+
+  // ---------- The answer: copies of the two rows fly down and multiply ----------
+  let answered = null, run = 0;
+  const rowHtml = p => `(<span class="ta">${fmt([0, p[1]])}</span> <span class="tb">${signed([p[0]])}</span>)`;
+  function hideAns() {
+    run++; answered = null;
+    $("ans").className = "ans"; $("foil").innerHTML = "";
+    $("verify").hidden = true;
+    clearHl();
+  }
+  async function showAnswerRows(rows) {
+    const key = rows.map(fmt).join("|");
+    if (answered === key) return;
+    hideAns(); answered = key;
+    const my = run;
+    const pre = lead(st.q.g);
+    $("ansbox").innerHTML = `${pre ? `<span>${pre}</span>` : ""}<span class="rowA">${rowHtml(rows[0])}</span><span class="rowB">${rowHtml(rows[1])}</span>`;
+    const L = boxes.workLogic, pars = $("lg").querySelectorAll(".par");
+    const targets = [$("ansbox").querySelector(".rowA"), $("ansbox").querySelector(".rowB")];
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) {
+      const fs = getComputedStyle($("ansbox")).fontSize;
+      const flies = [0, 1].map(i => {
+        const from = pars[i * 2].getBoundingClientRect(), to = targets[i].getBoundingClientRect();
+        const el = document.createElement("div");
+        el.className = "fly"; el.style.fontSize = fs; el.style.color = i ? "var(--orange)" : "var(--pt)";
+        el.innerHTML = rowHtml(rows[i]);
+        document.body.append(el);
+        const fromBox = [from.left, from.top + from.height / 2 - to.height / 2];
+        el.style.left = to.left + "px"; el.style.top = to.top + "px";
+        return el.animate([{ transform: `translate(${fromBox[0] - to.left}px, ${fromBox[1] - to.top}px)`, opacity: 0.4 }, { transform: "none", opacity: 1 }],
+          { duration: 900, delay: i * 250, easing: "cubic-bezier(.3,.7,.3,1)", fill: "forwards" }).finished.then(() => el.remove(), () => el.remove());
+      });
+      await Promise.all(flies);
+      if (my !== run) return;
+    }
+    $("ans").classList.add("show");
+    await sleep(reduce ? 0 : 250);
+    if (my !== run) return;
+    $("ans").classList.add("boxed");
+    $("verify").hidden = false; $("verify").disabled = false;
+  }
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  // ---------- Verify: FOIL the answer, lighting up the matching parts of the logic layout ----------
+  function clearHl() { document.querySelectorAll("#workLogic .hl, #ansbox .hlt").forEach(el => el.classList.remove("hl", "hlt")); }
+  async function verify() {
+    if (!answered) return;
+    const my = ++run; // a newer run (or any edit) cancels this one
+    const L = boxes.workLogic, A = $("ansbox");
+    const f = [parse(L.f1.value), parse(L.f2.value)], c = [parse(L.c1.value), parse(L.c2.value)];
+    const t = (row, which) => A.querySelector(`.row${row} .t${which}`);
+    const [cc, b, a] = st.q.r;
+    const steps = [
+      ["F", "First", [t("A", "a"), t("B", "a")], [L.f1, L.f2, $("lt1")], mul(f[0], f[1])],
+      ["O", "Outer", [t("A", "a"), t("B", "b")], [L.f1, L.c2, L.d2, $("l1")], mul(f[0], c[1])],
+      ["I", "Inner", [t("A", "b"), t("B", "a")], [L.c1, L.f2, L.d1, $("l2")], mul(c[0], f[1])],
+      ["L", "Last", [t("A", "b"), t("B", "b")], [L.c1, L.c2, $("lt3")], mul(c[0], c[1])],
+    ];
+    $("verify").disabled = true;
+    let line = "";
+    for (const [k, name, ans, parts, prod] of steps) {
+      clearHl();
+      ans.forEach(el => el.classList.add("hlt")); parts.forEach(el => el.classList.add("hl"));
+      line += (line ? " " + signed(prod) : fmt(prod));
+      $("foil").innerHTML = `<b>${name}:</b> ${line}`;
+      await sleep(1600);
+      if (my !== run) return;
+    }
+    clearHl();
+    [L.d1, L.d2, L.sum, $("lt2")].forEach(el => el.classList.add("hl"));
+    $("foil").innerHTML = `${line} = <span style="color:var(--green)">${fmt([cc, b, a])} ✓</span>`;
+    await sleep(1800);
+    if (my !== run) return;
+    clearHl();
+    $("verify").disabled = false;
+  }
+
   // ---------- Controls ----------
   function pick(box, val) { box.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === String(val)))); }
   $("method").onclick = e => {
     const b = e.target.closest("button"); if (!b) return;
     st.method = b.dataset.v; pick($("method"), st.method);
     $("workLogic").hidden = st.method !== "logic"; $("workDec").hidden = st.method !== "dec";
+    $("verify").hidden = !(st.method === "logic" && $("ans").classList.contains("boxed")); drawX();
     const anyFilled = ORDER[st.method].some(k => cur()[k].value.trim());
     if (anyFilled) check(); else { setMsg(startMsg(), false); steps(0); }
   };
   $("level").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.level = Number(b.dataset.v); pick($("level"), st.level); generate(); };
+  $("diff").onclick = e => { const b = e.target.closest("button"); if (!b) return; st.diff = Number(b.dataset.v); pick($("diff"), st.diff); generate(); };
   $("newQ").onclick = generate;
   $("typedForm").onsubmit = e => {
     e.preventDefault();
@@ -683,16 +834,223 @@ input.bx.dg2:not(.ok):not(.bad) { border-color: color-mix(in srgb, var(--teal) 6
   $("check").onclick = check;
   $("show").onclick = showAnswer;
   $("clear").onclick = clearAll;
+  $("verify").onclick = verify;
+  new ResizeObserver(drawX).observe($("lg"));
   document.querySelectorAll("input.bx").forEach(el => {
-    el.addEventListener("input", () => { el.classList.remove("ok", "bad", "todo", "try"); live(); });
+    el.addEventListener("input", () => { el.classList.remove("ok", "bad", "todo", "try"); if (el.closest("#workLogic")) hideAns(); live(); });
     el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
   });
 
-  pick($("method"), st.method); pick($("level"), st.level);
+  pick($("method"), st.method); pick($("level"), st.level); pick($("diff"), st.diff);
   $("workDec").hidden = false;
   generate();
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill fixed at the top centre of the window.
+  const st = document.createElement("style");
+  st.textContent =
+    "#lang-switch{position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:5px 12px;min-height:32px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>
