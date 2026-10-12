@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Probability Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Probability Lab: a coin, dice (4 to 20 sides), a spinner with equal sections and a marble bag.
+   Probability is read as "number out of number": the outcomes that count as a win, out of all the outcomes.
+   Understand: pick what counts as a win; the wins get counted 1, 2, 3 on the board, then "3 out of 8", the fraction and a likelihood line.
+   Explore: run 1, 10, 100 or 1000 trials; a bar chart compares what happened with the theory (dashed lines).
+   Play: questions to answer as __ out of __, with Show me and Try it. */
+:root { --c-red: #d23c3c; --c-blue: #2f5fd0; --c-yellow: #e0a810; --c-green: #23935f; --c-purple: #8650c8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-red: #ff6b6b; --c-blue: #7aa2ff; --c-yellow: #f5c542; --c-green: #4cc49a; --c-purple: #b38cf0; } }
+:root[data-theme="dark"] { --c-red: #ff6b6b; --c-blue: #7aa2ff; --c-yellow: #f5c542; --c-green: #4cc49a; --c-purple: #b38cf0; }
+.main { grid-template-columns: minmax(0, 1.55fr) minmax(330px, 1fr); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns.small button { font-family: var(--font-num); font-size: 1rem; min-height: 40px; padding: 4px 12px; }
+.panel { gap: 12px; }
+.card { padding: 14px 16px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.step { display: inline-flex; align-items: center; gap: 6px; }
+.step button { min-width: 40px; min-height: 40px; font-size: 1.2rem; padding: 0 8px; }
+.step output { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-width: 2ch; text-align: center; }
+.bagrows { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 12px; }
+.sw { display: inline-block; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--ink); flex: none; }
+.hint { margin: 8px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 1.05rem; background: var(--sheet); border: 2px solid var(--grid-major); }
+.chips button.num { font-family: var(--font-num); min-width: 48px; justify-content: center; }
+.chips button.on { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--sheet)); }
+.chips button.on::after { content: "✓"; color: var(--green); font-weight: 800; }
+.outof { font-family: var(--font-num); font-weight: 700; font-size: 2.3rem; line-height: 1.2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 14px; }
+.outof .w { color: var(--green); } .outof .t { color: var(--pt); }
+.outof small { font-family: var(--font-body); font-size: 1.15rem; color: var(--muted); font-weight: 700; }
+.eq { font-size: 1.35rem; margin-top: 6px; }
+.eq .ev { font-family: var(--font-display); font-weight: 800; }
+.scale { display: block; width: 100%; height: auto; margin-top: 10px; }
+.word { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: var(--orange); margin: 2px 0 0; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.1rem; min-height: 50px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.btns .reset { margin-left: auto; }
+.res { font-family: var(--font-num); font-size: 1.25rem; display: grid; grid-template-columns: auto auto auto; gap: 4px 14px; align-items: baseline; justify-content: start; }
+.res .k { font-family: var(--font-body); font-weight: 700; color: var(--muted); font-size: 1rem; }
+.res b { font-size: 1.5rem; }
+.res .got { color: var(--green); } .res .th { color: var(--orange); }
+.q { font-size: 1.3rem; font-weight: 700; margin: 0 0 10px; }
+.ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; }
+.ask .ev { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; }
+.ask input { font: inherit; width: 3.4ch; height: 60px; text-align: center; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; }
+.ask input#aW { border-color: var(--green); color: var(--green); }
+.ask input#aT { border-color: var(--pt); color: var(--pt); }
+.ask .word2 { font-family: var(--font-body); font-size: 1.15rem; color: var(--muted); }
+.fb { margin: 10px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); }
+.score { margin: 0; color: var(--muted); }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+
+/* Board drawing */
+#svg { user-select: none; }
+.cap { font-family: var(--font-display); font-weight: 800; font-size: 26px; fill: var(--muted); text-anchor: middle; }
+.oc { cursor: default; }
+.oc.click { cursor: pointer; }
+.oc.fade { opacity: 0.28; }
+.oc .ring { fill: none; stroke: var(--green); stroke-width: 6; opacity: 0; }
+.oc.win .ring { opacity: 1; }
+.oc.land .lring { opacity: 1; }
+.lring { fill: none; stroke: var(--orange); stroke-width: 7; opacity: 0; stroke-dasharray: 14 8; }
+.face { fill: var(--sheet); stroke: var(--ink); stroke-width: 3; }
+.pip { fill: var(--ink); }
+.fnum { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.coin { fill: color-mix(in srgb, var(--c-yellow) 35%, var(--sheet)); stroke: var(--ink); stroke-width: 3; }
+.coin-in { fill: none; stroke: var(--ink); stroke-width: 1.5; opacity: 0.5; }
+.coinlbl { font-family: var(--font-display); font-weight: 800; font-size: 26px; fill: var(--ink); text-anchor: middle; }
+.sec { stroke: var(--sheet); stroke-width: 3; }
+.rim { fill: none; stroke: var(--ink); stroke-width: 3; }
+.needle { fill: var(--ink); stroke: var(--sheet); stroke-width: 3; }
+.hub { fill: var(--ink); stroke: var(--sheet); stroke-width: 3; }
+.bag { fill: color-mix(in srgb, var(--grid-major) 40%, var(--sheet)); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
+.marble { stroke: var(--ink); stroke-width: 2; }
+.badge { fill: var(--green); stroke: var(--sheet); stroke-width: 3; }
+.badge-t { font-family: var(--font-num); font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+.ax { stroke: var(--muted); stroke-width: 2; }
+.gl { stroke: var(--grid); stroke-width: 1; }
+.tk { font-family: var(--font-num); font-weight: 700; font-size: 17px; fill: var(--muted); }
+.bar-l { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
+.bar-c { font-family: var(--font-num); font-weight: 500; fill: var(--muted); text-anchor: middle; }
+.theo { stroke: var(--orange); stroke-width: 3; stroke-dasharray: 8 6; }
+.ctitle { font-family: var(--font-display); font-weight: 800; font-size: 24px; fill: var(--ink); }
+.legend { font-family: var(--font-body); font-size: 17px; fill: var(--muted); }
+.fly { font-family: var(--font-display); font-weight: 800; font-size: 40px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
+.fly.yes { fill: var(--green); } .fly.no { fill: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Probability Lab</h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Tool" id="devs">
+        <button type="button" data-dev="coin">Coin</button><button type="button" data-dev="die">Die</button><button type="button" data-dev="spinner" class="on">Spinner</button><button type="button" data-dev="bag">Bag</button><button type="button" data-dev="mix" hidden>Mix</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Mode" id="modes">
+        <button type="button" data-mode="understand" class="on">Understand</button><button type="button" data-mode="explore">Explore</button><button type="button" data-mode="play">Play</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 760" role="img" aria-label="Probability tool"></svg></div>
+
+    <div class="panel">
+      <section class="card" id="setup">
+        <p class="label" id="setupLbl">Set up</p>
+        <div id="setupBody"></div>
+      </section>
+
+      <section class="card" id="winCard">
+        <p class="label">Counts as a win</p>
+        <div class="chips" id="chips"></div>
+      </section>
+
+      <section class="card" id="readU">
+        <div class="outof" id="outof"></div>
+        <div class="eq" id="eqU"></div>
+        <svg class="scale" id="scale" viewBox="0 0 400 78" aria-hidden="true"></svg>
+        <p class="word" id="word"></p>
+      </section>
+
+      <section class="card" id="readE" hidden>
+        <div class="btns" id="runBtns"></div>
+        <div class="res" id="res" style="margin-top: 12px"></div>
+      </section>
+
+      <section class="card" id="playQ" hidden>
+        <p class="q" id="qText"></p>
+        <div class="ask">
+          <span class="ev" id="qEv"></span><span>=</span>
+          <input id="aW" type="text" inputmode="numeric" autocomplete="off" aria-label="How many wins">
+          <span class="word2">out of</span>
+          <input id="aT" type="text" inputmode="numeric" autocomplete="off" aria-label="How many outcomes in all">
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <div class="btns" style="margin-top: 6px">
+          <button type="button" class="go" id="check">Check</button>
+          <button type="button" id="showme">Show me</button>
+          <button type="button" id="tryit">Try it</button>
+          <button type="button" id="nextQ">New question</button>
+        </div>
+        <p class="score" style="margin-top: 10px">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const W = 1000, H = 760;
+  const COLS = ["red", "blue", "yellow", "green", "purple"];
+  const cvar = c => `var(--c-${c})`;
+  const VERB = { coin: "Flip", die: "Roll", spinner: "Spin", bag: "Pull" };
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const pct = x => { const v = Math.round(x * 1000) / 10; return (Number.isInteger(v) ? v : v.toFixed(1)) + "%"; };
+  const listWords = a => a.length <= 1 ? (a[0] ?? "") : a.slice(0, -1).join(", ") + " or " + a[a.length - 1];
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  // ---- Devices ----
+  // A setup (cfg) is { dev, die, spin, bag }. Its outcomes are all equally likely; each has a kind (what a win is picked by).
+  function outcomes(cfg) {
+    if (cfg.dev === "coin") return [{ kind: "H" }, { kind: "T" }];
+    if (cfg.dev === "die") return Array.from({ length: cfg.die }, (_, i) => ({ kind: i + 1 }));
+    if (cfg.dev === "spinner") return cfg.spin.map(c => ({ kind: c }));
+    const out = [];
+    for (const c of COLS) for (let i = 0; i < (cfg.bag[c] || 0); i++) out.push({ kind: c });
+    return out;
+  }
+  function kinds(cfg) {
+    const seen = [];
+    for (const o of outcomes(cfg)) if (!seen.includes(o.kind)) seen.push(o.kind);
+    if (cfg.dev === "spinner" || cfg.dev === "bag") return COLS.filter(c => seen.includes(c));
+    return seen;
+  }
+  const kindName = (dev, k) => dev === "coin" ? (k === "H" ? "heads" : "tails") : String(k);
+  const unitWord = (cfg, n) => ({ coin: n === 1 ? "side" : "sides", die: n === 1 ? "face" : "faces",
+    spinner: n === 1 ? "section" : "sections", bag: n === 1 ? "marble" : "marbles" })[cfg.dev];
+  function evName(cfg, winKinds) {
+    const ks = kinds(cfg).filter(k => winKinds.has(k));
+    if (!ks.length) return "P(nothing)";
+    if (ks.length === kinds(cfg).length) return "P(anything)";
+    return "P(" + listWords(ks.map(k => kindName(cfg.dev, k))) + ")";
+  }
+  function countWins(cfg, winKinds) {
+    const all = outcomes(cfg);
+    return { w: all.filter(o => winKinds.has(o.kind)).length, t: all.length };
+  }
+
+  // ---- State ----
+  const cfg = { dev: "spinner", die: 6,
+    spin: ["red", "blue", "yellow", "red", "blue", "red", "green", "blue"],
+    bag: { red: 3, blue: 5, yellow: 0, green: 0, purple: 0 } };
+  const wins = { coin: new Set(["H"]), die: new Set([6]), spinner: new Set(["red"]), bag: new Set(["red"]) };
+  let mode = "understand", playDev = "mix";
+  let stats = { n: 0, by: {} }, last = null, needle = 0, busy = false;
+  let q = null, shown = false;
+  let els = [], needleEl = null, spinGeo = null;
+
+  function resetStats() { stats = { n: 0, by: {} }; last = null; }
+
+  // ---- Board ----
+  function render() {
+    svg.textContent = "";
+    els = []; needleEl = null; spinGeo = null;
+    if (mode === "play") {
+      if (!q) newQuestion();
+      drawSample(q.cfg, q.wins, { x: 0, y: 0, w: W, h: H }, { badges: shown, fade: shown, edit: false, cap: true });
+    } else if (mode === "understand") {
+      drawSample(cfg, wins[cfg.dev], { x: 0, y: 0, w: W, h: H }, { badges: true, fade: true, edit: true, cap: true });
+    } else {
+      drawSample(cfg, wins[cfg.dev], { x: 0, y: 0, w: 450, h: H }, { badges: false, fade: false, edit: true, cap: true });
+      drawChart({ x: 470, y: 0, w: 530, h: H });
+    }
+    if (last != null && els[last]) els[last].classList.add("land");
+  }
+
+  function badge(g, x, y, r, n) {
+    el("circle", { class: "badge", cx: x, cy: y, r }, g);
+    el("text", { class: "badge-t", x, y: y + 1, "font-size": r * 1.15 }, g, n);
+  }
+
+  function drawSample(c, winKinds, R, o) {
+    const all = outcomes(c);
+    const capH = o.cap ? 56 : 0;
+    if (o.cap) {
+      const n = all.length;
+      const txt = c.dev === "coin" ? "2 sides" : c.dev === "die" ? `${n} faces` :
+        c.dev === "spinner" ? `${n} equal sections` : `${n} ${unitWord(c, n)}`;
+      el("text", { class: "cap", x: R.x + R.w / 2, y: R.y + 40 }, svg, txt);
+    }
+    const A = { x: R.x + 16, y: R.y + capH, w: R.w - 32, h: R.h - capH - 16 };
+    let k = 0;
+    const isWin = i => winKinds.has(all[i].kind);
+    const nextBadge = () => ++k;
+    const mk = (i) => {
+      const g = el("g", { class: "oc" }, svg);
+      if (o.fade && !isWin(i)) g.classList.add("fade");
+      if (o.badges && isWin(i)) g.classList.add("win");
+      if (o.edit) {
+        g.classList.add("click");
+        g.addEventListener("click", () => onOutcomeClick(i));
+      }
+      els[i] = g;
+      return g;
+    };
+
+    if (c.dev === "spinner") {
+      const n = all.length;
+      const r = Math.min(A.w, A.h) / 2 - 14, cx = A.x + A.w / 2, cy = A.y + A.h / 2;
+      spinGeo = { cx, cy, r, n };
+      const pt = (a, rr) => [cx + rr * Math.sin(a), cy - rr * Math.cos(a)];
+      for (let i = 0; i < n; i++) {
+        const a0 = i * 2 * Math.PI / n, a1 = (i + 1) * 2 * Math.PI / n;
+        const [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r);
+        const g = mk(i);
+        const d = n === 1 ? `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z` :
+          `M${cx} ${cy}L${x0} ${y0}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}Z`;
+        el("path", { class: "sec", d, style: `fill: ${cvar(all[i].kind)}` }, g);
+        // win ring drawn as an inner arc band
+        const ri = r - 8;
+        const [p0x, p0y] = pt(a0 + 0.04, ri), [p1x, p1y] = pt(a1 - 0.04, ri);
+        el("path", { class: "ring", d: `M${p0x} ${p0y}A${ri} ${ri} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${p1x} ${p1y}` }, g);
+        el("path", { class: "lring", d: `M${p0x} ${p0y}A${ri} ${ri} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${p1x} ${p1y}` }, g);
+        if (o.badges && isWin(i)) {
+          const [bx, by] = pt((a0 + a1) / 2, r * 0.66);
+          badge(g, bx, by, Math.max(16, Math.min(28, r * 0.11)), nextBadge());
+        }
+      }
+      el("circle", { class: "rim", cx, cy, r }, svg);
+      needleEl = el("g", { transform: `rotate(${needle} ${cx} ${cy})` }, svg);
+      el("path", { class: "needle", d: `M${cx - 12} ${cy}L${cx} ${cy - r * 0.86}L${cx + 12} ${cy}L${cx} ${cy + 22}Z` }, needleEl);
+      el("circle", { class: "hub", cx, cy, r: 14 }, svg);
+      return;
+    }
+
+    if (c.dev === "coin") {
+      const r = Math.min(A.w / 4.6, A.h / 2.8);
+      [0, 1].forEach(i => {
+        const cx = A.x + A.w * (i ? 0.73 : 0.27), cy = A.y + A.h / 2 - 20;
+        const g = mk(i);
+        el("circle", { class: "coin", cx, cy, r }, g);
+        el("circle", { class: "coin-in", cx, cy, r: r * 0.84 }, g);
+        el("text", { class: "fnum", x: cx, y: cy, "font-size": r * 0.9 }, g, i ? "T" : "H");
+        el("text", { class: "coinlbl", x: cx, y: cy + r + 44 }, g, i ? "Tails" : "Heads");
+        el("circle", { class: "ring", cx, cy, r: r + 10 }, g);
+        el("circle", { class: "lring", cx, cy, r: r + 20 }, g);
+        if (o.badges && isWin(i)) badge(g, cx + r * 0.75, cy - r * 0.75, 26, nextBadge());
+      });
+      return;
+    }
+
+    if (c.dev === "die") {
+      const n = all.length;
+      let best = null;
+      for (let cols = 1; cols <= n; cols++) {
+        const rows = Math.ceil(n / cols);
+        const s = Math.min(A.w / cols, A.h / rows);
+        if (!best || s > best.s) best = { cols, rows, s };
+      }
+      const s = Math.min(best.s, 230), gap = s * 0.16, f = s - gap;
+      const ox = A.x + (A.w - best.cols * s) / 2 + gap / 2, oy = A.y + (A.h - best.rows * s) / 2 + gap / 2;
+      for (let i = 0; i < n; i++) {
+        const x = ox + (i % best.cols) * s, y = oy + Math.floor(i / best.cols) * s;
+        const g = mk(i);
+        el("rect", { class: "face", x, y, width: f, height: f, rx: f * 0.16 }, g);
+        const v = i + 1;
+        if (n === 6) {
+          const P = { 1: [[.5, .5]], 2: [[.27, .27], [.73, .73]], 3: [[.25, .25], [.5, .5], [.75, .75]],
+            4: [[.27, .27], [.73, .27], [.27, .73], [.73, .73]], 5: [[.25, .25], [.75, .25], [.5, .5], [.25, .75], [.75, .75]],
+            6: [[.28, .23], [.72, .23], [.28, .5], [.72, .5], [.28, .77], [.72, .77]] }[v];
+          for (const [px, py] of P) el("circle", { class: "pip", cx: x + px * f, cy: y + py * f, r: f * 0.085 }, g);
+        } else {
+          el("text", { class: "fnum", x: x + f / 2, y: y + f / 2 + 2, "font-size": f * (v >= 10 ? 0.44 : 0.52) }, g, v);
+        }
+        el("rect", { class: "ring", x: x - 7, y: y - 7, width: f + 14, height: f + 14, rx: f * 0.2 }, g);
+        el("rect", { class: "lring", x: x - 12, y: y - 12, width: f + 24, height: f + 24, rx: f * 0.22 }, g);
+        if (o.badges && isWin(i)) badge(g, x + f - 2, y + 2, Math.max(14, Math.min(24, f * 0.17)), nextBadge());
+      }
+      return;
+    }
+
+    // Bag of marbles, grouped by colour so they are easy to count.
+    const n = all.length;
+    const bx = A.x + A.w * 0.06, bw = A.w * 0.88, by = A.y + 40, bh = A.h - 50;
+    el("path", { class: "bag", d: `M${bx + bw * 0.16} ${by + 30}C${bx - bw * 0.02} ${by + bh * 0.4} ${bx} ${by + bh} ${bx + bw * 0.14} ${by + bh}H${bx + bw * 0.86}C${bx + bw} ${by + bh} ${bx + bw * 1.02} ${by + bh * 0.4} ${bx + bw * 0.84} ${by + 30}Q${bx + bw * 0.5} ${by - 10} ${bx + bw * 0.16} ${by + 30}Z` }, svg);
+    if (!n) return;
+    const ix = bx + bw * 0.12, iw = bw * 0.76, iy = by + 50, ih = bh - 70;
+    let best = null;
+    for (let cols = 1; cols <= n; cols++) {
+      const rows = Math.ceil(n / cols);
+      const s = Math.min(iw / cols, ih / rows);
+      if (!best || s > best.s) best = { cols, rows, s };
+    }
+    const s = Math.min(best.s, 130), rr = s * 0.4;
+    const ox = ix + (iw - best.cols * s) / 2 + s / 2, oy = iy + (ih - best.rows * s) / 2 + s / 2;
+    for (let i = 0; i < n; i++) {
+      const cx = ox + (i % best.cols) * s, cy = oy + Math.floor(i / best.cols) * s;
+      const g = mk(i);
+      el("circle", { class: "marble", cx, cy, r: rr, style: `fill: ${cvar(all[i].kind)}` }, g);
+      el("circle", { cx: cx - rr * 0.35, cy: cy - rr * 0.35, r: rr * 0.22, style: "fill: #fff; opacity: 0.45" }, g);
+      el("circle", { class: "ring", cx, cy, r: rr + 6, style: "stroke-width: 5" }, g);
+      el("circle", { class: "lring", cx, cy, r: rr + 10, style: "stroke-width: 6; stroke-dasharray: 8 5" }, g);
+      if (o.badges && isWin(i)) el("text", { class: "badge-t", x: cx, y: cy + 1, "font-size": rr * 0.95, style: "paint-order: stroke; stroke: rgba(0,0,0,.45); stroke-width: 4px" }, g, nextBadge());
+    }
+  }
+
+  function drawChart(R) {
+    const ks = kinds(cfg), all = outcomes(cfg), wk = wins[cfg.dev];
+    el("text", { class: "ctitle", x: R.x + 10, y: R.y + 40 }, svg, stats.n ? `Results after ${stats.n.toLocaleString()}` : "Results");
+    const lg = el("g", {}, svg);
+    el("line", { class: "theo", x1: R.x + 12, y1: R.y + 70, x2: R.x + 52, y2: R.y + 70 }, lg);
+    el("text", { class: "legend", x: R.x + 60, y: R.y + 76 }, lg, "theory");
+    const X0 = R.x + 64, X1 = R.x + R.w - 14, Y0 = R.y + R.h - 90, Y1 = R.y + 100;
+    let mx = 0;
+    for (const k of ks) {
+      const th = all.filter(o => o.kind === k).length / all.length;
+      const ex = stats.n ? (stats.by[k] || 0) / stats.n : 0;
+      mx = Math.max(mx, th, ex);
+    }
+    const steps = [0.1, 0.2, 0.25, 0.5, 0.75, 1];
+    const top = steps.find(s => s >= mx * 1.08) ?? 1;
+    const tick = top <= 0.2 ? 0.05 : top <= 0.5 ? 0.1 : 0.25;
+    const yv = v => Y0 - (v / top) * (Y0 - Y1);
+    for (let v = 0; v <= top + 1e-9; v += tick) {
+      el("line", { class: "gl", x1: X0, y1: yv(v), x2: X1, y2: yv(v) }, svg);
+      el("text", { class: "tk", x: X0 - 8, y: yv(v) + 6, "text-anchor": "end" }, svg, Math.round(v * 100) + "%");
+    }
+    el("line", { class: "ax", x1: X0, y1: Y0, x2: X1, y2: Y0 }, svg);
+    el("line", { class: "ax", x1: X0, y1: Y0, x2: X0, y2: Y1 - 10 }, svg);
+    const slot = (X1 - X0) / ks.length, bw = Math.min(70, slot * 0.66);
+    const fs = Math.max(13, Math.min(24, slot * 0.42));
+    ks.forEach((k, i) => {
+      const cx = X0 + slot * (i + 0.5);
+      const th = all.filter(o => o.kind === k).length / all.length;
+      const cnt = stats.by[k] || 0, ex = stats.n ? cnt / stats.n : 0;
+      const isW = wk.has(k);
+      const fill = (cfg.dev === "spinner" || cfg.dev === "bag") ? cvar(k) : isW ? "var(--green)" : "var(--grid-major)";
+      if (ex > 0) el("rect", { x: cx - bw / 2, y: yv(ex), width: bw, height: Y0 - yv(ex), rx: 3,
+        style: `fill: ${fill}; stroke: ${isW ? "var(--green)" : "var(--ink)"}; stroke-width: ${isW ? 4 : 1.5}` }, svg);
+      el("line", { class: "theo", x1: cx - bw / 2 - 6, y1: yv(th), x2: cx + bw / 2 + 6, y2: yv(th) }, svg);
+      const lbl = cfg.dev === "coin" ? k : cfg.dev === "die" ? k : k[0].toUpperCase() + k.slice(1, 3);
+      el("text", { class: "bar-l", x: cx, y: Y0 + 28, "font-size": fs, style: isW ? "fill: var(--green)" : "" }, svg, lbl + (isW ? "✓" : ""));
+      if (ks.length <= 12) el("text", { class: "bar-c", x: cx, y: Y0 + 54, "font-size": Math.min(18, fs * 0.85) }, svg, cnt);
+    });
+  }
+
+  // ---- Clicking the board ----
+  function onOutcomeClick(i) {
+    if (busy || mode === "play") return;
+    const all = outcomes(cfg);
+    if (cfg.dev === "spinner") {
+      // Tap a section to change its colour.
+      cfg.spin[i] = COLS[(COLS.indexOf(cfg.spin[i]) + 1) % COLS.length];
+      resetStats(); refresh(); return;
+    }
+    const k = all[i].kind, s = wins[cfg.dev];
+    s.has(k) ? s.delete(k) : s.add(k);
+    refresh();
+  }
+
+  // ---- Panel ----
+  function setupPanel() {
+    const b = $("setupBody");
+    b.textContent = "";
+    const add = (html) => { const d = document.createElement("div"); d.innerHTML = html; b.appendChild(d); return d; };
+    if (cfg.dev === "coin") {
+      add(`<p class="hint" style="margin: 0">A fair coin: heads or tails.</p>`);
+    } else if (cfg.dev === "die") {
+      const d = add(`<div class="row"><span>Sides</span><div class="seg-btns small" role="group" aria-label="Sides">${[4, 6, 8, 10, 12, 20]
+        .map(n => `<button type="button" data-n="${n}" class="${n === cfg.die ? "on" : ""}">${n}</button>`).join("")}</div></div>`);
+      d.querySelectorAll("button").forEach(bt => bt.onclick = () => {
+        if (busy) return;
+        cfg.die = +bt.dataset.n;
+        for (const v of [...wins.die]) if (v > cfg.die) wins.die.delete(v);
+        resetStats(); refresh();
+      });
+    } else if (cfg.dev === "spinner") {
+      const d = add(`<div class="row"><span>Sections</span><div class="step"><button type="button" data-d="-1" aria-label="Fewer sections">−</button><output>${cfg.spin.length}</output><button type="button" data-d="1" aria-label="More sections">+</button></div></div>
+        <p class="hint">Tap a section to change its colour.</p>`);
+      d.querySelectorAll("button").forEach(bt => bt.onclick = () => {
+        if (busy) return;
+        const n = cfg.spin.length + +bt.dataset.d;
+        if (n < 2 || n > 12) return;
+        if (n > cfg.spin.length) cfg.spin.push(COLS[cfg.spin.length % 4]); else cfg.spin.pop();
+        resetStats(); refresh();
+      });
+    } else {
+      const d = add(`<div class="bagrows">${COLS.map(c => `<div class="step"><span class="sw" style="background: ${cvar(c)}" title="${c}"></span>
+        <button type="button" data-c="${c}" data-d="-1" aria-label="One less ${c}">−</button><output>${cfg.bag[c]}</output>
+        <button type="button" data-c="${c}" data-d="1" aria-label="One more ${c}">+</button></div>`).join("")}</div>`);
+      d.querySelectorAll("button").forEach(bt => bt.onclick = () => {
+        if (busy) return;
+        const c = bt.dataset.c, v = cfg.bag[c] + +bt.dataset.d;
+        const tot = COLS.reduce((s, k) => s + cfg.bag[k], 0) + +bt.dataset.d;
+        if (v < 0 || v > 10 || tot < 1) return;
+        cfg.bag[c] = v;
+        resetStats(); refresh();
+      });
+    }
+  }
+
+  function chipsPanel() {
+    const box = $("chips");
+    box.textContent = "";
+    const s = wins[cfg.dev];
+    for (const k of kinds(cfg)) {
+      const bt = document.createElement("button");
+      bt.type = "button";
+      const colour = cfg.dev === "spinner" || cfg.dev === "bag";
+      if (colour) bt.innerHTML = `<span class="sw" style="background: ${cvar(k)}"></span>${k}`;
+      else { bt.textContent = cfg.dev === "coin" ? (k === "H" ? "Heads" : "Tails") : k; if (cfg.dev === "die") bt.classList.add("num"); }
+      if (s.has(k)) bt.classList.add("on");
+      bt.setAttribute("aria-pressed", s.has(k));
+      bt.onclick = () => { if (busy) return; s.has(k) ? s.delete(k) : s.add(k); refresh(); };
+      box.appendChild(bt);
+    }
+    if (cfg.dev === "die") {
+      const n = cfg.die, row = document.createElement("div");
+      row.className = "chips"; row.style.marginTop = "8px";
+      const presets = [["Even", v => v % 2 === 0], ["Odd", v => v % 2 === 1], [`More than ${Math.floor(n / 2)}`, v => v > Math.floor(n / 2)], ["Clear", () => false]];
+      for (const [name, f] of presets) {
+        const bt = document.createElement("button");
+        bt.type = "button"; bt.textContent = name; bt.style.minHeight = "40px"; bt.style.fontSize = "0.95rem";
+        bt.onclick = () => { if (busy) return; wins.die = new Set(Array.from({ length: n }, (_, i) => i + 1).filter(f)); refresh(); };
+        row.appendChild(bt);
+      }
+      box.appendChild(row);
+    }
+  }
+
+  function scaleLine(p) {
+    const sc = $("scale");
+    sc.textContent = "";
+    const x0 = 20, x1 = 380, y = 34;
+    el("line", { x1: x0, y1: y, x2: x1, y2: y, style: "stroke: var(--ink); stroke-width: 4; stroke-linecap: round" }, sc);
+    [[0, "0"], [0.5, "½"], [1, "1"]].forEach(([v, t]) => {
+      const x = x0 + v * (x1 - x0);
+      el("line", { x1: x, y1: y - 9, x2: x, y2: y + 9, style: "stroke: var(--ink); stroke-width: 3" }, sc);
+      el("text", { x, y: y + 30, "text-anchor": "middle", style: "fill: var(--ink); font: 700 17px var(--font-num)" }, sc, t);
+    });
+    [[0, "Impossible", "start"], [0.5, "Even chance", "middle"], [1, "Certain", "end"]].forEach(([v, t, a]) => {
+      el("text", { x: x0 + v * (x1 - x0) + (a === "start" ? -14 : a === "end" ? 14 : 0), y: y + 47, "text-anchor": a, style: "fill: var(--muted); font: 700 13px var(--font-body)" }, sc, t);
+    });
+    const x = x0 + p * (x1 - x0);
+    el("path", { d: `M${x} ${y - 4}l-11 -20h22z`, style: "fill: var(--orange); stroke: var(--sheet); stroke-width: 2" }, sc);
+  }
+  const likeWord = p => p === 0 ? "Impossible" : p === 1 ? "Certain" : p === 0.5 ? "Even chance" : p < 0.5 ? "Unlikely" : "Likely";
+
+  function fracHTML(a, b) { return `<span class="frac"><span>${a}</span><span>${b}</span></span>`; }
+
+  function readPanel() {
+    const { w, t } = countWins(cfg, wins[cfg.dev]);
+    const name = evName(cfg, wins[cfg.dev]);
+    $("outof").innerHTML = `<span><span class="w">${w}</span> <small>out of</small> <span class="t">${t}</span></span>`;
+    const g = gcd(w, t);
+    let eq = `<span class="ev">${name}</span> = ${fracHTML(w, t)}`;
+    if (w && g > 1) eq += ` = ${fracHTML(w / g, t / g)}`;
+    eq += ` <span class="dec">= ${pct(w / t)}</span>`;
+    $("eqU").innerHTML = eq;
+    const p = w / t;
+    scaleLine(p);
+    $("word").textContent = likeWord(p);
+  }
+
+  function explorePanel() {
+    const v = VERB[cfg.dev];
+    const rb = $("runBtns");
+    if (rb.dataset.dev !== cfg.dev) {
+      rb.dataset.dev = cfg.dev;
+      rb.innerHTML = [1, 10, 100, 1000].map(n => `<button type="button" class="go" data-n="${n}">${v} ${n.toLocaleString()}</button>`).join("") +
+        `<button type="button" class="reset" data-n="0">Reset</button>`;
+      rb.querySelectorAll("button").forEach(b => b.onclick = () => { const n = +b.dataset.n; n ? run(n) : (resetStats(), refresh()); });
+    }
+    rb.querySelectorAll("button").forEach(b => b.disabled = busy);
+    const { w, t } = countWins(cfg, wins[cfg.dev]);
+    const got = outcomesWinCount();
+    const name = evName(cfg, wins[cfg.dev]);
+    $("res").innerHTML = `<span class="k">${name}</span><span></span><span></span>
+      <span class="k">Happened</span><span class="got"><b>${got.toLocaleString()}</b> out of <b>${stats.n.toLocaleString()}</b></span><span class="got">${stats.n ? pct(got / stats.n) : ""}</span>
+      <span class="k">Theory</span><span class="th"><b>${w}</b> out of <b>${t}</b></span><span class="th">${pct(w / t)}</span>`;
+  }
+  function outcomesWinCount() {
+    let s = 0;
+    for (const k of wins[cfg.dev]) s += stats.by[k] || 0;
+    return s;
+  }
+
+  // ---- Running trials ----
+  function trial(c) { return rnd(outcomes(c).length); }
+
+  function animateLanding(c, idx, done) {
+    busy = true; syncBusy();
+    if (c.dev === "spinner" && needleEl && spinGeo) {
+      const n = spinGeo.n, sec = 360 / n;
+      const target = idx * sec + sec * (0.15 + Math.random() * 0.7);
+      const start = needle, end = start - (start % 360) + 360 * 4 + target;
+      const t0 = performance.now(), dur = 1700;
+      const step = now => {
+        const u = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - u, 3);
+        needle = start + (end - start) * e;
+        needleEl.setAttribute("transform", `rotate(${needle} ${spinGeo.cx} ${spinGeo.cy})`);
+        if (u < 1) requestAnimationFrame(step); else { needle = end % 360; busy = false; done(); }
+      };
+      requestAnimationFrame(step);
+      return;
+    }
+    // Others: a highlight hops between outcomes and slows down until it lands.
+    const n = els.length;
+    let hops = c.dev === "coin" ? 9 : 14, cur = -1, delay = 50;
+    const hop = () => {
+      if (cur >= 0 && els[cur]) els[cur].classList.remove("land");
+      if (hops-- <= 0) { busy = false; done(); return; }
+      let nx = hops === 0 ? idx : rnd(n);
+      if (n > 1 && hops > 0) while (nx === cur) nx = rnd(n);
+      cur = nx;
+      if (els[cur]) els[cur].classList.add("land");
+      delay *= 1.17;
+      setTimeout(hop, delay);
+    };
+    hop();
+  }
+
+  function run(n) {
+    if (busy) return;
+    if (n === 1) {
+      const idx = trial(cfg);
+      last = null; render();
+      animateLanding(cfg, idx, () => { record(idx); last = idx; refresh(); });
+      return;
+    }
+    let idx = 0;
+    for (let i = 0; i < n; i++) { idx = trial(cfg); record(idx); }
+    last = idx;
+    if (cfg.dev === "spinner") { const sec = 360 / cfg.spin.length; needle = idx * sec + sec / 2; }
+    refresh();
+  }
+  function record(idx) {
+    const k = outcomes(cfg)[idx].kind;
+    stats.by[k] = (stats.by[k] || 0) + 1;
+    stats.n++;
+  }
+  function syncBusy() {
+    document.querySelectorAll("#runBtns button, #tryit, #devs button, #modes button").forEach(b => b.disabled = busy);
+  }
+
+  // ---- Play ----
+  function newQuestion() {
+    const dev = playDev === "mix" ? pick(["die", "die", "spinner", "spinner", "bag", "bag", "coin"]) : playDev;
+    const c = { dev, die: 6, spin: [], bag: { red: 0, blue: 0, yellow: 0, green: 0, purple: 0 } };
+    let text = "", ev = "", w = new Set();
+    if (dev === "coin") {
+      const r = rnd(5);
+      if (r < 2) { w = new Set(["H"]); text = "What is the probability of flipping heads?"; ev = "P(heads)"; }
+      else if (r < 4) { w = new Set(["T"]); text = "What is the probability of flipping tails?"; ev = "P(tails)"; }
+      else { w = new Set(["H", "T"]); text = "What is the probability of flipping heads or tails?"; ev = "P(heads or tails)"; }
+    } else if (dev === "die") {
+      c.die = pick([6, 6, 6, 4, 8, 10, 12]);
+      const n = c.die, all = Array.from({ length: n }, (_, i) => i + 1);
+      const r = rnd(10);
+      const set = f => new Set(all.filter(f));
+      if (r < 2) { const k = 1 + rnd(n); w = new Set([k]); text = `Roll the ${n}-sided die. What is the probability of rolling a ${k}?`; ev = `P(${k})`; }
+      else if (r < 3) { w = set(v => v % 2 === 0); text = `Roll the ${n}-sided die. What is the probability of rolling an even number?`; ev = "P(even)"; }
+      else if (r < 4) { w = set(v => v % 2 === 1); text = `Roll the ${n}-sided die. What is the probability of rolling an odd number?`; ev = "P(odd)"; }
+      else if (r < 6) { const k = 1 + rnd(n - 1); w = set(v => v > k); text = `Roll the ${n}-sided die. What is the probability of rolling a number greater than ${k}?`; ev = `P(greater than ${k})`; }
+      else if (r < 7) { const k = 2 + rnd(n - 1); w = set(v => v < k); text = `Roll the ${n}-sided die. What is the probability of rolling a number less than ${k}?`; ev = `P(less than ${k})`; }
+      else if (r < 8) { w = set(v => v % 3 === 0); text = `Roll the ${n}-sided die. What is the probability of rolling a multiple of 3?`; ev = "P(multiple of 3)"; }
+      else if (r < 9) { const k = n + 1 + rnd(3); w = new Set(); text = `Roll the ${n}-sided die. What is the probability of rolling a ${k}?`; ev = `P(${k})`; }
+      else { const k = 1 + rnd(n); w = set(v => v !== k); text = `Roll the ${n}-sided die. What is the probability of NOT rolling a ${k}?`; ev = `P(not ${k})`; }
+    } else {
+      const ncol = 2 + rnd(dev === "spinner" ? 3 : 2);
+      const cols = [...COLS].sort(() => Math.random() - 0.5).slice(0, ncol);
+      if (dev === "spinner") {
+        const n = Math.max(ncol, 3 + rnd(8));
+        c.spin = cols.slice();
+        while (c.spin.length < n) c.spin.push(pick(cols));
+        c.spin.sort(() => Math.random() - 0.5);
+      } else {
+        for (const col of cols) c.bag[col] = 1 + rnd(6);
+      }
+      const verb = dev === "spinner" ? "landing on" : "pulling", noun = dev === "spinner" ? "" : " marble";
+      const intro = dev === "spinner" ? "Spin the spinner." : "Pull one marble without looking.";
+      const r = rnd(10), a = pick(cols);
+      if (r < 5) { w = new Set([a]); text = `${intro} What is the probability of ${verb} ${a}${noun}?`; ev = `P(${a})`; }
+      else if (r < 7 && ncol >= 3) { const b = pick(cols.filter(x => x !== a)); w = new Set([a, b]); text = `${intro} What is the probability of ${verb} ${a} or ${b}?`; ev = `P(${a} or ${b})`; }
+      else if (r < 9) { w = new Set(cols.filter(x => x !== a)); text = `${intro} What is the probability of NOT ${verb} ${a}?`; ev = `P(not ${a})`; }
+      else { const z = pick(COLS.filter(x => !cols.includes(x))); w = new Set([z]); text = `${intro} What is the probability of ${verb} ${z}${noun}?`; ev = `P(${z})`; }
+    }
+    q = { cfg: c, wins: w, text, ev, checked: false, counted: false };
+    shown = false; last = null;
+    if (c.dev === "spinner") needle = 0;
+    $("qText").textContent = q.text;
+    $("qEv").textContent = q.ev;
+    $("aW").value = ""; $("aT").value = "";
+    $("fb").textContent = ""; $("fb").className = "fb";
+  }
+
+  let right = 0, tried = 0;
+  function score() { $("right").textContent = right; $("tried").textContent = tried; }
+
+  function check() {
+    if (!q) return;
+    const a = $("aW").value.trim(), b = $("aT").value.trim();
+    const fb = $("fb");
+    if (!/^\d+$/.test(a) || !/^\d+$/.test(b) || +b === 0) { fb.textContent = "Type two whole numbers: wins out of all."; fb.className = "fb no"; return; }
+    const { w, t } = countWins(q.cfg, q.wins);
+    const A = +a, B = +b;
+    const ok = A <= B && A * t === w * B;
+    if (!q.counted) { tried++; q.counted = true; if (ok) right++; score(); }
+    if (ok) {
+      fb.textContent = (A === w && B === t) ? `Yes! ${w} out of ${t}.` : `Yes! ${A} out of ${B} is the same as ${w} out of ${t}.`;
+      fb.className = "fb ok";
+      shown = true; render();
+    } else if (B !== t) {
+      fb.textContent = `Not quite. Count all the ${unitWord(q.cfg, 2)} first.`; fb.className = "fb no";
+    } else {
+      fb.textContent = "Not quite. Count the ones that win again."; fb.className = "fb no";
+    }
+  }
+
+  function showMe() {
+    if (!q) return;
+    const { w, t } = countWins(q.cfg, q.wins);
+    if (!q.counted) { tried++; q.counted = true; score(); }
+    $("aW").value = w; $("aT").value = t;
+    $("fb").textContent = `${w} win${w === 1 ? "" : "s"} out of ${t} ${unitWord(q.cfg, t)}.`;
+    $("fb").className = "fb ok";
+    shown = true; render();
+  }
+
+  function tryIt() {
+    if (busy || !q) return;
+    const idx = trial(q.cfg);
+    last = null; render();
+    animateLanding(q.cfg, idx, () => {
+      last = idx; render();
+      const won = q.wins.has(outcomes(q.cfg)[idx].kind);
+      el("text", { class: "fly " + (won ? "yes" : "no"), x: W / 2, y: H - 20 }, svg, won ? "A win!" : "Not this time");
+      syncBusy();
+    });
+  }
+
+  // ---- Wiring ----
+  function refresh() {
+    const play = mode === "play";
+    document.querySelectorAll("#devs button").forEach(b => {
+      b.hidden = b.dataset.dev === "mix" && !play;
+      b.classList.toggle("on", b.dataset.dev === (play ? playDev : cfg.dev));
+    });
+    document.querySelectorAll("#modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+    $("setup").hidden = play;
+    $("winCard").hidden = play;
+    $("readU").hidden = mode !== "understand";
+    $("readE").hidden = mode !== "explore";
+    $("playQ").hidden = !play;
+    if (!play) { setupPanel(); chipsPanel(); }
+    if (mode === "understand") readPanel();
+    if (mode === "explore") explorePanel();
+    render();
+    syncBusy();
+  }
+
+  $("devs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-dev]");
+    if (!b || busy) return;
+    if (mode === "play") { playDev = b.dataset.dev; q = null; render(); refresh(); return; }
+    if (b.dataset.dev === "mix") return;
+    cfg.dev = b.dataset.dev; resetStats(); needle = 0;
+    refresh();
+  });
+  $("modes").addEventListener("click", e => {
+    const b = e.target.closest("button[data-mode]");
+    if (!b || busy) return;
+    mode = b.dataset.mode;
+    if (mode === "play") { if (playDev !== "mix") playDev = cfg.dev; q = null; }
+    last = null;
+    refresh();
+  });
+  $("check").onclick = check;
+  $("showme").onclick = showMe;
+  $("tryit").onclick = tryIt;
+  $("nextQ").onclick = () => { if (busy) return; newQuestion(); render(); };
+  ["aW", "aT"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
+
+  refresh();
+})();
+</script>
+
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

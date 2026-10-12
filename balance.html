@@ -149,7 +149,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    The tool finds the whole number x that balances the scale (kept hidden) and from then on the scale tips by real weight:
    doing an operation to both sides keeps it level, doing it to one side (or dragging a piece on or off) tips it and flashes
    an error. A bar model under the scale shows the same two sides as bars, with removed pieces fading out in red and
-   division splitting each bar into equal groups. Boxes blue, weights orange, red only for errors. */
+   division splitting each bar into equal groups. Boxes blue, weights orange. A red −1 weight is a negative one (Shawn): it pulls
+   its pan up by 1, a 1 and a −1 on the same side make a zero pair, and in the bar model it covers the end of the bar it takes
+   away from. Errors use the darker warning red. */
+:root { --neg: rgb(239,107,107); --neg-ink: #1b2733; } /* same red as negative algebra tiles and integer chips, both themes */
 .main { grid-template-columns: minmax(0, 1fr) clamp(220px, 18vw, 290px); }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
 .board { padding: 8px; }
@@ -182,6 +185,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .piece { cursor: grab; }
 .wt.frac rect { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt.frac text { font-size: 18px; }
+.wt.neg path, .wt.neg rect { fill: var(--neg); }
+.wt.neg text { fill: var(--neg-ink); }
 .piece.enter > * { animation: drop 0.4s ease-out; }
 @keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
 .piece.leave > *, .seg.leave { animation: leave 1.2s ease-in forwards; }
@@ -196,7 +201,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
 .seg rect { stroke: var(--ink); stroke-width: 2; }
-.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); }
+.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); } .seg.neg rect { fill: var(--neg); fill-opacity: 0.92; }
+.seg.neg text { fill: var(--neg-ink); }
+.zero { stroke: var(--ink); stroke-width: 3; }
 .seg text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
 .seg.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
 .seg line { stroke: rgba(0,0,0,0.35); stroke-width: 1.5; }
@@ -282,9 +289,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const fmtN = v => v < 0 ? "−" + -v : String(v);
 
   // L and R hold the count of x boxes and the ones on each side. Ones are counted in pieces of size 1/D so dividing
-  // can leave fractions (7 split 3 ways = 7/3) while every number stays a whole number. xv = { p, q } is the hidden x = p/q
-  // (null while building); x can be any positive fraction (Shawn).
-  let S = { L: { x: 0, one: 0 }, R: { x: 0, one: 0 }, D: 1 }, xv = null, history = [], steps = [];
+  // can leave fractions (7 split 3 ways = 7/3) while every number stays a whole number. neg counts the red −1 weights the
+  // same way. xv = { p, q } is the hidden x = p/q (null while building); x can be any positive fraction (Shawn).
+  let S = { L: { x: 0, one: 0, neg: 0 }, R: { x: 0, one: 0, neg: 0 }, D: 1 }, xv = null, history = [], steps = [];
   let angle = 0, target = 0, anim = null;
   let fx = null; // pending animation: { leave: {L:{x,one},R:{...}}, enter: {...}, div: {L:n,R:n} }
   let kind = "sub", what = "one", n = 1;
@@ -305,15 +312,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   };
 
   const sideStr = (s, D = S.D) => {
-    const parts = [];
-    if (s.x) parts.push((s.x === 1 ? "" : s.x) + "x");
-    if (s.one || !s.x) parts.push(fracStr(s.one, D));
-    return parts.join(" + ");
+    let out = s.x ? (s.x === 1 ? "" : s.x) + "x" : "";
+    if (s.one || (!s.x && !s.neg)) out += (out ? " + " : "") + fracStr(s.one, D);
+    if (s.neg) out += (out ? " − " : "−") + fracStr(s.neg, D);
+    return out;
   };
-  const weight = s => s.x * xv.p * S.D + s.one * xv.q; // weight times q·D, a whole number
+  const weight = s => s.x * xv.p * S.D + (s.one - s.neg) * xv.q; // weight times q·D, a whole number
   const balanced = () => xv === null || weight(S.L) === weight(S.R);
-  const solved = () => xv !== null && balanced() &&
-    ((S.L.x === 1 && !S.L.one && !S.R.x) || (S.R.x === 1 && !S.R.one && !S.L.x));
+  const isX = (a, b) => a.x === 1 && !a.one && !a.neg && !b.x && !(b.one && b.neg); // x alone = one number
+  const solved = () => xv !== null && balanced() && (isX(S.L, S.R) || isX(S.R, S.L));
+  const isEmpty = s => !s.x && !s.one && !s.neg;
 
   // ---------- Drawing ----------
   let gScale, gBeam, gPan = {}, gBars, gTop, gSteps, inp = {}, eqSign;
@@ -339,12 +347,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     el("path", { d: `M${PX},${PY} L${PX - 58},490 L${PX + 58},490 Z`, class: "post" });
     // Tray right under the balance: drag these onto a pan.
     el("rect", { x: PX - 150, y: 530, width: 300, height: 140, rx: 14, class: "tray-bg" });
-    const sx = el("g", { class: "src", "data-type": "x", transform: `translate(${PX - 95},${560})` });
+    const sx = el("g", { class: "src", "data-type": "x", transform: `translate(${PX - 128},${560})` });
     const xb = el("g", { class: "xbox" }, sx);
     el("rect", { x: 0, y: 0, width: 66, height: 66, rx: 6 }, xb); txt("x", { x: 33, y: 33 }, xb);
-    const so = el("g", { class: "src", "data-type": "one", transform: `translate(${PX + 40},${566}) scale(1.6)` });
-    const wb = el("g", { class: "wt" }, so);
-    el("path", { d: weightPath(0, 0) }, wb); txt("1", { x: WT_W / 2, y: 20 }, wb);
+    [["one", "1", "wt", PX - 22], ["neg", "−1", "wt neg", PX + 72]].forEach(([type, label, cls, x]) => {
+      const so = el("g", { class: "src", "data-type": type, transform: `translate(${x},${566}) scale(1.6)` });
+      const wb = el("g", { class: cls }, so);
+      el("path", { d: weightPath(0, 0) }, wb); txt(label, { x: WT_W / 2, y: 20 }, wb);
+    });
     txt("Drag onto the scale", { x: PX, y: 658, class: "trayl" });
     gSteps = el("g", {});
     gScale = el("g", {});
@@ -357,16 +367,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   function drawTop() {
     gTop.innerHTML = "";
-    const empty = !S.L.x && !S.L.one && !S.R.x && !S.R.one;
+    const empty = isEmpty(S.L) && isEmpty(S.R);
     ["L", "R"].forEach(side => {
       const t = inp[side];
       t.disabled = xv !== null; // while solving the boxes just show the equation; changes happen on the scale
       const sd = S[side];
-      if (document.activeElement !== t) { t.value = sd.x || sd.one ? sideStr(sd) : ""; t.classList.remove("bad"); }
+      if (document.activeElement !== t) { t.value = isEmpty(sd) ? "" : sideStr(sd); t.classList.remove("bad"); }
     });
     eqSign.textContent = balanced() ? "=" : "≠"; eqSign.className = balanced() ? "" : "ne";
     if (xv === null) {
-      if (inp.L.classList.contains("bad") || inp.R.classList.contains("bad")) txt("Type it like 2x + 3", { x: PX, y: 132, class: "msg bad" }, gTop);
+      if (inp.L.classList.contains("bad") || inp.R.classList.contains("bad")) txt("Type it like 2x + 3 or x − 4", { x: PX, y: 132, class: "msg bad" }, gTop);
       else if (empty) txt("Type, or drag pieces onto both sides", { x: PX, y: 132, class: "msg hint" }, gTop);
       return;
     }
@@ -374,18 +384,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     else if (solved()) txt(`Balanced! x = ${fracStr(xv.p, xv.q)}`, { x: PX, y: 132, class: "msg good" }, gTop);
   }
 
-  // Read a typed side like "2x + 3", "x+x+5" or "7". Whole positive numbers only; null if it can't be read.
+  // Read a typed side like "2x + 3", "x+x+5", "x − 4" or "7". Whole numbers only; a number after − becomes red −1 weights
+  // (no negative x boxes). null if it can't be read.
   function parseSide(str) {
-    str = str.replace(/\s+/g, "").replace(/X/g, "x");
-    const out = { x: 0, one: 0 };
+    str = str.replace(/\s+/g, "").replace(/X/g, "x").replace(/[−–]/g, "-");
+    const out = { x: 0, one: 0, neg: 0 };
     if (!str) return out;
-    for (const term of str.split("+")) {
+    const terms = str.match(/[+-]?[^+-]+/g) || [];
+    if (terms.join("") !== str) return null;
+    for (const term of terms) {
+      const neg = term[0] === "-", t = term.replace(/^[+-]/, "");
       let m;
-      if ((m = term.match(/^(\d*)x$/))) out.x += m[1] === "" ? 1 : +m[1];
-      else if (/^\d+$/.test(term)) out.one += +term;
+      if (!neg && (m = t.match(/^(\d*)x$/))) out.x += m[1] === "" ? 1 : +m[1];
+      else if (/^\d+$/.test(t)) out[neg ? "neg" : "one"] += +t;
       else return null;
     }
-    return out.x <= MAX_X && out.one <= MAX_ONE ? out : null;
+    return out.x <= MAX_X && out.one <= MAX_ONE && out.neg <= MAX_ONE ? out : null;
   }
   function typed(side) {
     const t = inp[side], v = parseSide(t.value);
@@ -401,6 +415,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const whole = Math.floor(s.one / S.D), rest = s.one % S.D;
     for (let i = 0; i < whole; i++) items.push({ t: "one", i, w: WT_W, h: WT_H });
     if (rest) items.push({ t: "frac", i: 0, w: 52, h: 26, label: fracStr(rest, S.D) });
+    const wholeN = Math.floor(s.neg / S.D), restN = s.neg % S.D;
+    for (let i = 0; i < wholeN; i++) items.push({ t: "neg", i, w: WT_W, h: WT_H });
+    if (restN) items.push({ t: "frac", neg: true, i: 0, w: 60, h: 26, label: "−" + fracStr(restN, S.D) });
     const rows = []; let row = [], used = 0;
     const inner = PLATE - 20;
     items.forEach(it => {
@@ -424,9 +441,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       el("line", { x1: 0, y1: 0, x2: 0, y2: -STEM, class: "stem" }, g);
       el("rect", { x: -PLATE / 2, y: -STEM - 10, width: PLATE, height: 10, rx: 5, class: "plate" }, g);
       const s = S[side], enter = fx && fx.enter && fx.enter[side], divN = fx && fx.div && fx.div[side];
-      const whole = Math.floor(s.one / S.D);
+      const whole = Math.floor(s.one / S.D), wholeN = Math.floor(s.neg / S.D);
       // Dividing keeps one group: 1/n of the boxes and of the weights; the rest lift off.
-      const leave = divN ? { x: s.x - s.x / divN, one: whole - Math.floor(whole / divN) } : fx && fx.leave && fx.leave[side];
+      const leave = divN ? { x: s.x - s.x / divN, one: whole - Math.floor(whole / divN), neg: wholeN - Math.floor(wholeN / divN) } : fx && fx.leave && fx.leave[side];
       const items = placePieces(s);
       // The operation (−3, + x, or a bar over 3 for dividing) appears over each pan it is done to while the pieces move.
       if (fx && fx.tag && fx.tag[side]) {
@@ -439,9 +456,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         } else txt(t, { x: 0, y: top - 18 }, tg);
       }
       items.forEach(it => {
-        const count = it.t === "x" ? s.x : whole;
+        const count = it.t === "x" ? s.x : it.t === "neg" ? wholeN : whole;
         if (it.t === "frac") { // the part of a weight left after dividing; it can't be dragged
-          const fg = el("g", { class: "wt frac", transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
+          const fg = el("g", { class: "wt frac" + (it.neg ? " neg" : ""), transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
           el("rect", { x: 0, y: 0, width: it.w, height: it.h, rx: 6 }, fg);
           txt(it.label, { x: it.w / 2, y: it.h / 2 + 1 }, fg);
           return;
@@ -455,9 +472,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           el("rect", { x: 0, y: 0, width: BOX, height: BOX, rx: 5 }, b);
           txt("x", { x: BOX / 2, y: BOX / 2 }, b);
         } else {
-          const w = el("g", { class: "wt" }, pg);
+          const w = el("g", { class: it.t === "neg" ? "wt neg" : "wt" }, pg);
           el("path", { d: weightPath(0, 0) }, w);
-          txt("1", { x: WT_W / 2, y: 20 }, w);
+          txt(it.t === "neg" ? "−1" : "1", { x: WT_W / 2, y: 20 }, w);
         }
       });
     });
@@ -743,5 +760,212 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>
