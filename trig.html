@@ -189,6 +189,9 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 .gridfoot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 8px; }
 .gridfoot span { color: var(--muted); font-size: 0.9rem; }
 #gridBtn[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.typefn { display: flex; gap: 8px; margin-top: 8px; }
+.typefn input { flex: 1 1 auto; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--ink); padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); }
+.typefn input.bad { border-color: var(--bad); }
 .work { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .work label { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-weight: 700; font-size: 0.9rem; color: var(--muted); }
 .work input { width: 100%; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; color: var(--ink); padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); }
@@ -281,6 +284,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
         <p class="label" id="qLabel">Sketch this function</p>
         <div class="eqbig" id="qEq"></div>
         <div class="eqbig alt" id="qEq2"></div>
+        <form class="typefn" id="typeForm"><input id="typeIn" autocomplete="off" spellcheck="false" placeholder="Type one: y = 2 sin 3(x − 30°) + 1" aria-label="Type a function to sketch"><button type="submit">Sketch it</button></form>
         <p class="instr" id="instr"></p>
       </div>
       <div class="card" id="workCard">
@@ -417,7 +421,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       return s + `tan ${b}x`;
     }
     s += f.a == null ? ph("a") : f.a === 1 ? "" : f.a === -1 ? MINUS : numHTML(f.a);
-    s += ` ${f.fn} `;
+    s += (s.endsWith(" ") ? "" : " ") + `${f.fn} `;
     const b = f.b == null ? ph("b") : f.b === 1 ? "" : numHTML(f.b);
     if (f.c === 0) s += `${b}x`;
     else if (f.c == null) s += `${b}(x − ${ph("c")})`;
@@ -442,8 +446,10 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       }
       if (!F || JSON.stringify(f) !== JSON.stringify(F)) break;
     }
-    F = f;
-    W = WIN[fn === "tan" ? "tan" : "sc"][F.b];
+    setFunction(f, WIN[fn === "tan" ? "tan" : "sc"][f.b]);
+  }
+  function setFunction(f, w) {
+    F = f; W = w;
     autoGrid();
     pts = []; asyms = []; lines = []; checked = false; revealed = false; yours = null;
     WORK.forEach(k => { $(k).value = ""; $(k).className = ""; });
@@ -451,6 +457,47 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     setAnsFn("sin");
     $("msg").hidden = true;
     render();
+  }
+
+  // ---------- a typed function ----------
+  // Reads y = a sin b(x − c) + d in the usual ways: brackets or not, 2x − 60° or 2(x − 30°), degrees or π.
+  function parseFn(t) {
+    let s = t.toLowerCase().replace(/[−–]/g, "-").replace(/\s+/g, "").replace(/pi/g, "π").replace(/\*/g, "");
+    s = s.replace(/^(y|f\(x\))=/, "");
+    const m = s.match(/^(.*?)(sin|cos|tan)(.+)$/);
+    if (!m) return null;
+    const a = m[1] === "" || m[1] === "+" ? 1 : m[1] === "-" ? -1 : parseNum(m[1]);
+    let rest = m[3], d = 0;
+    const close = rest.lastIndexOf(")");
+    if (close >= 0 && rest.slice(close + 1)) { d = parseNum(rest.slice(close + 1)); rest = rest.slice(0, close + 1); }
+    else if (close < 0) { const k = rest.match(/^(.*x)([+-][\d./]+)$/); if (k) { d = parseNum(k[2]); rest = k[1]; } }
+    while (rest[0] === "(" && rest.endsWith(")") && depthOk(rest.slice(1, -1))) rest = rest.slice(1, -1);
+    let b, c = 0, k;
+    if ((k = rest.match(/^([\d./]*)\(x(?:([+-])(.+))?\)$/)) || (!rest.includes("(") && (k = rest.match(/^([\d./]*)x(?:([+-])(.+))?$/)))) {
+      b = k[1] === "" ? 1 : parseNum(k[1]);
+      if (k[3]) {
+        const v = parseAngle(k[3]);
+        if (v === null || isNaN(v)) return null;
+        c = k[2] === "-" ? v : -v;
+        if (!rest.includes("(") && b) c /= b; // 2x − 60° is 2(x − 30°)
+      }
+    } else return null;
+    if ([a, b, c, d].some(v => v === null || isNaN(v)) || !b || !a) return null;
+    if (b < 0) return null;
+    return { fn: m[2], a, b, c: +c.toFixed(6), d };
+  }
+  function depthOk(s) { let n = 0; for (const ch of s) { if (ch === "(") n++; if (ch === ")" && --n < 0) return false; } return n === 0; }
+  // A window for any b and c: grid lines land on every key point.
+  function makeWin(f) {
+    const q = (f.fn === "tan" ? 45 : 90) / f.b;
+    const g2 = (x, y) => (y < 1e-6 ? x : g2(y, x % y));
+    let minor = Math.round(g2(Math.round(q * 4), Math.round(Math.abs(f.c) * 4))) / 4 || q;
+    const fits = m => isInt(q / m) && isInt(f.c / m);
+    while (q / minor > 6) { const k = [2, 3, 5].find(k => fits(minor * k)); if (!k) break; minor *= k; }
+    let lo, hi;
+    if (f.fn === "tan") { lo = -6 * q; hi = 6 * q; }
+    else { lo = Math.min(0, Math.floor((f.c - q) / minor) * minor); hi = Math.max(lo + 6 * q, Math.ceil((f.c + 5 * q) / minor) * minor); }
+    return { q, minor, lo, hi, label: labelStep(minor, lo, hi, q), ym: Math.max(7, Math.ceil(Math.abs(f.d) + Math.abs(f.a) + 1)), ystep: isInt(f.a) && isInt(f.d) ? 1 : 0.5 };
   }
 
   // The 5 key points of one period, inside the window and nearest the y-axis.
@@ -489,7 +536,8 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     return lab;
   }
   function autoGrid() {
-    G = { xlo: W.lo, xhi: W.hi, xstep: W.minor, xlabel: W.label, ylo: -7, yhi: 7, ystep: 1 };
+    const ym = W.ym || 7;
+    G = { xlo: W.lo, xhi: W.hi, xstep: W.minor, xlabel: W.label, ylo: -ym, yhi: ym, ystep: W.ystep || 1 };
     fillGrid();
   }
   function fillGrid() {
@@ -616,6 +664,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   function renderPanel() {
     const sk = mode === "sketch";
     $("qLabel").textContent = sk ? "Sketch this function" : "Write the equation of this graph";
+    $("typeForm").hidden = !sk;
     $("qEq").hidden = !sk; $("qEq2").hidden = !sk || units !== "both";
     $("qEq").innerHTML = eqHTML(F, units === "rad" ? "rad" : "deg");
     $("qEq2").innerHTML = eqHTML(F, "rad");
@@ -955,6 +1004,15 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     $(k).addEventListener("keydown", e => { if (e.key === "Enter") checkFind(); });
   });
   $("newBtn").addEventListener("click", newFunction);
+  $("typeIn").addEventListener("input", () => ($("typeIn").className = ""));
+  $("typeForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const f = parseFn($("typeIn").value);
+    if (!f) { $("typeIn").className = "bad"; return say(`<span class="no">I can't read that function.</span><br>Try y = 2 sin 3(x − 30°) + 1, y = −cos(x + π/4) − 2 or y = tan 2x.`); }
+    if (f.fn === "tan" && (f.a !== 1 || f.c || f.d)) { $("typeIn").className = "bad"; return say(`<span class="no">For tan, only the period changes.</span><br>Type it as y = tan bx.`); }
+    $("typeIn").value = "";
+    setFunction(f, makeWin(f));
+  });
   $("gridBtn").addEventListener("click", () => {
     const on = $("gridCard").hidden;
     $("gridCard").hidden = !on; $("gridBtn").setAttribute("aria-pressed", on);
@@ -975,6 +1033,93 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
@@ -1008,6 +1153,12 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }

@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Function Transformations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Function Transformations (Alberta Math 30-1): y = a f(b(x − h)) + k.
+   Horizontal changes (b, h) are green, vertical changes (a, k) orange, the image blue,
+   the original grey and dashed, the inverse purple, invariant points pink. */
+:root { --purple: #7a3fc4; --pink: #b8156f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --pink: #ff6fb7; } }
+:root[data-theme="dark"] { --purple: #b98cff; --pink: #ff6fb7; }
+header { margin-bottom: 10px; }
+h1 .m { color: var(--pt); }
+.course { font-family: var(--font-display); font-weight: 800; color: var(--pt); border: 2px solid var(--pt); border-radius: 999px; padding: 4px 14px; }
+.main { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr) minmax(290px, 370px); gap: 14px; }
+@media (max-width: 1100px) and (min-width: 861px) { .main { grid-template-columns: minmax(250px, 290px) minmax(0, 1fr) minmax(260px, 310px); } }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 10px; }
+.card { padding: 10px 12px; }
+.label { margin-bottom: 6px; }
+.fns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.fns button, .sub button { font-family: var(--font-num); padding: 6px 4px; min-height: 40px; background: var(--sheet); }
+.fns button[aria-pressed="true"], .sub button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.fns button.wide { grid-column: span 2; font-family: var(--font-body); }
+.sub { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.sub > span { color: var(--muted); font-size: 0.9rem; font-weight: 700; }
+.sub button { min-height: 34px; padding: 4px 10px; }
+.pw { margin-top: 8px; font-family: var(--font-num); font-size: 0.85rem; line-height: 1.35; display: flex; align-items: center; gap: 6px; }
+.pw .brace { font-size: 2.6rem; font-weight: 400; line-height: 1; }
+.pw small { color: var(--muted); }
+.sl { display: grid; grid-template-columns: 26px minmax(0, 1fr) 70px; align-items: center; gap: 8px; }
+.sl + .sl { margin-top: 0; }
+.sl input { height: 22px; }
+#controls .card { padding: 8px 12px; }
+#controls { gap: 8px; }
+.sl label { font-family: var(--font-num); font-style: italic; font-weight: 700; font-size: 1.4rem; }
+.sl output { font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; text-align: right; }
+.sl.v label, .sl.v output { color: var(--orange); }
+.sl.hz label, .sl.hz output { color: var(--green); }
+.sl.v input { accent-color: var(--orange); }
+.sl.hz input { accent-color: var(--green); }
+.lbl-row { display: flex; justify-content: space-between; align-items: center; }
+.lbl-row button { padding: 3px 10px; font-size: 0.85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chips label { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--grid-major); border-radius: 999px; padding: 2px 9px 2px 7px; font-size: 0.85rem; cursor: pointer; font-size: 0.9rem; font-weight: 700; background: var(--sheet); }
+.chips label:has(input:checked) { background: color-mix(in srgb, var(--pt) 14%, var(--sheet)); border-color: var(--pt); }
+.chips label.off { opacity: 0.45; cursor: not-allowed; }
+.chips input { width: 16px; height: 16px; margin: 0; accent-color: var(--pt); }
+.note { margin: 6px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.35; }
+/* Equations */
+.eqn { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; line-height: 1.6; }
+.eqn.gen { font-size: 1rem; color: var(--muted); line-height: 1.3; }
+.eqn.inv { color: var(--purple); font-size: 1.15rem; }
+.eqn .frac { font-size: 0.72em; vertical-align: middle; }
+.eqn sup { font-size: 0.68em; }
+.eqn sub { font-size: 0.68em; }
+.rad { border-top: 2px solid currentColor; padding: 0 2px; margin-left: -0.15em; }
+.restr { font-size: 0.85em; color: var(--muted); }
+.ca { color: var(--orange); }
+.cb { color: var(--green); }
+.cv { color: var(--pt); }
+.ci { color: var(--purple); }
+/* Properties */
+.steps { margin: 0; padding-left: 1.3em; font-size: 0.95rem; line-height: 1.35; }
+.steps li + li { margin-top: 3px; }
+.steps .ci { font-weight: 700; }
+.map { font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; line-height: 1.7; }
+.map.gen { font-size: 0.95rem; color: var(--muted); margin-bottom: 2px; }
+.map .frac, .steps .frac { font-size: 0.72em; vertical-align: middle; }
+.dr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: baseline; font-size: 0.95rem; }
+.dr dt { color: var(--muted); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.dr dd { margin: 0; font-family: var(--font-num); font-weight: 700; overflow-wrap: anywhere; }
+.dr dd small { display: block; color: var(--muted); font-weight: 500; font-size: 0.85em; }
+.dr + .sep { margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--grid-major); }
+.sep .label { color: var(--purple); }
+.inv-list { margin: 0; padding: 0; list-style: none; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.inv-list.p { color: var(--pink); }
+.inv-list.q { color: var(--purple); }
+table.kp { width: 100%; border-collapse: collapse; font-family: var(--font-num); font-weight: 700; font-size: 0.95rem; text-align: center; }
+table.kp th { font-family: var(--font-body); font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 0 4px 3px; }
+table.kp td { padding: 2px 4px; border-top: 1px solid var(--grid); }
+table.kp td:first-child { color: var(--muted); }
+table.kp td.im { color: var(--pt); }
+table.kp td.iv { color: var(--purple); }
+table.kp td.out { opacity: 0.5; }
+/* Board */
+.board { position: relative; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; font-size: 0.85rem; font-weight: 700; padding-top: 4px; flex: none; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 4px solid; }
+.legend i.dash { border-top-style: dashed; border-top-width: 3px; }
+.legend i.dot { width: 12px; height: 12px; border: 0; border-radius: 50%; }
+.legend i.ring { width: 12px; height: 12px; border: 3px solid; border-radius: 50%; }
+.g-minor { stroke: var(--grid); stroke-width: 1; }
+.g-major { stroke: var(--grid-major); stroke-width: 1.2; }
+.g-axis { stroke: var(--muted); stroke-width: 2.5; }
+.tick { font-family: var(--font-num); font-weight: 700; font-size: 16px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.c-base { fill: none; stroke: var(--muted); stroke-width: 3; stroke-dasharray: 9 7; stroke-linecap: round; opacity: 0.85; }
+.c-img { fill: none; stroke: var(--pt); stroke-width: 4.5; stroke-linejoin: round; stroke-linecap: round; }
+.c-ghost { fill: none; stroke: var(--pt); stroke-width: 2.5; stroke-dasharray: 3 7; stroke-linecap: round; opacity: 0.6; }
+.c-inv { fill: none; stroke: var(--purple); stroke-width: 4.5; stroke-linejoin: round; stroke-linecap: round; }
+.yx { stroke: var(--purple); stroke-width: 2; stroke-dasharray: 2 6; stroke-linecap: round; }
+.asy { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 3 6; stroke-linecap: round; opacity: 0.8; }
+.asy.i { stroke: var(--purple); opacity: 0.8; }
+.asy-lbl { font-family: var(--font-num); font-weight: 700; font-size: 16px; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.asy-lbl.i { fill: var(--purple); }
+.band { fill: var(--pt); fill-opacity: 0.18; }
+.band-end { stroke: var(--pt); stroke-width: 3; }
+.k-base { fill: var(--sheet); stroke: var(--muted); stroke-width: 2.5; }
+.k-img { fill: var(--pt); stroke: var(--sheet); stroke-width: 2.5; }
+.k-inv { fill: var(--purple); stroke: var(--sheet); stroke-width: 2.5; }
+.k-arrow { stroke: var(--muted); stroke-width: 1.6; opacity: 0.6; fill: none; }
+.k-arrow-head { fill: var(--muted); opacity: 0.6; }
+.end-c { stroke: var(--sheet); stroke-width: 2.5; }
+.end-o { fill: var(--sheet); stroke-width: 3; }
+.ip { fill: none; stroke: var(--pink); stroke-width: 4; }
+.ip.q { stroke: var(--purple); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Function <span class="m">Transformations</span></h1></div>
+    <span class="course">Math 30-1</span>
+  </header>
+
+  <div class="main">
+    <div class="panel" id="controls">
+      <div class="card">
+        <p class="label">Parent function y = f(x)</p>
+        <div class="fns" id="fns" role="group" aria-label="Parent function"></div>
+        <div class="sub" id="baseRow" hidden><span>Base</span></div>
+        <div class="sub" id="unitRow" hidden><span>Angles</span>
+          <button type="button" data-units="rad" aria-pressed="true">Radians</button>
+          <button type="button" data-units="deg" aria-pressed="false">Degrees</button>
+        </div>
+        <div class="pw" id="pwDef" hidden>
+          <span>f(x) =</span><span class="brace">{</span>
+          <span>2x + 6, <small>−4 ≤ x &lt; −2</small><br>2, <small>−2 ≤ x ≤ 1</small><br>−x + 3, <small>1 &lt; x ≤ 4</small></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="lbl-row"><p class="label">Parameters</p><button type="button" id="reset">Reset</button></div>
+        <div class="eqn gen">y = <span class="ca">a</span>f(<span class="cb">b</span>(x − <span class="cb">h</span>)) + <span class="ca">k</span></div>
+        <div class="sl v"><label for="sa">a</label><input type="range" id="sa" min="0" max="13" step="1" value="10" aria-describedby="oa"><output id="oa"></output></div>
+        <div class="sl hz"><label for="sb">b</label><input type="range" id="sb" min="0" max="13" step="1" value="10" aria-describedby="ob"><output id="ob"></output></div>
+        <div class="sl hz"><label for="sh">h</label><input type="range" id="sh" min="-8" max="8" step="1" value="0" aria-describedby="oh"><output id="oh"></output></div>
+        <div class="sl v"><label for="sk">k</label><input type="range" id="sk" min="-8" max="8" step="1" value="0" aria-describedby="ok"><output id="ok"></output></div>
+      </div>
+      <div class="card">
+        <p class="label">Show</p>
+        <div class="chips" id="chips">
+          <label><input type="checkbox" data-t="base" checked>Original f(x)</label>
+          <label><input type="checkbox" data-t="keys" checked>Key points</label>
+          <label><input type="checkbox" data-t="map" checked>Mapping notation</label>
+          <label><input type="checkbox" data-t="dr" checked>Domain &amp; range</label>
+          <label><input type="checkbox" data-t="asy" checked>Asymptotes</label>
+          <label><input type="checkbox" data-t="inv">Invariant points</label>
+          <label id="lInverse"><input type="checkbox" data-t="inverse">Inverse (y = x)</label>
+          <label id="lRestrict"><input type="checkbox" data-t="restrict">Restrict domain</label>
+        </div>
+        <p class="note" id="chipNote"></p>
+      </div>
+    </div>
+
+    <div class="board">
+      <svg id="svg" viewBox="0 0 860 860" role="img" aria-label="Graph of the parent function and its transformed image"></svg>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="panel" id="props">
+      <div class="card">
+        <p class="label">Equation</p>
+        <div class="eqn" id="eq"></div>
+        <div class="eqn gen" id="eqAlt"></div>
+        <div class="eqn inv" id="eqInv" hidden></div>
+      </div>
+      <div class="card">
+        <p class="label">Transformations, in order</p>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="card" id="cMap">
+        <p class="label">Mapping notation</p>
+        <div class="map gen">(x, y) → (<span class="frac"><span>x</span><span><span class="cb">b</span></span></span> + <span class="cb">h</span>, <span class="ca">a</span>y + <span class="ca">k</span>)</div>
+        <div class="map" id="map"></div>
+        <div class="map ci" id="mapInv" hidden></div>
+      </div>
+      <div class="card" id="cDR">
+        <p class="label" id="drLabel">Domain and range</p>
+        <dl class="dr" id="dr"></dl>
+        <div class="sep" id="drInvWrap" hidden><p class="label">Inverse</p><dl class="dr" id="drInv"></dl></div>
+      </div>
+      <div class="card" id="cInv">
+        <p class="label">Invariant points</p>
+        <ul class="inv-list p" id="invList"></ul>
+        <p class="note" id="invNote"></p>
+        <div id="invQ" hidden>
+          <ul class="inv-list q" id="invListQ"></ul>
+          <p class="note" id="invNoteQ"></p>
+        </div>
+      </div>
+      <div class="card" id="cKeys">
+        <p class="label">Key points</p>
+        <table class="kp" id="kp"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg");
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const MINUS = "−";
+  const PI = Math.PI;
+
+  // ---------- exact fractions ----------
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  const Q = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
+  const qa = (p, q) => Q(p.n * q.d + q.n * p.d, p.d * q.d);
+  const qs = (p, q) => Q(p.n * q.d - q.n * p.d, p.d * q.d);
+  const qm = (p, q) => Q(p.n * q.n, p.d * q.d);
+  const qd = (p, q) => Q(p.n * q.d, p.d * q.n);
+  const qv = p => p.n / p.d;
+  const qeq = (p, n) => p.n === n * p.d;
+  const qneg = p => Q(-p.n, p.d);
+  const qabs = p => Q(Math.abs(p.n), p.d);
+  const ONE = Q(1), ZERO = Q(0);
+
+  // ---------- state ----------
+  const AB = [-4, -3, -2, -1, Q(-1, 2), Q(-1, 3), Q(-1, 4), Q(1, 4), Q(1, 3), Q(1, 2), 1, 2, 3, 4].map(v => typeof v === "number" ? Q(v) : v);
+  const S = { fn: "abs", base: 2, units: "rad", t: {} };
+  document.querySelectorAll("#chips input").forEach(c => (S.t[c.dataset.t] = c.checked));
+
+  // ---------- parent functions ----------
+  // Intervals: {kind:"all"} | {kind:"int", lo, hi, loC, hiC} (lo/hi null = infinite) | {kind:"except", c} | {kind:"tan"}.
+  const ALL = { kind: "all" };
+  const iv = (lo, hi, loC, hiC) => ({ kind: "int", lo: lo === null ? null : Q(lo), hi: hi === null ? null : Q(hi), loC, hiC });
+  const PW = [[-4, -2], [-2, 2], [1, 2], [4, -1]];
+  const pwf = u => {
+    if (u < -4 - 1e-12 || u > 4 + 1e-12) return NaN;
+    for (let i = 0; i < 3; i++) {
+      const [x1, y1] = PW[i], [x2, y2] = PW[i + 1];
+      if (u <= x2 + 1e-12) return y1 + (y2 - y1) * (u - x1) / (x2 - x1);
+    }
+    return NaN;
+  };
+  const expKeys = { 2: [[-1, Q(1, 2)], [0, 1], [1, 2], [2, 4], [3, 8]], 3: [[-1, Q(1, 3)], [0, 1], [1, 3], [2, 9]], "0.5": [[-3, 8], [-2, 4], [-1, 2], [0, 1], [1, Q(1, 2)]] };
+  const logKeys = { 2: [[Q(1, 2), -1], [1, 0], [2, 1], [4, 2], [8, 3]], 3: [[Q(1, 3), -1], [1, 0], [3, 1], [9, 2]], 10: [[Q(1, 10), -1], [1, 0], [10, 1]] };
+  const F = {
+    abs:  { btn: "|x|", f: u => Math.abs(u), dom: ALL, rng: iv(0, null, true, false), keys: () => [[-2, 2], [-1, 1], [0, 0], [1, 1], [2, 2]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
+    sqrt: { btn: "√x", f: u => Math.sqrt(u), dom: iv(0, null, true, false), rng: iv(0, null, true, false), keys: () => [[0, 0], [1, 1], [4, 2], [9, 3]], one: true },
+    sq:   { btn: "x²", f: u => u * u, dom: ALL, rng: iv(0, null, true, false), keys: () => [[-2, 4], [-1, 1], [0, 0], [1, 1], [2, 4]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
+    cube: { btn: "x³", f: u => u * u * u, dom: ALL, rng: ALL, keys: () => [[-2, -8], [-1, -1], [0, 0], [1, 1], [2, 8]], one: true },
+    exp:  { btn: "bˣ", f: u => Math.pow(S.base, u), dom: ALL, rng: iv(0, null, false, false), keys: () => expKeys[S.base], asyH: [0], one: true, bases: [2, 3, 0.5] },
+    log:  { btn: "log x", f: u => Math.log(u) / Math.log(S.base), dom: iv(0, null, false, false), rng: ALL, keys: () => logKeys[S.base], asyV: [0], one: true, bases: [2, 3, 10] },
+    rec:  { btn: "1/x", f: u => 1 / u, dom: { kind: "except", c: ZERO }, rng: { kind: "except", c: ZERO }, keys: () => [[-2, Q(-1, 2)], [-1, -1], [Q(-1, 2), -2], [Q(1, 2), 2], [1, 1], [2, Q(1, 2)]], asyV: [0], asyH: [0], one: true },
+    pw:   { btn: "Piecewise f(x)", wide: true, f: pwf, dom: iv(-4, 4, true, true), rng: iv(-2, 2, true, true), keys: () => PW, res: { dom: iv(-4, -2, true, true), rng: iv(-2, 2, true, true) } },
+    sin:  { btn: "sin x", trig: true, f: u => Math.sin(u), dom: ALL, rng: iv(-1, 1, true, true), keys: () => [[0, 0], [Q(1, 2), 1], [1, 0], [Q(3, 2), -1], [2, 0]] },
+    cos:  { btn: "cos x", trig: true, f: u => Math.cos(u), dom: ALL, rng: iv(-1, 1, true, true), keys: () => [[0, 1], [Q(1, 2), 0], [1, -1], [Q(3, 2), 0], [2, 1]] },
+    tan:  { btn: "tan x", trig: true, f: u => Math.tan(u), dom: { kind: "tan" }, rng: ALL, keys: () => [[Q(-1, 4), -1], [0, 0], [Q(1, 4), 1]] },
+  };
+  const ORDER = ["abs", "sqrt", "sq", "cube", "exp", "log", "rec", "sin", "cos", "tan", "pw"];
+  const fnBox = $("fns");
+  ORDER.forEach(id => {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.fn = id; b.textContent = F[id].btn;
+    if (F[id].wide) b.className = "wide";
+    b.setAttribute("aria-pressed", id === S.fn);
+    fnBox.appendChild(b);
+  });
+
+  const fn = () => F[S.fn];
+  const trig = () => !!fn().trig;
+  const restricted = () => S.t.restrict && !!fn().res && !trig();
+
+  // ---------- parameters ----------
+  const par = () => {
+    const a = AB[+$("sa").value], b = AB[+$("sb").value];
+    const hv = +$("sh").value, k = Q(+$("sk").value);
+    const h = trig() ? Q(hv, 12) : Q(hv); // trig: h in multiples of π/12
+    return { a, b, h, k };
+  };
+
+  // ---------- number formatting ----------
+  const fint = n => (n < 0 ? MINUS + Math.abs(n) : String(n));
+  const fq = q => (q.d === 1 ? fint(q.n) : (q.n < 0 ? MINUS : "") + Math.abs(q.n) + "/" + q.d);
+  // An angle q means q·π radians.
+  const fang = q => {
+    if (S.units === "deg") {
+      const v = qv(q) * 180, r = Math.round(v);
+      return (Math.abs(v - r) < 1e-9 ? fint(r) : (v < 0 ? MINUS : "") + Math.abs(v).toFixed(1)) + "°";
+    }
+    if (q.n === 0) return "0";
+    const s = q.n < 0 ? MINUS : "", n = Math.abs(q.n);
+    return s + (n === 1 ? "" : n) + "π" + (q.d === 1 ? "" : "/" + q.d);
+  };
+  const fv = (q, angle) => (angle ? fang(q) : fq(q));
+  const fracH = (top, bot) => `<span class="frac"><span>${top}</span><span>${bot}</span></span>`;
+  // HTML for a fraction (stacked), keeping the sign in front.
+  const qH = (q, angle) => {
+    const s = q.n < 0 ? MINUS : "", n = Math.abs(q.n);
+    if (angle) {
+      if (S.units === "deg") return fang(q);
+      if (q.n === 0) return "0";
+      const top = (n === 1 ? "" : n) + "π";
+      return s + (q.d === 1 ? top : fracH(top, q.d));
+    }
+    return s + (q.d === 1 ? n : fracH(n, q.d));
+  };
+  // A decimal value shown exactly when it is a simple fraction (of π for angles), otherwise ≈ 2 decimals.
+  const nice = (v, angle) => {
+    const w = angle ? v / PI : v;
+    for (let d = 1; d <= 12; d++) {
+      const n = Math.round(w * d);
+      if (Math.abs(w - n / d) < 1e-7) return fv(Q(n, d), angle);
+    }
+    if (angle && S.units === "deg") return "≈" + fint(+(v * 180 / PI).toFixed(1)).replace("-", MINUS) + "°";
+    const r = v.toFixed(2);
+    return "≈" + (v < 0 ? MINUS + r.slice(1) : r);
+  };
+  const pt = (x, y) => `(${x}, ${y})`;
+
+  // ---------- intervals: image of a set under v → m·v + c ----------
+  function mapSet(I, m, c) {
+    if (I.kind === "all") return I;
+    if (I.kind === "except") return { kind: "except", c: qa(qm(I.c, m), c) };
+    if (I.kind === "tan") return { kind: "tan", m, c };
+    const f = v => (v === null ? null : qa(qm(v, m), c));
+    if (qv(m) > 0) return { kind: "int", lo: f(I.lo), hi: f(I.hi), loC: I.loC, hiC: I.hiC };
+    return { kind: "int", lo: f(I.hi), hi: f(I.lo), loC: I.hiC, hiC: I.loC };
+  }
+  // tan excludes u = π/2 + nπ; after x = u/b + h that is x = x0 + n·p with p = π/|b|.
+  function tanParts(I) {
+    const p = qabs(I.m);
+    let x0 = qa(qm(Q(1, 2), I.m), I.c);
+    const t = Math.floor(qv(qd(x0, p)));
+    x0 = qs(x0, qm(Q(t), p));
+    return { x0, p };
+  }
+  function interval(I, angle) {
+    const F = q => fv(q, angle);
+    if (I.kind === "all") return `(${MINUS}∞, ∞)`;
+    if (I.kind === "except") return `(${MINUS}∞, ${F(I.c)}) ∪ (${F(I.c)}, ∞)`;
+    if (I.kind === "tan") {
+      const { x0, p } = tanParts(I);
+      return `… ∪ (${F(qs(x0, p))}, ${F(x0)}) ∪ (${F(x0)}, ${F(qa(x0, p))}) ∪ …`;
+    }
+    return (I.lo === null ? `(${MINUS}∞` : (I.loC ? "[" : "(") + F(I.lo)) + ", " + (I.hi === null ? "∞)" : F(I.hi) + (I.hiC ? "]" : ")"));
+  }
+  function cond(I, v, angle) {
+    const F = q => fv(q, angle);
+    if (I.kind === "all") return null;
+    if (I.kind === "except") return `${v} ≠ ${F(I.c)}`;
+    if (I.kind === "tan") {
+      const { x0, p } = tanParts(I);
+      const np = qeq(p, 1) && angle && S.units === "rad" ? "nπ" : "n(" + F(p) + ")";
+      return `${v} ≠ ${F(x0)} + ${np}, n ∈ I`;
+    }
+    if (I.lo !== null && I.hi !== null) return `${F(I.lo)} ${I.loC ? "≤" : "<"} ${v} ${I.hiC ? "≤" : "<"} ${F(I.hi)}`;
+    if (I.lo !== null) return `${v} ${I.loC ? "≥" : ">"} ${F(I.lo)}`;
+    return `${v} ${I.hiC ? "≤" : "<"} ${F(I.hi)}`;
+  }
+  const setB = (I, v, angle) => { const c = cond(I, v, angle); return `{${v} | ${c ? c + ", " : ""}${v} ∈ R}`; };
+
+  // ---------- the current function, exactly ----------
+  function model() {
+    const P = par(), f = fn(), T = trig();
+    const dom0 = restricted() ? f.res.dom : f.dom, rng0 = restricted() ? f.res.rng : f.rng;
+    const dom = mapSet(dom0, qd(ONE, P.b), P.h);
+    const rng = mapSet(rng0, P.a, P.k);
+    const tr = (u, v) => [qa(qd(u, P.b), P.h), qa(qm(v, P.a), P.k)];
+    const inDom0 = u => {
+      const I = dom0;
+      if (I.kind === "all") return true;
+      if (I.kind === "except") return Math.abs(u - qv(I.c)) > 1e-12;
+      if (I.kind === "tan") return true;
+      return (I.lo === null || u > qv(I.lo) - 1e-12) && (I.hi === null || u < qv(I.hi) + 1e-12);
+    };
+    const keys = f.keys().map(([u, v]) => [typeof u === "number" ? Q(u) : u, typeof v === "number" ? Q(v) : v]).filter(([u]) => inDom0(qv(u)));
+    return { P, f, T, dom0, rng0, dom, rng, tr, keys, inDom0 };
+  }
+
+  // ---------- board ----------
+  const W = 860, PAD = 30, UNIT = 40, GMIN = -10, GMAX = 10;
+  const gx = x => (trig() ? x / (PI / 4) : x);         // real x → grid units
+  const SX = x => PAD + (gx(x) - GMIN) * UNIT;
+  const SY = y => PAD + (GMAX - y) * UNIT;
+  const XMIN = () => (trig() ? GMIN * PI / 4 : GMIN), XMAX = () => (trig() ? GMAX * PI / 4 : GMAX);
+  const uval = q => qv(q) * (trig() ? PI : 1);       // exact value → real number
+
+  function grid(g) {
+    for (let i = GMIN; i <= GMAX; i++) {
+      const cls = i === 0 ? "g-axis" : trig() && i % 2 === 0 ? "g-major" : "g-minor";
+      el("line", { x1: PAD + (i - GMIN) * UNIT, y1: SY(GMIN), x2: PAD + (i - GMIN) * UNIT, y2: SY(GMAX), class: cls }, g);
+      el("line", { x1: PAD, y1: SY(i), x2: W - PAD, y2: SY(i), class: i === 0 ? "g-axis" : "g-minor" }, g);
+    }
+    for (let i = GMIN; i <= GMAX; i++) {
+      if (i === 0) continue;
+      if (!trig() || i % 2 === 0) {
+        const t = trig() ? fang(Q(i, 4)) : fint(i);
+        el("text", { x: PAD + (i - GMIN) * UNIT, y: SY(0) + 21, class: "tick", "text-anchor": "middle" }, g).textContent = t;
+      }
+      el("text", { x: SX(0) - 6, y: SY(i) + 6, class: "tick", "text-anchor": "end" }, g).textContent = fint(i);
+    }
+    el("text", { x: W - PAD - 4, y: SY(0) - 9, class: "tick", "text-anchor": "end" }, g).textContent = "x";
+    el("text", { x: SX(0) + 8, y: PAD + 14, class: "tick" }, g).textContent = "y";
+  }
+
+  // Continuous pieces of the parent's domain (real u), each end tagged "closed", "open" or "inf".
+  function uPieces(dom0, ulo, uhi) {
+    const out = [];
+    const add = (a, b, ta, tb) => {
+      const s = Math.max(a, ulo), e = Math.min(b, uhi);
+      if (s < e) out.push([s, e, s === a ? ta : "inf", e === b ? tb : "inf"]);
+    };
+    if (dom0.kind === "all") add(-Infinity, Infinity, "inf", "inf");
+    else if (dom0.kind === "except") { const c = uval(dom0.c); add(-Infinity, c, "inf", "open"); add(c, Infinity, "open", "inf"); }
+    else if (dom0.kind === "tan") {
+      for (let n = Math.floor(ulo / PI) - 1; n <= Math.ceil(uhi / PI) + 1; n++) add((n - 0.5) * PI, (n + 0.5) * PI, "open", "open");
+    } else add(dom0.lo === null ? -Infinity : uval(dom0.lo), dom0.hi === null ? Infinity : uval(dom0.hi), dom0.lo === null ? "inf" : dom0.loC ? "closed" : "open", dom0.hi === null ? "inf" : dom0.hiC ? "closed" : "open");
+    return out;
+  }
+  // Points of y = a f(b(x − h)) + k (optionally swapped for the inverse) as SVG path pieces plus endpoint dots.
+  function trace(M, P, dom0, swap) {
+    const f = M.f.f, a = qv(P.a), b = qv(P.b), h = uval(P.h), k = qv(P.k);
+    const xr = [XMIN(), XMAX()], yr = [GMIN, GMAX];
+    // For the inverse, the window limits the original's y; sample the whole x range that can matter.
+    const span = swap ? [Math.min(xr[0], yr[0] * (trig() ? 1 : 1)) - 12, Math.max(xr[1], yr[1]) + 12] : [xr[0] - 0.5, xr[1] + 0.5];
+    const u1 = b * (span[0] - h), u2 = b * (span[1] - h);
+    const pieces = uPieces(dom0, Math.min(u1, u2), Math.max(u1, u2));
+    const keyU = M.f.keys().map(([u]) => uval(typeof u === "number" ? Q(u) : u));
+    if (S.fn === "pw") PW.forEach(([u]) => keyU.push(u));
+    const paths = [], ends = [];
+    const toXY = u => {
+      let y = a * f(u) + k;
+      if (!isFinite(y)) y = y > 0 ? 80 : -80;
+      y = Math.max(-80, Math.min(80, y));
+      const x = u / b + h;
+      return swap ? [y, x] : [x, y];
+    };
+    for (const [s, e, ts, te] of pieces) {
+      const us = [];
+      const N = 700;
+      for (let i = 0; i <= N; i++) us.push(s + (e - s) * i / N);
+      keyU.forEach(u => { if (u > s && u < e) us.push(u); });
+      // Crowd samples toward open ends so curves run into their asymptotes.
+      [[s, ts, 1], [e, te, -1]].forEach(([p, t, dir]) => {
+        if (t === "open") for (let j = 1; j <= 9; j++) us.push(p + dir * Math.pow(10, -j) * Math.min(1, e - s));
+      });
+      us.sort((m, n) => m - n);
+      let d = "";
+      us.forEach((u, i) => {
+        if (u < s || u > e || (ts === "open" && u === s) || (te === "open" && u === e)) return;
+        const [x, y] = toXY(u);
+        const X = PAD + ((swap ? x : gx(x)) - GMIN) * UNIT, Y = PAD + (GMAX - (swap ? y : y)) * UNIT;
+        // the inverse of a non-trig function keeps plain units on both axes
+        d += (d ? "L" : "M") + X.toFixed(1) + " " + Y.toFixed(1);
+      });
+      if (d) paths.push(d);
+      [[s, ts], [e, te]].forEach(([u, t]) => {
+        if (t === "inf") return;
+        const yv = f(u);
+        if (!isFinite(yv)) return;
+        const [x, y] = toXY(u);
+        ends.push({ x, y, closed: t === "closed" });
+      });
+    }
+    return { paths, ends };
+  }
+
+  function arrowLine(g, x1, y1, x2, y2) {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    if (len < 18) return;
+    const ux = (x2 - x1) / len, uy = (y2 - y1) / len;
+    const ex = x2 - ux * 10, ey = y2 - uy * 10;
+    el("line", { x1: x1 + ux * 8, y1: y1 + uy * 8, x2: ex, y2: ey, class: "k-arrow" }, g);
+    el("path", { d: `M${ex + ux * 2} ${ey + uy * 2} L${ex - ux * 9 - uy * 5} ${ey - uy * 9 + ux * 5} L${ex - ux * 9 + uy * 5} ${ey - uy * 9 - ux * 5} Z`, class: "k-arrow-head" }, g);
+  }
+  const onBoard = (X, Y) => X >= PAD - 1 && X <= W - PAD + 1 && Y >= PAD - 1 && Y <= W - PAD + 1;
+
+  // ---------- invariant points ----------
+  // Fixed points of (x, y) → (x/b + h, ay + k) that lie on the graph.
+  function invariants(M) {
+    const { a, b, h, k } = M.P, f = M.f.f, T = M.T;
+    const idX = qeq(b, 1), idY = qeq(a, 1);
+    if (idX && idY && h.n === 0 && k.n === 0) return { all: true, note: "No transformation yet, so every point is invariant." };
+    if ((idX && h.n !== 0) || (idY && k.n !== 0)) return { pts: [], note: idX && h.n !== 0 ? "A horizontal translation moves every point, so nothing stays put." : "A vertical translation moves every point, so nothing stays put." };
+    const x0 = idX ? null : qd(qm(h, b), qs(b, ONE)); // x = hb/(b − 1)
+    const y0 = idY ? null : qd(k, qs(ONE, a));       // y = k/(1 − a)
+    if (x0 && y0) {
+      const u = uval(x0);
+      const on = M.inDom0(u) && Math.abs(f(u) - qv(y0)) < 1e-9;
+      return { pts: on ? [[u, qv(y0)]] : [], note: on ? "The only point the mapping leaves fixed is on the graph." : `The mapping only fixes ${pt(fv(x0, T), fq(y0))}, which is not on the graph, so there are none.` };
+    }
+    if (x0) {
+      const u = uval(x0);
+      const on = M.inDom0(u) && isFinite(f(u));
+      return { pts: on ? [[u, f(u)]] : [], note: `Points on the line x = ${fv(x0, T)} do not move.` + (on ? "" : " The graph does not reach it.") };
+    }
+    // y0: roots of f(u) = y0 inside the window
+    const Y = qv(y0), pts = [];
+    let seg = null;
+    if (S.fn === "pw") {
+      for (let i = 0; i < 3; i++) {
+        let [u1, v1] = PW[i], [u2, v2] = PW[i + 1];
+        if (M.dom0.kind === "int") { const lo = qv(M.dom0.lo), hi = qv(M.dom0.hi); if (u2 < lo - 1e-9 || u1 > hi + 1e-9) continue; }
+        if (v1 === v2) { if (Math.abs(v1 - Y) < 1e-9) seg = [[u1, Y], [u2, Y]]; continue; }
+        const u = u1 + (Y - v1) * (u2 - u1) / (v2 - v1);
+        if (u >= u1 - 1e-9 && u <= u2 + 1e-9 && !pts.some(p => Math.abs(p[0] - u) < 1e-7)) pts.push([u, Y]);
+      }
+    } else roots(u => f(u) - Y, M, XMIN(), XMAX()).forEach(u => pts.push([u, Y]));
+    let note = `Points on the line y = ${fq(y0)} do not move.`;
+    if (seg) note += ` The whole flat piece from ${pt(nice(seg[0][0]), nice(Y))} to ${pt(nice(seg[1][0]), nice(Y))} is invariant.`;
+    if (!pts.length && !seg) note += " The graph does not cross it.";
+    return { pts, note, seg };
+  }
+  function roots(g, M, lo, hi) {
+    const out = [], N = 4000;
+    let pu = null, pv = null;
+    for (let i = 0; i <= N; i++) {
+      const u = lo + (hi - lo) * i / N;
+      if (!M.inDom0(u)) { pu = null; continue; }
+      const v = g(u);
+      if (!isFinite(v)) { pu = null; continue; }
+      if (Math.abs(v) < 1e-12) out.push(u);
+      else if (pu !== null && pv * v < 0) {
+        let A = pu, B = u, fa = pv;
+        for (let j = 0; j < 80; j++) { const m = (A + B) / 2, fm = g(m); if (fa * fm <= 0) B = m; else { A = m; fa = fm; } }
+        const r = (A + B) / 2;
+        if (Math.abs(g(r)) < 1e-6) out.push(r);
+      }
+      pu = u; pv = v;
+    }
+    return out.filter((u, i) => i === 0 || Math.abs(u - out[i - 1]) > 1e-6);
+  }
+  // Points where the (restricted) image meets y = x: they stay put under the reflection.
+  function inverseInvariants(M) {
+    const { a, b, h, k } = M.P, f = M.f.f;
+    const A = qv(a), B = qv(b), H = qv(h), K = qv(k);
+    const inX = x => M.inDom0(B * (x - H));
+    const g = x => A * f(B * (x - H)) + K - x;
+    return roots(g, { inDom0: inX }, GMIN, GMAX).map(x => [x, x]);
+  }
+
+  // ---------- equations ----------
+  function eqHTML(P, v, lhs) {
+    const T = trig(), { a, b, h, k } = P;
+    const coef = (q, cls) => (qeq(q, 1) ? "" : qeq(q, -1) ? `<span class="${cls}">${MINUS}</span>` : `<span class="${cls}">${qH(q)}</span>`);
+    const hT = h.n === 0 ? v : `${v} ${h.n > 0 ? MINUS : "+"} <span class="cb">${qH(qabs(h), T)}</span>`;
+    const bare = qeq(b, 1) && h.n === 0;
+    let s = qeq(b, 1) ? hT : coef(b, "cb") + (h.n === 0 ? v : `(${hT})`);
+    const wrap = x => (bare ? x : `(${x})`);
+    const A = coef(a, "ca");
+    const K = k.n === 0 ? "" : ` ${k.n > 0 ? "+" : MINUS} <span class="ca">${Math.abs(k.n)}</span>`;
+    let r;
+    switch (S.fn) {
+      case "abs": r = `${A}|${s}|`; break;
+      case "sqrt": r = `${A}√<span class="rad">${s}</span>`; break;
+      case "sq": r = `${A}${wrap(s)}<sup>2</sup>`; break;
+      case "cube": r = `${A}${wrap(s)}<sup>3</sup>`; break;
+      case "exp": {
+        const base = S.base === 0.5 ? `(${fracH(1, 2)})` : String(S.base);
+        r = A === "" || qeq(a, -1) ? `${A}${base}<sup>${s}</sup>` : `${A}(${S.base === 0.5 ? fracH(1, 2) : S.base})<sup>${s}</sup>`;
+        break;
+      }
+      case "log": r = `${A}log<sub>${S.base}</sub> ${wrap(s)}`; break;
+      case "rec":
+        r = a.d === 1 ? (a.n < 0 ? `<span class="ca">${MINUS}</span>` : "") + fracH(`<span class="ca">${Math.abs(a.n)}</span>`, s) : `${A}${fracH(1, s)}`;
+        if (a.d === 1 && Math.abs(a.n) === 1) r = (a.n < 0 ? `<span class="ca">${MINUS}</span>` : "") + fracH(1, s);
+        break;
+      case "pw": r = `${A}f(${s})`; break;
+      default: {
+        const arg = bare ? v : qv(b) < 0 || qeq(b, 1) ? `(${s})` : s;
+        r = `${A}${S.fn} ${arg}`;
+      }
+    }
+    return `${lhs} = ${r}${K}`;
+  }
+  function mapHTML(P) {
+    const T = trig(), { a, b, h, k } = P, p = qd(ONE, b);
+    const c = (q, cls, w) => (qeq(q, 1) ? w : qeq(q, -1) ? `<span class="${cls}">${MINUS}</span>${w}` : `<span class="${cls}">${qH(q)}</span>${w}`);
+    const xs = c(p, "cb", "x") + (h.n === 0 ? "" : ` ${h.n > 0 ? "+" : MINUS} <span class="cb">${qH(qabs(h), T)}</span>`);
+    const ys = c(a, "ca", "y") + (k.n === 0 ? "" : ` ${k.n > 0 ? "+" : MINUS} <span class="ca">${Math.abs(k.n)}</span>`);
+    return `(x, y) → (${xs}, ${ys})`;
+  }
+  function steps(P) {
+    const T = trig(), { a, b, h, k } = P, out = [];
+    const B = qabs(b), A = qabs(a);
+    if (!qeq(B, 1)) out.push(`<span class="cb">Horizontal stretch</span> about the y-axis by a factor of ${qH(qd(ONE, B))}`);
+    if (qv(b) < 0) out.push(`<span class="cb">Reflection in the y-axis</span>`);
+    if (!qeq(A, 1)) out.push(`<span class="ca">Vertical stretch</span> about the x-axis by a factor of ${qH(A)}`);
+    if (qv(a) < 0) out.push(`<span class="ca">Reflection in the x-axis</span>`);
+    if (h.n !== 0) out.push(`<span class="cb">Horizontal translation</span> ${qH(qabs(h), T)} ${T && S.units === "deg" ? "" : Math.abs(qv(h)) === 1 && !T ? "unit " : "units "}${h.n > 0 ? "right" : "left"}`.replace("  ", " "));
+    if (k.n !== 0) out.push(`<span class="ca">Vertical translation</span> ${Math.abs(k.n)} ${Math.abs(k.n) === 1 ? "unit" : "units"} ${k.n > 0 ? "up" : "down"}`);
+    if (!out.length) out.push("No transformation: the image is y = f(x)");
+    if (S.t.inverse && !T) out.push(`<span class="ci">Reflection in the line y = x</span> for the inverse`);
+    return out;
+  }
+
+  // ---------- render ----------
+  function render() {
+    const M = model(), P = M.P, T = M.T;
+    // outputs
+    $("oa").textContent = fq(P.a); $("ob").textContent = fq(P.b); $("oh").innerHTML = qH(P.h, T); $("ok").innerHTML = fq(P.k);
+    // chip availability
+    const canInv = !T, canRes = !!M.f.res && !T;
+    $("lInverse").classList.toggle("off", !canInv); $("lInverse").querySelector("input").disabled = !canInv;
+    $("lRestrict").classList.toggle("off", !canRes); $("lRestrict").querySelector("input").disabled = !canRes;
+    const showInv = S.t.inverse && canInv;
+    let note = "";
+    if (T) note = "Inverses and restricted domains are not used with trig functions in Math 30-1.";
+    else if (!M.f.res) note = "This function is one-to-one, so its inverse is a function without restricting the domain.";
+    else if (showInv && !restricted()) note = "The inverse is not a function. Restrict the domain to make it one.";
+    $("chipNote").textContent = note; $("chipNote").hidden = !note;
+
+    // equation
+    const restr = restricted() ? `<span class="restr">, ${cond(M.dom, "x", T)}</span>` : "";
+    $("eq").innerHTML = eqHTML(P, "x", "y") + restr;
+    $("eqAlt").innerHTML = P.k.n === 0 ? "" : eqHTML({ ...P, k: ZERO }, "x", `y ${P.k.n > 0 ? MINUS : "+"} <span class="ca">${Math.abs(P.k.n)}</span>`);
+    $("eqInv").hidden = !showInv;
+    if (showInv) $("eqInv").innerHTML = "Inverse: " + eqHTML(P, "y", "x") + (restricted() ? `<span class="restr">, ${cond(M.dom, "y", false)}</span>` : "");
+    $("steps").innerHTML = steps(P).map(s => `<li>${s}</li>`).join("");
+
+    // mapping
+    $("cMap").hidden = !S.t.map;
+    $("map").innerHTML = mapHTML(P);
+    $("mapInv").hidden = !showInv;
+    $("mapInv").innerHTML = "Inverse: (x, y) → (y, x)";
+
+    // domain and range
+    $("cDR").hidden = !S.t.dr;
+    $("drLabel").textContent = restricted() ? "Domain and range (restricted domain)" : "Domain and range";
+    const drRows = (D, R, dAng, rAng) => `<dt>Domain</dt><dd>${interval(D, dAng)}<small>${setB(D, "x", dAng)}</small></dd><dt>Range</dt><dd>${interval(R, rAng)}<small>${setB(R, "y", rAng)}</small></dd>`;
+    $("dr").innerHTML = drRows(M.dom, M.rng, T, false);
+    $("drInvWrap").hidden = !showInv;
+    if (showInv) $("drInv").innerHTML = drRows(M.rng, M.dom, false, false);
+
+    // key points table
+    $("cKeys").hidden = !S.t.keys;
+    const img = M.keys.map(([u, v]) => M.tr(u, v));
+    const inWin = (x, y) => Math.abs(gx(uval(x))) <= GMAX + 1e-9 && Math.abs(qv(y)) <= GMAX + 1e-9;
+    $("kp").innerHTML = `<tr><th>y = f(x)</th><th>Image</th>${showInv ? "<th>Inverse</th>" : ""}</tr>` + M.keys.map(([u, v], i) => {
+      const [x, y] = img[i], o = inWin(x, y) ? "" : " out";
+      return `<tr><td>${pt(fv(u, T), fq(v))}</td><td class="im${o}">${pt(fv(x, T), fq(y))}</td>${showInv ? `<td class="iv${o}">${pt(fq(y), fq(x))}</td>` : ""}</tr>`;
+    }).join("");
+
+    // invariant points
+    $("cInv").hidden = !S.t.inv;
+    const IV = invariants(M);
+    $("invList").innerHTML = IV.all ? "" : IV.pts.length ? IV.pts.slice(0, 8).map(([x, y]) => `<li>${pt(nice(x, T), nice(y))}</li>`).join("") + (IV.pts.length > 8 ? "<li>…</li>" : "") : IV.seg ? "" : "<li>None</li>";
+    $("invNote").textContent = IV.note;
+    const IQ = showInv ? inverseInvariants(M) : [];
+    $("invQ").hidden = !showInv;
+    if (showInv) {
+      $("invListQ").innerHTML = IQ.length ? IQ.slice(0, 6).map(([x, y]) => `<li>${pt(nice(x), nice(y))}</li>`).join("") : "<li>None</li>";
+      $("invNoteQ").textContent = "Reflecting in y = x leaves points on the line y = x in place, so these are on the graph and its inverse.";
+    }
+
+    draw(M, IV, IQ, showInv);
+  }
+
+  function draw(M, IV, IQ, showInv) {
+    const P = M.P, T = M.T;
+    svg.innerHTML = "";
+    const defs = el("defs", {}, svg);
+    const cp = el("clipPath", { id: "win" }, defs);
+    el("rect", { x: PAD, y: PAD, width: W - 2 * PAD, height: W - 2 * PAD }, cp);
+    const g = el("g", {}, svg);
+    grid(g);
+    const L = el("g", { "clip-path": "url(#win)" }, svg);
+    const top = el("g", {}, svg);
+    const legend = [];
+
+    // restricted domain band on the x-axis
+    if (restricted() && M.dom.kind === "int") {
+      const lo = M.dom.lo === null ? XMIN() : uval(M.dom.lo), hi = M.dom.hi === null ? XMAX() : uval(M.dom.hi);
+      el("rect", { x: SX(lo), y: SY(0) - 9, width: Math.max(0, SX(hi) - SX(lo)), height: 18, class: "band" }, L);
+      [[M.dom.lo, lo], [M.dom.hi, hi]].forEach(([q, x]) => { if (q !== null) el("line", { x1: SX(x), y1: SY(0) - 14, x2: SX(x), y2: SY(0) + 14, class: "band-end" }, L); });
+      legend.push(`<span><i style="border-color: color-mix(in srgb, var(--pt) 35%, transparent); border-top-width: 10px"></i>Restricted domain</span>`);
+    }
+
+    // asymptotes
+    const drawV = (x, cls, label) => { const X = SX(x); if (X < PAD || X > W - PAD) return; el("line", { x1: X, y1: PAD, x2: X, y2: W - PAD, class: "asy " + cls }, L); if (label) el("text", { x: X + 6, y: PAD + 18, class: "asy-lbl " + cls }, top).textContent = label; };
+    const drawH = (y, cls, label) => { const Y = SY(y); if (Y < PAD || Y > W - PAD) return; el("line", { x1: PAD, y1: Y, x2: W - PAD, y2: Y, class: "asy " + cls }, L); if (label) el("text", { x: W - PAD - 6, y: Y - 7, class: "asy-lbl " + cls, "text-anchor": "end" }, top).textContent = label; };
+    if (S.t.asy) {
+      let any = false;
+      (M.f.asyV || []).forEach(c => { const x = qa(qd(Q(c), P.b), P.h); drawV(uval(x), "", "x = " + fv(x, T)); any = true; if (showInv) drawH(qv(x), "i", "y = " + fq(x)); });
+      (M.f.asyH || []).forEach(c => { const y = qa(qm(Q(c), P.a), P.k); drawH(qv(y), "", "y = " + fq(y)); any = true; if (showInv) drawV(qv(y), "i", "x = " + fq(y)); });
+      if (S.fn === "tan") {
+        const { x0, p } = tanParts(mapSet({ kind: "tan" }, qd(ONE, P.b), P.h));
+        const step = uval(p);
+        for (let x = uval(x0) - 12 * step; x <= XMAX() + 1e-9; x += step) if (x >= XMIN() - 1e-9) { drawV(x, "", ""); any = true; }
+      }
+      if (any) legend.push(`<span><i class="dash" style="border-color: var(--warn); border-top-style: dotted"></i>Asymptote</span>`);
+    }
+
+    // y = x
+    if (showInv) { el("line", { x1: SX(GMIN), y1: SY(GMIN), x2: SX(GMAX), y2: SY(GMAX), class: "yx" }, L); el("text", { x: SX(9.6), y: SY(9.6) + 20, class: "asy-lbl i", "text-anchor": "end" }, top).textContent = "y = x"; }
+
+    // original
+    const ID = { a: ONE, b: ONE, h: ZERO, k: ZERO };
+    if (S.t.base) {
+      trace(M, ID, M.f.dom, false).paths.forEach(d => el("path", { d, class: "c-base" }, L));
+      legend.push(`<span><i class="dash" style="border-color: var(--muted)"></i>y = f(x)</span>`);
+    }
+    // image (full graph faint when the domain is restricted)
+    if (restricted()) trace(M, P, M.f.dom, false).paths.forEach(d => el("path", { d, class: "c-ghost" }, L));
+    const im = trace(M, P, M.dom0, false);
+    im.paths.forEach(d => el("path", { d, class: "c-img" }, L));
+    legend.push(`<span><i style="border-color: var(--pt)"></i>Image</span>`);
+    let inv = null;
+    if (showInv) {
+      inv = trace(M, P, M.dom0, true);
+      inv.paths.forEach(d => el("path", { d, class: "c-inv" }, L));
+      legend.push(`<span><i style="border-color: var(--purple)"></i>Inverse</span>`);
+    }
+    // endpoints
+    const endDot = (x, y, color, closed, swap) => {
+      const X = swap ? PAD + (x - GMIN) * UNIT : SX(x), Y = SY(y);
+      if (!onBoard(X, Y)) return;
+      el("circle", { cx: X, cy: Y, r: 7, class: closed ? "end-c" : "end-o", style: closed ? `fill: ${color}` : `stroke: ${color}` }, top);
+    };
+    im.ends.forEach(e => endDot(e.x, e.y, "var(--pt)", e.closed));
+    if (inv) inv.ends.forEach(e => endDot(e.x, e.y, "var(--purple)", e.closed, true));
+
+    // key points
+    if (S.t.keys) {
+      M.keys.forEach(([u, v]) => {
+        const [x, y] = M.tr(u, v);
+        const BX = SX(uval(u)), BY = SY(qv(v)), IX = SX(uval(x)), IY = SY(qv(y));
+        if (S.t.base && S.t.map && onBoard(BX, BY) && onBoard(IX, IY)) arrowLine(L, BX, BY, IX, IY);
+        if (S.t.base && onBoard(BX, BY)) el("circle", { cx: BX, cy: BY, r: 5.5, class: "k-base" }, top);
+        if (onBoard(IX, IY)) {
+          const c = el("circle", { cx: IX, cy: IY, r: 7, class: "k-img" }, top);
+          el("title", {}, c).textContent = `${pt(fv(u, T), fq(v))} → ${pt(fv(x, T), fq(y))}`;
+        }
+        if (inv) {
+          const VX = PAD + (qv(y) - GMIN) * UNIT, VY = SY(qv(x));
+          if (onBoard(VX, VY)) { const c = el("circle", { cx: VX, cy: VY, r: 7, class: "k-inv" }, top); el("title", {}, c).textContent = pt(fq(y), fq(x)); }
+        }
+      });
+      legend.push(`<span><i class="dot" style="background: var(--pt)"></i>Key points</span>`);
+    }
+
+    // invariant points
+    if (S.t.inv) {
+      const pts = IV.all ? [] : IV.pts.slice();
+      if (IV.seg) {
+        const [[u1, y], [u2]] = IV.seg;
+        el("line", { x1: SX(u1), y1: SY(y), x2: SX(u2), y2: SY(y), class: "ip", "stroke-width": 9, opacity: 0.5 }, top);
+      }
+      pts.forEach(([x, y]) => { const X = SX(x), Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip" }, top); });
+      IQ.forEach(([x, y]) => { const X = PAD + (x - GMIN) * UNIT, Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip q" }, top); });
+      if (pts.length || IV.seg) legend.push(`<span><i class="ring" style="border-color: var(--pink)"></i>Invariant</span>`);
+      if (IQ.length) legend.push(`<span><i class="ring" style="border-color: var(--purple)"></i>On y = x</span>`);
+    }
+    $("legend").innerHTML = legend.join("");
+  }
+
+  // ---------- events ----------
+  function setFn(id) {
+    const wasTrig = trig();
+    S.fn = id;
+    fnBox.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.fn === id));
+    const f = fn();
+    if (f.bases) {
+      if (!f.bases.includes(S.base)) S.base = f.bases[0];
+      const row = $("baseRow");
+      row.querySelectorAll("button").forEach(b => b.remove());
+      f.bases.forEach(bs => {
+        const b = document.createElement("button");
+        b.type = "button"; b.dataset.base = bs; b.innerHTML = bs === 0.5 ? "½" : bs;
+        b.setAttribute("aria-pressed", bs === S.base);
+        row.appendChild(b);
+      });
+    }
+    $("baseRow").hidden = !f.bases;
+    $("unitRow").hidden = !f.trig;
+    $("pwDef").hidden = id !== "pw";
+    if (wasTrig !== trig()) {
+      const sh = $("sh");
+      if (trig()) { sh.min = -24; sh.max = 24; } else { sh.min = -8; sh.max = 8; }
+      sh.value = 0;
+    }
+    render();
+  }
+  fnBox.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setFn(b.dataset.fn); });
+  $("baseRow").addEventListener("click", e => {
+    const b = e.target.closest("button[data-base]"); if (!b) return;
+    S.base = +b.dataset.base;
+    $("baseRow").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    render();
+  });
+  $("unitRow").addEventListener("click", e => {
+    const b = e.target.closest("button[data-units]"); if (!b) return;
+    S.units = b.dataset.units;
+    $("unitRow").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    render();
+  });
+  ["sa", "sb", "sh", "sk"].forEach(id => $(id).addEventListener("input", render));
+  $("reset").addEventListener("click", () => { $("sa").value = 10; $("sb").value = 10; $("sh").value = 0; $("sk").value = 0; render(); });
+  $("chips").addEventListener("change", e => { const c = e.target; if (c.dataset.t) { S.t[c.dataset.t] = c.checked; render(); } });
+
+  setFn("abs");
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t == null) return false;
+      let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? "");
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

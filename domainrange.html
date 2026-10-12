@@ -172,6 +172,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
 .fb { margin: 8px 0 0; font-size: 1.1rem; font-weight: 700; min-height: 1.5em; line-height: 1.35; }
 .fb:empty { display: none; }
 .fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.almost { color: var(--orange); } .fb.show { color: var(--ink); }
+.fb .say { display: block; margin-top: 4px; font-weight: 400; font-style: italic; color: var(--ink); font-size: 1rem; }
 .fb .big { display: block; font-family: var(--font-num); font-size: 1.5rem; margin-top: 2px; }
 .ex { margin: 0; color: var(--muted); font-size: 1.05rem; }
 .ex code { font-family: var(--font-num); font-weight: 700; color: var(--ink); background: var(--chip); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
@@ -440,7 +441,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
   const N = n => fmt(+n.toFixed(2));
   const listWords = vs => vs.length === 1 ? N(vs[0]) : vs.slice(0, -1).map(N).join(", ") + " and " + N(vs[vs.length - 1]);
   function write(a, v, how) {
-    if (isSet(a)) return how === "words" ? `the ${v}-values are ${listWords(a.set)}` : `{${a.set.map(N).join(", ")}}`;
+    if (isSet(a)) return how === "words" ? `the ${v}-values are ${listWords(a.set)}` : how === "set" ? `{${v} | ${v} = ${a.set.map(N).join(", ")}}` : `{${a.set.map(N).join(", ")}}`;
     const lo = isFinite(a.lo), hi = isFinite(a.hi);
     if (how === "interval") return `${a.loC ? "[" : "("}${lo ? N(a.lo) : "−∞"}, ${hi ? N(a.hi) : "∞"}${a.hiC ? "]" : ")"}`;
     if (how === "words") {
@@ -508,6 +509,8 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
     const right = bar < 0 ? inner : inner.slice(bar + 1), left = bar < 0 ? "" : inner.slice(0, bar);
     if (left && /^[a-z]/.test(left) && left[0] !== v) return fail(`Use ${v}: the ${v === "x" ? "domain is about x-values" : "range is about y-values"}.`);
     if (!right && /^[a-z]∈r$/.test(left)) return { ...ALL };
+    const eq = right.match(new RegExp(`^([a-z])=(${NUM}(?:(?:,|or|and)${NUM})*)(?:,[a-z]∈[a-z])?$`));
+    if (eq) { if (eq[1] !== v) return fail(`Use ${v}: the ${v === "x" ? "domain is about x-values" : "range is about y-values"}.`); return toSet(eq[2].split(/,|or|and/).map(num)); }
     return inequalities(right.split(/,|and/), v);
   }
   const NEG = "(?:not including|not includes|excluding|but not|not)";
@@ -727,6 +730,24 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
     return side(true) || side(false) || "Not quite.";
   }
 
+  // How to read the answer out loud, in the language of the chosen notation.
+  function sayIt(a, v) {
+    const cmp = (c, big) => big ? `greater than ${c ? "or equal to " : ""}` : `less than ${c ? "or equal to " : ""}`;
+    if (note === "interval") {
+      if (isSet(a)) return `the set containing ${listWords(a.set)}`;
+      const L = isFinite(a.lo) ? `${N(a.lo)}, ${a.loC ? "included" : "not included"}` : "negative infinity", R = isFinite(a.hi) ? `${N(a.hi)}, ${a.hiC ? "included" : "not included"}` : "infinity";
+      return `the interval from ${L}, to ${R}`;
+    }
+    if (note !== "set") return "";
+    const start = `the set of all values of ${v} such that ${v}`;
+    if (isSet(a)) return `${start} equals ${listWords(a.set).replace(/ and ([^,]*)$/, " or $1")}`;
+    const parts = [];
+    if (isFinite(a.lo)) parts.push(cmp(a.loC, true) + N(a.lo));
+    if (isFinite(a.hi)) parts.push(cmp(a.hiC, false) + N(a.hi));
+    return parts.length ? `${start} is ${parts.join(" and ")}, and ${v} is an element of the real numbers` : `${start} is an element of the real numbers`;
+  }
+  const sayHtml = (a, v) => { const t = sayIt(a, v); return t ? `<span class="say">Say: “${t[0].toUpperCase() + t.slice(1)}.”</span>` : ""; };
+
   function checkOne(which, counting) {
     const v = which === "d" ? "x" : "y", inp = which === "d" ? $("dIn") : $("rIn"), fb = which === "d" ? $("dFb") : $("rFb");
     const e = which === "d" ? state.ans.d : state.ans.r;
@@ -738,7 +759,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
     const good = same(r.a, e);
     if (good && !r.fits) { say("almost", `That's the right set! Now write it in ${{ words: "words", set: "set-builder notation", interval: "interval notation" }[note]}.`); return false; }
     if (good) {
-      say("ok", `Yes! ${isSet(e) ? "Separate points, so it is a list." : ""}`);
+      say("ok", `Yes! ${isSet(e) ? "Separate points, so it is a list." : ""}${sayHtml(e, v)}`);
       inp.classList.add("ok"); state.done[which] = true; redrawProj(); return true;
     }
     say("no", why(r.a, e, v)); inp.classList.add("no"); return false;
@@ -754,7 +775,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
     [["d", "x", $("dFb"), $("dIn")], ["r", "y", $("rFb"), $("rIn")]].forEach(([w, v, fb, inp]) => {
       if (state.done[w]) return;
       fb.className = "fb show";
-      fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], v, note)}</span>`;
+      fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], v, note)}</span>${sayHtml(state.ans[w], v)}`;
       inp.classList.remove("ok", "no");
       state.done[w] = state.shown[w] = true;
     });
@@ -765,12 +786,12 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
   // ---------- controls ----------
   const EX = {
     words: `Example: <code>x is greater than −2 and less than or equal to 5</code>`,
-    set: `Example: <code>{x | −2 &lt; x ≤ 5, x ∈ R}</code> Points? <code>{−3, 1, 4}</code>`,
+    set: `Example: <code>{x | −2 &lt; x ≤ 5, x ∈ R}</code> Points? <code>{x | x = −3, 1, 4}</code>`,
     interval: `Example: <code>(−2, 5]</code> or <code>[1, ∞)</code> Points? <code>{−3, 1, 4}</code>`
   };
   const KEYS = {
     words: ["all real numbers", "greater than", "less than", "or equal to", "and", "−"],
-    set: ["{", "}", "|", "x", "y", "≤", "<", "≥", ">", "∈", "R", ",", "−"],
+    set: ["{", "}", "|", "x", "y", "=", "≤", "<", "≥", ">", "∈", "R", ",", "−"],
     interval: ["[", "]", "(", ")", "∞", "−", ",", "{", "}"]
   };
   let lastInput = $("dIn");
@@ -808,7 +829,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
     // Answers already shown follow the new notation; typed answers are checked again in it.
     if (state) ["d", "r"].forEach(w => {
       const fb = w === "d" ? $("dFb") : $("rFb");
-      if (state.shown[w]) fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], w === "d" ? "x" : "y", n)}</span>`;
+      if (state.shown[w]) fb.innerHTML = `Answer: <span class="big">${write(state.ans[w], w === "d" ? "x" : "y", n)}</span>${sayHtml(state.ans[w], w === "d" ? "x" : "y")}`;
       else { fb.textContent = ""; fb.className = "fb"; state.done[w] = false; (w === "d" ? $("dIn") : $("rIn")).classList.remove("ok", "no"); }
     });
     if (state) redrawProj();
@@ -837,6 +858,93 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries

@@ -186,7 +186,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wt.frac rect { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt.frac text { font-size: 18px; }
 .wt.neg path, .wt.neg rect { fill: var(--neg); }
-.wt.neg text { fill: var(--neg-ink); }
+.wt.neg text { fill: var(--neg-ink); font-size: 13px; letter-spacing: -1px; }
+.wt.frac.neg text { font-size: 18px; letter-spacing: 0; }
 .piece.enter > * { animation: drop 0.4s ease-out; }
 @keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
 .piece.leave > *, .seg.leave { animation: leave 1.2s ease-in forwards; }
@@ -201,7 +202,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
 .seg rect { stroke: var(--ink); stroke-width: 2; }
-.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); } .seg.neg rect { fill: var(--neg); fill-opacity: 0.92; }
+.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); } .seg.neg rect { fill: var(--neg); stroke-width: 2.5; }
 .seg.neg text { fill: var(--neg-ink); }
 .zero { stroke: var(--ink); stroke-width: 3; }
 .seg text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
@@ -502,45 +503,59 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     anim = requestAnimationFrame(stepT);
   }
 
-  // Bar model: each side is a bar of x pieces (length x) and one block of ones (length = count).
+  // Bar model: each side is a bar of x pieces (length x) and one block of ones (length = count). Red −1s are a red block
+  // laid over the end of the bar, covering what they take away, so the uncovered part is the side's value. When a side
+  // is below zero the red runs past a zero line drawn to the left.
   function drawBars() {
     gBars.innerHTML = "";
-    const xl = xv === null ? NOMINAL_X : xv.p / xv.q, D = S.D;
-    const total = s => s.x * xl + s.one / D;
-    const span = Math.max(total(S.L), total(S.R), fx && fx.before ? Math.max(total(fx.before.L), total(fx.before.R)) : 0, 1);
-    const u = BAR_W / span;
+    const D = S.D, shown = fx && fx.before ? [S.L, S.R, fx.before.L, fx.before.R] : [S.L, S.R];
+    // While building, x is drawn long enough that red −1s cover at most a third of the x boxes.
+    const xl = xv !== null ? xv.p / xv.q : Math.max(NOMINAL_X, ...shown.filter(s => s.x).map(s => 3 * s.neg / D / s.x));
+    const pos = s => s.x * xl + s.one / D, ng = s => s.neg / D;
+    const over = Math.max(0, ...shown.map(s => ng(s) - pos(s)));
+    const u = BAR_W / (Math.max(...shown.map(pos), 1) + over), X0 = BAR_X + over * u;
     const ends = {};
+    if (over) el("line", { x1: X0, y1: BAR_Y.L - 12, x2: X0, y2: BAR_Y.R + BAR_H + 12, class: "zero" }, gBars);
     ["L", "R"].forEach(side => {
       const y = BAR_Y[side], s = fx && fx.before ? fx.before[side] : S[side];
       txt(side === "L" ? "Left" : "Right", { x: BAR_X - 14, y: y + BAR_H / 2, class: "side" }, gBars);
-      const leave = (fx && fx.leave && fx.leave[side]) || { x: 0, one: 0 };
+      const leave = (fx && fx.leave && fx.leave[side]) || cnt(0, 0);
       const divN = (fx && fx.div && fx.div[side]) || 0;
-      const segs = [];
+      const segs = [], negs = []; // negs: { end, len } along the bar, drawn over it
       if (divN) { // equal groups, all but the first fade away
         for (let gI = 0; gI < divN; gI++) {
           for (let i = 0; i < s.x / divN; i++) segs.push({ t: "x", len: xl, leave: gI > 0 });
           if (s.one) segs.push({ t: "one", len: s.one / D / divN, label: fracStr(s.one, D * divN), leave: gI > 0 });
+          if (s.neg) negs.push({ end: (gI + 1) * pos(s) / divN, len: ng(s) / divN, label: fracStr(s.neg, D * divN), leave: gI > 0 });
         }
       } else {
         for (let i = 0; i < s.x; i++) segs.push({ t: "x", len: xl, leave: i >= s.x - leave.x });
         const keep = s.one - leave.one * D;
         if (keep) segs.push({ t: "one", len: keep / D, label: fracStr(keep, D) });
         if (leave.one) segs.push({ t: "one", len: leave.one, label: String(leave.one), leave: true });
+        const keepN = s.neg - leave.neg * D; // red −1s that are leaving sit at the far end
+        if (keepN) negs.push({ end: pos(s) - leave.neg, len: keepN / D, label: fracStr(keepN, D) });
+        if (leave.neg) negs.push({ end: pos(s), len: leave.neg, label: String(leave.neg), leave: true });
       }
-      let x = BAR_X;
-      segs.forEach(sg => {
-        const w = sg.len * u;
-        const g = el("g", { class: "seg " + sg.t + (sg.leave ? " leave" : "") }, gBars);
-        el("rect", { x, y, width: w, height: BAR_H }, g);
-        if (sg.t === "one" && u >= 7) for (let k = 1; k < sg.len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - 14, x2: x + k * u, y2: y + BAR_H }, g);
-        if (w >= 26) txt(sg.t === "x" ? "x" : sg.label, { x: x + w / 2, y: y + BAR_H / 2 - (sg.t === "one" && u >= 7 ? 5 : 0) }, g);
-        x += w;
-      });
+      negs.forEach(n => { n.a = X0 + (n.end - n.len) * u; n.b = X0 + n.end * u; });
+      const block = (t, x, len, label, gone) => {
+        const w = len * u, ticks = t !== "x" && u >= 7, inset = t === "neg" ? 9 : 0; // red sits inside the bar it covers
+        const g = el("g", { class: "seg " + t + (gone ? " leave" : "") }, gBars);
+        el("rect", { x, y: y + inset, width: w, height: BAR_H - 2 * inset }, g);
+        if (ticks) for (let k = 1; k < len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - inset - 14, x2: x + k * u, y2: y + BAR_H - inset }, g);
+        // A label goes in the part of the block the red −1s leave uncovered (the red blocks are drawn last, on top).
+        let a = x, b = x + w;
+        if (t !== "neg") negs.forEach(n => { if (n.a < b && n.b > a) { if (n.a <= a) a = Math.max(a, n.b); else b = Math.min(b, n.a); } });
+        if (b - a >= 26) txt(t === "x" ? "x" : t === "neg" ? "−" + label : label, { x: (a + b) / 2, y: y + BAR_H / 2 - (ticks ? 5 : 0) }, g);
+      };
+      let x = X0;
+      segs.forEach(sg => { block(sg.t, x, sg.len, sg.label, sg.leave); x += sg.len * u; });
+      negs.forEach(n => block("neg", n.a, n.len, n.label, n.leave));
       if (divN) for (let gI = 1; gI < divN; gI++) { // group dividers
-        const gx = BAR_X + gI * (total(s) / divN) * u;
+        const gx = X0 + gI * (pos(s) / divN) * u;
         el("line", { x1: gx, y1: y - 8, x2: gx, y2: y + BAR_H + 8, class: "divider" }, gBars);
       }
-      ends[side] = BAR_X + total(S[side]) * u;
+      ends[side] = X0 + (pos(S[side]) - ng(S[side])) * u;
     });
     if (xv !== null && !balanced() && !fx) {
       const far = Math.max(ends.L, ends.R);
@@ -595,7 +610,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const cx = alignRight ? x - w / 2 : x + w / 2;
     num.setAttribute("x", cx); den.setAttribute("x", cx);
     el("line", { x1: cx - w / 2, y1: y + 13, x2: cx + w / 2, y2: y + 13, class: "fbar" }, g);
-    if (side.x === n && !side.one) {
+    if (side.x === n && !side.one && !side.neg) {
       const k = String(n).length, a = num.getExtentOfChar(0), b = num.getExtentOfChar(k - 1), d = den.getBBox();
       el("line", { x1: a.x - 2, y1: a.y + a.height - 4, x2: b.x + b.width + 2, y2: a.y + 6, class: "cancel" }, g);
       el("line", { x1: d.x - 2, y1: d.y + d.height - 4, x2: d.x + d.width + 2, y2: d.y + 6, class: "cancel" }, g);
@@ -639,7 +654,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     } else finish();
   }
 
-  const cnt = (x, one) => ({ x, one });
+  const cnt = (x, one, neg = 0) => ({ x, one, neg });
   const opOn = (sides, t) => Object.fromEntries(sides.map(s => [s, t]));
   function operate(where) {
     note("");
@@ -649,34 +664,47 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (kind === "div") {
       if (n < 2) return note("Pick a number bigger than 1 to divide by.");
       for (const s of sides) {
-        if (!S[s].x && !S[s].one) return note(`The ${names[s]} is empty.`);
+        if (isEmpty(S[s])) return note(`The ${names[s]} is empty.`);
         if (S[s].x % n) return note(`The x boxes on the ${names[s]} can't split into ${n} equal groups.`);
       }
       // Count the ones in pieces n times smaller, then the divided sides keep their count. Reduce afterwards.
       const div = {};
       next.D = S.D * n;
       ["L", "R"].forEach(s => {
-        if (sides.includes(s)) { next[s] = cnt(S[s].x / n, S[s].one); div[s] = n; }
-        else next[s] = cnt(S[s].x, S[s].one * n);
+        if (sides.includes(s)) { next[s] = cnt(S[s].x / n, S[s].one, S[s].neg); div[s] = n; }
+        else next[s] = cnt(S[s].x, S[s].one * n, S[s].neg * n);
       });
-      const g = gcd(gcd(next.D, next.L.one), next.R.one);
-      next.D /= g; next.L.one /= g; next.R.one /= g;
+      const g = [next.L.one, next.R.one, next.L.neg, next.R.neg].reduce(gcd, next.D);
+      next.D /= g; ["L", "R"].forEach(s => { next[s].one /= g; next[s].neg /= g; });
       return commit(next, { div: n, L: clone(S.L), R: clone(S.R), D: S.D }, { div, tag: opOn(sides, n) });
     }
-    const leave = {}, enter = {};
+    const leave = {}, enter = {}, D = S.D;
     for (const s of sides) {
-      const have = what === "x" ? S[s].x : Math.floor(S[s].one / S.D);
-      if (kind === "sub" && have < n) return note(`There ${n === 1 ? "isn't" : "aren't"} ${wName} on the ${names[s]} to take away.`);
-      if (kind === "add" && have + n > (what === "x" ? MAX_X : MAX_ONE)) return note(`The ${names[s]} is too full.`);
+      if (what === "x") {
+        if (kind === "sub" && S[s].x < n) return note(`There ${n === 1 ? "isn't" : "aren't"} ${wName} on the ${names[s]} to take away.`);
+        if (kind === "add" && S[s].x + n > MAX_X) return note(`The ${names[s]} is too full.`);
+      } else { // ones first cancel the opposite kind as zero pairs; only what is left over is added
+        const ones = Math.floor(S[s].one / D), negs = Math.floor(S[s].neg / D);
+        if ((kind === "add" ? ones + n - Math.min(n, negs) : negs + n - Math.min(n, ones)) > MAX_ONE) return note(`The ${names[s]} is too full.`);
+      }
     }
     sides.forEach(s => {
-      const d = what === "x" ? cnt(n, 0) : cnt(0, n);
-      if (kind === "sub") { next[s] = cnt(S[s].x - d.x, S[s].one - d.one * S.D); leave[s] = d; }
-      else { next[s] = cnt(S[s].x + d.x, S[s].one + d.one * S.D); enter[s] = d; }
+      const c = S[s];
+      if (what === "x") {
+        if (kind === "sub") { next[s] = cnt(c.x - n, c.one, c.neg); leave[s] = cnt(n, 0); }
+        else { next[s] = cnt(c.x + n, c.one, c.neg); enter[s] = cnt(n, 0); }
+      } else if (kind === "add") { // adding 1s takes red −1s away in zero pairs first
+        const k = Math.min(n, Math.floor(c.neg / D));
+        next[s] = cnt(c.x, c.one + (n - k) * D, c.neg - k * D); leave[s] = cnt(0, 0, k); enter[s] = cnt(0, n - k);
+      } else { // taking away 1s past what is there leaves red −1s
+        const k = Math.min(n, Math.floor(c.one / D));
+        next[s] = cnt(c.x, c.one - k * D, c.neg + (n - k) * D); leave[s] = cnt(0, k); enter[s] = cnt(0, 0, n - k);
+      }
     });
     const sign = kind === "sub" ? "−" : "+";
     const tag = opOn(sides, `${sign} ${wName}`);
-    commit(next, tag, kind === "sub" ? { leave, tag } : { enter, tag });
+    const leaving = Object.values(leave).some(c => c.x || c.one || c.neg);
+    commit(next, tag, { leave: leaving ? leave : null, enter, tag });
   }
 
   document.querySelectorAll("#opk button").forEach(b => b.onclick = () => { kind = b.dataset.k; if (kind === "div" && n < 2) n = 2; panel(); });
@@ -692,9 +720,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   $("clear").onclick = reset; $("restart").onclick = reset;
 
   $("go").onclick = () => {
-    const a = S.L.x - S.R.x, b = S.R.one - S.L.one, bn = $("buildnote");
+    const a = S.L.x - S.R.x, b = (S.R.one - S.R.neg) - (S.L.one - S.L.neg), bn = $("buildnote");
     if (!S.L.x && !S.R.x) return bn.textContent = "Put at least one x box on the scale.";
-    if (!(S.L.x || S.L.one) || !(S.R.x || S.R.one)) return bn.textContent = "Put something on both sides.";
+    if (isEmpty(S.L) || isEmpty(S.R)) return bn.textContent = "Put something on both sides.";
     if (a === 0) return bn.textContent = b === 0 ? "Both sides are the same. Change one side." : "This scale can never balance. Change one side.";
     let p = b, q = a;
     if (q < 0) { p = -p; q = -q; }
@@ -713,7 +741,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const scale = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
     gh.innerHTML = type === "x"
       ? `<svg width="${BOX * scale}" height="${BOX * scale}" viewBox="0 0 ${BOX} ${BOX}"><g class="xbox"><rect x="1" y="1" width="${BOX - 2}" height="${BOX - 2}" rx="5"/><text x="${BOX / 2}" y="${BOX / 2}">x</text></g></svg>`
-      : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt"><path d="${weightPath(0, 0)}"/><text x="${WT_W / 2}" y="20">1</text></g></svg>`;
+      : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt${type === "neg" ? " neg" : ""}"><path d="${weightPath(0, 0)}"/><text x="${WT_W / 2}" y="20">${type === "neg" ? "−1" : "1"}</text></g></svg>`;
     document.body.appendChild(gh);
     drag = { type, from, gh, id: e.pointerId };
     moveGhost(e);
@@ -737,16 +765,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const step = type === "x" ? 1 : S.D;
     if (from && next[from][type] < step) return;
     if (to && next[to][type] / step + 1 > (type === "x" ? MAX_X : MAX_ONE)) { if (xv !== null) note(`The ${names[to]} is too full.`); else $("buildnote").textContent = `That side is full.`; return; }
-    const one = type === "x" ? "x" : "1";
+    const one = type === "x" ? "x" : type === "neg" ? "(−1)" : "1";
+    const unit = type === "x" ? cnt(1, 0) : type === "neg" ? cnt(0, 0, 1) : cnt(0, 1);
     if (from && to) { // moved across
       next[from][type] -= step; next[to][type] += step;
-      commit(next, { [from]: `− ${one}`, [to]: `+ ${one}` }, { enter: { [to]: type === "x" ? cnt(1, 0) : cnt(0, 1) } });
+      commit(next, { [from]: `− ${one}`, [to]: `+ ${one}` }, { enter: { [to]: unit } });
     } else if (from) {
       next[from][type] -= step;
       commit(next, { [from]: `− ${one}` });
     } else if (to) {
       next[to][type] += step;
-      commit(next, { [to]: `+ ${one}` }, { enter: { [to]: type === "x" ? cnt(1, 0) : cnt(0, 1) } });
+      commit(next, { [to]: `+ ${one}` }, { enter: { [to]: unit } });
     }
   });
   addEventListener("pointercancel", () => { if (drag) { drag.gh.remove(); drag = null; } });
@@ -760,6 +789,93 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
