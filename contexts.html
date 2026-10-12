@@ -180,6 +180,28 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
 .g-fit { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
 .g-pt.hit { fill: var(--green); transform-box: fill-box; transform-origin: center; }
 .g-pair.hit { fill: var(--green); }
+/* Build function: the start value (green) and the rate of change (orange) build y = mx + b one step at a time. */
+.fit button.alt { margin-top: 10px; background: var(--sheet); color: var(--pt); }
+.fit button.alt:hover { background: var(--chip); }
+.fn { margin-top: 12px; text-align: left; }
+.fn-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 2px; }
+.fn-cap { font-weight: 700; color: var(--muted); font-size: 1rem; }
+.fn-val { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.fn-row.start .fn-val { color: var(--green); } .fn-row.rate .fn-val { color: var(--orange); }
+.fn-row.bad .fn-val, .fn-row.bad .fn-cap { color: var(--warn); }
+.fn-eq { margin-top: 8px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 10px; overflow-wrap: anywhere; }
+.fn-eq.long { font-size: 1.4rem; }
+.fn-eq i { font-style: italic; color: var(--pt); }
+.e-rate { color: var(--orange); } .e-start { color: var(--green); }
+.e-blank { display: inline-block; width: 1.4em; height: 1em; vertical-align: -0.1em; border: 2px dashed var(--muted); border-radius: 6px; }
+.g-run, .g-rise { stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.g-back { stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 10 8; }
+.g-run.bad, .g-rise.bad { stroke: var(--warn); }
+.mk-rate { fill: var(--orange); } .mk-back { fill: var(--green); } .mk-bad { fill: var(--warn); }
+.g-dlab { font-family: var(--font-num); font-size: 24px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.g-dlab.rate { fill: var(--orange); } .g-dlab.back { fill: var(--green); } .g-dlab.bad { fill: var(--warn); }
+.g-start { fill: none; stroke: var(--green); stroke-width: 5; transform-box: fill-box; transform-origin: center; }
+.g-startpt { fill: var(--green); stroke: var(--sheet); stroke-width: 3; }
 .g-pair { fill: var(--pt); font-family: var(--font-num); font-size: 22px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
 </style>
 
@@ -201,6 +223,8 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
       <div class="fit">
         <button type="button" id="fitBtn" aria-pressed="false">Draw line</button>
         <p id="fitNote" aria-live="polite" hidden>Not linear</p>
+        <button type="button" id="buildBtn" class="alt">Build function</button>
+        <div class="fn" id="fn" aria-live="polite" hidden></div>
       </div>
     </div>
     <div class="board" id="board">
@@ -278,16 +302,179 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     return Math.max(1, Math.ceil(v / step - 1e-9), Math.ceil(maxV / step + 1 - 1e-9) * (maxV > v ? 1 : 0));
   }
 
-  function render() {
-    tidyRows();
+  // ---- Build function (Shawn): animate how the start value and the rate of change make the function ----
+  // build = how many steps are showing. With n = 0 in the table the start value comes first;
+  // otherwise the rate comes first, then the table is walked back to n = 0 to find the start value.
+  let build = 0, animStep = null;
+  const MINUS = "−";
+  // Numbers as written on the board: up to 4 decimals, otherwise a fraction like 1/3; a real minus sign.
+  function fmt(v) {
+    let s = null;
+    if (Math.abs(v * 1e4 - Math.round(v * 1e4)) < 1e-6) s = num(v);
+    else for (let q = 2; q <= 12 && s == null; q++) if (Math.abs(v * q - Math.round(v * q)) < 1e-6) s = `${Math.round(v * q)}/${q}`;
+    return (s ?? num(+v.toFixed(3))).replace("-", MINUS);
+  }
+  const signed = v => (v > 0 ? "+" : "") + fmt(v);
+  const paren = v => v < 0 ? `(${fmt(v)})` : fmt(v);
+  const same = (a, b) => Math.abs(a - b) <= 1e-6 * (1 + Math.abs(a) + Math.abs(b));
+
+  // Table sorted by x; the change between each row and the next; linear when every change has the same rate.
+  function model(pts) {
+    const rowsX = [];
+    let twoValues = null;
+    for (const p of [...pts].sort((a, b) => a.x - b.x)) {
+      const q = rowsX[rowsX.length - 1];
+      if (q && same(q.x, p.x)) { if (!same(q.y, p.y)) twoValues = p.x; continue; }
+      rowsX.push(p);
+    }
+    const pairs = rowsX.slice(1).map((p, i) => ({ a: rowsX[i], b: p, run: p.x - rowsX[i].x, rise: p.y - rowsX[i].y }));
+    pairs.forEach(q => q.rate = q.rise / q.run);
+    const m = pairs.length ? pairs[0].rate : 0;
+    const linear = pairs.length > 0 && twoValues == null && pairs.every(q => same(q.rate, m));
+    const first = rowsX[0], b = first ? first.y - m * first.x : 0, hasZero = !!first && same(first.x, 0);
+    let steps = [];
+    if (pairs.length && twoValues == null) steps = hasZero ? ["start", "rate", "fn"] : ["rate", "start", "fn"];
+    if (!linear) steps = steps.slice(0, steps.indexOf("rate") + 1);
+    return { rowsX, pairs, m, b, first, linear, hasZero, twoValues, steps };
+  }
+
+  // Draws the steps on the board. Only the step just added (animStep) animates.
+  function drawBuild(g, md, shown, X, Y) {
+    const motion = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const defs = el("defs", {}, g);
+    for (const k of ["rate", "back", "bad"]) {
+      const mk = el("marker", { id: "mk-" + k, viewBox: "0 0 10 10", refX: 7, refY: 5, markerWidth: 4.5, markerHeight: 4.5, orient: "auto" }, defs);
+      el("path", { d: "M0 0L10 5L0 10z", class: "mk-" + k }, mk);
+    }
+    const clip = el("clipPath", { id: "buildClip" }, defs);
+    el("rect", { x: L - 4, y: T - 4, width: PW + 8, height: PH + 8 }, clip);
+    const arrows = el("g", { "clip-path": "url(#buildClip)" }, g);
+    // An arrow grows out of its start; a label fades in once its arrow is drawn.
+    const arrow = (x1, y1, x2, y2, cls, mk, play, delay, dur) => {
+      const a = el("line", { x1, y1, x2, y2, class: cls, "marker-end": `url(#mk-${mk})` }, arrows);
+      if (play && motion) {
+        a.style.transformBox = "view-box"; a.style.transformOrigin = `${x1}px ${y1}px`;
+        const k = Math.abs(x2 - x1) > Math.abs(y2 - y1) ? "scaleX(0)" : "scaleY(0)";
+        a.animate([{ transform: k }, { transform: "none" }], { duration: dur, delay, easing: "ease-out", fill: "backwards" });
+      }
+    };
+    const label = (x, y, txt, cls, anchor, play, delay) => {
+      const t = el("text", { x, y, class: "g-dlab " + cls, "text-anchor": anchor }, g, txt);
+      if (play && motion) t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay, fill: "backwards" });
+    };
+    const DOT = 15; // arrows stop short of the dots so the arrowheads show
+
+    if (shown.has("rate")) {
+      // A staircase between each row and the next: run across, then rise up (or down).
+      const play = animStep === "rate", per = Math.min(1100, 6000 / md.pairs.length);
+      md.pairs.forEach((q, i) => {
+        const ok = same(q.rate, md.m), cls = ok ? "rate" : "bad";
+        const px = X(q.a.x), py = Y(q.a.y), cx = X(q.b.x), qy = Y(q.b.y), d = i * per;
+        const up = qy <= py, wide = cx - px;
+        if (wide > DOT + 8) arrow(px + DOT, py, cx, py, "g-run" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d, per * 0.4);
+        if (Math.abs(qy - py) > DOT + 8) arrow(cx, py, cx, qy + (up ? DOT : -DOT), "g-rise" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d + per * 0.45, per * 0.4);
+        if (wide >= 44 || i === 0) {
+          label((px + cx) / 2, py + (up ? 30 : -14), signed(q.run), cls, "middle", play, d + per * 0.3);
+          const right = cx < L + PW - 90;
+          label(cx + (right ? 12 : -12), (py + qy) / 2 + 8, signed(q.rise), cls, right ? "start" : "end", play, d + per * 0.75);
+        }
+      });
+    }
+    if (shown.has("start")) {
+      const play = animStep === "start", sx0 = X(0), sy0 = Y(md.b);
+      let wait = 0;
+      if (!md.hasZero) {
+        // Walk back from the first row to n = 0 at the same rate (dashed: it is not in the table).
+        const f = md.first, px = X(f.x), py = Y(f.y), up = sy0 < py, dur = 700;
+        if (px - sx0 > DOT + 8) arrow(px - DOT, py, sx0, py, "g-back", "back", play, 0, dur);
+        if (Math.abs(sy0 - py) > 12) arrow(sx0, py, sx0, sy0, "g-back", "back", play, dur, dur);
+        label((px + sx0) / 2, py + (up ? 30 : -14), signed(-f.x), "back", "middle", play, dur * 0.6);
+        label(sx0 + 12, (py + sy0) / 2 + 8, signed(-f.x * md.m), "back", "start", play, dur * 1.6);
+        wait = dur * 2;
+        el("circle", { cx: sx0, cy: sy0, r: 11, class: "g-startpt" }, g);
+      }
+      const ring = el("circle", { cx: sx0, cy: sy0, r: 22, class: "g-start" }, g);
+      if (play && motion) ring.animate([{ transform: "scale(0)" }, { transform: "scale(1.6)", offset: 0.5 }, { transform: "scale(1)" }], { duration: 800, delay: wait, easing: "ease-out", fill: "backwards" });
+      if (!md.hasZero) label(sx0 + 16, sy0 + (sy0 < T + 40 ? 34 : -14), `(0, ${fmt(md.b)})`, "back", "start", play, wait + 300);
+    }
+  }
+
+  // The side panel: one row per step and the function filling in as each part is found.
+  function showPanel(md, shown) {
+    const box = $("fn");
+    box.hidden = !build && !buildMsg;
+    box.textContent = "";
+    if (buildMsg) { const r = document.createElement("div"); r.className = "fn-row bad"; r.innerHTML = `<span class="fn-cap"></span>`; r.firstChild.textContent = buildMsg; box.appendChild(r); }
+    const hx = $("hx").value.trim() || "x", hy = $("hy").value.trim() || "y";
+    const row = (cls, cap, val) => {
+      const r = document.createElement("div"); r.className = "fn-row " + cls;
+      const c = document.createElement("span"); c.className = "fn-cap"; c.textContent = cap;
+      const v = document.createElement("span"); v.className = "fn-val"; v.textContent = val;
+      r.append(c, v); box.appendChild(r);
+    };
+    for (const s of md.steps) {
+      if (!shown.has(s)) continue;
+      if (s === "start") {
+        if (md.hasZero) row("start", `Start value (${hx} = 0)`, fmt(md.b));
+        else row("start", "Start value", `${fmt(md.first.y)} ${MINUS} ${fmt(md.first.x)} × ${paren(md.m)} = ${fmt(md.b)}`);
+      } else if (s === "rate") {
+        const q = md.pairs[0];
+        if (md.linear) row("rate", "Rate of change", `${fmt(q.rise)} ÷ ${fmt(q.run)} = ${fmt(md.m)}`);
+        else {
+          const rates = md.pairs.map(p => fmt(p.rate)).filter((r, i, a) => a.indexOf(r) === i).slice(0, 3);
+          row("rate bad", "Rate changes: not linear", rates.join(", "));
+        }
+      }
+    }
+    if (!build || !md.linear) return;
+    // y = mx + b with blanks for the parts not found yet; a multi-letter heading reads "5 × hours".
+    const eq = document.createElement("div"); eq.className = "fn-eq";
+    const put = (txt, cls, tag = "span") => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; eq.appendChild(e); return e; };
+    const knowM = shown.has("rate"), knowB = shown.has("start"), m = md.m, b = md.b;
+    put(hy, "", "i"); put(" = ");
+    const short = hx.length === 1;
+    if (!knowM) { put("", "e-blank"); short ? put(hx, "", "i") : (put(" × "), put(hx, "", "i")); }
+    else if (!same(m, 0) || !knowB) {
+      const coef = short && same(m, 1) ? "" : short && same(m, -1) ? MINUS : short && fmt(m).includes("/") ? `(${fmt(m)})` : fmt(m);
+      if (coef) put(coef, "e-rate");
+      if (!short && coef) put(" × ");
+      put(hx, "", "i");
+    }
+    if (!knowB) { put(" + "); put("", "e-blank"); }
+    else if (knowM && same(m, 0)) put(fmt(b), "e-start");
+    else if (!same(b, 0)) { put(b < 0 ? ` ${MINUS} ` : " + "); put(fmt(Math.abs(b)), "e-start"); }
+    eq.classList.toggle("long", eq.textContent.length > 12);
+    box.appendChild(eq);
+    if (animStep && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // The part just found pops into the function; the last step pops the whole function.
+      const pops = animStep === "fn" ? [eq] : eq.querySelectorAll(animStep === "rate" ? ".e-rate" : ".e-start");
+      const late = animStep === "fn" ? 1200 : animStep === "start" && !md.hasZero ? 1500 : 700;
+      pops.forEach(e => { if (e !== eq) e.style.display = "inline-block"; e.animate([{ transform: "scale(0.4)", opacity: 0 }, { transform: "scale(1.3)", opacity: 1, offset: 0.6 }, { transform: "scale(1)" }], { duration: 600, delay: late, easing: "ease-out", fill: "backwards" }); });
+    }
+  }
+  let buildMsg = "";
+
+  function currentPts() {
     const pts = [];
     for (const tr of rows.children) {
       const [a, b] = tr.querySelectorAll("input");
       const x = parse(a), y = parse(b);
       if (x != null && y != null) pts.push({ x, y });
     }
+    return pts;
+  }
+
+  function render() {
+    tidyRows();
+    const pts = currentPts();
+    const md = model(pts), steps = md.steps;
+    if (build > steps.length) build = steps.length;
+    if (!animStep) setBuildBtn(steps);
+    const shown = new Set(steps.slice(0, build)), fnShown = shown.has("fn");
     const sx = scaleOf("sx"), sy = scaleOf("sy");
-    const maxX = Math.max(0, ...pts.map(p => p.x)), maxY = Math.max(0, ...pts.map(p => p.y));
+    const maxX = Math.max(0, ...pts.map(p => p.x));
+    // While building, the grid also reaches the start value so the work-back can land on the axis.
+    const maxY = Math.max(0, ...pts.map(p => p.y), build && md.linear ? md.b : 0);
     const nx = Math.min(400, squaresWith("mx", maxX, sx)), ny = Math.min(400, squaresWith("my", maxY, sy));
     const cw = PW / nx, ch = PH / ny;
     const X = v => L + v / sx * cw, Y = v => T + PH - v / sy * ch;
@@ -316,7 +503,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     // Drawing order: points, then the line over them, then the ordered-pair labels on top.
     let fit = null, missed = false;
     const onLine = new Set();
-    if (showFit && pts.length >= 2) {
+    if ((showFit || fnShown) && pts.length >= 2) {
       const n = pts.length, mx = pts.reduce((a, p) => a + p.x, 0) / n, my = pts.reduce((a, p) => a + p.y, 0) / n;
       const sxx = pts.reduce((a, p) => a + (p.x - mx) ** 2, 0), sxy = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0);
       if (sxx < 1e-9 * (1 + maxX)) { // every x is the same: a vertical line through all of them
@@ -338,6 +525,8 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
       el("rect", { x: L, y: T, width: PW, height: PH }, clip);
       line = el("line", { ...fit, class: "g-fit", "clip-path": "url(#plotClip)", pathLength: 1 }, g);
     }
+    if (build) drawBuild(g, md, shown, X, Y);
+    showPanel(md, shown);
     // Labels flip left or below near the right and top edges.
     for (const p of pts) {
       const px = X(p.x), py = Y(p.y);
@@ -346,7 +535,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     }
 
     // On a button press, the line sweeps across and each point it hits pops into green as the line reaches it.
-    if (animate && line && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if ((animate || animStep === "fn") && line && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const DUR = 1400, css = getComputedStyle(svg), blue = css.getPropertyValue("--pt").trim(), green = css.getPropertyValue("--green").trim();
       line.animate([{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { duration: DUR, easing: "ease-in-out", fill: "backwards" });
       line.style.strokeDasharray = "1";
@@ -379,13 +568,238 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     showFit = !showFit;
     $("fitBtn").textContent = showFit ? "Hide line" : "Draw line";
     $("fitBtn").setAttribute("aria-pressed", String(showFit));
+    build = 0; buildMsg = ""; setBuildBtn();
     animate = showFit; render(); animate = false;
   });
+  // Build function walks one step per press; the label names the next step.
+  const NAMES = { start: "start value", rate: "rate of change", fn: "the function" };
+  function setBuildBtn(steps) {
+    const btn = $("buildBtn");
+    if (!build) btn.textContent = "Build function";
+    else btn.textContent = build < steps.length ? `Next: ${NAMES[steps[build]]}` : "Clear";
+  }
+  $("buildBtn").addEventListener("click", () => {
+    const pts = currentPts(), steps = model(pts).steps;
+    buildMsg = "";
+    if (!build && !steps.length) buildMsg = pts.length < 2 ? "Type at least two rows." : "One input has two outputs: not a function.";
+    else if (build >= steps.length) build = 0;
+    else { build++; animStep = steps[build - 1]; }
+    if (showFit) { showFit = false; $("fitBtn").textContent = "Draw line"; $("fitBtn").setAttribute("aria-pressed", "false"); }
+    render(); animStep = null;
+    setBuildBtn(steps);
+  });
   let animate = false;
-  document.addEventListener("input", render);
+  document.addEventListener("input", () => { buildMsg = ""; render(); });
   render();
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

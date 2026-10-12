@@ -253,6 +253,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .msg .eqn .eq + .eq { margin-top: 10px; }
 .msg .eqn .frac { font-size: 1.35rem; }
 .msg .eqn .lead { display: block; margin-top: 8px; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
+.msg .why .big { display: block; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.3; }
+.msg .why .do { display: block; margin-top: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; }
+.msg .why .tag { vertical-align: middle; }
 </style>
 <!-- Stacked Addition and Subtraction (grades 3 to 7; Shawn 2026-10-08): the same tool as Stacked Multiplication, with an
      Add / Subtract switch at the top. Type a question like 456 + 278 or press New question, work it out in the boxes,
@@ -513,15 +516,15 @@ window.Written = (() => {
 
     function show() {
       if (!prob) { msg.innerHTML = `<p class="lead">${cfg.start}</p>`; return; }
-      if (!result) { msg.innerHTML = `<p class="lead">Work it out in the boxes. Press <b>Check answer</b> any time to see how you are doing.</p>`; return; }
+      if (!result) { msg.innerHTML = `<p class="lead">Fill in the boxes. Press <b>Check answer</b> any time.</p>`; return; }
       if (result.done) { msg.innerHTML = `<p class="res good">✓ You got it!</p><div class="eqn">${cfg.done(prob)}</div>`; return; }
       const it = result.item;
-      const head = !result.empty ? (it.point ? "Not quite. Look at the red decimal point." : "Not quite. Look at the red box.")
-        : it.point ? "Next, put in the decimal point: click one of the orange dots."
-        : result.okCount ? "So far, so good! Next, fill in the orange box." : "Start with the orange box.";
+      const head = !result.empty ? (it.point ? "Oops! Look at the red dot." : "Oops! Look at the red box.")
+        : it.point ? "Next: put in the dot."
+        : result.okCount ? "Good! Next: the orange box." : "Start here: the orange box.";
       const why = typeof it.why === "function" ? it.why(result.v) : it.why;
       msg.innerHTML = `<p class="res ${result.empty ? "next" : "bad"}">${head}</p>` +
-        (explain.checked ? `<p class="why">${why}</p>` : `<p class="lead">Tick <b>Show explanation</b> for help with this one.</p>`);
+        (explain.checked ? `<div class="why">${why}</div>` : `<p class="lead">Tick <b>Show explanation</b> for help.</p>`);
     }
 
     function check() {
@@ -569,22 +572,23 @@ window.Written = (() => {
     s = s.padStart(dp + 1, "0");
     return (s.slice(0, -dp).replace(/^0+(?=\d)/, "") || "0") + "." + s.slice(-dp);
   }
+  // A kid-sized explanation (Shawn): one big math line (or a few), then one short thing to do.
+  const say = (math, action) => (math ? `<span class="big">${[].concat(math).join("<br>")}</span>` : "") + `<span class="do">${action}</span>`;
   const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
   const s = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-  return { page, want, pointItem, num, norm, withPoint, rnd, s };
+  return { page, want, pointItem, num, norm, withPoint, rnd, s, say };
 })();
 </script>
 <script>
 (() => {
-  const { want, pointItem, num, withPoint, rnd, s } = Written;
+  const { want, pointItem, num, withPoint, rnd, s, say } = Written;
   const m = x => `<span class="m">${x}</span>`;
   const $ = id => document.getElementById(id);
   let op = "+";
 
   // Place names, by place: 0 = ones; -1 = tenths.
   const PLACE = { 4: "ten thousands", 3: "thousands", 2: "hundreds", 1: "tens", 0: "ones", [-1]: "tenths", [-2]: "hundredths", [-3]: "thousandths" };
-  const ONE = { 5: "hundred thousand", 4: "ten thousand", 3: "thousand", 2: "hundred", 1: "ten", 0: "one", [-1]: "tenth", [-2]: "hundredth" };
 
   // Line the two numbers up on the decimal point: digit strings of the same length, dp places after the point.
   function align(A, B) {
@@ -670,6 +674,8 @@ window.Written = (() => {
     const need = p => p < String(T).length || p <= dp;   // places that must hold a digit
     const items = [];
 
+    // Explanations are kid-sized (Shawn): a math line, then one short thing to do.
+    const empty = say("", "Leave this box empty.");
     if (add) {
       sh.lab(R.small, LAB, "carry");
       const carry = [];
@@ -681,18 +687,11 @@ window.Written = (() => {
         if (inB(p)) terms.push(dy(p));
         if (c) terms.push(c);
         const t = terms.reduce((u, v) => u + v, 0), d = t % 10, co = Math.floor(t / 10);
-        const sum = terms.length > 1 ? `${m(terms.join(" + ") + " = " + t)}${c ? " (the last 1 is the one you carried)" : ""}`
-          : terms.length ? `only ${m(terms[0])}${c && !inA(p) && !inB(p) ? " (the 1 you carried)" : ""}, so ${m(t)}` : "";
+        const math = terms.length > 1 ? `${terms.join(" + ")} = ${t}` : String(t);
         const lastCol = p === L.N - 1;
-        const say = `Add the ${place(p)}: ${sum}.`;
-        items.push(want(ans[p], d, need(p) ? "req" : "opt", !terms.length
-          ? "Nothing is left to add here, so this box stays empty."
-          : say + (co ? (lastCol ? ` Write ${m(t)}: the ${m(d)} here and the ${m(co)} in the box to its left.` : ` That makes ${co} ${ONE[p - dp + 1]}, so write the ${m(d)} here and carry the ${m(co)}.`) : ` Write ${m(t)} here.`)));
-        if (carry[p + 1]) {
-          items.push(want(carry[p + 1], co, "opt", co
-            ? `${say} That is ${m(co)} ${ONE[p - dp + 1]} and ${m(d)} ${PLACE[p - dp]}: carry the ${m(co)} into this small box, at the top of the ${place(p + 1)}.`
-            : `${say} That is less than 10, so there is nothing to carry. Leave this small box empty.`));
-        }
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", !terms.length ? empty
+          : say(math, co ? (lastCol ? `Write ${t}: the ${d} here, the ${co} next to it.` : `Write ${d}. Carry ${co}.`) : `Write ${t}.`)));
+        if (carry[p + 1]) items.push(want(carry[p + 1], co, "opt", say(math, co ? `Carry ${co}. Put it in the little box.` : "Nothing to carry. Leave it empty.")));
         c = co;
       }
     } else {
@@ -705,26 +704,17 @@ window.Written = (() => {
       for (let p = 0; p < L.N; p++) {
         const a = dx(p), b = dy(p), cur = a - gave, takes = cur < b, now = takes ? cur + 10 : cur;
         const changed = gave || takes;
-        let why;
-        if (cur < 0) {
-          why = `The ${place(p)} column has 0, so it had to regroup too: it got 10 ${PLACE[p - dp]} from the ${place(p + 1)}, then gave 1 to the column on its right. ${m("10 − 1 = 9")}. Write ${m(9)} in this small box.`;
-        } else if (takes) {
-          why = `In the ${place(p)}, ${m(cur)} is less than ${m(b)}, so regroup: take 1 ${ONE[p - dp + 1]} from the next column and trade it for 10 ${PLACE[p - dp]}. ${m(`${cur} + 10 = ${now}`)}${gave ? ` (this column already gave 1 away, so it had ${cur})` : ""}. Write ${m(now)} in this small box.`;
-        } else if (gave) {
-          why = `You took 1 from the ${place(p)} for the column on its right, so ${m(a)} becomes ${m(`${a} − 1 = ${now}`)}. Write ${m(now)} in this small box.`;
-        } else {
-          why = `Nothing was regrouped in the ${place(p)}, so leave this small box empty.`;
-        }
+        const why = cur < 0 ? say("10 − 1 = 9", "This 0 borrows 10, then gives 1 away. Write 9 up top.")
+          : takes ? say(`${cur} + 10 = ${now}`, `${cur} is too small to take away ${b}. Borrow 10. Write ${now} up top.`)
+          : gave ? say(`${a} − 1 = ${now}`, `You borrowed 1 from here. Write ${now} up top.`)
+          : say("", "Nothing changed here. Leave it empty.");
         if (box[p]) items.push({ el: box[p], why, ok: v => v === "" || v === String(changed ? now : a) });
         const d = now - b;
-        const top = changed ? `${m(now)} (after regrouping)` : m(now);
-        items.push(want(ans[p], d, need(p) ? "req" : "opt", inA(p)
-          ? `Subtract the ${place(p)}: ${top} − ${m(b)} = ${m(d)}.` + (takes ? ` ${m(cur)} was too small to take ${m(b)} away, so it had to regroup first.` : "") + (need(p) ? ` Write ${m(d)} here.` : " Nothing is left here, so this box stays empty (or write 0).")
-          : "Nothing is left here, so this box stays empty."));
+        items.push(want(ans[p], d, need(p) ? "req" : "opt", inA(p) && need(p) ? say(changed ? [`${a} → ${now}`, `${now} − ${b} = ${d}`] : `${now} − ${b} = ${d}`, changed ? `The ${a} became ${now}. Write ${d}.` : `Write ${d}.`) : empty));
         gave = takes ? 1 : 0;
       }
     }
-    if (slots) items.push(pointItem(slots, dp, `The numbers are lined up on their decimal points, so the point in the answer goes straight down from them. Click the dot under the other points.`));
+    if (slots) items.push(pointItem(slots, dp, say("", "Put the dot right under the other dots.")));
     return items;
   }
 
@@ -749,5 +739,212 @@ window.Written = (() => {
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

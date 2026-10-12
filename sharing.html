@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Sharing and Grouping</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Sharing and Grouping (grade 2): division as equal groups, two ways.
+   Share: share the counters equally into N circles, how many in each?  Groups of: put N in each circle, how many circles? */
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 48px; padding: 6px 14px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.board svg { aspect-ratio: 1000 / 700; }
+.tray { fill: var(--paper); stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 10 7; }
+.tray-lbl { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+.grp { fill: var(--chip); stroke: var(--ink); stroke-width: 4; }
+.grp.hot { stroke: var(--pt); stroke-width: 7; }
+.grp.ok { stroke: var(--green); stroke-width: 7; }
+.grp.empty { cursor: pointer; }
+.grp-n { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
+.grp-n.ok { fill: var(--green); }
+.ctr { fill: var(--pt); stroke: var(--sheet); stroke-width: 2.5; cursor: grab; transition: transform 0.28s ease; }
+.ctr.drag { transition: none; cursor: grabbing; stroke: var(--ink); }
+.hidecounts .grp-n { display: none; }
+
+.panel .card { display: flex; flex-direction: column; gap: 10px; }
+.step { display: grid; grid-template-columns: minmax(0, 1fr) 48px 64px 48px; align-items: center; gap: 8px; }
+.step label { font-weight: 700; font-size: 1.1rem; }
+.step button { min-height: 48px; font-size: 1.5rem; padding: 0; }
+.step output { font-family: var(--font-num); font-weight: 700; font-size: 2rem; text-align: center; }
+.ask { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; margin: 0; }
+.ask b { font-family: var(--font-num); color: var(--pt); }
+.answer-row { display: flex; gap: 10px; align-items: stretch; }
+#ans { width: 0; flex: 1 1 auto; min-width: 0; height: 72px; font-family: var(--font-num); font-weight: 700; font-size: 2.8rem; text-align: center;
+  color: var(--ink); background: var(--paper); border: 3px solid var(--pt); border-radius: 12px; }
+#check { font-size: 1.3rem; padding: 8px 20px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.fb { min-height: 1.6em; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; line-height: 1.25; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.div { display: flex; justify-content: center; gap: 6px; font-family: var(--font-num); font-weight: 700; padding-top: 10px; border-top: 1px dashed var(--grid-major); }
+.div > span { display: flex; flex-direction: column; align-items: center; font-size: 2.2rem; line-height: 1.1; }
+.div small { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); max-width: 7em; text-align: center; line-height: 1.2; }
+.div .q { color: var(--muted); }
+.div .a { color: var(--green); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.row button { flex: 1 1 auto; min-height: 48px; font-size: 1.05rem; }
+#show { background: var(--green); color: var(--sheet); border-color: var(--green); }
+button:disabled { opacity: 0.45; cursor: default; }
+.toggles { margin-top: 0; }
+@media (min-width: 861px) and (max-height: 820px) {
+  .panel { gap: 10px; }
+  .panel .card { padding: 12px; gap: 8px; }
+  .ask { font-size: 1.25rem; }
+  #ans { height: 60px; font-size: 2.3rem; }
+  .div > span { font-size: 1.8rem; }
+  .step button, .row button, #new { min-height: 42px; }
+  .step output { font-size: 1.7rem; }
+  .fb { font-size: 1.15rem; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Sharing and Grouping</h1></div>
+    <div class="opts">
+      <span class="seg" id="mode"><button type="button" data-v="share" aria-pressed="true">Share equally</button><button type="button" data-v="groups" aria-pressed="false">Groups of</button></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Counters and groups"></svg></div>
+    <div class="panel">
+      <div class="card">
+        <div class="step"><label for="tot-o">Counters</label><button type="button" data-k="tot" data-d="-1" aria-label="Fewer counters">−</button><output id="tot-o">6</output><button type="button" data-k="tot" data-d="1" aria-label="More counters">+</button></div>
+        <div class="step"><label for="per-o" id="per-l">Groups</label><button type="button" data-k="per" data-d="-1" aria-label="Less">−</button><output id="per-o">3</output><button type="button" data-k="per" data-d="1" aria-label="More">+</button></div>
+        <button type="button" id="new">New problem</button>
+      </div>
+      <div class="card">
+        <p class="ask" id="ask"></p>
+        <div class="answer-row">
+          <input id="ans" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" aria-label="Your answer">
+          <button type="button" id="check">Check</button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <div class="div" id="div"></div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button type="button" id="deal"></button>
+          <button type="button" id="add">+ New group</button>
+        </div>
+        <div class="row">
+          <button type="button" id="show">Show me</button>
+          <button type="button" id="back">Put all back</button>
+        </div>
+        <div class="toggles"><label><input type="checkbox" id="counts" checked> Show how many in each group</label></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const W = 1000, TRAY = { x: 14, y: 12, w: 972, h: 128 }, TOP = 158, BOT = 692;
+  const MAXTOT = 30, MAXPER = 10;
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+  // mode "share": per = number of groups; mode "groups": per = counters in each group.
+  let mode = "share", tot = 6, per = 3;
+  let pile = [], groups = [], turn = 0, solved = false, busy = false;
+  const dots = []; // one <circle> per counter id
+
+  const gTray = el("g", {}), gGroups = el("g", {}), gDots = el("g", {});
+  el("rect", { x: TRAY.x, y: TRAY.y, width: TRAY.w, height: TRAY.h, rx: 18, class: "tray" }, gTray);
+
+  const answer = () => Math.floor(tot / per);
+  const left = () => tot % per;
+
+  function reset() {
+    pile = Array.from({ length: tot }, (_, i) => i);
+    groups = mode === "share" ? Array.from({ length: per }, () => []) : [];
+    turn = 0; solved = false;
+    while (dots.length < tot) {
+      const c = el("circle", { r: 17, class: "ctr" }, gDots);
+      c.dataset.id = dots.length;
+      dots.push(c);
+    }
+    dots.forEach((c, i) => (c.style.display = i < tot ? "" : "none"));
+    $("ans").value = "";
+    $("fb").textContent = ""; $("fb").className = "fb";
+    text();
+    render();
+  }
+
+  // Words, steppers and the division sentence.
+  function text() {
+    $("tot-o").textContent = tot; $("per-o").textContent = per;
+    $("per-l").textContent = mode === "share" ? "Groups" : "In each group";
+    $("ask").innerHTML = mode === "share"
+      ? `Share <b>${tot}</b> counters equally into <b>${per}</b> groups. How many in each group?`
+      : `Put <b>${per}</b> counters in each group. How many groups can you make?`;
+    $("deal").textContent = mode === "share" ? "Give one to each group" : `Make a group of ${per}`;
+    $("add").hidden = mode === "share";
+    const a = solved ? `<span class="a">${answer()}</span>` : `<span class="q">?</span>`;
+    const lo = left() && solved ? `<span style="font-size:1.2rem;align-self:center">${left()} left over</span>` : "";
+    const lbl = mode === "share" ? ["counters", "groups", "in each group"] : ["counters", "in each group", "groups"];
+    $("div").innerHTML = `<span>${tot}<small>${lbl[0]}</small></span><span>÷</span><span>${per}<small>${lbl[1]}</small></span><span>=</span><span>${a}<small>${lbl[2]}</small></span>${lo}`;
+  }
+
+  // Layout: pick how many rows of circles give the biggest circles.
+  let spots = [], cs = 40;
+  function layout() {
+    const n = Math.max(groups.length, 1);
+    let best = null;
+    for (let r = 1; r <= 5; r++) {
+      const cols = Math.ceil(n / r), ch = (BOT - TOP) / r;
+      const R = Math.min(W / cols, ch - 46) / 2 - 10;
+      if (!best || R > best.R) best = { r, cols, R, ch };
+    }
+    const { r, cols, R, ch } = best;
+    spots = groups.map((_, i) => {
+      const row = Math.floor(i / cols), inRow = Math.min(cols, n - row * cols);
+      const cw = W / cols, x0 = (W - inRow * cw) / 2;
+      return { x: x0 + cw * (i % cols + 0.5), y: TOP + ch * row + (ch - 40) / 2, R };
+    });
+    // One counter size for every circle, so equal groups look equal.
+    const most = Math.max(1, ...groups.map(g => g.length));
+    const c = Math.ceil(Math.sqrt(most)), rr = Math.ceil(most / c);
+    cs = Math.min(44, (0.9 * R) / (Math.hypot(c - 1, rr - 1) / 2 + 0.42));
+  }
+  function inGroup(k, i) {
+    const c = Math.ceil(Math.sqrt(k)), r = Math.ceil(k / c), row = Math.floor(i / c);
+    const inRow = Math.min(c, k - row * c);
+    return [(i % c - (inRow - 1) / 2) * cs, (row - (r - 1) / 2) * cs];
+  }
+  // The pile: rows of 20, in fives like a ten-frame.
+  function inPile(i) {
+    const row = Math.floor(i / 20), j = i % 20;
+    const x = 70 + j * 41 + Math.floor(j / 5) * 18;
+    return [x, TRAY.y + 42 + row * 44];
+  }
+
+  function render() {
+    layout();
+    gGroups.textContent = "";
+    const done = isDone();
+    groups.forEach((g, i) => {
+      const s = spots[i];
+      const ok = done && solved;
+      el("circle", { cx: s.x, cy: s.y, r: s.R, class: "grp" + (ok ? " ok" : "") + (!g.length && mode === "groups" ? " empty" : ""), "data-g": i }, gGroups);
+      const t = el("text", { x: s.x, y: s.y + s.R + Math.min(34, 10 + s.R * 0.3), class: "grp-n" + (ok ? " ok" : ""), "font-size": Math.max(18, Math.min(34, s.R * 0.4)) }, gGroups);
+      t.textContent = g.length;
+    });
+    if (!groups.length) {
+      const t = el("text", { x: W / 2, y: (TOP + BOT) / 2, class: "tray-lbl", "text-anchor": "middle" }, gGroups);
+      t.textContent = "Press + New group to make a circle";
+    }
+    pile.forEach((id, i) => place(id, ...inPile(i), 17));
+    groups.forEach((g, gi) => g.forEach((id, i) => {
+      const [dx, dy] = inGroup(g.length, i);
+      place(id, spots[gi].x + dx, spots[gi].y + dy, cs * 0.4);
+    }));
+    $("deal").disabled = busy || pile.length < per;
+    $("show").disabled = busy || isDone();
+    $("back").disabled = busy;
+    $("add").disabled = busy || groups.length >= MAXTOT;
+  }
+  function place(id, x, y, r) {
+    const c = dots[id];
+    if (c.classList.contains("drag")) return;
+    c.setAttribute("r", r);
+    c.style.transform = `translate(${x}px, ${y}px)`;
+    c.dataset.x = x; c.dataset.y = y;
+  }
+
+  // Done means: nothing more can be shared, and every group that has counters is equal.
+  function isDone() {
+    if (mode === "share") return pile.length < per && groups.every(g => g.length === groups[0].length);
+    const full = groups.filter(g => g.length);
+    return pile.length < per && full.length > 0 && full.every(g => g.length === per) && full.length === groups.length;
+  }
+
+  const from = id => (pile.includes(id) ? pile : groups.find(g => g.includes(id)));
+  function move(id, to) {
+    const f = from(id);
+    f.splice(f.indexOf(id), 1);
+    to.push(id);
+    if (solved && !isDone()) solved = false;
+    $("fb").textContent = ""; $("fb").className = "fb";
+    text();
+  }
+
+  // Helpers: one round of dealing, or one whole group.
+  function step() {
+    if (mode === "share") {
+      if (pile.length < per) return false;
+      for (let i = 0; i < per; i++) move(pile[pile.length - 1], groups[i]);
+    } else {
+      if (pile.length < per) return false;
+      // Use an empty circle if there is one, otherwise make a new one.
+      let g = groups.find(x => !x.length);
+      if (!g) { if (groups.length >= MAXTOT) return false; groups.push(g = []); }
+      for (let i = 0; i < per; i++) move(pile[pile.length - 1], g);
+    }
+    render();
+    return true;
+  }
+  function showMe(then) {
+    busy = true; render();
+    const tick = () => {
+      if (mode === "share") {
+        // Make every circle equal first (take extras back), then deal.
+        const low = Math.min(...groups.map(g => g.length));
+        const extra = groups.find(g => g.length > low);
+        if (extra) { move(extra[extra.length - 1], pile); render(); return setTimeout(tick, 220); }
+      } else {
+        const over = groups.find(g => g.length > per);
+        if (over) { move(over[over.length - 1], pile); render(); return setTimeout(tick, 220); }
+        // A part-filled circle gets filled if there are enough counters, otherwise emptied.
+        const part = groups.find(g => g.length && g.length < per);
+        if (part) {
+          if (pile.length + part.length >= per) move(pile[pile.length - 1], part);
+          else move(part[part.length - 1], pile);
+          render(); return setTimeout(tick, 220);
+        }
+        const empty = groups.findIndex(g => !g.length);
+        if (empty >= 0 && pile.length < per) { groups.splice(empty, 1); render(); return setTimeout(tick, 220); }
+      }
+      if (step()) return setTimeout(tick, 420);
+      busy = false; render();
+      if (then) then();
+    };
+    tick();
+  }
+
+  // Dragging and tapping counters.
+  let drag = null;
+  const toSvg = e => {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  };
+  svg.addEventListener("pointerdown", e => {
+    if (busy) return;
+    const t = e.target;
+    if (t.classList.contains("grp") && t.classList.contains("empty")) {
+      groups.splice(+t.dataset.g, 1); render(); return;
+    }
+    if (!t.classList.contains("ctr")) return;
+    const p = toSvg(e);
+    drag = { id: +t.dataset.id, c: t, x0: p.x, y0: p.y, ox: +t.dataset.x, oy: +t.dataset.y, moved: false };
+    svg.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = toSvg(e), dx = p.x - drag.x0, dy = p.y - drag.y0;
+    if (!drag.moved && Math.hypot(dx, dy) < 8) return;
+    if (!drag.moved) { drag.moved = true; drag.c.classList.add("drag"); gDots.appendChild(drag.c); }
+    drag.c.style.transform = `translate(${drag.ox + dx}px, ${drag.oy + dy}px)`;
+    const hot = target(p);
+    gGroups.querySelectorAll(".grp").forEach(c => c.classList.toggle("hot", hot !== null && hot !== pile && +c.dataset.g === groups.indexOf(hot)));
+  });
+  function target(p) {
+    if (p.y < TRAY.y + TRAY.h + 8) return pile;
+    let best = null, bd = Infinity;
+    spots.forEach((s, i) => { const d = Math.hypot(p.x - s.x, p.y - s.y); if (d < s.R + 20 && d < bd) { bd = d; best = groups[i]; } });
+    return best;
+  }
+  const end = e => {
+    if (!drag) return;
+    const { id, c, moved } = drag;
+    drag = null;
+    c.classList.remove("drag");
+    if (!moved) {
+      // Tap: from the pile into the next circle; from a circle back to the pile.
+      if (pile.includes(id)) {
+        let g;
+        if (mode === "share") { g = groups[turn % per]; turn++; }
+        else { g = groups[groups.length - 1]; if (!g) groups.push(g = []); }
+        move(id, g);
+      } else move(id, pile);
+    } else {
+      const to = target(toSvg(e));
+      if (to && to !== from(id)) move(id, to);
+    }
+    render();
+  };
+  svg.addEventListener("pointerup", end);
+  svg.addEventListener("pointercancel", end);
+
+  // Checking the answer.
+  function check() {
+    const v = $("ans").value.trim();
+    const fb = $("fb");
+    if (!/^\d+$/.test(v)) { fb.className = "fb no"; fb.textContent = mode === "share" ? "Type how many are in each group." : "Type how many groups."; return; }
+    if (+v === answer()) {
+      const good = () => {
+        solved = true; text(); render();
+        fb.className = "fb ok";
+        fb.textContent = mode === "share"
+          ? `Yes! ${tot} shared into ${per} groups is ${answer()} in each group${left() ? `, with ${left()} left over` : ""}.`
+          : `Yes! ${tot} in groups of ${per} makes ${answer()} groups${left() ? `, with ${left()} left over` : ""}.`;
+      };
+      if (isDone()) good(); else showMe(good);
+      return;
+    }
+    fb.className = "fb no";
+    const placed = tot - pile.length;
+    if (mode === "share") {
+      if (!placed) fb.textContent = "Not yet. Share the counters into the circles to find out.";
+      else if (pile.length >= per) fb.textContent = `Not yet. There are still ${pile.length} counters to share.`;
+      else if (!isDone()) fb.textContent = "Not yet. Are the groups equal?";
+      else fb.textContent = "Not yet. Count the counters in one group.";
+    } else {
+      if (!placed) fb.textContent = `Not yet. Put ${per} counters in a circle, then make another group.`;
+      else if (pile.length >= per) fb.textContent = `Not yet. You can still make another group of ${per}.`;
+      else if (!isDone()) fb.textContent = `Not yet. Does every group have ${per}?`;
+      else fb.textContent = "Not yet. Count the circles.";
+    }
+  }
+
+  // Controls.
+  document.querySelectorAll(".step button").forEach(b => b.addEventListener("click", () => {
+    if (busy) return;
+    const d = +b.dataset.d;
+    if (b.dataset.k === "tot") tot = Math.max(1, Math.min(MAXTOT, tot + d));
+    else per = Math.max(1, Math.min(MAXPER, per + d));
+    reset();
+  }));
+  $("new").addEventListener("click", () => {
+    if (busy) return;
+    // Facts that come out even, small enough for grade 2.
+    const q = rnd(2, 5); per = rnd(2, 5);
+    tot = per * q;
+    reset();
+  });
+  $("mode").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || busy || b.dataset.v === mode) return;
+    $("mode").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    mode = b.dataset.v;
+    // The same fact, the other way: 6 ÷ 3 = 2 becomes 6 ÷ 2 = 3.
+    if (tot % per === 0 && tot / per <= MAXPER) per = tot / per;
+    reset();
+  });
+  $("check").addEventListener("click", () => !busy && check());
+  $("ans").addEventListener("keydown", e => { if (e.key === "Enter" && !busy) check(); });
+  $("ans").addEventListener("input", () => { $("ans").value = $("ans").value.replace(/\D/g, ""); });
+  $("deal").addEventListener("click", () => { if (!busy) { if (mode === "share") turn = 0; step(); } });
+  $("add").addEventListener("click", () => { if (!busy && groups.length < MAXTOT) { groups.push([]); render(); } });
+  $("show").addEventListener("click", () => !busy && showMe());
+  $("back").addEventListener("click", () => {
+    if (busy) return;
+    groups.forEach(g => g.splice(0).forEach(id => pile.push(id)));
+    pile.sort((a, b) => a - b);
+    if (mode === "groups") groups = [];
+    turn = 0; solved = false;
+    $("fb").textContent = ""; text(); render();
+  });
+  $("counts").addEventListener("change", () => svg.classList.toggle("hidecounts", !$("counts").checked));
+
+  reset();
+})();
+</script>
+
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

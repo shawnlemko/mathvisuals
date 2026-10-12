@@ -934,78 +934,86 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const tn = n => n ? " " + (n < 0 ? MINUS : "+") + " " + Math.abs(n) : ""; // + 5 / − 5 / nothing
   const X2 = "x" + sup2;
 
-  // The words and the algebra for step i of the typed expression.
+  // Show steps (Shawn 2026-10-08): only the algebra from trinomial to vertex form, one line per click.
+  // Kinds: "start" (tiles into the area model), "factor" (a > 1: one model per x²),
+  // "pairs" (zero pairs: + inside the bracket and − after it, together), "read" (vertex form).
+  const stepKinds = () => target.a > 1 ? ["start", "factor", "pairs", "read"] : ["start", "pairs", "read"];
   function stepText(i) {
-    const { a, b, c } = target, h = b / (2 * a), N = a * h * h, d = c - N, A = a > 1 ? a : "";
-    const have = Math.max(0, c), pairs = Math.max(0, N - have);
-    const inner = (body, group) => a > 1 ? `${a}(${body})` : group ? `(${body})` : body;
-    return [
-      ["Start with the tiles", poly(a, b, c)],
-      a > 1 ? [`Make ${a} area models, one for each x²`, `${inner(`${X2} ${tx(b / a)}`)}${tn(c)}`]
-            : ["Put x² in the corner", poly(a, b, c)],
-      [`Split ${sx(b / a)} in half: ${sx(h)} on top, ${sx(h)} down the side`, `${inner(`${X2} ${tx(h)} ${tx(h)}`)}${tn(c)}`],
-      [`The corner needs ${Math.abs(h)} × ${Math.abs(h)} = ${h * h} ${h * h === 1 ? "one" : "ones"}` + (a > 1 ? ` in each, ${N} in all` : "") +
-        (pairs ? `. Add ${pairs} zero pair${pairs === 1 ? "" : "s"}: green ones in, red ones out` : ""),
-        `${inner(`${X2} ${tx(b / a)} + ${h * h}`, true)}${tn(c)} ${MINUS} ${N}`],
-      ["Read the sides", `${A}${binom(h)}${sup2}${tn(d)}`]
-    ][i];
+    const { a, b, c } = target, h = b / (2 * a), N = a * h * h, A = a > 1 ? a : "";
+    const br = body => a > 1 ? `${a}(${body})` : `(${body})`;
+    return {
+      start: poly(a, b, c),
+      factor: `= ${br(`${X2} ${tx(b / a)}`)}${tn(c)}`,
+      pairs: `= ${br(`${X2} ${tx(b / a)} + ${h * h}`)}${tn(c)} ${MINUS} ${N}`,
+      read: `= ${A}${binom(h)}${sup2}${tn(c - N)}`
+    }[stepKinds()[i]];
   }
-  // Move the tiles for step i.
+  // Put x² in the corner and split the x tiles along the top and side (making the a models first if needed).
+  function arrange() {
+    const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
+    if (!mats.length) {
+      const S = matSize(h);
+      for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
+      drawMats(); split = true; splitBtn.hidden = true;
+    }
+    const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));
+    const xt = tiles.filter(t => /^-?x$/.test(t.k.id)), slots = [];
+    mats.forEach(m => { for (let k = 1; k < n; k++) slots.push(at(m, 0, k)); });
+    mats.forEach(m => { for (let r = 1; r < n; r++) slots.push(at(m, r, 0)); });
+    slots.forEach((c, j) => xt[j] && moves.push(moveTo(xt[j], c)));
+    const moving = moves.map(m => m.t);
+    // Ones and anything else sitting where the area models are move out of the way.
+    for (const t of tiles) if (!moving.includes(t) && mats.some(m => overlap(t, m))) {
+      const spot = findSpot(t.w, t.h, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD });
+      if (spot) moves.push({ t, x: spot.x, y: spot.y });
+    }
+    return animate(moves);
+  }
   async function stepMoves(i) {
     const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
-    if (i === 1) {
-      if (!mats.length) {
-        const S = matSize(h);
-        for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
-        drawMats(); split = true; splitBtn.hidden = true;
-      }
-      const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));
-      // Anything else sitting where the area models now are moves out of the way.
-      for (const t of tiles) if (!big.includes(t) && mats.some(m => overlap(t, m))) {
-        const spot = findSpot(t.w, t.h, { x: PAD, y: PAD, w: WS.w - 2 * PAD, h: WS.h - 2 * PAD });
-        if (spot) moves.push({ t, x: spot.x, y: spot.y });
-      }
-      return animate(moves);
-    }
-    if (i === 2) {
-      const xt = tiles.filter(t => /^-?x$/.test(t.k.id) && !inCell(t)), slots = [];
-      mats.forEach(m => { for (let k = 1; k < n; k++) slots.push(at(m, 0, k)); });
-      mats.forEach(m => { for (let r = 1; r < n; r++) slots.push(at(m, r, 0)); });
-      return animate(slots.map((c, j) => xt[j] && moveTo(xt[j], c)).filter(Boolean));
-    }
-    if (i === 3) {
+    const kind_ = stepKinds()[i];
+    if (kind_ === "start") return a > 1 ? undefined : arrange();
+    if (kind_ === "factor") return arrange();
+    if (kind_ === "pairs") {
+      // Every corner cell gets a green one; its red partner lands outside at the same moment.
       const slots = [];
       mats.forEach(m => { for (let r = 1; r < n; r++) for (let k = 1; k < n; k++) slots.push(at(m, r, k)); });
-      const ones = tiles.filter(t => t.k.id === "1" && !inCell(t)), moves = [];
-      slots.forEach((c, j) => {
-        let t = ones[j];
-        if (!t) { // a zero pair: the green one fills the corner, the red one stays outside
-          const spot = pairSpot();
-          if (!spot) return;
-          t = newTile(kind("1"), spot.x, spot.y);
-          newTile(kind("-1"), spot.x + U, spot.y);
-        }
-        moves.push(moveTo(t, c));
+      const moves = [];
+      slots.forEach(c => {
+        const spot = pairSpot();
+        if (!spot) return;
+        const g = newTile(kind("1"), spot.x, spot.y);
+        newTile(kind("-1"), spot.x + U, spot.y);
+        moves.push(moveTo(g, c));
       });
       return animate(moves, 1100);
     }
-    if (i === 4) { dimsOn = true; refresh(); }
+    if (kind_ === "read") {
+      // Ones outside the models cancel: each green one slides onto a red one and both go.
+      const out = tiles.filter(t => /^-?1$/.test(t.k.id) && !inCell(t));
+      const gr = out.filter(t => t.k.id === "1"), rd = out.filter(t => t.k.id === "-1");
+      const k = Math.min(gr.length, rd.length), moves = [];
+      for (let j = 0; j < k; j++) moves.push({ t: gr[j], x: rd[j].x, y: rd[j].y });
+      await animate(moves, 900);
+      for (let j = 0; j < k; j++) { removeTile(gr[j]); removeTile(rd[j]); }
+      dimsOn = true; refresh();
+    }
   }
   stepsBtn.addEventListener("click", async () => {
     if (busy || drag || !target) return;
-    if (!stepNo || stepNo > 4) makeTiles(target);
+    const last = stepKinds().length - 1;
+    if (!stepNo || stepNo > last) { makeTiles(target); stepNo = 0; }
     stepsCard.hidden = false;
     stepsBtn.disabled = true;
     clearSel();
     await stepMoves(stepNo);
     stepList.querySelectorAll("li").forEach(li => li.classList.remove("now"));
-    const [say, math] = stepText(stepNo);
     const li = document.createElement("li");
     li.className = "now";
-    li.innerHTML = `<span class="say">${say}</span><span class="math">${math}</span>`;
+    li.innerHTML = `<span class="math">${stepText(stepNo)}</span>`;
     stepList.appendChild(li);
     stepNo++;
-    stepsBtn.textContent = stepNo > 4 ? "Show steps again" : "Next step";
+    stepsBtn.textContent = stepNo > last ? "Show steps again" : "Next step";
     stepsBtn.disabled = false;
     refresh();
   });
@@ -1037,5 +1045,212 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 })();
 </script>
 
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
 </body>
 </html>

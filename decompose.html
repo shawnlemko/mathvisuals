@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Decomposing Numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Decomposing Numbers (grade 1): a whole in a grey box on top, two parts under it, as in Shawn's sketch.
+   Box widths follow the size of each number, so a part that is too small leaves a gap and too big sticks out.
+   "Picture it" fills every box with unit cubes (and tens rods for Up to 20 and 100). */
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.opt { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 48px; padding: 6px 14px; font-family: var(--font-num); }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+#pic { min-height: 48px; font-size: 1.1rem; padding: 6px 16px; border: 2px solid var(--grid-major); background: var(--sheet); display: inline-flex; align-items: center; gap: 8px; }
+#pic .box { width: 22px; height: 22px; border: 2px solid currentColor; border-radius: 5px; display: inline-grid; place-items: center; font-size: 0.9rem; line-height: 1; }
+#pic[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } .board { height: 62vh; min-height: 340px; } }
+.board { position: relative; overflow: hidden; }
+.bond { position: absolute; inset: 8px; }
+
+/* The boxes: thick dark outlines that share their edges, like the sketch. */
+.bx { position: absolute; border: 6px solid var(--ink); background: var(--sheet); display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: left 0.3s, width 0.3s, top 0.3s, height 0.3s; overflow: hidden; }
+.bx.whole { background: var(--chip); }
+.bx.ask { background: color-mix(in srgb, var(--pt) 10%, var(--sheet)); }
+.bx:focus-within { z-index: 2; outline: 4px solid var(--pt); outline-offset: -12px; }
+.bx input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--ink); text-align: center; padding: 0;
+  font-family: var(--font-num); font-weight: 700; font-size: var(--fs, 80px); line-height: 1.1; flex: none; }
+.bx input:focus-visible { outline: none; }
+.bx input::placeholder { color: var(--muted); opacity: 0.55; }
+.bx input[readonly] { cursor: default; }
+.bx svg { flex: none; display: block; overflow: visible; margin-top: 4px; }
+.bx.ok { border-color: var(--green); }
+/* Gap (parts too small) and overshoot (parts too big). */
+.ghost { position: absolute; border: 4px dashed var(--muted); border-radius: 4px; display: grid; place-items: center; transition: left 0.3s, width 0.3s, opacity 0.2s;
+  font-family: var(--font-display); font-weight: 800; color: var(--muted); font-size: 1.3rem; text-align: center; line-height: 1.1; }
+.ghost.over { border-color: var(--warn); color: var(--warn); }
+.ghost[hidden] { display: none; }
+
+.cube { stroke: var(--ink); stroke-width: 0.07; }
+.cube.w { fill: var(--pt); } .cube.a { fill: var(--green); } .cube.b { fill: var(--orange); }
+.rod-line { stroke: var(--ink); stroke-width: 0.05; opacity: 0.6; }
+
+.panel .card { display: flex; flex-direction: column; gap: 12px; }
+#make { font-size: 1.6rem; min-height: 68px; background: var(--green); color: var(--sheet); border-color: var(--green); font-family: var(--font-display); font-weight: 800; }
+.ask-line { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; line-height: 1.2; margin: 0; }
+.ask-line b { font-family: var(--font-num); color: var(--pt); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row button { flex: 1 1 auto; min-height: 52px; font-size: 1.15rem; }
+#check { flex: 2 1 auto; font-size: 1.5rem; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.fb { min-height: 3.2rem; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2rem; line-height: 1.2; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb small { display: block; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; color: var(--ink); margin-top: 4px; }
+.ways { border-top: 1px dashed var(--grid-major); padding-top: 10px; }
+.ways ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ways li { font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; background: var(--chip); border-radius: 8px; padding: 3px 10px; }
+.ways li .a { color: var(--green); } .ways li .b { color: var(--orange); }
+.ways .none { color: var(--muted); font-size: 1rem; }
+.stars { display: flex; align-items: baseline; gap: 10px; margin: 0; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; color: #c89400; }
+.stars span { font-family: var(--font-body); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+@media (max-width: 600px) { .ask-line { font-size: 1.5rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Decomposing Numbers</h1></div>
+    <div class="opts">
+      <span class="opt">Up to
+        <span class="seg" id="range"><button type="button" data-v="5" aria-pressed="false">5</button><button type="button" data-v="10" aria-pressed="true">10</button><button type="button" data-v="20" aria-pressed="false">20</button><button type="button" data-v="100" aria-pressed="false">100</button></span></span>
+      <button type="button" id="pic" aria-pressed="false"><span class="box" aria-hidden="true"></span>Picture it</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <div class="bond" id="bond">
+        <div class="bx whole" id="bW"><input id="w" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" placeholder="?" aria-label="The whole number"><svg aria-hidden="true"></svg></div>
+        <div class="bx" id="bA"><input id="a" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" aria-label="First part"><svg aria-hidden="true"></svg></div>
+        <div class="bx" id="bB"><input id="b" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" aria-label="Second part"><svg aria-hidden="true"></svg></div>
+        <div class="ghost" id="gap" hidden></div>
+        <div class="ghost over" id="over" hidden>too much</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="card">
+        <button type="button" id="make">Make one</button>
+        <p class="ask-line" id="askLine"></p>
+        <div class="row">
+          <button type="button" id="check">Check</button>
+          <button type="button" id="another">Another way</button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <div class="ways">
+          <p class="label" id="waysLabel">Ways we found</p>
+          <ul id="ways"></ul>
+        </div>
+        <p class="stars"><span>Stars</span><b id="stars">0</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const inW = $("w"), inA = $("a"), inB = $("b"), bW = $("bW"), bA = $("bA"), bB = $("bB");
+  // given: which part Make one filled in ("a", "b" or null when the student types the whole and both parts).
+  const st = { range: 10, pic: false, given: null, last: 0, ways: [], stars: 0, done: false };
+
+  const num = inp => (inp.value === "" ? null : +inp.value);
+  const rods = () => st.range >= 20; // Up to 5 and 10 use cubes only; 20 and 100 bundle tens into rods.
+  const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+
+  // Block footprint in cube units. Cubes only: rows of 5, like a ten-frame. With rods: rods, then cubes in columns of 5.
+  const G = 0.15, RG = 0.3, GG = 0.7;
+  function foot(n) {
+    if (!n) return { w: 0, h: 0 };
+    if (!rods()) { const c = Math.min(n, 5), r = Math.ceil(n / 5); return { w: c + (c - 1) * G, h: r + (r - 1) * G }; }
+    const t = Math.floor(n / 10), u = n % 10, uc = Math.ceil(u / 5), ur = Math.min(u, 5);
+    const w = (t ? t + (t - 1) * RG : 0) + (t && uc ? GG : 0) + (uc ? uc + (uc - 1) * G : 0);
+    return { w, h: t ? 10 : ur + (ur - 1) * G };
+  }
+  function drawBlocks(svg, n, cls, s) {
+    svg.replaceChildren();
+    if (!st.pic || !n || !s) { svg.style.display = "none"; return; }
+    const f = foot(n);
+    svg.style.display = "";
+    svg.setAttribute("viewBox", `-0.1 -0.1 ${f.w + 0.2} ${f.h + 0.2}`);
+    svg.setAttribute("width", (f.w + 0.2) * s); svg.setAttribute("height", (f.h + 0.2) * s);
+    const add = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); };
+    const cube = (x, y) => add("rect", { class: `cube ${cls}`, x, y, width: 1, height: 1, rx: 0.12 });
+    let x = 0;
+    if (rods()) {
+      const t = Math.floor(n / 10), u = n % 10;
+      for (let i = 0; i < t; i++) {
+        add("rect", { class: `cube ${cls}`, x, y: 0, width: 1, height: 10, rx: 0.12 });
+        for (let k = 1; k < 10; k++) add("line", { class: "rod-line", x1: x, x2: x + 1, y1: k, y2: k });
+        x += 1 + RG;
+      }
+      if (t && u) x += GG - RG;
+      const top = t ? 10 - Math.min(u, 5) - (Math.min(u, 5) - 1) * G : 0; // cubes sit on the same floor as the rods
+      for (let i = 0; i < u; i++) cube(x + Math.floor(i / 5) * (1 + G), top + (i % 5) * (1 + G));
+    } else {
+      for (let i = 0; i < n; i++) cube((i % 5) * (1 + G), Math.floor(i / 5) * (1 + G));
+    }
+  }
+
+  // Place the boxes. Widths follow the numbers: the whole fills the row, each part takes its share.
+  function layout() {
+    const bond = $("bond"), BW = bond.clientWidth, BH = bond.clientHeight;
+    if (!BW || !BH) return;
+    const B = 6, X = BW - 8;
+    const rowH = Math.min((BH - 8) / 2, BW * 0.3), top = (BH - rowH * 2 + B) / 2;
+    const w = num(inW), a = num(inA), b = num(inB);
+    const W = w > 0 ? w : null, sum = (a ?? 0) + (b ?? 0);
+    const T = W ? Math.max(W, a != null && b != null ? sum : Math.max(a ?? 0, b ?? 0)) : null;
+    const m = Math.max(rowH * 0.42, 64); // a part box is never too thin to type in
+    const wholeW = W ? W / T * X : X;
+    let wa, wb;
+    if (!W) { wa = wb = X / 2; }
+    else if (a != null && b != null) { wa = a / T * X; wb = b / T * X; }
+    else if (a != null) { wa = a / T * X; wb = Math.max(W - a, 0) / T * X; }
+    else if (b != null) { wb = b / T * X; wa = Math.max(W - b, 0) / T * X; }
+    else { wa = wb = X / 2; }
+    wa = Math.max(wa, m); wb = Math.max(wb, m);
+    const lim = W && T > W ? X : wholeW;
+    if (wa + wb > lim) { const ex = wa + wb - lim; if (wa > wb) wa = Math.max(m, wa - ex); else wb = Math.max(m, wb - ex); }
+    const L = 4;
+    const put = (el, x, y, wd, ht) => Object.assign(el.style, { left: x + "px", top: y + "px", width: wd + "px", height: ht + "px" });
+    put(bW, L, top, wholeW, rowH);
+    put(bA, L, top + rowH - B, wa, rowH);
+    put(bB, L + wa - B, top + rowH - B, wb + B, rowH);
+    const partsEnd = L + wa + wb;
+    // Gap: both parts typed but they do not reach the end of the whole.
+    const gap = $("gap"), over = $("over");
+    const both = W && a != null && b != null;
+    gap.hidden = !(both && sum < W && L + wholeW - partsEnd > 12);
+    if (!gap.hidden) put(gap, partsEnd + 4, top + rowH + 4, L + wholeW - partsEnd - 8, rowH - B - 8);
+    over.hidden = !(both && sum > W && partsEnd - (L + wholeW) > 12);
+    if (!over.hidden) put(over, L + wholeW + 4, top + 4, partsEnd - L - wholeW - 8, rowH - 8);
+
+    // Number size: huge on its own, smaller when the pictures need the room.
+    const fsFor = wd => Math.max(22, Math.min(rowH * (st.pic ? 0.3 : 0.56), (wd - 2 * B) / 2.1));
+    const fw = fsFor(wholeW), fa = fsFor(wa), fb = fsFor(wb);
+    bW.style.setProperty("--fs", fw + "px"); bA.style.setProperty("--fs", fa + "px"); bB.style.setProperty("--fs", fb + "px");
+
+    // One cube size for every box, the biggest that fits all of them, so the parts' blocks match the whole's.
+    let s = 0;
+    if (st.pic) {
+      s = rowH * 0.22;
+      for (const [n, wd, fs] of [[W, wholeW, fw], [a, wa, fa], [b, wb, fb]]) {
+        if (!n) continue;
+        const f = foot(n), aw = wd - 2 * B - 14, ah = rowH - 2 * B - fs * 1.1 - 14;
+        s = Math.min(s, aw / (f.w + 0.2), ah / (f.h + 0.2));
+      }
+      s = Math.max(s, 2);
+    }
+    drawBlocks(bW.querySelector("svg"), W, "w", s);
+    drawBlocks(bA.querySelector("svg"), a, "a", s);
+    drawBlocks(bB.querySelector("svg"), b, "b", s);
+  }
+
+  function ask() {
+    const w = num(inW), a = num(inA), b = num(inB);
+    let t;
+    if (!(w > 0)) t = "Type a number in the top box, or press Make one.";
+    else if (st.given === "a") t = `<b>${a}</b> and <b>?</b> make <b>${w}</b>`;
+    else if (st.given === "b") t = `<b>?</b> and <b>${b}</b> make <b>${w}</b>`;
+    else t = `Break <b>${w}</b> into two parts.`;
+    $("askLine").innerHTML = t;
+    bA.classList.toggle("ask", w > 0 && st.given !== "a");
+    bB.classList.toggle("ask", w > 0 && st.given !== "b");
+  }
+
+  function setFb(cls, html) { $("fb").className = "fb " + cls; $("fb").innerHTML = html; }
+  function clearMarks() { st.done = false; for (const x of [bW, bA, bB]) x.classList.remove("ok"); setFb("", ""); }
+
+  function lockParts() {
+    inA.readOnly = st.given === "a"; inB.readOnly = st.given === "b";
+    inA.tabIndex = st.given === "a" ? -1 : 0; inB.tabIndex = st.given === "b" ? -1 : 0;
+  }
+
+  function showWays() {
+    const w = num(inW);
+    $("waysLabel").textContent = w > 0 ? `Ways to make ${w}` : "Ways we found";
+    $("ways").innerHTML = st.ways.length
+      ? st.ways.map(([a, b]) => `<li><span class="a">${a}</span> and <span class="b">${b}</span></li>`).join("")
+      : `<li class="none" style="background:none;padding:0">None yet</li>`;
+  }
+
+  function refresh() { ask(); layout(); }
+
+  function make() {
+    const lo = { 5: 2, 10: 3, 20: 6, 100: 11 }[st.range];
+    let w;
+    do w = rand(lo, st.range); while (w === st.last && st.range - lo > 0);
+    st.last = w;
+    st.given = Math.random() < 0.5 ? "a" : "b";
+    const g = rand(1, w - 1);
+    inW.value = w;
+    inA.value = st.given === "a" ? g : ""; inB.value = st.given === "b" ? g : "";
+    st.ways = [];
+    lockParts(); clearMarks(); showWays(); refresh();
+    (st.given === "a" ? inB : inA).focus();
+  }
+
+  function another() {
+    if (!(num(inW) > 0)) { inW.focus(); return; }
+    st.given = null; inA.value = ""; inB.value = "";
+    lockParts(); clearMarks(); refresh();
+    inA.focus();
+  }
+
+  function check() {
+    const w = num(inW), a = num(inA), b = num(inB);
+    if (!(w > 0)) { inW.focus(); return; }
+    if (a == null) { inA.focus(); return; }
+    if (b == null) { inB.focus(); return; }
+    const sum = a + b;
+    if (sum === w) {
+      st.done = true;
+      for (const x of [bW, bA, bB]) x.classList.add("ok");
+      const fresh = !st.ways.some(([p, q]) => p === a && q === b);
+      if (fresh) { st.ways.push([a, b]); st.stars++; $("stars").textContent = st.stars; }
+      setFb("ok", `${fresh ? "Yes! ★" : "Yes!"}<small>${a} + ${b} = ${w}</small>`);
+      showWays();
+      $("another").focus();
+    } else {
+      setFb("no", `${sum < w ? "Too small" : "Too big"}<small>${a} and ${b} make ${sum}, not ${w}</small>`);
+      (st.given === "a" ? inB : st.given === "b" ? inA : inB).select();
+    }
+  }
+
+  // Typing: digits only. A new whole starts fresh with both parts open; a whole past the range moves the range up.
+  for (const inp of [inW, inA, inB]) {
+    inp.addEventListener("focus", () => { if (!inp.readOnly) inp.select(); });
+    inp.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      if (inp === inW && num(inA) == null) { if (num(inW) > 0) inA.focus(); return; }
+      check();
+    });
+  }
+  inW.addEventListener("input", () => {
+    inW.value = inW.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 3);
+    if (+inW.value > 100) inW.value = "100";
+    st.given = null; inA.value = ""; inB.value = ""; st.ways = [];
+    const w = num(inW);
+    if (w > st.range) setRange([5, 10, 20, 100].find(r => r >= w));
+    lockParts(); clearMarks(); showWays(); refresh();
+  });
+  for (const inp of [inA, inB]) inp.addEventListener("input", () => {
+    inp.value = inp.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 3);
+    if (+inp.value > 100) inp.value = "100";
+    clearMarks(); layout();
+  });
+
+  function setRange(r) {
+    st.range = r;
+    for (const x of $("range").children) x.setAttribute("aria-pressed", +x.dataset.v === r);
+  }
+  $("range").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    setRange(+b.dataset.v); make();
+  });
+  $("pic").addEventListener("click", () => {
+    st.pic = !st.pic;
+    $("pic").setAttribute("aria-pressed", st.pic);
+    $("pic").querySelector(".box").textContent = st.pic ? "✓" : "";
+    layout();
+  });
+  $("make").addEventListener("click", make);
+  $("check").addEventListener("click", check);
+  $("another").addEventListener("click", another);
+  new ResizeObserver(layout).observe($("bond"));
+  if (document.fonts) document.fonts.ready.then(layout);
+  make();
+})();
+</script>
+
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
