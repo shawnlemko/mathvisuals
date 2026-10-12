@@ -148,9 +148,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 /* The Binomial Theorem (Alberta Math 30-1): t_(k+1) = nCk · a^(n−k) · b^k.
    Find a term: type a binomial, its exponent and a term number. The terms show as empty boxes; the student fills in
    the formula for that term (a think aloud explains k, n and the powers), then works out each part (or presses the
-   part's key to have it worked out), then checks the final term.
-   Find the binomial: the reverse. A term and its place are given with the first term of the binomial; the student
-   finds k, then n, then b, and types the binomial. */
+   part's key to have it worked out), then checks the final term. */
 :root { --a: var(--pt); --b: var(--orange); --kn: #7a3fc4; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --kn: #b88cff; } }
 :root[data-theme="dark"] { --kn: #b88cff; }
@@ -159,10 +157,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 header { margin-bottom: 12px; }
 .card { padding: 12px 18px; }
 
-.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
-.tabs button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; }
-.tabs button + button { border-left: 2px solid var(--grid-major); }
-.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
 
 .ca { color: var(--a); } .cb { color: var(--b); } .ck { color: var(--kn); }
 .m { font-family: var(--font-num); font-weight: 700; }
@@ -189,12 +183,6 @@ input.in.bad { border-color: var(--warn); background: color-mix(in srgb, var(--w
 .tpick { display: inline-flex; align-items: flex-end; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; }
 .tpick input { margin-bottom: -12px; }
 .err { color: var(--warn); font-weight: 700; margin: 0; }
-.puz { font-size: 1.5rem; margin: 0; flex: 1 1 30em; }
-.puz .m { font-size: 1.7rem; }
-.qbox { display: inline-block; min-width: 1.4em; padding: 0 6px; border: 2px dashed var(--muted); border-radius: 6px; color: var(--muted); text-align: center; line-height: 1.2; }
-sup .qbox { min-width: 1em; padding: 0 3px; }
-.btn-main { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
-.btn-main:hover { background: var(--sheet); color: var(--pt); }
 
 /* The terms of the expansion */
 .seq { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
@@ -209,7 +197,6 @@ sup .qbox { min-width: 1em; padding: 0 3px; }
 .tb.sel .tl { color: var(--kn); }
 .tb.done .tv { color: var(--green); }
 div.tb { cursor: default; }
-.seq .more { color: var(--muted); font-size: 1.6rem; }
 #allBtn { margin-left: auto; }
 
 /* Work area: one list of steps. Each step names what to find in bold, holds its boxes, and keeps its explaining
@@ -244,16 +231,14 @@ div.tb { cursor: default; }
 .fml .hi { align-self: flex-start; margin-top: -10px; }
 .fml .in.a { border-left: 6px solid var(--a); } .fml .in.b { border-left: 6px solid var(--b); }
 .key { font-family: var(--font-num); }
+.in.typeset { display: inline-flex; align-items: center; min-height: 1.9em; padding: 2px 12px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
+.in.typeset .fr { font-size: 0.75em; }
 </style>
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>The Binomial Theorem</h1></div>
-    <div class="tabs" id="tabs" role="group" aria-label="Mode">
-      <button type="button" data-m="term" aria-pressed="true">Find a term</button>
-      <button type="button" data-m="rev" aria-pressed="false">Find the binomial</button>
-    </div>
   </header>
 
   <!-- Find a term -->
@@ -265,14 +250,6 @@ div.tb { cursor: default; }
       <div class="grp"><span class="lab">Term</span><span class="gen">t<sub>k+1</sub> = <sub>n</sub>C<sub>k</sub> <span class="ca">a</span><sup>n−k</sup> <span class="cb">b</span><sup>k</sup></span></div>
       <label class="grp"><span class="lab">Find</span><span class="tpick">t<input class="in sm" id="tIn" value="3" inputmode="numeric" aria-label="Term number to find"></span></label>
       <p class="err" id="err"></p>
-    </div>
-  </section>
-
-  <!-- Find the binomial -->
-  <section class="card" data-mode="rev" hidden>
-    <div class="setup">
-      <p class="puz" id="puz"></p>
-      <button type="button" class="btn-main" id="newP">New puzzle</button>
     </div>
   </section>
 
@@ -467,13 +444,13 @@ div.tb { cursor: default; }
   document.addEventListener("input", grow);
   document.addEventListener("click", () => requestAnimationFrame(grow));
   document.addEventListener("keydown", () => requestAnimationFrame(grow));
-  const rootName = k => (k === 2 ? "a square root" : k === 3 ? "a cube root" : `the ${ord(k)} root`);
 
   /* ---------- Think-aloud explanations ---------- */
   function chooseWhy(n, k) {
     const c = choose(n, k);
     if (k === 0 || k === n) return `${Cn(n, k)} = 1. There is only one way to choose ${k === 0 ? "none" : "all"} of the ${n} brackets.`;
-    return `${Cn(n, k)} = <span class="m">${n}! ÷ (${k}! × ${n - k}!) = ${fmt(fact(n))} ÷ (${fmt(fact(k))} × ${fmt(fact(n - k))}) = ${fmt(c)}</span>. ` +
+    const fr = (t, d) => `<span class="fr"><span>${t}</span><span>${d}</span></span>`;
+    return `${Cn(n, k)} = <span class="m">${fr(`${n}!`, `${k}! × ${n - k}!`)} = ${fr(fmt(fact(n)), `${fmt(fact(k))} × ${fmt(fact(n - k))}`)} = ${fmt(c)}</span>. ` +
       `It counts the ways to choose which ${k} of the ${n} brackets give the <span class="cb">b</span>.`;
   }
   function powWhy(m, e) {
@@ -512,10 +489,10 @@ div.tb { cursor: default; }
 
   /* ---------- Shared: the row of term boxes ---------- */
   const seq = $("seq");
-  function drawSeq({ lead, n, sel, shown, upTo, clickable, allBtn }) {
+  function drawSeq({ lead, n, sel, shown, clickable, allBtn }) {
     seq.innerHTML = "";
     seq.appendChild(el("span", "lead", lead + " ="));
-    const last = upTo ?? n + 1;
+    const last = n + 1;
     for (let i = 1; i <= last; i++) {
       if (i > 1) seq.appendChild(el("span", "plus", "+"));
       const b = el(clickable ? "button" : "div", "tb" + (i === sel ? " sel" : "") + (shown[i] ? " done" : ""));
@@ -524,7 +501,6 @@ div.tb { cursor: default; }
       b.appendChild(el("span", "tl", `t<sub>${i}</sub>`));
       seq.appendChild(b);
     }
-    if (upTo != null) { seq.appendChild(el("span", "plus", "+")); seq.appendChild(el("span", "more", "…")); }
     if (allBtn) seq.appendChild(allBtn);
   }
 
@@ -561,6 +537,7 @@ div.tb { cursor: default; }
       finished = true;
       row.classList.replace("now", "done");
       boxes.forEach(b => { if (!d.check) b.inp.value = b.val; b.inp.classList.add("ok"); b.inp.classList.remove("bad"); });
+      boxes.forEach(typeset);
       if (d.done) d.done(msg);
       if (st.stage === i) { st.stage = i + 1; if (d.advance) d.advance(); addStep(defs, st, i + 1, true); }
       grow();
@@ -590,9 +567,16 @@ div.tb { cursor: default; }
         if (nx) nx.inp.focus();
       };
     });
-    if (i < st.stage) { boxes.forEach(b => (b.inp.value = b.val)); finished = true; row.classList.replace("now", "done"); boxes.forEach(b => b.inp.classList.add("ok")); if (d.done) d.done(msg); }
+    if (i < st.stage) { boxes.forEach(b => (b.inp.value = b.val)); finished = true; row.classList.replace("now", "done"); boxes.forEach(b => b.inp.classList.add("ok")); boxes.forEach(typeset); if (d.done) d.done(msg); }
     grow();
     if (fresh) { row.scrollIntoView({ block: "nearest", behavior: "smooth" }); if (boxes[0]) boxes[0].inp.focus({ preventScroll: true }); }
+  }
+  // A finished answer is shown as typeset math (fractions stacked), in place of the typed text.
+  function typeset(b) {
+    if (!b.h || b.inp.hidden) return;
+    const v = el("span", "in ok typeset", b.h);
+    b.inp.after(v);
+    b.inp.hidden = true;
   }
   const lineBox = (wk, mk, lab, min) => { wk.appendChild(el("span", "", lab + " =")); const inp = mk("", lab.replace(/<[^>]+>/g, ""), min); wk.appendChild(inp); return inp; };
 
@@ -632,7 +616,7 @@ div.tb { cursor: default; }
     const { a, b, n, t } = S, k = t - 1;
     const c = choose(n, k), A = pow(a, n - k), B = pow(b, k), tt = term(a, b, n, k);
     const intBox = (inp, v) => ({ inp, ok: x => parseInt2(x) === v, val: String(v) });
-    const monoBox = (inp, m) => ({ inp, ok: x => eq(parseMono(x), m), val: T(m) });
+    const monoBox = (inp, m) => ({ inp, ok: x => eq(parseMono(x), m), val: T(m), h: H(m) });
     const tl = `t<sub>${t}</sub>`;
     const zero = " Anything to the power 0 is 1.";
     return [
@@ -684,7 +668,7 @@ div.tb { cursor: default; }
         goal: `Multiply to find <span class="m">${tl}</span>`,
         build: (wk, mk) => {
           const pr = `${F(M(c))} · ${A.p < 0n || A.q !== 1n ? P(A) : H(A)} · ${B.p < 0n || B.q !== 1n ? P(B) : H(B)}`;
-          return [{ inp: lineBox(wk, mk, `${tl} = ${pr}`, 8), ok: x => eq(parseMono(x), tt), val: T(tt) }];
+          return [{ inp: lineBox(wk, mk, `${tl} = ${pr}`, 8), ok: x => eq(parseMono(x), tt), val: T(tt), h: H(tt) }];
         },
         hint: () => `<p>${multWhy(c, A, B, tt, tl).replace(/ So <span class="m">.*$/, "")}</p>`,
         check: ([bx]) => {
@@ -707,7 +691,7 @@ div.tb { cursor: default; }
     if (r !== "") return;
     S.stage = 0;
     drawTermSeq();
-    if (mode === "term") stepsRun(termSteps(), S);
+    stepsRun(termSteps(), S);
   }
   [binIn, nIn, tIn].forEach(i => {
     i.addEventListener("change", update);
@@ -715,109 +699,98 @@ div.tb { cursor: default; }
   });
   [nIn, tIn].forEach(i => i.addEventListener("input", () => { if (parseInt2(i.value) != null) update(); }));
 
-  /* ---------- Find the binomial ---------- */
-  const R = { stage: 0 };
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  function newPuzzle() {
-    const As = [M(1n, 1n, { x: 1 }), M(2n, 1n, { x: 1 }), M(2n, 1n, { x: 1 }), M(3n, 1n, { x: 1 }), M(1n, 2n, { x: 1 }), M(1n, 3n, { x: 1 })];
-    for (let tries = 0; tries < 500; tries++) {
-      const a = pick(As), b = M(BigInt(pick([2, 3, 4, 5, 2, 3])) * (Math.random() < 0.45 ? -1n : 1n));
-      const n = 3 + Math.floor(Math.random() * 5), k = 1 + Math.floor(Math.random() * (n - 1));
-      const tt = term(a, b, n, k);
-      if (abs(tt.p) > 200000n || tt.q > 100n) continue;
-      if (R.a && eq(R.a, a) && eq(R.b, b) && R.n === n && R.k === k) continue;
-      Object.assign(R, { a, b, n, k, tt, stage: 0, solved: false });
-      break;
-    }
-    const t = R.k + 1;
-    $("puz").innerHTML = `The <b>${ord(t)} term</b> of <span class="m">(<span class="ca">${H(R.a)}</span> + <span class="qbox">?</span>)<sup><span class="qbox">?</span></sup></span> is <span class="m">${H(R.tt)}</span>. What is the binomial?`;
-    drawRevSeq();
-    if (mode === "rev") stepsRun(revSteps(), R);
-  }
-  function drawRevSeq() {
-    const shown = {};
-    if (R.solved) for (let i = 1; i <= R.n + 1; i++) shown[i] = term(R.a, R.b, R.n, i - 1);
-    else shown[R.k + 1] = R.tt;
-    const lead = R.solved ? `(${binH(R.a, R.b)})${supN(R.n)}` : `(${H(R.a)} + <span class="qbox">?</span>)<sup><span class="qbox">?</span></sup>`;
-    drawSeq({ lead, n: R.n, sel: R.k + 1, shown, upTo: R.stage >= 2 || R.solved ? null : R.k + 1 });
-  }
-  function revSteps() {
-    const { a, n, k, tt } = R, t = k + 1, xe = tt.v.x;
-    const c = choose(n, k), A = pow(a, n - k), known = mul(M(c), A);
-    const bk = pow(R.b, k), even = k % 2 === 0, bAbs = R.b.p < 0n ? neg(R.b) : R.b;
-    const bLab = k === 1 ? `<span class="cb">b</span>` : `<span class="cb">b</span>${supN(k)}`;
-    const okB = x => { const m = parseMono(norm(x).replace(/^\s*(\+-|±)/, "")); return eq(m, R.b) || (even && eq(m, neg(R.b))); };
-    const defs = [
-      {
-        goal: `Find <span class="m ck">k</span>`,
-        build: (wk, mk) => [{ inp: lineBox(wk, mk, `<span class="ck">k</span>`, 4), ok: x => parseInt2(x) === k, val: String(k) }],
-        hint: () => `<p>This is the ${ord(t)} term. The term number is always k + 1, so <span class="m">k + 1 = ${t}</span>.</p>`,
-      },
-      {
-        goal: `Find <span class="m ck">n</span>`,
-        build: (wk, mk) => [{ inp: lineBox(wk, mk, `<span class="ck">n</span>`, 4), ok: x => parseInt2(x) === n, val: String(n) }],
-        hint: () => `<p>Only <span class="m ca">${H(a)}</span> has an <i class="v">x</i>, and it gets the power <span class="m">n − k</span>.</p>` +
-          `<p>The term has <span class="m">${H(M(1n, 1n, { x: xe }))}</span>, so <span class="m">n − ${k} = ${xe}</span>.</p>`,
-        advance: drawRevSeq,
-      },
-      {
-        goal: `Find <span class="m">${bLab}</span>`,
-        build: (wk, mk) => [k === 1 ? { inp: lineBox(wk, mk, bLab, 5), ok: okB, val: T(R.b) } : { inp: lineBox(wk, mk, bLab, 5), ok: x => eq(parseMono(x), bk), val: T(bk) }],
-        hint: () => `<p>Put what you know in the formula: <span class="m">t<sub>${t}</sub> = ${Cn(n, k)} (${H(a)})${supN(n - k)} ${bLab} = ${H(known)} · ${bLab}</span>.</p>` +
-          `<p>It has to match the term: <span class="m">${H(known)} · ${bLab} = ${H(tt)}</span>. Divide both sides by <span class="m">${H(known)}</span>.</p>`,
-      },
-    ];
-    if (k > 1) defs.push({
-      goal: `Find <span class="m cb">b</span>`,
-      build: (wk, mk) => [{ inp: lineBox(wk, mk, `<span class="cb">b</span>`, 5), ok: okB, val: even ? `±${T(bAbs)}` : T(R.b) }],
-      hint: () => `<p>Undo the power ${k} with ${rootName(k)}: <span class="m">${H(bAbs)}${supN(k)} = ${H(pow(bAbs, k))}</span>${even ? "" : ` and <span class="m">${P(neg(bAbs))}${supN(k)} = ${H(pow(neg(bAbs), k))}</span>`}.</p>` +
-        (even ? `<p>An even power hides the sign, so <span class="m">${H(bAbs)}</span> and <span class="m">${H(neg(bAbs))}</span> both work.</p>` : ""),
-    });
-    defs.push({
-      goal: "Write the binomial",
-      build: (wk, mk) => {
-        const sp = el("span", "binin"), ai = mk("", "the binomial", 10), ni = mk("sm up", "exponent");
-        sp.append(el("span", "par", "("), ai, el("span", "par", ")"), ni);
-        wk.appendChild(sp);
-        return [
-          { inp: ai, ok: x => { const r = parseBin(x); return !r.error && eq(r.a, a) && okB(T(r.b)); }, val: binT(a, R.b) },
-          { inp: ni, ok: x => parseInt2(x) === n, val: String(n) },
-        ];
-      },
-      hint: () => `<p>Put <span class="m cb">b</span> back into <span class="m">(${H(a)} + b)</span> and use <span class="m ck">n</span> as the exponent.</p>`,
-      check: ([ab, nb]) => {
-        const r = parseBin(ab.inp.value);
-        if (r.n != null) nb.inp.value = r.n;
-        if (r.error) return { ok: false, html: r.error };
-        if (!eq(r.a, a)) return { ok: false, html: `Keep <span class="m">${H(a)}</span> first: the term number depends on which term comes first.` };
-        if (!okB(T(r.b))) return { ok: false, html: "Check the second term." };
-        if (!nb.ok(nb.inp.value)) return { ok: false, html: "The binomial is right. Check the exponent." };
-        R.b = r.b;
-        return { ok: true, html: `✓ Yes! <span class="m">(${binH(a, r.b)})${supN(n)}</span>` + (even ? ` and <span class="m">(${binH(a, neg(r.b))})${supN(n)}</span> both work.` : "") };
-      },
-      done: () => { R.solved = true; drawRevSeq(); },
-    });
-    return defs;
-  }
-  $("newP").onclick = newPuzzle;
-
-  /* ---------- Mode switch ---------- */
-  let mode = "term";
-  function setMode(m) {
-    mode = m;
-    document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === m)));
-    document.querySelectorAll("[data-mode]").forEach(s => (s.hidden = s.dataset.mode !== m));
-    if (m === "term") { drawTermSeq(); stepsRun(termSteps(), S); } else { drawRevSeq(); stepsRun(revSteps(), R); }
-  }
-  document.querySelectorAll("#tabs button").forEach(b => (b.onclick = () => setMode(b.dataset.m)));
-
   update();
-  newPuzzle();
-  setMode("term");
   grow();
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
@@ -851,6 +824,12 @@ div.tb { cursor: default; }
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }

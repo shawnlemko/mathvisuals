@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Inductive or Deductive?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7b3fc4; --ind: var(--pt); --ded: var(--orange); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b48cff; } }
+:root[data-theme="dark"] { --purple: #b48cff; }
+.m { font-family: var(--font-num); font-weight: 700; white-space: nowrap; }
+.c-ind { color: var(--ind); font-weight: 800; } .c-ded { color: var(--ded); font-weight: 800; }
+.ok { color: var(--green); font-weight: 700; } .bad { color: var(--warn); font-weight: 700; }
+
+header .tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns.small { display: grid; grid-template-columns: 1fr 1fr; }
+.seg-btns.small button { font-size: 1.05rem; padding: 6px 12px; }
+.seg-btns.small button + button { border-left: 0; }
+.seg-btns.small button:nth-child(even) { border-left: 2px solid var(--grid-major); }
+.seg-btns.small button:nth-child(n+3) { border-top: 2px solid var(--grid-major); }
+
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.board { gap: 10px; }
+.board.text { justify-content: flex-start; padding: 12px 14px; overflow-y: auto; }
+.claim { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; text-align: center; text-wrap: balance; }
+.claim .lbl { color: var(--muted); font-size: 1rem; text-transform: uppercase; letter-spacing: .06em; margin-right: 8px; }
+
+/* Learn: two columns, one per kind of reasoning */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1 1 auto; min-height: 0; }
+@media (max-width: 700px) { .cols { grid-template-columns: 1fr; } }
+.col { border: 2px solid var(--grid); border-top: 8px solid; border-radius: 12px; padding: 10px 14px; min-width: 0; display: flex; flex-direction: column; gap: 6px; transition: border-color .3s; }
+.col.ind { border-top-color: var(--ind); } .col.ded { border-top-color: var(--ded); }
+.col.now.ind { border-color: var(--ind); } .col.now.ded { border-color: var(--ded); }
+.col h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; line-height: 1.15; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.col.ind h2 { color: var(--ind); } .col.ded h2 { color: var(--ded); }
+.col .def { margin: 0; font-size: 1rem; line-height: 1.3; }
+.dir { display: flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 0; }
+.dir svg { width: 34px; height: 14px; flex: none; }
+.steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; border-top: 2px dashed var(--grid); padding-top: 8px; }
+.steps li { font-size: 1.08rem; line-height: 1.3; padding: 4px 8px; border-radius: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; animation: rise .45s ease-out; }
+.steps li[hidden] { display: none; }
+.steps li.lit { background: var(--chip); }
+.steps li .note { flex-basis: 100%; color: var(--muted); font-size: .95rem; }
+.steps li.concl { border: 2px solid; margin-top: 2px; font-weight: 700; }
+.col.ind li.concl { border-color: var(--ind); } .col.ded li.concl { border-color: var(--ded); }
+.steps li.broken { border-color: var(--warn); }
+.steps li.broken .txt { text-decoration: line-through; text-decoration-color: var(--warn); text-decoration-thickness: 2px; }
+.steps li.cex { border: 2px dashed var(--warn); }
+.pill { font-size: .75rem; padding: 2px 10px; }
+.pill.ind { color: var(--ind); } .pill.ded { color: var(--ded); } .pill.no { color: var(--warn); }
+.kind { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); min-width: 4.6em; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .steps li, .shake { animation: none !important; } }
+
+/* Dot pictures */
+.pic { height: 2.3em; flex: none; overflow: visible; }
+.pic.tall { height: 3.6em; }
+.pic .a { fill: var(--pt); } .pic .b { fill: var(--green); } .pic .s { fill: var(--muted); }
+.pic .x { fill: var(--orange); }
+.pic .join { fill: none; stroke: var(--purple); stroke-width: 2.5; stroke-dasharray: 4 3; }
+.pic .mv { fill: none; stroke: var(--orange); stroke-width: 2.5; }
+.pic .mvh { fill: var(--orange); }
+.pic .ghost { fill: none; stroke: var(--orange); stroke-width: 2; stroke-dasharray: 3 2; }
+
+/* Learn panel */
+.lessons { display: flex; flex-direction: column; gap: 8px; }
+.lessons button { text-align: left; font-size: 1.05rem; min-height: 44px; background: var(--sheet); border: 2px solid var(--grid-major); }
+.lessons button.on { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btns button { font-size: 1.1rem; min-height: 48px; padding: 8px 16px; }
+.btns .go { font-family: var(--font-display); font-size: 1.25rem; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns .go:hover { background: var(--sheet); color: var(--pt); }
+.btns button:disabled { opacity: .4; cursor: default; }
+.stepno { font-weight: 700; color: var(--muted); margin: 0; }
+.sum p { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+.sum p + p { margin-top: 6px; }
+
+/* Practice */
+.qtype { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; text-align: center; }
+.arg { margin: 0 auto; max-width: 46em; width: 100%; background: var(--paper); border: 2px solid var(--grid-major); border-left: 8px solid var(--purple); border-radius: 12px; padding: 14px 20px; font-size: 1.4rem; line-height: 1.45; }
+.arg .lbl { display: block; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.arg mark { background: color-mix(in srgb, var(--hl, var(--pt)) 22%, transparent); color: inherit; border-radius: 4px; padding: 0 3px; }
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 46em; width: 100%; margin: 0 auto; }
+.answers button { font-size: 1.3rem; min-height: 64px; padding: 10px 14px; background: var(--sheet); border: 3px solid var(--grid-major); border-radius: 12px; line-height: 1.25; }
+.answers button.big { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.answers button.big small { display: block; font-family: var(--font-body); font-weight: 400; font-size: .95rem; color: var(--muted); }
+.answers button.i { border-color: var(--ind); } .answers button.d { border-color: var(--ded); }
+.answers button.right { border-color: var(--green); background: color-mix(in srgb, var(--green) 16%, var(--sheet)); }
+.answers button.wrong { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--sheet)); opacity: .75; }
+.answers button:disabled { cursor: default; }
+.answers.order { grid-template-columns: 1fr; }
+.answers.order button { text-align: left; font-size: 1.15rem; min-height: 52px; }
+.proof { list-style: none; margin: 0 auto; padding: 0; max-width: 46em; width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.proof li { display: flex; gap: 12px; align-items: center; font-size: 1.15rem; line-height: 1.3; padding: 8px 12px; border-radius: 10px; border: 2px dashed var(--grid-major); color: var(--muted); min-height: 48px; }
+.proof li.done { border: 2px solid var(--green); color: var(--ink); background: color-mix(in srgb, var(--green) 10%, var(--sheet)); animation: rise .35s ease-out; }
+.proof li b { font-family: var(--font-num); color: var(--green); flex: none; width: 1.4em; text-align: center; }
+.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.fb { max-width: 46em; width: 100%; margin: 0 auto; min-height: 3.2em; font-size: 1.2rem; line-height: 1.35; }
+.fb p { margin: 0; } .fb p + p { margin-top: 4px; }
+.fb .head { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; }
+.nextq { display: block; margin: 0 auto; font-family: var(--font-display); font-size: 1.25rem; padding: 10px 22px; min-height: 48px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.nextq:hover { background: var(--sheet); color: var(--pt); }
+.score { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.score b { font-family: var(--font-num); }
+.remind { display: flex; flex-direction: column; gap: 10px; }
+.remind div { border-left: 6px solid; padding: 2px 0 2px 10px; }
+.remind .i { border-color: var(--ind); } .remind .d { border-color: var(--ded); }
+.remind h3 { margin: 0; font-family: var(--font-display); font-size: 1.15rem; }
+.remind .i h3 { color: var(--ind); } .remind .d h3 { color: var(--ded); }
+.remind p { margin: 0; font-size: .98rem; line-height: 1.3; }
+.remind div.lit { background: var(--chip); border-radius: 0 8px 8px 0; }
+@media (min-width: 861px) and (min-height: 520px) { .main .panel { overflow-y: auto; } }
+@media (max-height: 760px) and (min-width: 861px) { .steps li { font-size: 1rem; } .col .def { font-size: .95rem; } .claim { font-size: 1.3rem; } .arg { font-size: 1.25rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Inductive or Deductive?</h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Mode" id="modes">
+        <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Kind of examples" id="doms">
+        <button type="button" data-dom="num" class="on">Numbers</button><button type="button" data-dom="ctx">Real life</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main" id="learn">
+    <div class="board text">
+      <p class="claim" id="claim"></p>
+      <div class="cols">
+        <section class="col ind" id="colI">
+          <h2>Inductive reasoning</h2>
+          <p class="def">Look at <b>examples</b>. Find a <b>pattern</b>. Make a <b>conjecture</b> (a smart guess).</p>
+          <p class="dir">Examples <svg viewBox="0 0 34 14" aria-hidden="true"><path d="M2 7H28M22 2L29 7L22 12" style="fill:none;stroke:var(--ind);stroke-width:2.5"/></svg> a general rule</p>
+          <ol class="steps" id="stepsI"></ol>
+        </section>
+        <section class="col ded" id="colD">
+          <h2>Deductive reasoning</h2>
+          <p class="def">Start with <b>facts or rules that are always true</b>. Use them <b>step by step</b> to reach a conclusion.</p>
+          <p class="dir">A general rule <svg viewBox="0 0 34 14" aria-hidden="true"><path d="M2 7H28M22 2L29 7L22 12" style="fill:none;stroke:var(--ded);stroke-width:2.5"/></svg> this case</p>
+          <ol class="steps" id="stepsD"></ol>
+        </section>
+      </div>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <p class="label">Pick an example</p>
+        <div class="lessons" id="lessons"></div>
+      </section>
+      <div class="btns">
+        <button type="button" id="back">Back</button>
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="restart">Start over</button>
+      </div>
+      <p class="stepno" id="stepno"></p>
+      <section class="card sum" id="sum" hidden>
+        <p class="label">The difference</p>
+        <div id="sumText"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="main" id="practice" hidden>
+    <div class="board text" id="pboard">
+      <p class="qtype" id="qtype"></p>
+      <div class="arg" id="arg"></div>
+      <ol class="proof" id="proof" hidden></ol>
+      <div class="answers" id="answers"></div>
+      <div class="fb" id="fb" aria-live="polite"></div>
+      <button type="button" class="nextq" id="nextq" hidden>Next question</button>
+    </div>
+
+    <div class="panel">
+      <section class="card">
+        <p class="label">Practice</p>
+        <div class="seg-btns small" role="group" aria-label="Question type" id="types">
+          <button type="button" data-t="kind" class="on">Which kind?</button><button type="button" data-t="cex">Counterexample</button><button type="button" data-t="order">Order the proof</button><button type="button" data-t="mix">Mix</button>
+        </div>
+      </section>
+      <div class="btns">
+        <button type="button" id="newq">New question</button>
+        <button type="button" id="showans">Show answer</button>
+      </div>
+      <p class="score">Correct: <b id="right">0</b> of <b id="tried">0</b></p>
+      <section class="card remind">
+        <p class="label">Remember</p>
+        <div class="i" id="remI"><h3>Inductive</h3><p>Examples → a pattern → a conjecture. <b>Probably true</b>, but it could be wrong.</p></div>
+        <div class="d" id="remD"><h3>Deductive</h3><p>Facts that are always true → step by step → a conclusion. <b>Must be true.</b></p></div>
+        <p style="margin:0;font-size:.98rem;line-height:1.3"><b>Counterexample:</b> one example that breaks a conjecture. One is enough to prove it false.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const m = s => `<span class="m">${s}</span>`;
+
+/* ---------- dot pictures ---------- */
+// Pairs: each number is drawn as columns of 2 dots. An odd number has one dot left over (orange).
+function pairs(groups, o = {}) {
+  const s = 18, r = 6.5, top = o.join ? 16 : 4;
+  let x = 10, out = '', extras = [];
+  groups.forEach(g => {
+    for (let i = 0; i < g.n; i++) {
+      const cx = x + Math.floor(i / 2) * s, cy = top + 9 + (i % 2) * s;
+      const extra = g.n % 2 && i === g.n - 1;
+      if (extra) extras.push([cx, cy]);
+      out += `<circle cx="${cx}" cy="${cy}" r="${r}" class="${extra ? 'x' : g.c || 's'}"/>`;
+    }
+    x += Math.ceil(g.n / 2) * s + 12;
+  });
+  if (o.join && extras.length === 2) {
+    const [[x1, y1], [x2]] = extras;
+    out = `<path class="join" d="M${x1} ${y1 - 9}Q${(x1 + x2) / 2} ${y1 - 30} ${x2} ${y1 - 9}"/>` + out;
+  }
+  const w = x - 12 + 1, h = top + 9 + s + 10;
+  return svgWrap(w, h, out, o.tall);
+}
+// Rows × cols array (a prime only makes one row).
+function grid(rows, cols, cls = 'a') {
+  const s = 16, r = 6;
+  let out = '';
+  for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) out += `<circle cx="${10 + j * s}" cy="${8 + i * s}" r="${r}" class="${cls}"/>`;
+  return svgWrap(cols * s + 4, rows * s, out, rows > 1);
+}
+// Stacks for three numbers in a row; move=true shows the top dot of the tallest stack moving to the shortest.
+function bars(hs, move) {
+  const s = 15, r = 5.5, H = Math.max(...hs) * s + 8;
+  let out = '';
+  hs.forEach((h, k) => {
+    for (let i = 0; i < h; i++) {
+      const isTop = move && k === hs.length - 1 && i === h - 1;
+      out += `<circle cx="${12 + k * 30}" cy="${H - 8 - i * s}" r="${r}" class="${isTop ? 'x' : ['a', 'b', 's'][k]}"/>`;
+    }
+  });
+  if (move) {
+    const xa = 12 + 60, ya = H - 8 - (hs[2] - 1) * s, xb = 12, yb = H - 8 - hs[0] * s;
+    out += `<circle cx="${xb}" cy="${yb}" r="${r}" class="ghost"/>`;
+    out += `<path class="mv" d="M${xa - 6} ${ya - 4}Q${(xa + xb) / 2} ${ya - 22} ${xb + 8} ${yb - 6}"/>`;
+    out += `<path class="mvh" d="M${xb + 4} ${yb - 9}l8 -3l-2 8z"/>`;
+  }
+  return svgWrap(12 + 2 * 30 + 12, H, out, true);
+}
+function svgWrap(w, h, inner, tall) {
+  const hEm = tall ? 3.6 : 2.3;
+  return `<svg class="pic${tall ? ' tall' : ''}" viewBox="0 0 ${w} ${h}" style="width:${(w / h * hEm).toFixed(2)}em" aria-hidden="true">${inner}</svg>`;
+}
+
+/* ---------- lessons ----------
+   Each step: s = 'i' (inductive) or 'd' (deductive), k = label, t = text, pic, note,
+   concl = conclusion box, cex = counterexample (breaks the inductive conjecture). */
+const LESSONS = {
+  num: [
+    { name: 'Even + even', claim: 'An even number plus an even number is always even.',
+      steps: [
+        { s: 'i', k: 'Example', t: `${m('2 + 4 = 6')} <span class="ok">even ✓</span>`, pic: pairs([{ n: 2, c: 'a' }, { n: 4, c: 'b' }]) },
+        { s: 'i', k: 'Example', t: `${m('6 + 8 = 14')} <span class="ok">even ✓</span>`, pic: pairs([{ n: 6, c: 'a' }, { n: 8, c: 'b' }]) },
+        { s: 'i', k: 'Example', t: `${m('10 + 12 = 22')} <span class="ok">even ✓</span>` },
+        { s: 'i', concl: true, t: 'Every time, the answer is even. Conjecture: even + even is always even.', note: 'We checked 3 cases. We can never check every number.' },
+        { s: 'd', k: 'Fact', t: 'An even number makes pairs, with none left over.', pic: pairs([{ n: 6, c: 's' }]) },
+        { s: 'd', k: 'Step', t: `So an even number is ${m('2 × (whole number)')}. Call the two numbers ${m('2a')} and ${m('2b')}.` },
+        { s: 'd', k: 'Step', t: m('2a + 2b = 2(a + b)'), pic: pairs([{ n: 6, c: 'a' }, { n: 8, c: 'b' }]), note: `${m('a')} pairs plus ${m('b')} pairs is ${m('(a + b)')} pairs. Nothing is left over.` },
+        { s: 'd', concl: true, t: `${m('2 × (whole number)')} is even. So even + even is even for every even number.` }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> three examples gave a good guess.', '<b class="c-ded">Deductive:</b> the meaning of “even” proved it for all even numbers, even ones nobody has tried.'] },
+    { name: 'Odd + odd', claim: 'An odd number plus an odd number is always even.',
+      steps: [
+        { s: 'i', k: 'Example', t: `${m('3 + 5 = 8')} <span class="ok">even ✓</span>`, pic: pairs([{ n: 3, c: 'a' }, { n: 5, c: 'b' }]) },
+        { s: 'i', k: 'Example', t: `${m('7 + 1 = 8')} <span class="ok">even ✓</span>` },
+        { s: 'i', k: 'Example', t: `${m('9 + 11 = 20')} <span class="ok">even ✓</span>` },
+        { s: 'i', concl: true, t: 'Every time, the answer is even. Conjecture: odd + odd is always even.', note: 'Three examples. That is good evidence, not proof.' },
+        { s: 'd', k: 'Fact', t: 'An odd number makes pairs with 1 left over.', pic: pairs([{ n: 5, c: 's' }]) },
+        { s: 'd', k: 'Step', t: `So an odd number is ${m('2a + 1')}. The other one is ${m('2b + 1')}.` },
+        { s: 'd', k: 'Step', t: m('(2a + 1) + (2b + 1) = 2a + 2b + 2'), pic: pairs([{ n: 5, c: 'a' }, { n: 7, c: 'b' }], { join: true }), note: 'The two left-over dots join to make a new pair.' },
+        { s: 'd', k: 'Step', t: m('2a + 2b + 2 = 2(a + b + 1)') },
+        { s: 'd', concl: true, t: `${m('2 × (whole number)')} is even. So odd + odd is even for every odd number.` }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> we saw a pattern in three sums.', '<b class="c-ded">Deductive:</b> the two left-over dots always make a pair, so it is true every time.'] },
+    { name: 'Three in a row', claim: 'Three whole numbers in a row always add up to a multiple of 3.',
+      steps: [
+        { s: 'i', k: 'Example', t: `${m('1 + 2 + 3 = 6 = 3 × 2')} <span class="ok">✓</span>` },
+        { s: 'i', k: 'Example', t: `${m('4 + 5 + 6 = 15 = 3 × 5')} <span class="ok">✓</span>` },
+        { s: 'i', k: 'Example', t: `${m('10 + 11 + 12 = 33 = 3 × 11')} <span class="ok">✓</span>` },
+        { s: 'i', concl: true, t: 'Conjecture: three numbers in a row always add to a multiple of 3.', note: 'It worked 3 times. Will it work for 998 + 999 + 1000? We have not checked.' },
+        { s: 'd', k: 'Fact', t: `Numbers in a row go up by 1. Call them ${m('n')}, ${m('n + 1')} and ${m('n + 2')}.`, pic: bars([3, 4, 5], true), note: 'Move 1 dot from the tallest stack to the shortest.' },
+        { s: 'd', k: 'Step', t: m('n + (n + 1) + (n + 2) = 3n + 3') },
+        { s: 'd', k: 'Step', t: m('3n + 3 = 3(n + 1)'), pic: bars([4, 4, 4]), note: `Three equal stacks of ${m('n + 1')}.` },
+        { s: 'd', concl: true, t: `${m('3 × (whole number)')} is a multiple of 3. So it works for every three numbers in a row.` }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> three examples made us think it is true.', '<b class="c-ded">Deductive:</b> algebra showed the sum is always 3 equal parts.'] },
+    { name: 'Are odd numbers prime?', claim: 'Every odd number bigger than 1 is prime.',
+      steps: [
+        { s: 'i', k: 'Example', t: `${m('3')} only makes 1 row <span class="ok">prime ✓</span>`, pic: grid(1, 3) },
+        { s: 'i', k: 'Example', t: `${m('5')} only makes 1 row <span class="ok">prime ✓</span>`, pic: grid(1, 5) },
+        { s: 'i', k: 'Example', t: `${m('7')} only makes 1 row <span class="ok">prime ✓</span>`, pic: grid(1, 7) },
+        { s: 'i', concl: true, t: 'Conjecture: every odd number bigger than 1 is prime.' },
+        { s: 'i', cex: true, k: 'Check', t: `${m('9 = 3 × 3')} <span class="bad">not prime ✗</span>`, pic: grid(3, 3, 'x'), note: '9 is a counterexample. One counterexample shows a conjecture is false.' },
+        { s: 'd', k: 'Fact', t: 'A prime number has exactly two factors: 1 and itself.' },
+        { s: 'd', k: 'Step', t: `${m('9 = 3 × 3')}, so 9 has the factors ${m('1')}, ${m('3')} and ${m('9')}.` },
+        { s: 'd', concl: true, t: '9 has three factors, so 9 is not prime. The claim is false.', note: 'Deduction can prove that a claim is false, too.' }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> the pattern looked good for 3, 5 and 7, then broke at 9.', '<b class="c-ded">Deductive:</b> the definition of prime proves 9 does not fit.', 'Inductive reasoning can be wrong. That is why we prove things.'] }
+  ],
+  ctx: [
+    { name: 'Cold days and recess', claim: 'Is recess inside today?',
+      steps: [
+        { s: 'i', k: 'Saw', t: `Monday, ${m('−28 °C')}: recess was inside.` },
+        { s: 'i', k: 'Saw', t: `Wednesday, ${m('−30 °C')}: recess was inside.` },
+        { s: 'i', k: 'Saw', t: `Friday, ${m('−27 °C')}: recess was inside.` },
+        { s: 'i', concl: true, t: `Conjecture: when it is colder than ${m('−25 °C')}, recess is inside.`, note: 'A good guess from what we saw. Nobody told us the rule.' },
+        { s: 'd', k: 'Rule', t: `School rule: when it is colder than ${m('−25 °C')}, recess is inside.` },
+        { s: 'd', k: 'Fact', t: `Today it is ${m('−32 °C')}.` },
+        { s: 'd', k: 'Step', t: `${m('−32 °C')} is colder than ${m('−25 °C')}.` },
+        { s: 'd', concl: true, t: 'So recess is inside today.', note: 'No guessing. The rule and the fact make it certain.' }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> we watched what happened and guessed the rule.', '<b class="c-ded">Deductive:</b> we were given the rule and used it for today.'] },
+    { name: 'Late library books', claim: 'How much does a late book cost?',
+      steps: [
+        { s: 'i', k: 'Saw', t: `Week 1: Jo's book was late. Jo paid ${m('$1')}.` },
+        { s: 'i', k: 'Saw', t: `Week 3: late again. Jo paid ${m('$1')}.` },
+        { s: 'i', k: 'Saw', t: `Week 6: late again. Jo paid ${m('$1')}.` },
+        { s: 'i', concl: true, t: `Conjecture: a late book always costs ${m('$1')}.`, note: 'Probably. But the price could go up, or a very late book could cost more.' },
+        { s: 'd', k: 'Rule', t: `Library rule: every late book costs ${m('$1')}.` },
+        { s: 'd', k: 'Fact', t: "Jo's book is late today." },
+        { s: 'd', concl: true, t: `So Jo owes ${m('$1')}.`, note: 'If the rule and the fact are true, this must be true.' }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> three visits to the library led to a guess.', '<b class="c-ded">Deductive:</b> the posted rule gives a sure answer.'] },
+    { name: 'Can all birds fly?', claim: 'Can all birds fly?',
+      steps: [
+        { s: 'i', k: 'Saw', t: 'A robin is a bird. It can fly <span class="ok">✓</span>' },
+        { s: 'i', k: 'Saw', t: 'A crow is a bird. It can fly <span class="ok">✓</span>' },
+        { s: 'i', k: 'Saw', t: 'A blue jay is a bird. It can fly <span class="ok">✓</span>' },
+        { s: 'i', concl: true, t: 'Conjecture: all birds can fly.' },
+        { s: 'i', cex: true, k: 'Check', t: 'A penguin is a bird. It cannot fly <span class="bad">✗</span>', note: 'The penguin is a counterexample. The conjecture is false.' },
+        { s: 'd', k: 'Fact', t: 'All birds have feathers.' },
+        { s: 'd', k: 'Fact', t: 'A penguin is a bird.' },
+        { s: 'd', concl: true, t: 'So a penguin has feathers.', note: 'The facts are true for every bird, so this must be true.' }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> three birds made a guess that turned out wrong.', '<b class="c-ded">Deductive:</b> a fact about every bird gives a conclusion that cannot be wrong.'] },
+    { name: 'Our hockey team', claim: 'What will happen tonight?',
+      steps: [
+        { s: 'i', k: 'Saw', t: 'Game 1: Ana scored. We won.' },
+        { s: 'i', k: 'Saw', t: 'Game 2: Ana scored. We won.' },
+        { s: 'i', k: 'Saw', t: 'Game 3: Ana scored. We won.' },
+        { s: 'i', concl: true, t: 'Conjecture: when Ana scores, our team wins.', note: 'Maybe. The other team could still score more goals.' },
+        { s: 'd', k: 'Rule', t: `League rule: a team that wins gets ${m('2')} points.` },
+        { s: 'd', k: 'Fact', t: 'Our team won tonight.' },
+        { s: 'd', concl: true, t: `So our team gets ${m('2')} points tonight.` }
+      ],
+      sum: ['<b class="c-ind">Inductive:</b> a streak of games suggests a pattern.', '<b class="c-ded">Deductive:</b> the league rule tells us for sure.'] }
+  ]
+};
+
+/* ---------- state ---------- */
+let mode = 'learn', dom = 'num', lessonIx = { num: 0, ctx: 0 }, shown = 0;
+
+function lesson() { return LESSONS[dom][lessonIx[dom]]; }
+
+function buildLessonButtons() {
+  $('#lessons').innerHTML = LESSONS[dom].map((L, i) => `<button type="button" data-i="${i}" class="${i === lessonIx[dom] ? 'on' : ''}">${L.name}</button>`).join('');
+}
+$('#lessons').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  lessonIx[dom] = +b.dataset.i; buildLessonButtons(); startLesson();
+});
+
+function startLesson() {
+  const L = lesson();
+  $('#claim').innerHTML = `<span class="lbl">${dom === 'num' ? 'Claim' : 'Question'}</span>${L.claim}`;
+  const li = st => {
+    const pill = st.concl ? `<span class="pill ${st.s === 'i' ? 'ind' : 'ded'}">${st.s === 'i' ? 'Probably true' : 'Must be true'}</span>` : '';
+    return `<li class="${st.concl ? 'concl' : ''}${st.cex ? ' cex' : ''}" hidden>${st.k ? `<span class="kind">${st.k}</span>` : ''}<span class="txt">${st.t}</span>${st.pic || ''}${pill}${st.note ? `<span class="note">${st.note}</span>` : ''}</li>`;
+  };
+  $('#stepsI').innerHTML = L.steps.filter(s => s.s === 'i').map(li).join('');
+  $('#stepsD').innerHTML = L.steps.filter(s => s.s === 'd').map(li).join('');
+  $('#sumText').innerHTML = L.sum.map(p => `<p>${p}</p>`).join('');
+  shown = 0; render();
+}
+
+function render() {
+  const L = lesson(), n = L.steps.length;
+  const items = { i: [...$('#stepsI').children], d: [...$('#stepsD').children] }, at = { i: 0, d: 0 };
+  let broke = false;
+  L.steps.forEach((st, k) => {
+    const el = items[st.s][at[st.s]++];
+    el.hidden = k >= shown;
+    el.classList.toggle('lit', k === shown - 1);
+    if (st.cex && k < shown) broke = true;
+  });
+  // A counterexample crosses out the inductive conjecture and changes its tag.
+  const conj = $('#stepsI .concl');
+  if (conj) {
+    conj.classList.toggle('broken', broke);
+    const pill = conj.querySelector('.pill');
+    pill.className = broke ? 'pill no' : 'pill ind';
+    pill.textContent = broke ? 'False ✗' : 'Probably true';
+  }
+  const cur = L.steps[shown - 1];
+  $('#colI').classList.toggle('now', !!cur && cur.s === 'i');
+  $('#colD').classList.toggle('now', !!cur && cur.s === 'd');
+  $('#back').disabled = shown === 0;
+  $('#next').disabled = shown === n;
+  $('#stepno').textContent = shown === 0 ? 'Press Next step to begin.' : `Step ${shown} of ${n}`;
+  $('#sum').hidden = shown < n;
+  const lit = document.querySelector('.steps li.lit');
+  if (lit) lit.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+$('#next').onclick = () => { if (shown < lesson().steps.length) { shown++; render(); } };
+$('#back').onclick = () => { if (shown > 0) { shown--; render(); } };
+$('#restart').onclick = () => { shown = 0; render(); };
+
+/* ---------- practice banks ---------- */
+const KIND = {
+  num: [
+    { k: 'i', t: '4 × 5 = 20, 6 × 5 = 30, 8 × 5 = 40. So an even number times 5 always ends in 0.', clue: '4 × 5 = 20, 6 × 5 = 30, 8 × 5 = 40' },
+    { k: 'd', t: 'Every multiple of 10 ends in 0. 370 is a multiple of 10. So 370 ends in 0.', clue: 'Every multiple of 10 ends in 0' },
+    { k: 'i', t: '1 + 3 = 4, 1 + 3 + 5 = 9, 1 + 3 + 5 + 7 = 16. So adding odd numbers starting at 1 always makes a square number.', clue: '1 + 3 = 4, 1 + 3 + 5 = 9, 1 + 3 + 5 + 7 = 16' },
+    { k: 'd', t: 'An odd number is 2a + 1. Adding 2 gives 2a + 3 = 2(a + 1) + 1. So an odd number plus 2 is always odd.', clue: 'An odd number is 2a + 1' },
+    { k: 'i', t: 'I measured the angles in 5 triangles. Each time they added to 180°. So the angles in every triangle add to 180°.', clue: 'I measured the angles in 5 triangles' },
+    { k: 'd', t: 'The angles in any triangle add to 180°. Two angles are 50° and 60°. So the third angle is 70°.', clue: 'The angles in any triangle add to 180°' },
+    { k: 'd', t: 'Any number times 0 is 0. So 4782 × 0 = 0.', clue: 'Any number times 0 is 0' },
+    { k: 'i', t: '11 × 11 = 121, 12 × 12 = 144, 13 × 13 = 169. So every square number has 3 digits.', clue: '11 × 11 = 121, 12 × 12 = 144, 13 × 13 = 169' },
+    { k: 'd', t: 'A multiple of 4 is 4k. 4k = 2(2k), which is 2 times a whole number. So every multiple of 4 is even.', clue: 'A multiple of 4 is 4k' },
+    { k: 'i', t: 'I tried 2 + 3, 5 + 8 and 10 + 7. The answer was the same when I switched the order. So the order never matters when you add.', clue: 'I tried 2 + 3, 5 + 8 and 10 + 7' },
+    { k: 'd', t: 'A square has 4 equal sides. This square has a side of 6 cm. So its perimeter is 4 × 6 = 24 cm.', clue: 'A square has 4 equal sides' },
+    { k: 'i', t: 'The pattern goes 2, 4, 8, 16. Each number doubles. So the next number is 32.', clue: 'The pattern goes 2, 4, 8, 16' }
+  ],
+  ctx: [
+    { k: 'i', t: 'The last 6 times it rained, the soccer game was cancelled. So rain always cancels the game.', clue: 'The last 6 times it rained' },
+    { k: 'd', t: 'School rule: games are cancelled when there is lightning. There is lightning today. So today’s game is cancelled.', clue: 'School rule: games are cancelled when there is lightning' },
+    { k: 'i', t: 'My last three phones each lasted 2 years. So my next phone will last 2 years.', clue: 'My last three phones each lasted 2 years' },
+    { k: 'd', t: 'All grade 10 students take a math class. Lee is in grade 10. So Lee takes a math class.', clue: 'All grade 10 students take a math class' },
+    { k: 'i', t: 'Every cat I have met hates baths. So all cats hate baths.', clue: 'Every cat I have met hates baths' },
+    { k: 'd', t: 'You need a licence to drive a car. Kai does not have a licence. So Kai is not allowed to drive a car.', clue: 'You need a licence to drive a car' },
+    { k: 'i', t: 'The bus was late every Monday this month. So the bus will be late next Monday.', clue: 'The bus was late every Monday this month' },
+    { k: 'd', t: 'The store is closed on every holiday. Monday is a holiday. So the store is closed on Monday.', clue: 'The store is closed on every holiday' },
+    { k: 'i', t: 'The first 20 people in line all ordered fries. So everyone who comes here orders fries.', clue: 'The first 20 people in line all ordered fries' },
+    { k: 'd', t: 'Movie tickets cost $12 each. We bought 3 tickets. So we paid $36.', clue: 'Movie tickets cost $12 each' },
+    { k: 'i', t: 'Every time Mia studied the night before, she passed her quiz. So studying the night before means she will pass.', clue: 'Every time Mia studied the night before, she passed her quiz' },
+    { k: 'd', t: 'Everyone on the team must wear a helmet. Sam is on the team. So Sam must wear a helmet.', clue: 'Everyone on the team must wear a helmet' }
+  ]
+};
+const CEX = {
+  num: [
+    { c: 'Every number times 2 is bigger than the number.', ex: '5 × 2 = 10, 8 × 2 = 16, 20 × 2 = 40', ch: [
+      ['5', '5 × 2 = 10. That is bigger than 5, so it fits.'], ['12', '12 × 2 = 24. Bigger than 12, so it fits.'], ['0', '0 × 2 = 0. That is not bigger than 0!', 1], ['7', '7 × 2 = 14. Bigger than 7, so it fits.']] },
+    { c: 'Every prime number is odd.', ex: '3, 5, 7 and 11 are prime and odd.', ch: [
+      ['3', '3 is prime and odd. It fits.'], ['2', '2 is prime, but 2 is even!', 1], ['13', '13 is prime and odd. It fits.'], ['9', '9 is odd, but 9 is not prime. It does not test the claim.']] },
+    { c: 'A square number is always even.', ex: '2 × 2 = 4, 4 × 4 = 16, 6 × 6 = 36', ch: [
+      ['16', '16 = 4 × 4 and it is even. It fits.'], ['36', '36 = 6 × 6 and it is even. It fits.'], ['9', '9 = 3 × 3 is a square number, and 9 is odd!', 1], ['8', '8 is even, but 8 is not a square number. It does not test the claim.']] },
+    { c: 'Every number that ends in 4 can be divided by 4 evenly.', ex: '24 ÷ 4 = 6, 44 ÷ 4 = 11, 64 ÷ 4 = 16', ch: [
+      ['24', '24 ÷ 4 = 6. It fits.'], ['14', '14 ÷ 4 = 3.5. Not even!', 1], ['84', '84 ÷ 4 = 21. It fits.'], ['44', '44 ÷ 4 = 11. It fits.']] },
+    { c: 'When you multiply two whole numbers, the answer is bigger than both numbers.', ex: '2 × 3 = 6, 4 × 5 = 20, 3 × 7 = 21', ch: [
+      ['2 × 6', '2 × 6 = 12, bigger than 2 and 6. It fits.'], ['5 × 4', '5 × 4 = 20, bigger than 5 and 4. It fits.'], ['1 × 6', '1 × 6 = 6. That is not bigger than 6!', 1], ['3 × 3', '3 × 3 = 9, bigger than 3. It fits.']] },
+    { c: 'Every multiple of 3 is odd.', ex: '3, 9, 15 and 21 are multiples of 3 and odd.', ch: [
+      ['9', '9 is a multiple of 3 and odd. It fits.'], ['15', '15 is a multiple of 3 and odd. It fits.'], ['12', '12 = 3 × 4 is a multiple of 3, and 12 is even!', 1], ['7', '7 is odd, but not a multiple of 3. It does not test the claim.']] },
+    { c: 'Adding two numbers always gives an answer bigger than each number.', ex: '2 + 3 = 5, 10 + 5 = 15, 7 + 7 = 14', ch: [
+      ['4 + 6', '4 + 6 = 10, bigger than both. It fits.'], ['8 + 1', '8 + 1 = 9, bigger than both. It fits.'], ['4 + (−1)', '4 + (−1) = 3. That is smaller than 4!', 1], ['5 + 5', '5 + 5 = 10, bigger than 5. It fits.']] },
+    { c: 'A shape with 4 equal sides is always a square.', ex: 'Every square has 4 equal sides.', ch: [
+      ['A square', 'A square has 4 equal sides and is a square. It fits.'], ['A rhombus (tilted)', 'A tilted rhombus has 4 equal sides, but its corners are not right angles. Not a square!', 1], ['A rectangle', 'A long rectangle does not have 4 equal sides. It does not test the claim.'], ['A triangle', 'A triangle has 3 sides. It does not test the claim.']] }
+  ],
+  ctx: [
+    { c: 'All birds can fly.', ex: 'Robins, crows and eagles can fly.', ch: [
+      ['Robin', 'A robin is a bird that flies. It fits.'], ['Eagle', 'An eagle is a bird that flies. It fits.'], ['Penguin', 'A penguin is a bird that cannot fly!', 1], ['Bat', 'A bat flies, but it is not a bird. It does not test the claim.']] },
+    { c: 'Every month has at least 30 days.', ex: 'March has 31, June has 30, October has 31.', ch: [
+      ['March', 'March has 31 days. It fits.'], ['June', 'June has 30 days. It fits.'], ['February', 'February has only 28 or 29 days!', 1], ['December', 'December has 31 days. It fits.']] },
+    { c: 'Every animal that lives in the ocean is a fish.', ex: 'Salmon, cod and sharks live in the ocean and are fish.', ch: [
+      ['Salmon', 'A salmon is a fish. It fits.'], ['Shark', 'A shark is a fish. It fits.'], ['Whale', 'A whale lives in the ocean, but it is a mammal, not a fish!', 1], ['Tuna', 'A tuna is a fish. It fits.']] },
+    { c: 'Every Canadian province touches an ocean.', ex: 'B.C., Nova Scotia and Quebec all touch an ocean.', ch: [
+      ['British Columbia', 'B.C. touches the Pacific Ocean. It fits.'], ['Alberta', 'Alberta does not touch any ocean!', 1], ['Nova Scotia', 'Nova Scotia touches the Atlantic Ocean. It fits.'], ['Newfoundland and Labrador', 'It touches the Atlantic Ocean. It fits.']] },
+    { c: 'All fruit tastes sweet.', ex: 'Apples, mangoes and grapes taste sweet.', ch: [
+      ['Apple', 'An apple tastes sweet. It fits.'], ['Mango', 'A mango tastes sweet. It fits.'], ['Lemon', 'A lemon is a fruit, and it tastes sour!', 1], ['Grape', 'A grape tastes sweet. It fits.']] },
+    { c: 'All metals are solid at room temperature.', ex: 'Iron, copper and gold are solid.', ch: [
+      ['Iron', 'Iron is a solid metal. It fits.'], ['Copper', 'Copper is a solid metal. It fits.'], ['Mercury', 'Mercury is a metal that is liquid at room temperature!', 1], ['Gold', 'Gold is a solid metal. It fits.']] },
+    { c: 'If it is sunny, it is warm outside.', ex: 'Sunny days in June, July and August were warm.', ch: [
+      ['A sunny July day', 'Sunny and warm. It fits.'], ['A sunny day at −20 °C in January', 'Sunny, but very cold!', 1], ['A rainy day', 'It is not sunny, so it does not test the claim.'], ['A sunny August day', 'Sunny and warm. It fits.']] }
+  ]
+};
+const ORDER = {
+  num: [
+    { c: 'Prove: even + even is even.', st: ['Two even numbers can be written as 2a and 2b.', 'Add them: 2a + 2b.', 'Take out the 2: 2a + 2b = 2(a + b).', '2 times a whole number is even. So the sum is even.'] },
+    { c: 'Prove: odd + odd is even.', st: ['Two odd numbers can be written as 2a + 1 and 2b + 1.', 'Add them: 2a + 2b + 2.', 'Take out the 2: 2a + 2b + 2 = 2(a + b + 1).', '2 times a whole number is even. So the sum is even.'] },
+    { c: 'Prove: even + odd is odd.', st: ['An even number is 2a. An odd number is 2b + 1.', 'Add them: 2a + 2b + 1.', 'Take out the 2: 2a + 2b + 1 = 2(a + b) + 1.', 'An even number plus 1 is odd. So the sum is odd.'] },
+    { c: 'Prove: an even number times any whole number is even.', st: ['An even number is 2a. Any whole number is n.', 'Multiply them: 2a × n.', 'Regroup: 2a × n = 2(a × n).', '2 times a whole number is even. So the product is even.'] },
+    { c: 'Prove: three numbers in a row add to a multiple of 3.', st: ['Three numbers in a row are n, n + 1 and n + 2.', 'Add them: n + n + 1 + n + 2 = 3n + 3.', 'Take out the 3: 3n + 3 = 3(n + 1).', '3 times a whole number is a multiple of 3.'] },
+    { c: 'Prove: two numbers in a row add to an odd number.', st: ['Two numbers in a row are n and n + 1.', 'Add them: n + n + 1 = 2n + 1.', '2n is even.', 'An even number plus 1 is odd. So the sum is odd.'] }
+  ],
+  ctx: [
+    { c: 'Show that recess is inside today.', st: ['School rule: when it is colder than −25 °C, recess is inside.', 'Today it is −32 °C.', '−32 °C is colder than −25 °C.', 'So recess is inside today.'] },
+    { c: 'Show that Kai is not allowed to drive.', st: ['To drive a car, you need a licence.', 'To get a licence, you must pass a test.', 'Kai has not passed the test, so Kai has no licence.', 'So Kai is not allowed to drive.'] },
+    { c: 'Show what pizza costs right now.', st: ['The cafeteria sells all food at half price after 1:00.', 'Pizza costs $4 before 1:00.', 'It is now 1:30, so the price is half of $4.', 'So pizza costs $2 right now.'] },
+    { c: 'Show how much we paid.', st: ['Movie tickets cost $12 each.', 'We bought 3 tickets.', '3 × $12 = $36.', 'So we paid $36.'] },
+    { c: 'Show that Sam needs a helmet.', st: ['Everyone on the team must wear a helmet in games.', 'Sam is on the team.', 'Sam is playing in a game tonight.', 'So Sam must wear a helmet tonight.'] }
+  ]
+};
+
+/* ---------- practice ---------- */
+let qtype = 'kind', q = null, firstTry = true, done = false, right = 0, tried = 0, orderAt = 0;
+const bags = {};
+function draw(name, list) {
+  const key = name + dom;
+  if (!bags[key] || !bags[key].length) bags[key] = shuffle(list.map((_, i) => i));
+  return list[bags[key].pop()];
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+function newQuestion() {
+  const t = qtype === 'mix' ? ['kind', 'cex', 'order'][Math.floor(Math.random() * 3)] : qtype;
+  firstTry = true; done = false; orderAt = 0;
+  $('#fb').innerHTML = ''; $('#nextq').hidden = true; $('#showans').disabled = false;
+  $('#remI').classList.remove('lit'); $('#remD').classList.remove('lit');
+  const ans = $('#answers'), arg = $('#arg'), proof = $('#proof');
+  ans.className = 'answers'; proof.hidden = true;
+  if (t === 'kind') {
+    q = { t, ...draw('kind', KIND[dom]) };
+    $('#qtype').textContent = 'Is this inductive or deductive reasoning?';
+    arg.innerHTML = `<span class="lbl">Read the argument</span><span id="argtxt">${esc(q.t)}</span>`;
+    ans.innerHTML = `<button type="button" class="big i" data-a="i">Inductive<small>examples → a guess</small></button><button type="button" class="big d" data-a="d">Deductive<small>always-true rule → a sure answer</small></button>`;
+  } else if (t === 'cex') {
+    q = { t, ...draw('cex', CEX[dom]) };
+    q.ch = shuffle(q.ch.slice());
+    $('#qtype').textContent = 'Find the counterexample.';
+    arg.innerHTML = `<span class="lbl">Conjecture</span><b>${esc(q.c)}</b><br><span style="color:var(--muted);font-size:.9em">Evidence: ${esc(q.ex)}</span>`;
+    ans.innerHTML = q.ch.map((c, i) => `<button type="button" data-i="${i}">${esc(c[0])}</button>`).join('');
+  } else {
+    q = { t, ...draw('order', ORDER[dom]) };
+    let order; do { order = shuffle(q.st.map((_, i) => i)); } while (order.every((v, i) => v === i));
+    q.order = order;
+    $('#qtype').textContent = 'Put the steps in order. Tap the first step.';
+    arg.innerHTML = `<span class="lbl">Deductive proof</span><b>${esc(q.c)}</b>`;
+    proof.hidden = false;
+    proof.innerHTML = q.st.map((_, i) => `<li><b>${i + 1}</b><span></span></li>`).join('');
+    ans.className = 'answers order';
+    ans.innerHTML = order.map(i => `<button type="button" data-s="${i}">${esc(q.st[i])}</button>`).join('');
+  }
+}
+
+function score(ok) { tried++; if (ok) right++; $('#right').textContent = right; $('#tried').textContent = tried; }
+function finish(ok) {
+  if (done) return; done = true;
+  score(ok && firstTry);
+  $('#nextq').hidden = false; $('#showans').disabled = true;
+  $('#nextq').focus({ preventScroll: true });
+}
+function highlightClue() {
+  const el = $('#argtxt'); if (!el || !q.clue) return;
+  el.innerHTML = esc(q.t).replace(esc(q.clue), `<mark style="--hl:var(${q.k === 'i' ? '--ind' : '--ded'})">${esc(q.clue)}</mark>`);
+}
+
+$('#answers').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || done || b.disabled) return;
+  if (q.t === 'kind') {
+    const ok = b.dataset.a === q.k;
+    [...$('#answers').children].forEach(x => { x.disabled = true; if (x.dataset.a === q.k) x.classList.add('right'); else if (x === b) x.classList.add('wrong'); });
+    $(q.k === 'i' ? '#remI' : '#remD').classList.add('lit');
+    highlightClue();
+    $('#fb').innerHTML = `<p class="head ${ok && firstTry ? 'ok' : 'bad'}">${!firstTry ? 'Answer:' : ok ? 'Yes!' : 'Not quite.'} It is ${q.k === 'i' ? '<span class="c-ind">inductive</span>' : '<span class="c-ded">deductive</span>'}.</p>` +
+      (q.k === 'i' ? '<p>It looks at some examples and guesses a rule. The guess could still be wrong.</p>'
+                   : '<p>It starts from a rule or fact that is always true and uses it. The conclusion must be true.</p>');
+    finish(ok);
+  } else if (q.t === 'cex') {
+    const c = q.ch[+b.dataset.i];
+    if (c[2]) {
+      b.classList.add('right');
+      [...$('#answers').children].forEach(x => x.disabled = true);
+      $('#fb').innerHTML = `<p class="head ok">${firstTry ? 'Yes!' : 'Got it.'} ${esc(c[0])} is a counterexample.</p><p>${esc(c[1])} One counterexample proves the conjecture is false.</p>`;
+      finish(true);
+    } else {
+      b.classList.add('wrong'); b.disabled = true; firstTry = false;
+      $('#fb').innerHTML = `<p class="head bad">Not a counterexample.</p><p>${esc(c[1])} Try another.</p>`;
+    }
+  } else {
+    const s = +b.dataset.s;
+    if (s === orderAt) {
+      const li = $('#proof').children[orderAt];
+      li.classList.add('done'); li.querySelector('span').textContent = q.st[s];
+      b.remove(); orderAt++;
+      if (orderAt === q.st.length) {
+        $('#fb').innerHTML = `<p class="head ok">${firstTry ? 'Proven!' : 'Done.'}</p><p>Each step follows from the one before. That is <span class="c-ded">deductive</span> reasoning.</p>`;
+        finish(true);
+      } else {
+        $('#fb').innerHTML = `<p>Good. Now tap step ${orderAt + 1}.</p>`;
+      }
+    } else {
+      firstTry = false;
+      b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+      $('#fb').innerHTML = orderAt === 0
+        ? '<p class="bad">Not first. Start with the rule, fact, or what the numbers look like.</p>'
+        : `<p class="bad">Not yet. Which step uses step ${orderAt}?</p>`;
+    }
+  }
+});
+
+$('#showans').onclick = () => {
+  if (done) return;
+  firstTry = false;
+  if (q.t === 'kind') { $(`#answers [data-a="${q.k}"]`).click(); return; }
+  if (q.t === 'cex') { const i = q.ch.findIndex(c => c[2]); $(`#answers [data-i="${i}"]`).click(); return; }
+  while (orderAt < q.st.length) $(`#answers [data-s="${orderAt}"]`).click();
+};
+$('#nextq').onclick = newQuestion;
+$('#newq').onclick = newQuestion;
+$('#types').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  qtype = b.dataset.t; [...$('#types').children].forEach(x => x.classList.toggle('on', x === b)); newQuestion();
+});
+
+/* ---------- switches ---------- */
+$('#modes').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = b.dataset.mode; [...$('#modes').children].forEach(x => x.classList.toggle('on', x === b));
+  $('#learn').hidden = mode !== 'learn'; $('#practice').hidden = mode !== 'practice';
+  if (mode === 'practice' && !q) newQuestion();
+});
+$('#doms').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  dom = b.dataset.dom; [...$('#doms').children].forEach(x => x.classList.toggle('on', x === b));
+  buildLessonButtons(); startLesson();
+  if (q) newQuestion();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, select, textarea')) return;
+  if (mode === 'learn') {
+    if (e.key === 'ArrowRight') { e.preventDefault(); $('#next').click(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); $('#back').click(); }
+  } else if (e.key === 'Enter' && done && document.activeElement !== $('#nextq')) { e.preventDefault(); newQuestion(); }
+});
+
+buildLessonButtons(); startLesson();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

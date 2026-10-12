@@ -344,10 +344,10 @@ function newQuestion() {
   do { cand = pick(pool(pick(use), mode)); tries++; } while (cand.n + '/' + cand.d === lastKey && tries < 20);
   lastKey = cand.n + '/' + cand.d;
   q = { ...cand, dec: decOf(cand.n, cand.d) };
-  if (mode === 'd2f' && q.type === 'repeating') { const g = gcd(q.n, q.d); q.sn = q.n / g; q.sd = q.d / g; }
+  { const g = gcd(q.n, q.d); q.sn = q.n / g; q.sd = q.d / g; } // simplest form, the answer going to a fraction or ratio
   if (mode === 'ratio') {
     q.dir = Math.random() < 0.5 ? 'r2d' : 'd2r';
-    if (q.dir === 'r2d') { q.T = 10 % q.d === 0 ? 10 : 100; q.k = q.T / q.d; }
+    if (q.dir === 'r2d') { q = { ...q, n: q.sn, d: q.sd }; q.T = 10 % q.d === 0 ? 10 : 100; q.k = q.T / q.d; }
     else { q.T = 10 ** q.dec.digits.length; q.p = q.n * q.T / q.d; } // the decimal as p out of T
   }
   shown = 0; solved = false; revealed = false; tried = false;
@@ -406,6 +406,8 @@ function readDec(raw) {
   return null;
 }
 const same = (a, b, c, d) => a * d === b * c;
+// The first L digits after the point of a repeating decimal.
+function digitsTo(e, L) { const out = e.digits.slice(); while (out.length < L) out.push(...e.digits.slice(e.repStart)); return out.join(''); }
 
 // Is this typed decimal equal to n/d? Returns 'good', 'close' or 'bad' with a message.
 function judgeDec(raw, n, d) {
@@ -414,15 +416,14 @@ function judgeDec(raw, n, d) {
   if (!r) return { s: 'bad', msg: 'Type a decimal like 0.75.' };
   if (r.dots !== undefined) {
     if (!e.rep) return { s: 'close', msg: 'This decimal stops, so no dots are needed.' };
-    const want = e.digits.concat(e.digits.slice(e.repStart), e.digits.slice(e.repStart), e.digits.slice(e.repStart)).join('');
+    const want = digitsTo(e, r.dots.length);
     if (!want.startsWith(r.dots)) return { s: 'bad', msg: 'Not quite. Try a hint.' };
     if (r.dots.length < e.repStart + e.b.length) return { s: 'close', msg: 'Right start! Show a little more before the dots.' };
     return { s: 'good' };
   }
   if (same(r.n, r.d, n, d)) return { s: 'good' };
   if (e.rep && r.digits !== undefined && r.ip === 0) {
-    const want = e.digits.concat(e.digits.slice(e.repStart), e.digits.slice(e.repStart), e.digits.slice(e.repStart)).join('');
-    if (want.startsWith(r.digits)) return { s: 'close', msg: 'Close! The digits keep going. Show it repeats: add ... at the end.' };
+    if (digitsTo(e, r.digits.length).startsWith(r.digits)) return { s: 'close', msg: 'Close! The digits keep going. Show it repeats: add ... at the end.' };
   }
   if (r.digits === String(n) + String(d)) return { s: 'bad', msg: `Not the digits side by side: ${fracT(n, d)} means ${n} ÷ ${d}.` };
   if (same(r.n * 10, r.d, n, d) || same(r.n, r.d * 10, n, d)) return { s: 'bad', msg: 'The digits are right. Check the place value.' };
@@ -455,7 +456,7 @@ function check() {
     const a = num('#a1');
     res.push(['#a1', a === q.p ? 'good' : 'bad', a === q.p ? '' : `${q.dec.text} is how many ${q.T === 10 ? 'tenths' : 'hundredths'}?`]);
     const b = num('#a2'), c = num('#a3');
-    if (b === q.n && c === q.d) res.push(['#a2', 'good'], ['#a3', 'good']);
+    if (b === q.sn && c === q.sd) res.push(['#a2', 'good'], ['#a3', 'good']);
     else if (b > 0 && c > 0 && same(b, c, q.n, q.d)) res.push(['#a2', 'close', 'Equal! Can you divide both by something more?'], ['#a3', 'close']);
     else res.push(['#a2', 'bad', 'Not equal yet. Divide both by the same number.'], ['#a3', 'bad']);
   }
@@ -488,7 +489,7 @@ function showAnswer() {
   if (mode === 'f2d') put('#a1', q.dec.text);
   else if (mode === 'd2f') { put('#a1', q.sn ?? q.n); put('#a2', q.sd ?? q.d); }
   else if (q.dir === 'r2d') { put('#a1', q.n * q.k); put('#a2', q.dec.text); }
-  else { put('#a1', q.p); put('#a2', q.n); put('#a3', q.d); }
+  else { put('#a1', q.p); put('#a2', q.sn); put('#a3', q.sd); }
   shown = steps().length; renderSteps();
   fb.className = 'fb show'; fb.textContent = 'Here is the answer. Read the steps, then try a new one.';
   finish();
@@ -529,20 +530,20 @@ function steps() {
     const T = 10 ** k, p = n * T / d, g = gcd(p, T);
     const out = [`${M(dec.text)} has ${k} digit${k > 1 ? 's' : ''} after the point, so it is ${place(k)}`,
       `${M(dec.text)} = ${M(fracT(p, T))}`];
-    if (g > 1) out.push(`Both divide by ${g} (the GCF): ${M(`${p} ÷ ${g} = ${n}`)} and ${M(`${T} ÷ ${g} = ${d}`)}`);
+    if (g > 1) out.push(`Both divide by ${g} (the GCF): ${M(`${p} ÷ ${g} = ${p / g}`)} and ${M(`${T} ÷ ${g} = ${T / g}`)}`);
     else out.push(`${p} and ${T} share no factor, so it is already simplest`);
-    out.push(`${M(dec.text)} = ${M(fracT(n, d))}`);
+    out.push(`${M(dec.text)} = ${M(fracT(p / g, T / g))}`);
     return out;
   }
   if (q.dir === 'r2d') return [`Part : whole ${M(`${n} : ${d}`)} is the fraction ${M(fracT(n, d))}`,
     `Scale the whole to ${q.T}: ${M(`${d} × ${q.k} = ${q.T}`)}, so ${M(`${n} × ${q.k} = ${n * q.k}`)}`,
     `${M(`${n * q.k} : ${q.T}`)} is ${n * q.k} ${q.T === 10 ? 'tenths' : 'hundredths'}`,
     `${M(`${n} : ${d}`)} = ${M(`${n * q.k} : ${q.T}`)} = ${M(dec.text)}`];
-  const g = q.T / d;
+  const g = q.T / q.sd;
   const out = [`${M(dec.text)} is ${q.p} ${place(k)}: ${M(`${q.p} : ${q.T}`)}`];
-  if (g > 1) out.push(`Divide both by ${g} (the GCF): ${M(`${q.p} ÷ ${g} = ${n}`)} and ${M(`${q.T} ÷ ${g} = ${d}`)}`);
+  if (g > 1) out.push(`Divide both by ${g} (the GCF): ${M(`${q.p} ÷ ${g} = ${q.sn}`)} and ${M(`${q.T} ÷ ${g} = ${q.sd}`)}`);
   else out.push(`${q.p} and ${q.T} share no factor, so it is already simplest`);
-  out.push(`${M(dec.text)} = ${M(`${q.p} : ${q.T}`)} = ${M(`${n} : ${d}`)}`);
+  out.push(`${M(dec.text)} = ${M(`${q.p} : ${q.T}`)} = ${M(`${q.sn} : ${q.sd}`)}`);
   return out;
 }
 function renderSteps() {
@@ -651,6 +652,145 @@ newQuestion();
 </script>
 
 <script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Fractions and Decimals (fracdec.html). Static labels and feedback; the step list stays in English. */
+window.I18N_PAGE = {
+  "Fractions and Decimals": "Fractions et nombres décimaux",
+  "Fraction → Decimal": "Fraction → Décimal",
+  "Decimal → Fraction": "Décimal → Fraction",
+  "Ratios": "Rapports",
+  "Visual on": "Visuel activé",
+  "Off": "Désactivé",
+  "Numbers to use": "Nombres à utiliser",
+  "Tenths and hundredths": "Dixièmes et centièmes",
+  "Make 10 or 100": "Faire 10 ou 100",
+  "Repeating": "Périodiques",
+  "Ratios scale to 10 or 100, so repeating decimals are left out here.": "Les rapports se ramènent à 10 ou 100, donc les décimaux périodiques sont exclus ici.",
+  "Steps": "Étapes",
+  "Stuck? Press Hint for one step at a time.": "Bloqué ? Appuie sur Indice pour une étape à la fois.",
+  "Next hint": "Indice suivant",
+  "Hint": "Indice",
+  "Right first time: {0}": "Réussi du premier coup : {0}",
+  "Write the fraction as a decimal.": "Écris la fraction en nombre décimal.",
+  "Write the decimal as a fraction in simplest form.": "Écris le nombre décimal en fraction irréductible.",
+  "The ratio is part : whole. Scale it, then write it as a decimal.": "Le rapport est partie : tout. Agrandis-le, puis écris-le en nombre décimal.",
+  "Write the decimal as a part : whole ratio, then simplify.": "Écris le nombre décimal en rapport partie : tout, puis simplifie.",
+  "part : whole": "partie : tout",
+  "part : {n}": "partie : {n}",
+  "decimal": "décimal",
+  "simplest": "irréductible",
+  "If it repeats, type dots: {0} or brackets: {1}": "S'il se répète, écris des points : {0} ou des parenthèses : {1}",
+  "Yes! Nice work.": "Oui ! Beau travail.",
+  "That’s it!": "C'est ça !",
+  "Right on!": "Exactement !",
+  "Here is the answer. Read the steps, then try a new one.": "Voici la réponse. Lis les étapes, puis essaie une nouvelle question.",
+  "Type a decimal first.": "Écris d'abord un nombre décimal.",
+  "Type a decimal like 0.75.": "Écris un nombre décimal comme 0.75.",
+  "This decimal stops, so no dots are needed.": "Ce nombre décimal s'arrête, pas besoin de points.",
+  "Not quite. Try a hint.": "Pas tout à fait. Essaie un indice.",
+  "Right start! Show a little more before the dots.": "Bon début ! Montre un peu plus de chiffres avant les points.",
+  "Close! The digits keep going. Show it repeats: add ... at the end.": "Presque ! Les chiffres continuent. Montre qu'il se répète : ajoute ... à la fin.",
+  "The digits are right. Check the place value.": "Les chiffres sont bons. Vérifie la valeur de position.",
+  "Type a whole number on top and on the bottom.": "Écris un nombre entier en haut et en bas.",
+  "Equal! Now simplify it: what divides into both?": "Égal ! Simplifie maintenant : quel nombre divise les deux ?",
+  "Not equal. Try a hint.": "Pas égal. Essaie un indice.",
+  "Equal! Can you divide both by something more?": "Égal ! Peux-tu encore diviser les deux ?",
+  "Not equal yet. Divide both by the same number.": "Pas encore égal. Divise les deux par le même nombre.",
+  "Hundred grid": "Grille de cent",
+  "Number line": "Droite numérique",
+  "Fraction bar: {n} equal parts": "Barre de fraction : {n} parties égales",
+  "Part {n} of whole {n}": "Partie {n} d'un tout de {n}",
+  "Each column is 0.1, each square 0.01": "Chaque colonne vaut 0.1, chaque carré 0.01",
+  "{n} of {n} squares": "{n} carrés sur {n}"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -668,7 +808,7 @@ newQuestion();
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -683,6 +823,12 @@ newQuestion();
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -722,8 +868,12 @@ newQuestion();
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t == null) return false;
+      let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? "");
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The Ambiguous Case</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Colours: side b blue, side a purple, 0 triangles red, 1 triangle green, 2 triangles orange (the second, obtuse-B triangle). */
+:root { --purple: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; } }
+:root[data-theme="dark"] { --purple: #b98cff; }
+h1 .m { color: var(--pt); }
+.c-purple { color: var(--purple); font-weight: 700; }
+.c-warn { color: var(--warn); font-weight: 700; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; font-size: 1.05rem; padding: 10px 16px; }
+.seg button:first-child { border-radius: 10px 0 0 10px; }
+.seg button:last-child { border-radius: 0 10px 10px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.main { grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); gap: 16px; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board { position: relative; }
+.boardbar { display: flex; align-items: center; gap: 12px; flex: none; margin: 4px 4px 0; min-height: 2.6rem; }
+.boardbar .hint { margin: 0; font-size: 1rem; }
+#swing { background: var(--purple); color: var(--sheet); border-color: var(--purple); font-size: 1rem; padding: 8px 14px; flex: none; }
+#swing:disabled { opacity: 0.4; cursor: default; }
+.panel { gap: 10px; }
+.card { padding: 10px 14px; }
+.card .label { margin-bottom: 4px; }
+.sl { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) 5.4rem; align-items: center; gap: 10px; }
+.sl + .sl { margin-top: 2px; }
+.sl label { font-weight: 700; font-family: var(--font-num); font-size: 1.15rem; }
+.sl output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.25rem; }
+input[type=range].purple { accent-color: var(--purple); }
+.presets { align-items: center; gap: 6px; }
+.presets span { color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.presets button { padding: 5px 10px; font-size: 0.9rem; }
+.strip { display: block; width: 100%; height: auto; }
+.case { margin: 4px 0 0; font-size: 1.1rem; font-weight: 700; line-height: 1.35; }
+.case .n { display: inline-block; min-width: 1.6em; text-align: center; border-radius: 6px; color: var(--sheet); padding: 0 6px; margin-right: 4px; font-family: var(--font-num); }
+.k0 { color: var(--warn); } .k1 { color: var(--green); } .k2 { color: var(--orange); }
+.n.k0 { background: var(--warn); color: var(--sheet); } .n.k1 { background: var(--green); color: var(--sheet); } .n.k2 { background: var(--orange); color: var(--sheet); }
+.eq { font-size: 1.2rem; gap: 6px 8px; }
+.eq + .eq { margin-top: 6px; }
+.eq .why { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); font-weight: 700; }
+.law .frac { font-size: 1.05rem; }
+.sup { font-size: 0.65em; vertical-align: 0.55em; }
+.mono { font-family: var(--font-num); font-weight: 700; }
+.err { background: var(--warn); color: var(--sheet); border-radius: 6px; padding: 0 8px; font-family: var(--font-num); font-weight: 700; }
+/* Practice */
+.q { margin: 0; font-size: 1.15rem; line-height: 1.4; }
+.q .mono { font-size: 1.2rem; }
+.step { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 8px 14px; }
+.step.now { border: 2px solid var(--pt); }
+.step.todo { opacity: 0.5; }
+.step h3 { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.12rem; }
+.step h3 .num { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--ink); color: var(--sheet); font-size: 0.9rem; flex: none; }
+.step.now h3 .num { background: var(--pt); }
+.step.done h3 .num { background: var(--green); }
+.step h3 .mark { margin-left: auto; font-size: 0.85rem; font-family: var(--font-body); color: var(--muted); }
+.step .body { margin-top: 6px; }
+.step p { margin: 0 0 6px; line-height: 1.35; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.row .mono { font-size: 1.25rem; }
+.ans { font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; width: 5.5em; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.ans.ok { border-color: var(--green); } .ans.bad { border-color: var(--warn); }
+.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.pickn button { min-width: 3.2em; font-family: var(--font-num); font-size: 1.3rem; padding: 6px 12px; }
+.pickn button.bad { border-color: var(--warn); color: var(--warn); text-decoration: line-through; }
+.pickn button.ok { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.fb { margin: 6px 0 0 !important; font-weight: 700; }
+.fb.ok { color: var(--green); } .fb.bad { color: var(--warn); }
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: none; margin-top: auto; }
+.foot .score { color: var(--muted); font-weight: 700; }
+.foot .score b { color: var(--ink); font-family: var(--font-num); }
+#newQ { font-size: 1.05rem; padding: 10px 16px; }
+#newQ.ready { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+@media (min-width: 861px) and (min-height: 520px) {
+  .panel { overflow-y: auto; }
+}
+/* Board drawing */
+.base { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.base.ext { stroke-dasharray: 6 8; stroke-width: 2; opacity: 0.6; }
+.sb { stroke: var(--pt); stroke-width: 6; stroke-linecap: round; }
+.sa { stroke: var(--purple); stroke-width: 6; stroke-linecap: round; }
+.sa.swing { stroke-width: 5; }
+.sa.short { stroke-dasharray: 10 7; }
+.sa.reject { stroke-width: 3; stroke-dasharray: 4 6; opacity: 0.55; }
+.trail { fill: none; stroke: var(--purple); stroke-width: 2.5; stroke-dasharray: 8 7; opacity: 0.8; }
+.hl { stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 7 6; }
+.gap { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 3 5; }
+.tri1 { fill: var(--green); fill-opacity: 0.14; }
+.tri2 { fill: var(--orange); fill-opacity: 0.16; }
+.tri1, .tri2 { animation: fadein .5s ease-out; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.ang { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.ang.k1 { stroke: var(--green); } .ang.k2 { stroke: var(--orange); }
+.ra { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+.vx { font-family: var(--font-display); font-weight: 800; font-size: 32px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.vx.k1 { fill: var(--green); } .vx.k2 { fill: var(--orange); }
+.tx { font-family: var(--font-num); font-weight: 700; font-size: 24px; fill: var(--ink); dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
+.tx.b { fill: var(--pt); } .tx.a { fill: var(--purple); } .tx.h { fill: var(--muted); } .tx.k1 { fill: var(--green); } .tx.k2 { fill: var(--orange); } .tx.warn { fill: var(--warn); }
+.tx.sm { font-size: 20px; }
+.dot { stroke: var(--sheet); stroke-width: 3; }
+.dot.C { fill: var(--pt); } .dot.k1 { fill: var(--green); } .dot.k2 { fill: var(--orange); } .dot.A { fill: var(--ink); }
+.x-mark { stroke: var(--warn); stroke-width: 4; stroke-linecap: round; }
+.tick { stroke: var(--purple); stroke-width: 3; }
+/* Strip */
+.zone { stroke: var(--sheet); stroke-width: 2; }
+.zone.z0 { fill: var(--warn); } .zone.z1 { fill: var(--green); } .zone.z2 { fill: var(--orange); } .zone.zn { fill: var(--grid-major); }
+.zone.dim { opacity: 0.22; }
+.zt { font-family: var(--font-num); font-weight: 700; font-size: 19px; fill: var(--ink); text-anchor: middle; }
+.zt.cnt { font-size: 18px; }
+.zt.k0 { fill: var(--warn); } .zt.k1 { fill: var(--green); } .zt.k2 { fill: var(--orange); }
+.zt.mut { fill: var(--muted); }
+.zt.dim { opacity: 0.35; }
+.stick { stroke: var(--ink); stroke-width: 2.5; }
+.amark { fill: var(--purple); }
+.zt.a { fill: var(--purple); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>The <span class="m">Ambiguous Case</span></h1></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Learn or practice">
+        <button type="button" data-mode="learn" aria-pressed="true">Learn</button>
+        <button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+      </div>
+      <div class="seg" role="group" aria-label="Angle A acute or obtuse">
+        <button type="button" data-kind="acute" aria-pressed="true">∠A acute</button>
+        <button type="button" data-kind="obtuse" aria-pressed="false">∠A obtuse</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="0 0 1000 600" role="img" aria-label="Angle A, side b and side a swinging from C to meet the base"></svg>
+      <div class="boardbar">
+        <button type="button" id="swing">▶ Swing side a</button>
+        <div class="presets" id="presets"></div>
+        <p class="hint" id="hint"></p>
+      </div>
+    </div>
+
+    <!-- Learn: given parts, then the two questions in order -->
+    <div class="panel" id="learn">
+      <div class="card">
+        <p class="label">Given: ∠A, side b, and side a (across from ∠A)</p>
+        <div class="sl"><label for="sA">∠A</label><input type="range" id="sA"><output id="oA"></output></div>
+        <div class="sl"><label for="sb" class="c-pt">b</label><input type="range" id="sb" min="4" max="10" step="0.5"><output id="ob" class="c-pt"></output></div>
+        <div class="sl"><label for="sa" class="c-purple">a</label><input type="range" id="sa" class="purple" min="1" step="0.1"><output id="oa" class="c-purple"></output></div>
+      </div>
+      <div class="card">
+        <p class="label">1 · How many triangles?</p>
+        <div class="eq" id="hLine"></div>
+        <svg class="strip" id="strip" viewBox="0 0 600 130" aria-hidden="true"></svg>
+        <p class="case" id="caseLine"></p>
+      </div>
+      <div class="card law">
+        <p class="label">2 · Find ∠B with the sine law</p>
+        <div id="law"></div>
+      </div>
+    </div>
+
+    <!-- Practice: one question, three numbered steps -->
+    <div class="panel" id="practice" hidden>
+      <div class="card"><p class="q" id="q"></p></div>
+      <div id="steps" style="display:flex; flex-direction:column; gap:8px"></div>
+      <div class="foot">
+        <span class="score">First try: <b id="score">0 of 0</b></span>
+        <button type="button" id="newQ">New question</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg"), strip = $("strip");
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    if (tag === "text" && !("text-anchor" in attrs)) e.setAttribute("text-anchor", "middle");
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const n1 = v => String(Math.round(v * 10) / 10);           // 6.9, 12
+  const d1 = v => (Math.round(v * 10) / 10).toFixed(1);       // 59.4, 90.0
+  const n4 = v => (Math.round(v * 10000) / 10000).toFixed(4);
+  const frac = (t, b) => `<span class="frac"><span>${t}</span><span>${b}</span></span>`;
+  const SUP = '<span class="sup">−1</span>';
+  const EPS = 1e-6;
+
+  // ---------- The geometry ----------
+  // A at the origin, the base along +x, C = b(cos A, sin A). Side a swings from C; where it meets the base (x > 0) is B.
+  function solve(A, b, a) {
+    const cx = b * Math.cos(rad(A)), h = b * Math.sin(rad(A));
+    const kind = A < 90 ? "acute" : "obtuse";
+    let key;
+    if (kind === "acute") key = a < h - EPS ? "zero" : Math.abs(a - h) <= EPS ? "right" : a < b - EPS ? "two" : "one";
+    else key = a > b + EPS ? "one" : "zero";
+    const hits = [];   // every place the swing crosses the base line, kept or rejected
+    if (a >= h - EPS) {
+      const d = Math.sqrt(Math.max(0, a * a - h * h));
+      const xs = key === "right" ? [cx] : [cx + d, cx - d];
+      xs.forEach(x => hits.push({ x, ok: x > 1e-4 }));
+    }
+    const kept = hits.filter(p => p.ok).sort((p, q) => q.x - p.x);   // farther B first: its ∠B is the acute one
+    kept.forEach((p, i) => {
+      p.B = 180 - deg(Math.atan2(h, cx - p.x));
+      p.k = kept.length === 2 ? i + 1 : 1;        // colour: 1 green, 2 orange
+      p.name = kept.length === 2 ? (i ? "B₂" : "B₁") : "B";
+    });
+    hits.forEach(p => (p.phi = deg(Math.atan2(p.x - cx, h))));   // swing angle from straight down
+    const sinB = b * Math.sin(rad(A)) / a;
+    return { A, b, a, cx, h, kind, key, hits, kept, count: kept.length, sinB };
+  }
+  const COUNT = { zero: 0, right: 1, two: 2, one: 1 };
+
+  // ---------- Drawing the board ----------
+  // view: { x0, x1, y0, y1 } in world units. show: which parts to draw. swing: 0..1 progress of the swing (1 = finished).
+  const fitsScreen = matchMedia("(min-width: 861px) and (min-height: 520px)");
+  function draw(S, view, show) {
+    svg.innerHTML = "";
+    // The viewBox follows the board's shape on big screens so the picture fills it.
+    const W = 1000;
+    let H = 620;
+    if (fitsScreen.matches && svg.clientWidth > 0) H = Math.max(420, Math.min(1000, W * svg.clientHeight / svg.clientWidth));
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const padT = 60, padB = 20;
+    const s = Math.min((W - 80) / (view.x1 - view.x0), (H - padT - padB) / (view.y1 - view.y0));
+    const ox = W / 2 - s * (view.x1 + view.x0) / 2;
+    const oy = padT + (H - padT - padB) / 2 + s * (view.y1 + view.y0) / 2;
+    const X = x => ox + x * s, Y = y => oy - y * s;
+    const defs = el("defs", {}, svg);
+    const cp = el("clipPath", { id: "clip" }, defs); el("rect", { x: 0, y: 0, width: W, height: H }, cp);
+    const g = el("g", { "clip-path": "url(#clip)" }, svg);
+    const C = { x: S.cx, y: S.h };
+    const sw = show.swing ?? 1;
+    const phiNow = -90 + 180 * sw;
+    const hitsNow = show.a ? S.hits.filter(p => p.phi <= phiNow + 1e-6) : [];
+    const keptNow = hitsNow.filter(p => p.ok);
+    const lx = X(-50), rx = X(1e3);
+
+    // Triangles (under everything)
+    keptNow.forEach(p => el("path", { class: `tri${p.k}`, d: `M${X(0)} ${Y(0)} L${X(p.x)} ${Y(0)} L${X(C.x)} ${Y(C.y)} Z` }, g));
+    // Base: solid from A to the right, dashed behind A
+    el("line", { class: "base ext", x1: lx, y1: Y(0), x2: X(0), y2: Y(0) }, g);
+    el("line", { class: "base", x1: X(0), y1: Y(0), x2: rx, y2: Y(0) }, g);
+    // Height h
+    if (show.h) {
+      el("line", { class: "hl", x1: X(C.x), y1: Y(C.y), x2: X(C.x), y2: Y(0) }, g);
+      const fx = X(C.x), sz = 16;
+      el("path", { class: "ra", d: `M${fx + sz} ${Y(0)} V${Y(0) - sz} H${fx}` }, g);
+      el("text", { class: "tx h", x: fx + 12, y: Y(C.y * 0.42), "text-anchor": "start" }, g, show.hVal ? `h = ${n1(S.h)}` : "h = ?");
+    }
+    // Swing: trail arc and the moving side
+    if (show.a) {
+      const r = S.a * s;
+      const pt = phi => [X(C.x) + r * Math.sin(rad(phi)), Y(C.y) + r * Math.cos(rad(phi))];
+      if (sw > 0) {
+        const [x1, y1] = pt(-90), [x2, y2] = pt(phiNow);
+        el("path", { class: "trail", d: `M${x1} ${y1} A${r} ${r} 0 0 0 ${x2} ${y2}` }, g);
+      }
+      if (sw < 1) {
+        const [x2, y2] = pt(phiNow);
+        el("line", { class: "sa swing", x1: X(C.x), y1: Y(C.y), x2, y2 }, g);
+      } else {
+        // Finished: side a to each kept B, faint to a rejected crossing, or hanging short of the base
+        hitsNow.filter(p => !p.ok).forEach(p => {
+          el("line", { class: "sa reject", x1: X(C.x), y1: Y(C.y), x2: X(p.x), y2: Y(0) }, g);
+          const px = X(p.x), py = Y(0), z = 11;
+          el("path", { class: "x-mark", d: `M${px - z} ${py - z} L${px + z} ${py + z} M${px + z} ${py - z} L${px - z} ${py + z}` }, g);
+          if (Math.abs(p.x) > 1e-3) el("text", { class: "tx warn sm", x: px, y: py - 28 }, g, "behind A");
+        });
+        keptNow.forEach(p => {
+          el("line", { class: "sa", x1: X(C.x), y1: Y(C.y), x2: X(p.x), y2: Y(0) }, g);
+          if (keptNow.length === 2) {   // equal-length marks: both are side a
+            const mx = (X(C.x) + X(p.x)) / 2, my = (Y(C.y) + Y(0)) / 2;
+            const L = Math.hypot(X(p.x) - X(C.x), Y(0) - Y(C.y)), ux = (X(p.x) - X(C.x)) / L, uy = (Y(0) - Y(C.y)) / L;
+            el("line", { class: "tick", x1: mx - uy * 10, y1: my + ux * 10, x2: mx + uy * 10, y2: my - ux * 10 }, g);
+          }
+        });
+        if (S.hits.length === 0) {
+          el("line", { class: "sa short", x1: X(C.x), y1: Y(C.y), x2: X(C.x) + 0.01, y2: Y(C.y - S.a) }, g);
+          el("line", { class: "gap", x1: X(C.x), y1: Y(C.y - S.a), x2: X(C.x), y2: Y(0) }, g);
+          el("text", { class: "tx warn sm", x: X(C.x) - 14, y: (Y(C.y - S.a) + Y(0)) / 2, "text-anchor": "end" }, g, "too short");
+        }
+      }
+      // Label for a: beside the farther side a, or beside the hanging side
+      const far = keptNow[0];
+      if (sw >= 1 && far) {
+        const mx = (X(C.x) + X(far.x)) / 2, my = (Y(C.y) + Y(0)) / 2;
+        el("text", { class: "tx a", x: mx + 22, y: my - 16, "text-anchor": "start" }, g, `a = ${n1(S.a)}`);
+      } else if (sw >= 1) {
+        el("text", { class: "tx a", x: X(C.x) + 14, y: S.hits.length === 0 ? Y(C.y - S.a / 2) : Y(C.y) + 34, "text-anchor": "start" }, g, `a = ${n1(S.a)}`);
+      }
+    } else if (show.aChip) {
+      el("text", { class: "tx a", x: X(C.x) + 22, y: Y(C.y) - 6, "text-anchor": "start" }, g, `a = ${n1(S.a)} swings from C`);
+    }
+    // Side b
+    el("line", { class: "sb", x1: X(0), y1: Y(0), x2: X(C.x), y2: Y(C.y) }, g);
+    {
+      const mx = (X(0) + X(C.x)) / 2, my = (Y(0) + Y(C.y)) / 2, nx = -Math.sin(rad(S.A)), ny = -Math.cos(rad(S.A));
+      el("text", { class: "tx b", x: mx + nx * 22, y: my + ny * 22, "text-anchor": S.A < 90 ? "end" : "start" }, g, `b = ${n1(S.b)}`);
+    }
+    // Angle A
+    {
+      const r = 46, x1 = X(0) + r, y1 = Y(0), x2 = X(0) + r * Math.cos(rad(S.A)), y2 = Y(0) - r * Math.sin(rad(S.A));
+      el("path", { class: "ang", d: `M${x1} ${y1} A${r} ${r} 0 0 0 ${x2} ${y2}` }, g);
+      const m = rad(Math.min(S.A / 2, 40));
+      el("text", { class: "tx", x: X(0) + 70 * Math.cos(m) + 14, y: Y(0) - 70 * Math.sin(m) + 4 }, g, `${n1(S.A)}°`);
+    }
+    // Angles at B: arc in the triangle, name and value under the base
+    if (show.a && sw >= 1) keptNow.forEach(p => {
+      const dirC = deg(Math.atan2(C.y, C.x - p.x));   // world direction from B to C
+      const bx = X(p.x), by = Y(0);
+      if (S.key === "right") {
+        const z = 18; el("path", { class: "ra", d: `M${bx - z} ${by} V${by - z} H${bx}` }, g);
+      } else {
+        const r = 40;
+        el("path", { class: `ang k${p.k}`, d: `M${bx + r * Math.cos(rad(dirC))} ${by - r * Math.sin(rad(dirC))} A${r} ${r} 0 0 0 ${bx - r} ${by}` }, g);
+      }
+      if (show.Bval || show.Bq) {
+        const two = keptNow.length === 2;
+        el("text", { class: `tx k${p.k}`, x: bx + (two ? (p.k === 2 ? 8 : -8) : 0), y: by + 64, "text-anchor": two ? (p.k === 2 ? "end" : "start") : "middle" }, g,
+          show.Bval ? `${p.name} = ${d1(p.B)}°` : `${p.name} = ?`);
+      }
+    });
+    // Vertices
+    el("circle", { class: "dot A", cx: X(0), cy: Y(0), r: 7 }, g);
+    el("text", { class: "vx", x: X(0) - 6, y: Y(0) + 28 }, g, "A");
+    el("circle", { class: "dot C", cx: X(C.x), cy: Y(C.y), r: 8 }, g);
+    el("text", { class: "vx", x: X(C.x), y: Y(C.y) - 30 }, g, "C");
+    if (show.a) keptNow.forEach(p => {
+      el("circle", { class: `dot k${p.k}`, cx: X(p.x), cy: Y(0), r: 9 }, g);
+      if (!(show.a && sw >= 1 && (show.Bval || show.Bq))) el("text", { class: `vx k${p.k}`, x: X(p.x), y: Y(0) + 28 }, g, p.name);
+    });
+  }
+
+  // Learn: the window depends on ∠A and b only (and the longest a the slider allows), so sliding a never rescales.
+  // Practice: fitted to the question without giving away where B lands.
+  const aMax = (kind, b) => kind === "acute" ? Math.ceil(b * 1.5) : Math.ceil(b * 2);
+  function learnView(A, b) {
+    const cx = b * Math.cos(rad(A)), h = b * Math.sin(rad(A)), am = aMax(A < 90 ? "acute" : "obtuse", b);
+    const reach = cx + Math.sqrt(Math.max(0, am * am - h * h));
+    return { x0: Math.min(0, cx) - 2.5, x1: Math.max(reach, cx, 2) + 1, y0: -2.4, y1: h + 1.2 };
+  }
+  function fitView(S) {
+    const x0 = Math.min(0, S.cx) - 2.5, x1 = Math.max(S.cx + S.a * 0.9, S.b * 0.7, 2) + 1;
+    return { x0, x1, y0: -2.4, y1: S.h + 1.2 };
+  }
+
+  // ---------- The strip: where a sits compared with h and b ----------
+  // Zones are drawn the same width every time (not to scale) so the rule reads like a table.
+  function pos(S) {
+    const a = S.a;
+    if (S.kind === "acute") {
+      if (a <= S.h) return 40 + 170 * a / S.h;
+      if (a <= S.b) return 210 + 190 * (a - S.h) / (S.b - S.h);
+      return 400 + 170 * Math.min(1, (a - S.b) / Math.max(4, S.b * 0.6));
+    }
+    if (a <= S.b) return 40 + 280 * a / S.b;
+    return 320 + 250 * Math.min(1, (a - S.b) / Math.max(4, S.b * 0.8));
+  }
+  function drawStrip(svgEl, S, opts) {
+    svgEl.innerHTML = "";
+    const reveal = opts.reveal, showA = opts.showA !== false;
+    const zones = S.kind === "acute"
+      ? [{ x1: 40, x2: 210, z: 0, key: "zero", rule: "a < h" }, { x1: 210, x2: 400, z: 2, key: "two", rule: "h < a < b" }, { x1: 400, x2: 570, z: 1, key: "one", rule: "a ≥ b" }]
+      : [{ x1: 40, x2: 320, z: 0, key: "zero", rule: "a ≤ b" }, { x1: 320, x2: 570, z: 1, key: "one", rule: "a > b" }];
+    // Rows: a marker on top, the bar with the triangle count inside, tick values, then the rule for each zone.
+    const y = 34, hgt = 32;
+    zones.forEach(Z => {
+      const on = reveal && S.key === Z.key;
+      el("rect", { class: `zone ${reveal ? "z" + Z.z : "zn"}${reveal && !on ? " dim" : ""}`, x: Z.x1, y, width: Z.x2 - Z.x1, height: hgt, rx: 5 }, svgEl);
+      el("text", { class: "zt cnt", x: (Z.x1 + Z.x2) / 2, y: y + 22, style: `fill: ${reveal && on ? "var(--sheet)" : "var(--ink)"}; opacity: ${reveal && !on ? 0.45 : 1}` }, svgEl,
+        reveal ? `${Z.z} triangle${Z.z === 1 ? "" : "s"}` : "?");
+      if (reveal) el("text", { class: `zt mut${on ? "" : " dim"}`, x: (Z.x1 + Z.x2) / 2, y: 124, style: "font-size:17px" }, svgEl, Z.rule);
+    });
+    const ticks = S.kind === "acute" ? [[40, "0"], [210, `h = ${n1(S.h)}`], [400, `b = ${n1(S.b)}`]] : [[40, "0"], [320, `b = ${n1(S.b)}`]];
+    ticks.forEach(([x, t]) => {
+      el("line", { class: "stick", x1: x, y1: y - 2, x2: x, y2: y + hgt + 6 }, svgEl);
+      el("text", { class: "zt", x: Math.max(30, x), y: y + hgt + 26 }, svgEl, t);
+    });
+    if (S.kind === "acute" && reveal) {
+      const on = S.key === "right";
+      el("circle", { cx: 210, cy: y + hgt / 2, r: 10, style: `fill: var(--green); stroke: var(--sheet); stroke-width: 3; opacity: ${on ? 1 : 0.4}` }, svgEl);
+    }
+    if (showA) {
+      const x = pos(S);
+      el("path", { class: "amark", d: `M${x} ${y - 2} l-9 -13 h18 z` }, svgEl);
+      el("text", { class: "zt a", x: Math.max(50, Math.min(550, x)), y: 14, style: "font-size:18px" }, svgEl, `a = ${n1(S.a)}`);
+    }
+  }
+  const CASE = {
+    acute: {
+      zero: `<span class="n k0">0</span> a < h: side a is too short to reach the base.`,
+      right: `<span class="n k1">1</span> a = h: side a just touches the base. A right triangle.`,
+      two: `<span class="n k2">2</span> h < a < b: side a reaches the base twice.`,
+      one: `<span class="n k1">1</span> a ≥ b: the second hit lands behind A, so it doesn't count.`,
+    },
+    obtuse: {
+      zero: `<span class="n k0">0</span> a ≤ b: side a is too short. Across from the obtuse angle must be the longest side.`,
+      one: `<span class="n k1">1</span> a > b: side a reaches the base once.`,
+    },
+  };
+
+  // Sine law lines: sin B = b sin A ÷ a, then B, then the 180° − B check.
+  function lawHTML(S) {
+    const L = [];
+    L.push(`<div class="eq">sin B = ${frac("b sin A", "a")} = ${frac(`${n1(S.b)} sin ${n1(S.A)}°`, n1(S.a))} = ${S.sinB > 1 + EPS ? `<span class="c-warn">${n4(S.sinB)}</span>` : n4(Math.min(1, S.sinB))}</div>`);
+    if (S.sinB > 1 + EPS) {
+      L.push(`<div class="eq">B = sin${SUP}(${n4(S.sinB)}) = <span class="err">ERROR</span></div>`);
+      L.push(`<div class="eq"><span class="why">No angle has a sine bigger than 1. No triangle.</span></div>`);
+      return L.join("");
+    }
+    const B1 = deg(Math.asin(Math.min(1, S.sinB))), B2 = 180 - B1;
+    L.push(`<div class="eq"><span class="k1">B${S.count === 2 ? "₁" : ""} = sin${SUP}(${n4(Math.min(1, S.sinB))}) = ${d1(B1)}°</span></div>`);
+    if (S.key === "right") { L.push(`<div class="eq"><span class="why">sin B = 1 only for 90°. One right triangle.</span></div>`); return L.join(""); }
+    const fits = S.A + B2 < 180 - 1e-6;
+    L.push(`<div class="eq"><span class="${fits ? "k2" : ""}">B₂ = 180° − ${d1(B1)}° = ${d1(B2)}°</span> <span class="why">same sine</span></div>`);
+    L.push(`<div class="eq"><span class="why">Check:</span> ${n1(S.A)}° + ${d1(B2)}° ${fits ? "<" : "≥"} 180° ${fits ? `<span class="k2">✓ fits, 2 triangles</span>` : `<span class="c-warn">✗ no room, 1 triangle</span>`}</div>`);
+    return L.join("");
+  }
+
+  // ---------- State ----------
+  let mode = "learn", kind = "acute";
+  const L = { acute: { A: 40, b: 8, a: 6 }, obtuse: { A: 120, b: 6, a: 9 } };
+  let anim = null, swingT = 1;
+
+  function playSwing(after) {
+    cancelAnimationFrame(anim);
+    const t0 = performance.now(), dur = 2200;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const tick = now => {
+      swingT = reduce ? 1 : Math.min(1, (now - t0) / dur);
+      render();
+      if (swingT < 1) anim = requestAnimationFrame(tick); else { anim = null; after && after(); }
+    };
+    anim = requestAnimationFrame(tick);
+  }
+
+  // ---------- Learn ----------
+  const sA = $("sA"), sb = $("sb"), sa = $("sa");
+  const PRESETS = {
+    acute: [["0 triangles", { A: 40, b: 8, a: 4 }], ["1 right triangle", { A: 30, b: 8, a: 4 }], ["2 triangles", { A: 40, b: 8, a: 6 }], ["1 triangle", { A: 40, b: 8, a: 9 }]],
+    obtuse: [["0 triangles", { A: 120, b: 8, a: 6 }], ["1 triangle", { A: 120, b: 6, a: 9 }]],
+  };
+  function setupLearn() {
+    const v = L[kind];
+    if (kind === "acute") { sA.min = 20; sA.max = 75; } else { sA.min = 95; sA.max = 150; }
+    sa.max = aMax(kind, v.b);
+    sA.step = 1; sA.value = v.A; sb.value = v.b; sa.value = v.a;
+    const pr = $("presets");
+    pr.innerHTML = `<span>Show me:</span>` + PRESETS[kind].map(([t], i) => `<button type="button" data-i="${i}">${t}</button>`).join("");
+    pr.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+      Object.assign(L[kind], PRESETS[kind][+btn.dataset.i][1]);
+      sA.value = L[kind].A; sb.value = L[kind].b; sa.max = aMax(kind, L[kind].b); sa.value = L[kind].a;
+      playSwing();
+    }));
+  }
+  function readLearn() {
+    const v = L[kind];
+    v.A = +sA.value; v.b = +sb.value;
+    sa.max = aMax(kind, v.b);
+    v.a = +sa.value;
+    // a snaps to h and to b so the edge cases can be found with the slider
+    const h = v.b * Math.sin(rad(v.A));
+    if (kind === "acute" && Math.abs(v.a - h) < 0.12) v.a = h;
+    if (Math.abs(v.a - v.b) < 0.12) v.a = v.b;
+  }
+  [sA, sb, sa].forEach(s => s.addEventListener("input", () => { cancelAnimationFrame(anim); swingT = 1; readLearn(); render(); }));
+
+  function renderLearn() {
+    const v = L[kind], S = solve(v.A, v.b, v.a);
+    $("oA").textContent = `${v.A}°`; $("ob").textContent = n1(v.b);
+    $("oa").textContent = Math.abs(v.a - S.h) <= EPS && kind === "acute" ? `${n1(v.a)} = h` : Math.abs(v.a - v.b) < EPS ? `${n1(v.a)} = b` : n1(v.a);
+    draw(S, learnView(v.A, v.b), { a: true, h: kind === "acute", hVal: true, swing: swingT, Bval: true });
+    $("hLine").innerHTML = kind === "acute"
+      ? `<span class="c-pt">h</span> = b sin A = ${n1(v.b)} sin ${v.A}° = <b>${n1(S.h)}</b> <span class="why">compare a with h and b</span>`
+      : `<span class="why">∠A is obtuse: compare a with b only</span>`;
+    drawStrip(strip, S, { reveal: true });
+    $("caseLine").innerHTML = CASE[kind][S.key];
+    $("law").innerHTML = lawHTML(S);
+    $("hint").textContent = "";
+  }
+
+  // ---------- Practice ----------
+  let P = null, score = { right: 0, total: 0 };
+  function makeQuestion() {
+    for (let t = 0; t < 500; t++) {
+      let A, b, a;
+      if (kind === "acute") {
+        const want = pick(["zero", "zero", "right", "two", "two", "two", "two", "one", "one", "one"]);
+        if (want === "right") { A = 30; b = pick([8, 10, 12, 14, 16, 18, 20]); a = b / 2; }
+        else {
+          A = rnd(25, 70); b = rnd(6, 20);
+          const h = b * Math.sin(rad(A));
+          let lo, hi;
+          if (want === "zero") { lo = Math.max(2, Math.ceil(h * 0.55)); hi = Math.floor(h - 0.4); }
+          else if (want === "two") { lo = Math.ceil(h + 0.6); hi = Math.floor(b - 0.6); }
+          else { lo = b; hi = b + 5; }
+          if (lo > hi) continue;
+          a = rnd(lo, hi);
+        }
+        const S = solve(A, b, a);
+        if (S.key !== want) continue;
+        if (want === "two" && S.kept[0].x - S.kept[1].x < 1.2) continue;
+        return S;
+      } else {
+        const want = Math.random() < 0.45 ? "zero" : "one";
+        A = rnd(95, 145); b = rnd(5, 15);
+        a = want === "zero" ? rnd(Math.max(3, b - 6), b) : rnd(b + 1, b + 8);
+        const S = solve(A, b, a);
+        if (S.key === want) return S;
+      }
+    }
+    return solve(40, 8, 6);
+  }
+  function newQuestion() {
+    cancelAnimationFrame(anim); swingT = 1;
+    const S = makeQuestion();
+    P = { S, step: 1, done: {}, tried: {}, shown: {}, swung: false, fb: {} };
+    $("newQ").classList.remove("ready");
+    render();
+    focusInput();
+  }
+  function countTry(step, right) {
+    if (P.tried[step]) return;
+    P.tried[step] = true; score.total++; if (right) score.right++;
+  }
+  const close = (v, target, tol) => v != null && Math.abs(v - target) <= tol;
+  const num = s => { const t = String(s).trim().replace(/[°\s]/g, "").replace(",", ".").replace("−", "-"); return t === "" || isNaN(+t) ? null : +t; };
+
+  function finishStep(step) {
+    P.done[step] = true; P.step = step + 1;
+    if (step === 2) { P.swung = true; playSwing(); }
+    if (step === 2 && P.S.count === 0) { P.done[3] = true; P.step = 4; }
+    if (P.step > 3) $("newQ").classList.add("ready");
+    render(); focusInput();
+  }
+  function focusInput() { const i = document.querySelector("#steps .now input"); if (i) i.focus({ preventScroll: true }); }
+
+  function check1() {
+    const S = P.S;
+    if (S.kind === "acute") {
+      const inp = $("in-h"), v = num(inp.value);
+      if (v == null) { P.fb[1] = ["bad", "Type a number for h."]; return render(); }
+      const ok = close(v, S.h, 0.051);
+      countTry(1, ok);
+      if (ok) { P.fb[1] = null; finishStep(1); }
+      else { P.fb[1] = ["bad", close(v, S.h, 0.6) ? "Close. Round to one decimal place." : `Not yet. h = ${n1(S.b)} × sin ${S.A}° (calculator in DEG mode).`]; P.lastH = inp.value; render(); }
+    }
+  }
+  function check1b(choice) {   // obtuse: is a > b?
+    const ok = (choice === "gt") === (P.S.a > P.S.b);
+    countTry(1, ok);
+    if (ok) { P.fb[1] = null; finishStep(1); }
+    else { P.fb[1] = ["bad", `Look again: a = ${n1(P.S.a)} and b = ${n1(P.S.b)}.`]; P.bad1 = choice; render(); }
+  }
+  function check2(n) {
+    const S = P.S, ok = n === S.count;
+    countTry(2, ok);
+    if (ok) { P.fb[2] = null; finishStep(2); return; }
+    P.bad2 = (P.bad2 || []).concat(n);
+    let msg;
+    if (S.kind === "obtuse") msg = n === 2 ? "An obtuse ∠A can never make 2 triangles: there is no room for a second obtuse angle." : S.count === 0 ? `a = ${n1(S.a)} is not longer than b = ${n1(S.b)}.` : `a = ${n1(S.a)} is longer than b = ${n1(S.b)}.`;
+    else if (S.key === "zero") msg = `a = ${n1(S.a)} is less than h = ${n1(S.h)}. Can it reach the base?`;
+    else if (S.key === "right") msg = `a = h exactly. It touches the base at one point.`;
+    else if (S.key === "two") msg = `a = ${n1(S.a)} is between h = ${n1(S.h)} and b = ${n1(S.b)}.`;
+    else msg = `a = ${n1(S.a)} is at least b = ${n1(S.b)}. The second hit lands behind A.`;
+    P.fb[2] = ["bad", msg]; render();
+  }
+  function check3() {
+    const S = P.S, B = S.kept.map(p => p.B);
+    const vals = [...document.querySelectorAll("#steps .now input")].map(i => num(i.value));
+    P.vals3 = [...document.querySelectorAll("#steps .now input")].map(i => i.value);
+    if (vals.some(v => v == null)) { P.fb[3] = ["bad", "Fill in every box."]; return render(); }
+    const tol = 0.15;
+    let ok;
+    if (B.length === 1) ok = close(vals[0], B[0], tol);
+    else ok = (close(vals[0], B[0], tol) && close(vals[1], B[1], tol)) || (close(vals[0], B[1], tol) && close(vals[1], B[0], tol));
+    countTry(3, ok);
+    if (ok) { P.fb[3] = null; finishStep(3); return; }
+    const anyB1 = vals.some(v => close(v, B[0], tol));
+    let msg;
+    if (B.length === 2 && anyB1) msg = `B₁ is right. For the second one: B₂ = 180° − ${d1(B[0])}°.`;
+    else if (vals.some(v => close(v, B[0], 0.6))) msg = "Close. Round to the nearest tenth of a degree.";
+    else msg = `sin B = (${n1(S.b)} sin ${S.A}°) ÷ ${n1(S.a)}, then press 2nd sin (sin${SUP}).`;
+    P.fb[3] = ["bad", msg]; render();
+  }
+  function showMe(step) {
+    countTry(step, false); P.shown[step] = true; P.fb[step] = null; finishStep(step);
+  }
+
+  function stepHTML(n, title, body, summary) {
+    const st = P.done[n] ? "done" : P.step === n ? "now" : "todo";
+    const mark = P.done[n] ? (P.shown[n] ? "shown" : "✓") : "";
+    return `<div class="step ${st}"><h3><span class="num">${n}</span>${title}<span class="mark">${mark}</span></h3>${st === "now" ? `<div class="body">${body}</div>` : st === "done" ? `<div class="body">${summary}</div>` : ""}</div>`;
+  }
+  const fbHTML = n => P.fb[n] ? `<p class="fb ${P.fb[n][0]}">${P.fb[n][1]}</p>` : "";
+
+  function renderPractice() {
+    const S = P.S;
+    $("q").innerHTML = `In △ABC, <span class="mono">∠A = ${S.A}°</span>, <span class="mono c-purple">a = ${n1(S.a)} cm</span>, <span class="mono c-pt">b = ${n1(S.b)} cm</span>.<br>How many triangles are possible? Find every ∠B to the nearest tenth.`;
+    const parts = [];
+    // Step 1
+    if (S.kind === "acute") {
+      parts.push(stepHTML(1, "Find the height h",
+        `<p>h is how high C is above the base: <b class="mono">h = b sin A</b></p>
+         <div class="row"><span class="mono">h =</span><input class="ans${P.fb[1] ? " bad" : ""}" id="in-h" inputmode="decimal" autocomplete="off" value="${P.lastH ?? ""}"><button type="button" class="go" data-act="c1">Check</button><button type="button" data-act="s1">Show me</button></div>${fbHTML(1)}`,
+        `<div class="eq">h = ${n1(S.b)} sin ${S.A}° = <b>${n1(S.h)}</b> cm</div>`));
+    } else {
+      parts.push(stepHTML(1, "Compare a with b",
+        `<p>∠A is obtuse, so it is the biggest angle. The side across from it, a, must be the longest side. Is it?</p>
+         <div class="row pickn"><button type="button" data-act="gt" class="${P.bad1 === "gt" ? "bad" : ""}">a > b</button><button type="button" data-act="le" class="${P.bad1 === "le" ? "bad" : ""}">a ≤ b</button><button type="button" data-act="s1" style="font-family:var(--font-body);font-size:0.95rem">Show me</button></div>${fbHTML(1)}`,
+        `<div class="eq">a = ${n1(S.a)} ${S.a > S.b ? ">" : "≤"} b = ${n1(S.b)}</div>`));
+    }
+    // Step 2
+    const reveal2 = !!P.done[2];
+    parts.push(stepHTML(2, "How many triangles?",
+      `<svg class="strip" id="pstrip" viewBox="0 0 600 130" aria-hidden="true"></svg>
+       <div class="row pickn">${[0, 1, 2].map(k => `<button type="button" data-act="n${k}" class="${(P.bad2 || []).includes(k) ? "bad" : ""}">${k}</button>`).join("")}<button type="button" data-act="s2" style="font-family:var(--font-body);font-size:0.95rem">Show me</button></div>${fbHTML(2)}`,
+      `<svg class="strip" id="pstrip" viewBox="0 0 600 130" aria-hidden="true"></svg><p class="case">${CASE[S.kind][S.key]}</p>`));
+    // Step 3
+    let body3, title3 = P.done[2] && S.count === 2 ? "Find both angles B" : "Find ∠B";
+    const v3 = P.vals3 || [];
+    if (S.count === 2) body3 = `<p>Sine law first, then <b>180° − B₁</b> for the second.</p>
+      <div class="row"><span class="mono k1">B₁ =</span><input class="ans" inputmode="decimal" autocomplete="off" value="${v3[0] ?? ""}"><span class="mono">°</span>
+      <span class="mono k2">B₂ =</span><input class="ans" inputmode="decimal" autocomplete="off" value="${v3[1] ?? ""}"><span class="mono">°</span></div>`;
+    else body3 = `<p>Use the sine law: <b class="mono">sin B = b sin A ÷ a</b></p>
+      <div class="row"><span class="mono k1">B =</span><input class="ans" inputmode="decimal" autocomplete="off" value="${v3[0] ?? ""}"><span class="mono">°</span></div>`;
+    body3 += `<div class="row" style="margin-top:8px"><button type="button" class="go" data-act="c3">Check</button><button type="button" data-act="s3">Show me</button></div>${fbHTML(3)}`;
+    parts.push(stepHTML(3, title3, body3, `<div class="law">${lawHTML(S)}</div>`));
+    $("steps").innerHTML = parts.join("");
+    const ps = $("pstrip");
+    if (ps) drawStrip(ps, S, { reveal: reveal2, showA: P.step >= 2 || reveal2 });
+    if (ps && S.kind === "acute" && P.step < 2) ps.style.display = "none";
+    $("score").textContent = `${score.right} of ${score.total}`;
+    const now = document.querySelector("#steps .now");
+    if (now) now.scrollIntoView({ block: "nearest" });
+
+    draw(S, P.view || (P.view = fitView(S)), {
+      h: S.kind === "acute", hVal: !!P.done[1],
+      a: P.swung, aChip: !P.swung, swing: P.swung ? swingT : 0,
+      Bq: true, Bval: !!P.done[3],
+    });
+    $("hint").textContent = !P.done[2] ? "Work out the count first. Then watch side a swing." : swingT < 1 ? "Side a swings from C ..." : P.step > 3 ? "Done. Press New question." : "Now find the angle at B.";
+  }
+
+  $("steps").addEventListener("click", e => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    const act = b.dataset.act;
+    if (act === "c1") check1();
+    else if (act === "gt" || act === "le") check1b(act);
+    else if (act[0] === "n") check2(+act.slice(1));
+    else if (act === "c3") check3();
+    else if (act[0] === "s") showMe(+act.slice(1));
+  });
+  $("steps").addEventListener("keydown", e => {
+    if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+    e.preventDefault();
+    if (P.step === 1) check1(); else if (P.step === 3) check3();
+  });
+  $("steps").addEventListener("input", e => {
+    if (e.target.id === "in-h") P.lastH = e.target.value;
+    else if (P.step === 3) P.vals3 = [...document.querySelectorAll("#steps .now input")].map(i => i.value);
+  });
+  $("newQ").addEventListener("click", newQuestion);
+
+  // ---------- Switches ----------
+  function render() {
+    $("learn").hidden = mode !== "learn"; $("practice").hidden = mode !== "practice";
+    $("swing").hidden = mode !== "learn";
+    if (mode === "learn") renderLearn(); else renderPractice();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    cancelAnimationFrame(anim); swingT = 1;
+    if (mode === "practice" && (!P || P.S.kind !== kind)) newQuestion(); else render();
+  }));
+  document.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => {
+    kind = b.dataset.kind;
+    document.querySelectorAll("[data-kind]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    cancelAnimationFrame(anim); swingT = 1;
+    setupLearn(); readLearn();
+    if (mode === "practice") newQuestion(); else playSwing();
+  }));
+  $("swing").addEventListener("click", () => playSwing());
+  let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(render, 80); });
+
+  setupLearn(); readLearn(); render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

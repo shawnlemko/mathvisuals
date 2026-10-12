@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Divisibility Rules</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Divisibility Rules: two modes.
+   Learn: pick a rule (2, 3, 4, 5, 6, 8, 9, 10) and a number; the digits the rule looks at light up,
+   the check is written out step by step, and "Why does it work?" shows the place-value reason.
+   Practice: tick the rules that are fair game, then Yes / No questions or Check all that apply. */
+:root { --bad: #c8323c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bad: #ff6b74; } }
+:root[data-theme="dark"] { --bad: #ff6b74; }
+
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 12px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+#mode button { font-size: 1.1rem; padding: 6px 18px; }
+
+.stage { display: grid; }
+.stage > section { min-width: 0; }
+.num { font-family: var(--font-num); font-weight: 700; }
+.ok { color: var(--green); font-weight: 700; }
+.no { color: var(--bad); font-weight: 700; }
+.o { color: var(--orange); font-weight: 700; }
+
+/* ---------- Learn ---------- */
+.learn { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+@media (max-width: 860px) { .learn { grid-template-columns: 1fr; } }
+.show { display: flex; flex-direction: column; gap: clamp(8px, 1.8vh, 18px); overflow-y: auto; min-height: 0; }
+.ruleHead { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.3rem, 3.4vh, 1.9rem); margin: 0; }
+.ruleText { margin: 0; font-size: clamp(1.05rem, 2.6vh, 1.4rem); }
+.digits { display: flex; justify-content: center; align-items: flex-end; gap: 0.06em; font-family: var(--font-num); font-weight: 700; font-size: clamp(3rem, 12vh, 7.5rem); line-height: 1.1; padding: 0.1em 0; }
+.digits .dg { display: inline-block; min-width: 0.7em; text-align: center; padding: 0 0.04em; border-radius: 0.12em; color: var(--muted); border-bottom: 0.08em solid transparent; }
+.digits .dg.hot { color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, transparent); border-bottom-color: var(--orange); }
+.digits .dg.hot2 { color: var(--pt); background: color-mix(in srgb, var(--pt) 12%, transparent); border-bottom-color: var(--pt); }
+.digits .sep { color: var(--grid-major); width: 0.2em; margin-left: -0.06em; margin-right: 0.1em; text-align: left; }
+.showTop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
+.showTop > div { flex: 1 1 18em; }
+.whyView .digits { font-size: clamp(2.4rem, 8vh, 5.5rem); }
+.whyView .check { display: none; }
+.steps { display: flex; flex-direction: column; gap: clamp(4px, 1vh, 10px); }
+.step { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font-size: clamp(1.1rem, 2.8vh, 1.5rem); }
+.step .tag { font-family: var(--font-display); font-weight: 800; color: var(--muted); font-size: 0.8em; min-width: 6.5em; }
+.step .num { word-spacing: -0.15em; }
+.verdict2 { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: clamp(8px, 1.6vh, 14px); border-top: 2px dashed var(--grid); }
+.big { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 4vh, 2.2rem); }
+.big.yes { color: var(--green); } .big.nope { color: var(--bad); }
+.check { color: var(--muted); font-size: clamp(1rem, 2.4vh, 1.25rem); }
+.why { background: var(--paper); border-radius: 10px; padding: clamp(10px, 1.8vh, 16px); display: flex; flex-direction: column; gap: 6px; }
+.why p { margin: 0; font-size: clamp(1rem, 2.4vh, 1.2rem); }
+.why .rows { display: grid; grid-template-columns: auto auto auto; justify-content: start; gap: 0 14px; font-size: clamp(1rem, 2.5vh, 1.3rem); word-spacing: -0.15em; }
+.why .rows span:nth-child(3n+1) { text-align: right; }
+
+.side { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0; }
+.rules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.rb { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; min-height: clamp(64px, 11vh, 92px); background: var(--sheet); border: 3px solid var(--grid-major); border-radius: 12px; }
+.rb .n { font-family: var(--font-num); font-size: clamp(1.6rem, 4.4vh, 2.4rem); line-height: 1; }
+.rb .t { font-weight: 400; font-size: 0.72rem; line-height: 1.15; color: var(--muted); text-align: center; }
+.rb[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.rb[aria-pressed="true"] .t { color: var(--sheet); }
+.rb .mark { position: absolute; top: -9px; right: -7px; width: 24px; height: 24px; border-radius: 50%; display: none; place-items: center; font-size: 0.85rem; color: #fff; }
+.showAll .rb .mark { display: grid; }
+.rb .mark.y { background: var(--green); } .rb .mark.x { background: var(--bad); }
+.entry { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.entry input { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; width: 7.5em; padding: 6px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.entry button { font-size: 1.05rem; min-height: 46px; }
+.side .toggles { margin-top: 0; flex-direction: column; gap: 10px; }
+
+/* ---------- Practice: setup ---------- */
+.sheet { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 12px; padding: clamp(14px, 2.5vh, 28px) clamp(14px, 2vw, 32px); }
+.setup { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(12px, 2.5vh, 28px) clamp(16px, 3vw, 48px); overflow-y: auto; }
+@media (max-width: 860px) { .setup { grid-template-columns: 1fr; } }
+.setup h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.2rem, 2.8vh, 1.6rem); margin: 0 0 10px; }
+.fair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(6px, 1.1vh, 10px); }
+.item { display: grid; grid-template-columns: 1.6em 1.6em minmax(0, 1fr); align-items: center; gap: 0.5em; text-align: left; padding: 0.2em 0.7em; min-height: clamp(46px, 7.4vh, 66px); background: var(--sheet); color: var(--ink); border: 3px solid var(--grid-major); border-radius: 12px; font-family: var(--font-display); font-weight: 800; font-size: clamp(1rem, 2.4vh, 1.35rem); line-height: 1.1; }
+.item .box { display: grid; place-items: center; width: 1.4em; height: 1.4em; border-radius: 6px; border: 2px solid var(--grid-major); background: var(--paper); }
+.item .d { font-family: var(--font-num); font-size: 1.25em; text-align: center; }
+.item .t { font-family: var(--font-body); font-weight: 400; font-size: 0.75em; color: var(--muted); }
+.item[aria-pressed="true"] { border-color: var(--pt); background: color-mix(in srgb, var(--pt) 10%, var(--sheet)); }
+.item[aria-pressed="true"] .box { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.item[aria-pressed="true"] .box::before { content: "✓"; }
+.quick { display: flex; gap: 8px; margin-top: 10px; }
+.opt2 { display: flex; flex-direction: column; justify-content: center; gap: clamp(12px, 3vh, 30px); align-items: center; text-align: center; }
+.pick { display: inline-flex; align-items: center; justify-content: center; gap: 0.4em; min-height: 54px; padding: 0.3em 0.9em; background: var(--sheet); color: var(--ink); border: 3px solid var(--grid-major); border-radius: 14px; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.1rem, 2.6vh, 1.5rem); line-height: 1.15; }
+.pick:hover { border-color: var(--pt); background: var(--sheet); }
+.pick[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.pick[aria-pressed="true"]::before { content: "✓"; }
+.group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.go { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 4.5vh, 2.4rem); padding: 0.35em 1.5em; border-radius: 16px; background: var(--green); border: 3px solid var(--green); color: var(--sheet); box-shadow: 0 4px 0 color-mix(in srgb, var(--green) 55%, var(--ink)); }
+.go:hover { background: var(--sheet); color: var(--green); border-color: var(--green); }
+.go:disabled { opacity: 0.45; cursor: not-allowed; }
+.need { margin: 0; color: var(--bad); font-weight: 700; min-height: 1.5em; }
+
+/* ---------- Practice: play ---------- */
+.play { display: flex; flex-direction: column; gap: clamp(6px, 1.5vh, 16px); overflow-y: auto; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.prog { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; margin-right: auto; }
+.prog b { font-family: var(--font-num); }
+.topbar button { font-family: var(--font-display); font-size: 1.1rem; padding: 8px 18px; border: 3px solid var(--grid-major); border-radius: 12px; background: var(--sheet); }
+.qbox { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 2.4vh, 26px); min-height: 0; text-align: center; }
+.pnum { font-family: var(--font-num); font-weight: 700; font-size: clamp(3.2rem, 15vh, 9rem); line-height: 1; color: var(--ink); }
+.ask { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.5rem, 4.6vh, 2.6rem); margin: 0; }
+.ask .num { color: var(--pt); }
+.yn { display: flex; gap: clamp(12px, 2vw, 28px); }
+.yn button { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 5vh, 2.6rem); min-width: 5.5em; padding: 0.3em 0.8em; border-radius: 16px; border: 3px solid var(--grid-major); background: var(--sheet); }
+.yn button:hover { border-color: var(--pt); }
+.yn button.right { background: var(--green); border-color: var(--green); color: var(--sheet); }
+.yn button.wrong { background: var(--bad); border-color: var(--bad); color: var(--sheet); }
+.all { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.all button { position: relative; font-family: var(--font-num); font-size: clamp(1.6rem, 5vh, 2.6rem); min-width: 2.6em; padding: 0.15em 0.4em; border-radius: 14px; border: 3px solid var(--grid-major); background: var(--sheet); }
+.all button[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.all button.right { background: var(--green); border-color: var(--green); color: var(--sheet); }
+.all button.wrong { background: var(--bad); border-color: var(--bad); color: var(--sheet); text-decoration: line-through; }
+.all button.missed { border-color: var(--orange); border-style: dashed; color: var(--orange); }
+.allHint { margin: 0; color: var(--muted); font-size: clamp(0.95rem, 2.2vh, 1.15rem); }
+.act { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.3rem, 3.6vh, 1.9rem); padding: 0.3em 1.4em; border-radius: 14px; background: var(--pt); border: 3px solid var(--pt); color: var(--sheet); }
+.act:hover { background: var(--sheet); color: var(--pt); }
+.fb { min-height: 2.6em; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fbRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 24px; }
+#fbLines { display: flex; flex-direction: column; gap: 2px; }
+.cm { margin: 0 -0.13em 0 -0.11em; }
+.allMode .pnum { font-size: clamp(3rem, 11vh, 7rem); }
+.fb .head { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 4vh, 2.2rem); }
+.fb .head.right { color: var(--green); } .fb .head.wrong { color: var(--bad); }
+.fb .why1 { font-size: clamp(1.05rem, 2.6vh, 1.35rem); }
+.fb .why1 .num { word-spacing: -0.15em; }
+
+/* ---------- Practice: done ---------- */
+.done { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(8px, 2.4vh, 26px); text-align: center; overflow-y: auto; }
+.cheer { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(2.2rem, 8vh, 4.4rem); color: var(--green); }
+.score { display: flex; align-items: baseline; justify-content: center; gap: 0.2em; font-family: var(--font-num); font-weight: 700; font-size: clamp(3rem, 14vh, 8rem); line-height: 1; }
+.score b { color: var(--green); }
+.score small { font-family: var(--font-display); font-size: 0.4em; color: var(--muted); }
+.miss { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 12px; max-width: 60rem; }
+.miss h2 { width: 100%; margin: 0; font-family: var(--font-display); font-size: 1.25rem; }
+.miss span { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; background: var(--chip); border-radius: 8px; padding: 4px 12px; }
+.btns { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+.btns button { font-family: var(--font-display); font-size: 1.3rem; padding: 12px 24px; border-radius: 12px; }
+.btns .go { font-size: 1.5rem; padding: 12px 32px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Divisibility Rules</h1></div>
+    <div class="opts">
+      <span class="seg" id="mode"><button type="button" data-v="learn" aria-pressed="true">Learn</button><button type="button" data-v="practice" aria-pressed="false">Practice</button></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="learn" id="learn">
+      <div class="card show" id="show" aria-live="polite">
+        <div class="showTop">
+          <div>
+            <p class="ruleHead" id="ruleHead"></p>
+            <p class="ruleText" id="ruleText"></p>
+          </div>
+          <span class="seg" id="view"><button type="button" data-v="check" aria-pressed="true">Check it</button><button type="button" data-v="why" aria-pressed="false">Why it works</button></span>
+        </div>
+        <div class="digits" id="digits" aria-hidden="true"></div>
+        <div class="steps" id="steps"></div>
+        <div class="verdict2" id="verdict"></div>
+        <div class="why" id="why" hidden></div>
+      </div>
+      <div class="side" id="side">
+        <div class="card">
+          <p class="label">Divisible by</p>
+          <div class="rules" id="rules" role="group" aria-label="Pick a rule"></div>
+        </div>
+        <div class="card">
+          <p class="label"><label for="numIn">Number</label></p>
+          <div class="entry">
+            <input id="numIn" type="text" inputmode="numeric" maxlength="7" autocomplete="off" value="1236">
+            <button type="button" id="newNum">New number</button>
+          </div>
+          <p class="hint">Type any whole number up to 6 digits.</p>
+        </div>
+        <div class="card">
+          <div class="toggles">
+            <label><input type="checkbox" id="allOn"> Show which rules this number passes</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet setup" id="setup" hidden>
+      <div>
+        <h2 id="fairName">Fair game: which rules?</h2>
+        <div class="fair" id="fair" role="group" aria-labelledby="fairName"></div>
+        <div class="quick"><button type="button" id="allBtn">All</button><button type="button" id="noneBtn">None</button></div>
+      </div>
+      <div class="opt2">
+        <div><h2 id="kindName">Questions</h2><div class="group" id="kind" role="group" aria-labelledby="kindName"></div></div>
+        <div><h2 id="sizeName">Number size</h2><div class="group" id="size" role="group" aria-labelledby="sizeName"></div></div>
+        <div><h2 id="countName">How many questions?</h2><div class="group" id="count" role="group" aria-labelledby="countName"></div></div>
+        <button type="button" class="go" id="start">Start ▶</button>
+        <p class="need" id="need" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="sheet play" id="play" hidden>
+      <div class="topbar">
+        <span class="prog">Question <b id="qNum">1</b> of <b id="qTot">10</b></span>
+        <span class="prog" style="margin-right: 0">Correct: <b id="qRight">0</b></span>
+        <button type="button" id="stop">Stop</button>
+      </div>
+      <div class="qbox">
+        <div class="pnum" id="pnum"></div>
+        <p class="ask" id="ask"></p>
+        <div class="yn" id="yn"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></div>
+        <p class="allHint" id="allHint" hidden>Pick every number it is divisible by. If none work, pick none.</p>
+        <div class="all" id="allPick" role="group" aria-label="Divisible by" hidden></div>
+        <button type="button" class="act" id="checkBtn" hidden>Check</button>
+        <div class="fb" aria-live="polite">
+          <div class="fbRow"><span class="head" id="fbHead"></span><button type="button" class="act" id="nextBtn" hidden>Next ▶</button></div>
+          <div id="fbLines"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet done" id="done" hidden>
+      <p class="cheer" id="cheer"></p>
+      <div class="score"><b id="right"></b> <small>right</small> / <span id="outOf"></span></div>
+      <div class="miss" id="miss"></div>
+      <div class="btns">
+        <button type="button" class="go" id="again">Practice again</button>
+        <button type="button" id="change">Change practice</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString("en-US");
+  const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const N = s => `<span class="num">${s}</span>`;
+  const YES = '<span class="ok">✓</span>', NO = '<span class="no">✗</span>';
+
+  const DIVS = [2, 3, 4, 5, 6, 8, 9, 10];
+  const RULES = {
+    2: { rule: "The last digit is even: 0, 2, 4, 6 or 8.", tag: "last digit even" },
+    3: { rule: "Add the digits. If the sum is divisible by 3, so is the number.", tag: "add the digits" },
+    4: { rule: "Look at the last two digits. If they make a number divisible by 4, so is the whole number.", tag: "last two digits" },
+    5: { rule: "The last digit is 0 or 5.", tag: "ends in 0 or 5" },
+    6: { rule: "It passes the test for 2 and the test for 3.", tag: "passes 2 and 3" },
+    8: { rule: "Look at the last three digits. If they make a number divisible by 8, so is the whole number.", tag: "last three digits" },
+    9: { rule: "Add the digits. If the sum is divisible by 9, so is the number.", tag: "add the digits" },
+    10: { rule: "The last digit is 0.", tag: "ends in 0" },
+  };
+
+  const digitsOf = n => String(n).split("").map(Number);
+  const dsum = n => digitsOf(n).reduce((a, b) => a + b, 0);
+  const divLine = (n, d) => `${fmt(n)} ÷ ${d} = ${fmt(Math.floor(n / d))}${n % d ? ` R ${n % d}` : ""}`;
+  // "1 + 2 + 3 + 6 = 12", then "1 + 2 = 3" until one digit is left.
+  function sumChain(n) {
+    const out = []; let s = n;
+    do { const ds = digitsOf(s); const t = ds.reduce((a, b) => a + b, 0); out.push([ds.join(" + "), t]); s = t; } while (s >= 10);
+    return out;
+  }
+  // Halve k times: 36 → 18 → 9. Stops at the first number that is not whole.
+  function halves(a, k) {
+    const out = [fmt(a)]; let v = a;
+    for (let i = 0; i < k; i++) { v = v / 2; out.push(Number.isInteger(v) ? fmt(v) : String(v)); if (!Number.isInteger(v)) break; }
+    return { text: out.join(" → "), ok: Number.isInteger(v) && out.length === k + 1 };
+  }
+
+  // The check written out: which digits light up (count from the right; "all" for digit sums) and the lines.
+  function explain(n, d) {
+    const ok = n % d === 0, ds = digitsOf(n), o = n % 10, L = [];
+    let hot = 0;
+    const lastK = k => {
+      const part = n % 10 ** k;
+      hot = k;
+      if (ds.length <= k) L.push([`Whole number`, `${fmt(n)} has only ${ds.length === 1 ? "one digit" : ds.length + " digits"}, so check it directly.`]);
+      else L.push([`Last ${k === 2 ? "two" : "three"}`, N(String(n).slice(-k)) + (String(n).slice(-k) !== String(part) ? ` is ${N(part)}` : "")]);
+      L.push([`Divide`, N(divLine(part, d)) + " " + (part % d ? NO : YES)]);
+      const h = halves(part, k);
+      L.push([k === 2 ? "Or halve twice" : "Or halve 3 times", N(h.text) + " " + (h.ok ? YES : NO)]);
+    };
+    if (d === 2) { hot = 1; L.push(["Last digit", `${N(o)} is ${o % 2 ? "odd" : "even"} ${o % 2 ? NO : YES}`]); }
+    else if (d === 5) { hot = 1; L.push(["Last digit", `${N(o)} ${o === 0 || o === 5 ? "is" : "is not"} 0 or 5 ${o % 5 ? NO : YES}`]); }
+    else if (d === 10) { hot = 1; L.push(["Last digit", `${N(o)} ${o === 0 ? "is" : "is not"} 0 ${o ? NO : YES}`]); }
+    else if (d === 4) lastK(2);
+    else if (d === 8) lastK(3);
+    else if (d === 3 || d === 9) {
+      hot = "all";
+      const ch = sumChain(n);
+      ch.forEach(([lhs, t], i) => L.push([i ? "Add again" : "Add digits", N(`${lhs} = ${t}`)]));
+      const s = ch[0][1];
+      L.push(["Sum", `${N(s)} ${s % d ? "is not" : "is"} a multiple of ${d} ${s % d ? NO : YES}`]);
+    } else if (d === 6) {
+      hot = "six";
+      L.push(["Test for 2", `last digit ${N(o)} is ${o % 2 ? "odd" : "even"} ${o % 2 ? NO : YES}`]);
+      const s = dsum(n);
+      L.push(["Test for 3", `${N(`${ds.join(" + ")} = ${s}`)}, ${s % 3 ? "not" : "a"} multiple of 3 ${s % 3 ? NO : YES}`]);
+      L.push(["Both?", ok ? `It passes both tests ${YES}` : `It has to pass both tests ${NO}`]);
+    }
+    return { ok, hot, lines: L };
+  }
+
+  // One line for practice feedback.
+  function short(n, d) {
+    const o = n % 10, s = dsum(n);
+    if (d === 2) return `The last digit ${N(o)} is ${o % 2 ? "odd" : "even"}.`;
+    if (d === 5) return `The last digit is ${N(o)}${o % 5 ? ", not 0 or 5" : ""}.`;
+    if (d === 10) return `The last digit is ${N(o)}${o ? ", not 0" : ""}.`;
+    if (d === 3 || d === 9) return `The digits add to ${N(s)}, ${s % d ? "not" : "a"} multiple of ${d}.`;
+    if (d === 4 || d === 8) { const k = d === 4 ? 2 : 3, p = n % 10 ** k; return `${String(n).length > k ? `Last ${k === 2 ? "two" : "three"} digits: ` : ""}${N(divLine(p, d))}.`; }
+    if (d === 6) return `${o % 2 ? "Odd" : "Even"} (${o % 2 ? "fails" : "passes"} 2), digit sum ${N(s)} (${s % 3 ? "fails" : "passes"} 3).`;
+  }
+
+  /* ---------- Learn ---------- */
+  const learn = { d: 4, n: 1236, view: "check" };
+  for (const d of DIVS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "rb"; b.dataset.d = d;
+    b.innerHTML = `<span class="mark" aria-hidden="true"></span><span class="n">${d}</span><span class="t">${RULES[d].tag}</span>`;
+    b.addEventListener("click", () => { learn.d = d; drawLearn(); });
+    $("rules").appendChild(b);
+  }
+
+  function why(n, d) {
+    const ones = n % 10;
+    if (d === 2 || d === 5 || d === 10) {
+      const split = n >= 10 ? `<p>${N(`${fmt(n)} = ${fmt(n - ones)} + <span class="o">${ones}</span>`)}</p>` : "";
+      const fact = d === 10 ? "Every 10 is one group of 10" : `Every 10 = ${10 / d} × ${d}`;
+      return `${split}<p>${n >= 10 ? `${N(fmt(n - ones))} is made of tens. ` : ""}${fact}, so the tens always split evenly into ${d}s. Only the <span class="o">ones digit</span> can leave something over.</p>`;
+    }
+    if (d === 4 || d === 8) {
+      const k = d === 4 ? 2 : 3, p = 10 ** k, last = n % p;
+      const split = n >= p ? `<p>${N(`${fmt(n)} = ${fmt(n - last)} + <span class="o">${String(n).slice(-k)}</span>`)}</p>` : "";
+      return `${split}<p>${n >= p ? `${N(fmt(n - last))} is made of ${d === 4 ? "hundreds" : "thousands"}. ` : ""}Every ${N(fmt(p))} = ${N(`${p / d} × ${d}`)}, so ${d === 4 ? "hundreds" : "thousands"} always split evenly into ${d}s. Only the <span class="o">last ${k === 2 ? "two" : "three"} digits</span> can leave something over.</p>`;
+    }
+    if (d === 3 || d === 9) {
+      const ds = digitsOf(n), len = ds.length;
+      const rows = ds.map((g, i) => {
+        const p = len - 1 - i;
+        if (p === 0) return `<span>${N(g)}</span><span></span><span>${N(`+ <span class="o">${g}</span>`)}</span>`;
+        return `<span>${N(`${g} × ${fmt(10 ** p)}`)}</span><span>${N(`= ${g} × ${fmt(10 ** p - 1)}`)}</span><span>${N(`+ <span class="o">${g}</span>`)}</span>`;
+      }).join("");
+      return `<p>${N("10 = 9 + 1, 100 = 99 + 1")} … and ${N("9, 99, 999")} … always split evenly into ${d}s.</p>
+        <div class="rows">${rows}</div>
+        <p>Left over: ${N(`<span class="o">${ds.join(" + ")} = ${dsum(n)}</span>`)}, the digit sum. So only the digit sum decides.</p>`;
+    }
+    if (d === 6) return `<p>${N("6 = 2 × 3")}. A number that splits evenly into 2s <b>and</b> into 3s also splits evenly into 6s.</p><p>Passing only one test is not enough: ${N("15")} passes the test for 3 but is odd, and ${N("15 ÷ 6 = 2 R 3")}.</p>`;
+  }
+
+  function drawLearn() {
+    const { d, n } = learn, ex = explain(n, d);
+    for (const b of $("rules").children) {
+      const bd = +b.dataset.d, pass = n % bd === 0, m = b.querySelector(".mark");
+      b.setAttribute("aria-pressed", bd === d);
+      m.className = "mark " + (pass ? "y" : "x"); m.textContent = pass ? "✓" : "✗";
+      b.setAttribute("aria-label", `Divisible by ${bd}${$("allOn").checked ? (pass ? ": yes" : ": no") : ""}`);
+    }
+    $("ruleHead").textContent = `Divisible by ${d}?`;
+    $("ruleText").textContent = RULES[d].rule;
+    const s = String(n), len = s.length;
+    let html = "";
+    for (let i = 0; i < len; i++) {
+      const fromRight = len - i;
+      let cls = "dg";
+      if (ex.hot === "all") cls += " hot";
+      else if (ex.hot === "six") cls += fromRight === 1 ? " hot" : " hot2";
+      else if (fromRight <= ex.hot) cls += " hot";
+      if (i > 0 && fromRight % 3 === 0) html += '<span class="sep">,</span>';
+      html += `<span class="${cls}">${s[i]}</span>`;
+    }
+    $("digits").innerHTML = html;
+    $("steps").innerHTML = ex.lines.map(([tag, body]) => `<div class="step"><span class="tag">${tag}</span><span>${body}</span></div>`).join("");
+    $("verdict").innerHTML = `<span class="big ${ex.ok ? "yes" : "nope"}">${ex.ok ? `Yes! ${fmt(n)} is divisible by ${d}.` : `No. ${fmt(n)} is not divisible by ${d}.`}</span><span class="check">Check: ${N(divLine(n, d))}</span>`;
+    $("why").innerHTML = why(n, d);
+    for (const b of $("view").children) b.setAttribute("aria-pressed", b.dataset.v === learn.view);
+    const w = learn.view === "why";
+    $("why").hidden = !w; $("steps").hidden = w;
+    $("show").classList.toggle("whyView", w);
+    $("side").classList.toggle("showAll", $("allOn").checked);
+  }
+
+  function setNum(v) {
+    const n = parseInt(String(v).replace(/\D/g, ""), 10);
+    if (!n || n > 999999) return false;
+    learn.n = n; drawLearn(); return true;
+  }
+  $("numIn").addEventListener("input", () => {
+    const ok = setNum($("numIn").value);
+    $("numIn").style.borderColor = ok || !$("numIn").value ? "" : "var(--bad)";
+  });
+  $("newNum").addEventListener("click", () => {
+    // About half the new numbers pass the rule being learned.
+    const d = learn.d, want = Math.random() < 0.5, lo = 100, hi = 99999;
+    let n;
+    do { n = rand(lo, hi); if (want) n -= n % d || 0; } while (n < lo || (n % d === 0) !== want || n === learn.n);
+    $("numIn").value = n; $("numIn").style.borderColor = ""; setNum(n);
+  });
+  $("view").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { learn.view = b.dataset.v; drawLearn(); } });
+  $("allOn").addEventListener("change", drawLearn);
+
+  /* ---------- Practice ---------- */
+  const KINDS = [["yn", "Yes or No"], ["all", "Check all that apply"]];
+  const SIZES = [[2, "2 digits"], [3, "3 digits"], [4, "4 digits"], [6, "5–6 digits"]];
+  const RANGE = { 2: [10, 99], 3: [100, 999], 4: [1000, 9999], 6: [10000, 999999] };
+  const COUNTS = [10, 20, 30];
+  const st = { fair: new Set(DIVS), kind: "yn", size: 3, count: 10 };
+
+  function pickGroup(id, list, key) {
+    const g = $(id);
+    for (const [v, txt] of list) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "pick"; b.dataset.v = v; b.textContent = txt;
+      b.addEventListener("click", () => { st[key] = typeof st[key] === "number" ? +v : v; paintSetup(); });
+      g.appendChild(b);
+    }
+  }
+  for (const d of DIVS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "item"; b.dataset.d = d;
+    b.innerHTML = `<span class="box" aria-hidden="true"></span><span class="d">${d}</span><span class="t">${RULES[d].tag}</span>`;
+    b.addEventListener("click", () => { st.fair.has(d) ? st.fair.delete(d) : st.fair.add(d); paintSetup(); });
+    $("fair").appendChild(b);
+  }
+  pickGroup("kind", KINDS, "kind");
+  pickGroup("size", SIZES, "size");
+  pickGroup("count", COUNTS.map(c => [c, String(c)]), "count");
+  $("allBtn").addEventListener("click", () => { DIVS.forEach(d => st.fair.add(d)); paintSetup(); });
+  $("noneBtn").addEventListener("click", () => { st.fair.clear(); paintSetup(); });
+
+  function paintSetup() {
+    for (const b of $("fair").children) b.setAttribute("aria-pressed", st.fair.has(+b.dataset.d));
+    for (const [id, key] of [["kind", "kind"], ["size", "size"], ["count", "count"]])
+      for (const b of $(id).children) b.setAttribute("aria-pressed", String(st[key]) === b.dataset.v);
+    $("start").disabled = !st.fair.size;
+    $("need").textContent = st.fair.size ? "" : "Pick at least one rule.";
+  }
+
+  const game = { qs: [], i: 0, right: 0, miss: [], answered: false };
+  const fairList = () => DIVS.filter(d => st.fair.has(d));
+
+  // Yes/No: about half are yes. Some no's are look-alikes that pass an easier test (even but not a multiple of 4, ...).
+  const LOOKALIKE = { 4: 2, 8: 4, 6: 3, 9: 3 };
+  function makeYN(prev) {
+    const [lo, hi] = RANGE[st.size], ds = fairList();
+    for (let tries = 0; tries < 500; tries++) {
+      const d = ds[rand(0, ds.length - 1)], want = Math.random() < 0.5;
+      let n = rand(lo, hi);
+      if (want) n -= n % d;
+      else if (LOOKALIKE[d] && Math.random() < 0.5) n -= n % LOOKALIKE[d];
+      if (n < lo || n > hi || (n % d === 0) !== want) continue;
+      if (prev && prev.n === n) continue;
+      return { n, d };
+    }
+    return { n: lo, d: ds[0] };
+  }
+  // Check all: most numbers are built to pass at least one fair rule.
+  function makeAll(prev) {
+    const [lo, hi] = RANGE[st.size], ds = fairList();
+    for (let tries = 0; tries < 500; tries++) {
+      let n = rand(lo, hi);
+      if (Math.random() < 0.75) { const d = ds[rand(0, ds.length - 1)]; n -= n % d; }
+      if (n < lo || (prev && prev.n === n)) continue;
+      return { n };
+    }
+    return { n: lo };
+  }
+
+  function startGame() {
+    game.qs = []; game.i = 0; game.right = 0; game.miss = [];
+    let prev = null;
+    for (let i = 0; i < st.count; i++) { prev = st.kind === "yn" ? makeYN(prev) : makeAll(prev); game.qs.push(prev); }
+    $("qTot").textContent = st.count;
+    // Check-all buttons show only the fair-game rules.
+    $("allPick").innerHTML = "";
+    for (const d of fairList()) {
+      const b = document.createElement("button");
+      b.type = "button"; b.dataset.d = d; b.textContent = d; b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", () => { if (!game.answered) b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"); });
+      $("allPick").appendChild(b);
+    }
+    show("play"); drawQ();
+  }
+
+  function drawQ() {
+    const q = game.qs[game.i], yn = st.kind === "yn";
+    game.answered = false;
+    $("qNum").textContent = game.i + 1; $("qRight").textContent = game.right;
+    $("pnum").innerHTML = fmt(q.n).replace(/,/g, '<span class="cm">,</span>');
+    $("ask").innerHTML = yn ? `Is it divisible by ${N(q.d)}?` : "Divisible by…";
+    $("yn").hidden = !yn; $("allPick").hidden = yn; $("allHint").hidden = yn; $("checkBtn").hidden = yn;
+    for (const b of $("yn").children) { b.className = ""; b.disabled = false; }
+    for (const b of $("allPick").children) { b.className = ""; b.setAttribute("aria-pressed", "false"); }
+    $("fbHead").textContent = ""; $("fbLines").innerHTML = ""; $("nextBtn").hidden = true;
+    $("play").classList.toggle("allMode", !yn);
+    (yn ? $("yn").firstElementChild : $("allPick").firstElementChild).focus({ preventScroll: true });
+  }
+
+  function finishQ(correct, head, lines) {
+    game.answered = true;
+    if (correct) game.right++;
+    $("qRight").textContent = game.right;
+    $("fbHead").className = "head " + (correct ? "right" : "wrong"); $("fbHead").textContent = head;
+    $("fbLines").innerHTML = lines.map(l => `<span class="why1">${l}</span>`).join("");
+    $("checkBtn").hidden = true;
+    $("nextBtn").hidden = false; $("nextBtn").textContent = game.i + 1 < game.qs.length ? "Next ▶" : "See score ▶";
+    $("nextBtn").focus({ preventScroll: true });
+  }
+
+  function answerYN(says) {
+    if (game.answered) return;
+    const q = game.qs[game.i], ok = q.n % q.d === 0, correct = says === ok;
+    for (const b of $("yn").children) {
+      b.disabled = true;
+      if ((b.dataset.v === "1") === says) b.className = correct ? "right" : "wrong";
+    }
+    if (!correct) game.miss.push(`${fmt(q.n)} ÷ ${q.d}`);
+    finishQ(correct, correct ? "Right!" : `Not quite. ${ok ? "It is" : "It is not"} divisible by ${q.d}.`, [short(q.n, q.d)]);
+  }
+
+  function checkAll() {
+    if (game.answered) return;
+    const q = game.qs[game.i], wrong = [];
+    for (const b of $("allPick").children) {
+      const d = +b.dataset.d, picked = b.getAttribute("aria-pressed") === "true", ok = q.n % d === 0;
+      b.className = picked && ok ? "right" : picked ? "wrong" : ok ? "missed" : "";
+      if (picked !== ok) wrong.push(d);
+    }
+    const works = fairList().filter(d => q.n % d === 0);
+    if (wrong.length) game.miss.push(fmt(q.n));
+    const head = wrong.length ? "Not quite." : "Right!";
+    const list = works.length ? `It is divisible by ${N(works.join(", "))}.` : "None of these work.";
+    const lines = [list, ...wrong.slice(0, 2).map(d => `${N(d)}: ${short(q.n, d)}`)];
+    finishQ(!wrong.length, head, lines);
+  }
+
+  function next() {
+    if (++game.i < game.qs.length) return drawQ();
+    const tot = game.qs.length, r = game.right;
+    $("right").textContent = r; $("outOf").textContent = tot;
+    $("cheer").textContent = r === tot ? "Perfect!" : r / tot >= 0.8 ? "Great work!" : r / tot >= 0.5 ? "Good practice!" : "Keep going!";
+    $("miss").innerHTML = game.miss.length ? `<h2>Look at these again</h2>` + game.miss.map(m => `<span>${m}</span>`).join("") : "";
+    show("done");
+    $("again").focus({ preventScroll: true });
+  }
+
+  $("yn").addEventListener("click", e => { const b = e.target.closest("button"); if (b) answerYN(b.dataset.v === "1"); });
+  $("checkBtn").addEventListener("click", checkAll);
+  $("nextBtn").addEventListener("click", next);
+  $("start").addEventListener("click", () => { if (st.fair.size) startGame(); });
+  $("again").addEventListener("click", startGame);
+  $("change").addEventListener("click", () => show("setup"));
+  $("stop").addEventListener("click", () => show("setup"));
+  document.addEventListener("keydown", e => {
+    if ($("play").hidden || e.target.tagName === "INPUT") return;
+    if (!game.answered && st.kind === "yn" && /^[yn]$/i.test(e.key)) { e.preventDefault(); answerYN(e.key.toLowerCase() === "y"); }
+    else if (e.key === "Enter" && game.answered && document.activeElement !== $("nextBtn")) { e.preventDefault(); next(); }
+  });
+
+  /* ---------- Modes ---------- */
+  let mode = "learn";
+  function show(sec) {
+    for (const id of ["learn", "setup", "play", "done"]) $(id).hidden = id !== sec;
+  }
+  function setMode(m) {
+    mode = m;
+    for (const b of $("mode").children) b.setAttribute("aria-pressed", b.dataset.v === m);
+    show(m === "learn" ? "learn" : "setup");
+  }
+  $("mode").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setMode(b.dataset.v); });
+
+  paintSetup();
+  drawLearn();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

@@ -191,7 +191,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
 .score b { color: var(--ink); font-family: var(--font-num); font-size: 1.4rem; }
 
 /* Board drawing */
-.rt { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.rt { font-family: var(--font-num); font-weight: 700; fill: var(--ink); white-space: pre; }
 .rt.t1 { fill: var(--pt); } .rt.t2 { fill: var(--orange); }
 .rt.q { fill: var(--muted); }
 .rt.word { font-family: var(--font-body); fill: var(--ink); }
@@ -348,7 +348,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     const l1 = line([[t1, "t1"], [" " + names[0]]], 0), l2 = line([["to "], [t2, "t2"], [" " + names[1]]], 0);
     const width = ps => ps.reduce((s, p) => s + p.getComputedTextLength(), 0);
     const widest = Math.max(width(l1), width(l2));
-    const f = Math.min(1, 500 / widest);
+    const f = Math.min(1, 440 / widest);
     S *= f;
     const y1 = cy - S * 0.22, y2 = cy + S * 1.0;
     const place = (ps, y) => {
@@ -397,8 +397,8 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     const up = p.op === "×";
     const grp = up ? [p.a, p.b] : r2;
     const n = grp[0] + grp[1];
-    const top = 396, avail = 300;
-    const u = Math.min(50, 470 / n, avail / (p.k * 1.3));
+    const top = 400, avail = 300;
+    const u = Math.min(64, 470 / n, avail / (p.k * 1.3));
     const side = (cx, rows, given) => {
       // given: this side's ratio is part of the question, so its picture always shows.
       const shown = given ? 2 : s;
@@ -523,15 +523,14 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     pq.f2 = pForm === "mix" ? pick(forms) : pForm;
     pq.done = false; pq.counted = false;
     const [A, B] = other(pq);
-    const fmt = (f, x, y) => f === "words" ? `${x} ${pq.names[0]} to ${y} ${pq.names[1]}` : f === "frac" ? `${x}/${y}` : `${x} : ${y}`;
-    if (pq.skill === "sf") {
-      $("prompt").textContent = `What is the scale factor from ${fmt(pq.f1, pq.a, pq.b)} to ${fmt(pq.f2, A, B)}?`;
+        if (pq.skill === "sf") {
+      $("prompt").textContent = "What scale factor takes the first ratio to the second?";
       $("ans").innerHTML = `<div class="seg-btns" role="group" aria-label="Multiply or divide"><button type="button" class="num on" data-pop="×">×</button><button type="button" class="num" data-pop="÷">÷</button></div>
         <input id="pk" class="k" type="text" inputmode="numeric" autocomplete="off" aria-label="Scale factor">`;
       pq.pop = "×";
       seg("[data-pop]", b => b.addEventListener("click", () => { pq.pop = b.dataset.pop; seg("[data-pop]", x => x.classList.toggle("on", x === b)); }));
     } else {
-      $("prompt").textContent = `${pq.op === "×" ? "Multiply" : "Divide"} ${fmt(pq.f1, pq.a, pq.b)} by ${pq.k}. What is the new ratio?`;
+      $("prompt").textContent = `${pq.op === "×" ? "Multiply" : "Divide"} the first ratio by ${pq.k}. What is the new ratio?`;
       const i1 = `<input id="p1" class="t1" type="text" inputmode="numeric" autocomplete="off" aria-label="First term">`;
       const i2 = `<input id="p2" class="t2" type="text" inputmode="numeric" autocomplete="off" aria-label="Second term">`;
       const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -579,7 +578,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   }
   function ok() { tally(true); $("fb").className = "fb ok"; $("fb").textContent = "Correct!"; play(); }
   $("check").addEventListener("click", check);
-  $("showme").addEventListener("click", () => { if (pq.done) return; tally(false); $("fb").className = "fb"; $("fb").textContent = ""; play(); });
+  $("showme").addEventListener("click", () => { if (pq.done) return; tally(false); $("fb").className = "fb"; $("fb").textContent = say({ ...pq, step: LAST }); play(); });
   $("newq").addEventListener("click", newQuestion);
   seg("[data-pskill]", b => b.addEventListener("click", () => {
     pSkill = b.dataset.pskill; seg("[data-pskill]", x => x.classList.toggle("on", x === b)); newQuestion();
@@ -605,6 +604,93 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries

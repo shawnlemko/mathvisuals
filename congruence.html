@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Triangle Congruence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; } }
+:root[data-theme="dark"] { --purple: #b98cff; }
+[hidden] { display: none !important; }
+h1 .m { color: var(--pt); }
+.c-purple { color: var(--purple); font-weight: 700; }
+.c-warn { color: var(--warn); font-weight: 700; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; font-size: 1.05rem; padding: 10px 18px; }
+.seg button:first-child { border-radius: 10px 0 0 10px; }
+.seg button:last-child { border-radius: 0 10px 10px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.tools > button { font-size: 1.05rem; padding: 10px 16px; border-radius: 10px; }
+.main { grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.85fr); gap: 16px; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.board .hint { margin: 4px 8px 2px; font-size: 1.05rem; color: var(--ink); flex: none; min-height: 1.6em; }
+.panel { gap: 10px; }
+.panel .card { padding: 10px 14px; }
+/* Rule picker */
+.cbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.cbtns + .label { margin-top: 8px; }
+.cbtns button { font-family: var(--font-num); font-size: 1.1rem; padding: 6px 12px; min-width: 3.6em; }
+.cbtns button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#bad button[aria-pressed="true"] { background: var(--warn); border-color: var(--warn); }
+.panel .label { margin: 0 0 6px; }
+/* Pattern card */
+.pat { display: flex; align-items: center; gap: 14px; }
+.pat .big { font-family: var(--font-num); font-weight: 700; font-size: 2.3rem; line-height: 1; letter-spacing: 0.08em; }
+.pat .words { font-weight: 700; font-size: 1.05rem; }
+.pat .key { margin: 2px 0 0; font-size: 0.98rem; color: var(--muted); line-height: 1.3; }
+.L-S { color: var(--pt); } .L-A { color: var(--orange); }
+.given { margin: 6px 0 0; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; }
+/* Steps */
+.steps { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.step { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 6px 12px; display: flex; gap: 10px; align-items: flex-start; font-size: 1.02rem; line-height: 1.35; }
+.step .n { display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--ink); color: var(--sheet); font-size: 0.85rem; font-weight: 700; flex: none; margin-top: 1px; }
+.step.now { border: 2px solid var(--pt); }
+.step.now .n { background: var(--pt); }
+.step.old { opacity: 0.7; }
+.nav { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; flex: none; }
+.nav button { font-size: 1.1rem; padding: 10px 8px; }
+.nav #next { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.nav button:disabled { opacity: 0.4; cursor: default; }
+.verdict-card { border-radius: 10px; padding: 8px 14px; border: 3px solid var(--green); font-weight: 700; font-size: 1.05rem; line-height: 1.35; }
+.verdict-card.no { border-color: var(--warn); }
+.verdict-card .tag { display: inline-block; color: var(--sheet); background: var(--green); border-radius: 999px; padding: 1px 10px; margin-right: 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.verdict-card.no .tag { background: var(--warn); }
+/* Practice */
+.q { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.score { display: flex; justify-content: space-between; align-items: baseline; }
+.score b { font-family: var(--font-num); font-size: 1.3rem; }
+.rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rules button { font-family: var(--font-num); font-size: 1.2rem; padding: 10px 6px; }
+.rules button.wide { grid-column: span 3; font-family: var(--font-body); }
+.opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.opts button { font-family: var(--font-num); font-size: 1.3rem; padding: 8px 6px; }
+button.right { background: var(--green); color: var(--sheet); border-color: var(--green); }
+button.wrong { background: var(--warn); color: var(--sheet); border-color: var(--warn); }
+.rules button:disabled, .opts button:disabled { cursor: default; }
+.rules button:disabled:not(.right):not(.wrong), .opts button:disabled:not(.right):not(.wrong) { opacity: 0.45; }
+.fb { margin: 0; font-size: 1.02rem; line-height: 1.4; }
+.fb .head { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+.fb .head.yes { color: var(--green); } .fb .head.no { color: var(--warn); }
+.stmt-eq { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; margin: 2px 0 6px; }
+#nextQ { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-size: 1.1rem; padding: 10px; }
+/* Board drawing */
+.tri { fill: var(--pt); fill-opacity: 0.07; stroke: var(--ink); stroke-width: 3.5; stroke-linejoin: round; }
+.tri.t2 { fill: var(--green); }
+.tri.ghost { fill: var(--green); fill-opacity: 0.08; stroke: var(--green); stroke-width: 2.5; stroke-dasharray: 8 6; }
+.tri.shape { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 6; }
+.giv { stroke: var(--pt); stroke-width: 7; stroke-linecap: round; }
+.ok { stroke: var(--green); stroke-width: 7; stroke-linecap: round; }
+.bad { stroke: var(--warn); stroke-width: 5; stroke-linecap: round; }
+.plain { stroke: var(--ink); stroke-width: 3.5; stroke-linecap: round; }
+.track { fill: none; stroke: var(--purple); stroke-width: 2.5; stroke-dasharray: 9 7; }
+.ray { stroke: var(--orange); stroke-width: 2.5; stroke-dasharray: 9 7; }
+.wedge { fill: var(--orange); fill-opacity: 0.18; stroke: var(--orange); stroke-width: 3; }
+.wedge.p { fill: var(--purple); stroke: var(--purple); }
+.ra { fill: none; stroke: var(--orange); stroke-width: 3; }
+.target { fill: none; stroke: var(--green); stroke-width: 3; }
+.vdot { fill: var(--ink); }
+.vname { font-family: var(--font-display); font-weight: 800; font-size: 30px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.chip-bg { fill: var(--sheet); stroke-width: 2.5; }
+.chip-bg.S { stroke: var(--pt); } .chip-bg.A { stroke: var(--orange); } .chip-bg.G { stroke: var(--green); } .chip-bg.R { stroke: var(--warn); } .chip-bg.P { stroke: var(--purple); }
+.chip { font-family: var(--font-num); font-weight: 700; font-size: 24px; text-anchor: middle; dominant-baseline: central; }
+.chip.S { fill: var(--pt); } .chip.A { fill: var(--orange); } .chip.G { fill: var(--green); } .chip.R { fill: var(--warn); } .chip.P { fill: var(--purple); }
+.handle { cursor: grab; outline: none; }
+.handle .dot { fill: var(--orange); stroke: var(--sheet); stroke-width: 4; }
+.handle .ring { fill: none; stroke: var(--orange); stroke-width: 2.5; opacity: 0.5; }
+.handle.drag { cursor: grabbing; }
+.handle:focus-visible .ring { opacity: 1; stroke-width: 4; }
+.tick { stroke: var(--pt); stroke-width: 3.5; stroke-linecap: round; }
+.marc { fill: none; stroke: var(--orange); stroke-width: 3; }
+.msq { fill: none; stroke: var(--orange); stroke-width: 3; }
+.shared { stroke: var(--purple); stroke-width: 10; stroke-opacity: 0.55; stroke-linecap: round; }
+.parc { fill: var(--purple); fill-opacity: 0.2; stroke: var(--purple); stroke-width: 3; }
+.flash { animation: flash 1.2s ease-in-out 2; }
+@keyframes flash { 50% { opacity: 0.25; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Triangle <span class="m">Congruence</span></h1></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Mode">
+        <button type="button" data-mode="learn" aria-pressed="true">Learn</button>
+        <button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+      </div>
+      <button type="button" id="newQ" hidden>New question</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="svg" viewBox="0 0 1000 640" role="img" aria-label="Triangle construction"></svg>
+      <p class="hint" id="hint"></p>
+    </div>
+
+    <div class="panel" id="learnP">
+      <div class="card">
+        <p class="label">Rules that prove congruence</p>
+        <div class="cbtns" id="good"></div>
+        <p class="label">Traps: not enough</p>
+        <div class="cbtns" id="bad"></div>
+      </div>
+      <div class="card">
+        <div class="pat"><div class="big" id="pat"></div><div><div class="words" id="words"></div><p class="key" id="keyNote"></p></div></div>
+        <p class="given" id="given"></p>
+      </div>
+      <ol class="steps" id="steps" aria-live="polite"></ol>
+      <div class="nav">
+        <button type="button" id="back">Back</button>
+        <button type="button" id="next">Next step</button>
+      </div>
+      <div class="verdict-card" id="verdict" hidden></div>
+    </div>
+
+    <div class="panel" id="pracP" hidden>
+      <div class="card score"><span class="label" id="qnum">Question 1</span><span>Score <b id="score">0 / 0</b></span></div>
+      <p class="q">Which rule matches the marks?</p>
+      <div class="rules" id="rules"></div>
+      <p class="fb" id="fb1" aria-live="polite"></p>
+      <div id="stmt" hidden>
+        <p class="q">Match the corners. Finish the statement.</p>
+        <div class="stmt-eq" id="stmtEq"></div>
+        <div class="opts" id="opts"></div>
+        <p class="fb" id="fb2" aria-live="polite"></p>
+      </div>
+      <button type="button" id="nextQ" hidden>Next question</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg");
+  const W = 1000, H = 640, D = Math.PI / 180;
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const P = (x, y) => ({ x, y });
+  const sub = (p, q) => P(p.x - q.x, p.y - q.y), add = (p, q) => P(p.x + q.x, p.y + q.y), mul = (p, k) => P(p.x * k, p.y * k);
+  const len = p => Math.hypot(p.x, p.y), dist = (p, q) => len(sub(p, q));
+  const unit = p => mul(p, 1 / (len(p) || 1));
+  const dir = a => P(Math.cos(a * D), Math.sin(a * D));
+  const angAt = (v, p, q) => { const a = sub(p, v), b = sub(q, v); return Math.acos(Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y) / (len(a) * len(b))))) / D; };
+  const r1 = v => String(Math.round(v * 10) / 10);
+  const centroid = pts => mul(pts.reduce(add, P(0, 0)), 1 / pts.length);
+
+  // ---------- Shared drawing (screen coordinates) ----------
+  function chip(c, text, cls) {
+    const g = el("g", {}, svg);
+    const w = 18 + 15 * [...text].length;
+    el("rect", { x: c.x - w / 2, y: c.y - 19, width: w, height: 38, rx: 10, class: "chip-bg " + cls }, g);
+    el("text", { x: c.x, y: c.y + 1, class: "chip " + cls }, g).textContent = text;
+    return g;
+  }
+  // Wedge or arc for the interior angle at v between rays to p and q.
+  function arcPath(v, p, q, r, closed) {
+    const a1 = Math.atan2(p.y - v.y, p.x - v.x), a2 = Math.atan2(q.y - v.y, q.x - v.x);
+    let d = a2 - a1; while (d <= -Math.PI) d += 2 * Math.PI; while (d > Math.PI) d -= 2 * Math.PI;
+    const s = P(v.x + r * Math.cos(a1), v.y + r * Math.sin(a1)), e = P(v.x + r * Math.cos(a1 + d), v.y + r * Math.sin(a1 + d));
+    const arc = `A${r} ${r} 0 0 ${d > 0 ? 1 : 0} ${e.x} ${e.y}`;
+    return closed ? `M${v.x} ${v.y} L${s.x} ${s.y} ${arc} Z` : `M${s.x} ${s.y} ${arc}`;
+  }
+  // Point at distance r from v along the bisector of the angle p v q.
+  function bis(v, p, q, r) { return add(v, mul(unit(add(unit(sub(p, v)), unit(sub(q, v)))), r)); }
+  function rightSq(v, p, q, r, cls) {
+    const a = add(v, mul(unit(sub(p, v)), r)), b = add(v, mul(unit(sub(q, v)), r)), c = add(a, sub(b, v));
+    el("path", { d: `M${a.x} ${a.y} L${c.x} ${c.y} L${b.x} ${b.y}`, class: cls }, svg);
+  }
+  function vname(v, away, name) {
+    const p = add(v, mul(unit(sub(v, away)), 30));
+    el("text", { x: p.x, y: p.y, class: "vname" }, svg).textContent = name;
+  }
+  function line(p, q, cls) { return el("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y, class: cls }, svg); }
+  // Chip beside a side, pushed away from the point `away` (usually the triangle's middle).
+  function sideChip(p, q, away, text, cls, off = 30) {
+    const m = mul(add(p, q), 0.5);
+    let n = unit(P(-(q.y - p.y), q.x - p.x));
+    if ((m.x - away.x) * n.x + (m.y - away.y) * n.y < 0) n = mul(n, -1);
+    chip(add(m, mul(n, off)), text, cls);
+  }
+
+  // ================= LEARN =================
+  // One reference triangle for most rules: AB = 7, ∠A = 40°, ∠B = 75°, so ∠C = 65°, AC ≈ 7.5, BC ≈ 5.
+  const c0 = 7, b0 = 7 * Math.sin(75 * D) / Math.sin(65 * D), a0 = 7 * Math.sin(40 * D) / Math.sin(65 * D);
+  const A0 = P(0, 0), B0 = P(7, 0), C0 = mul(dir(40), b0);
+  const tSSA2 = c0 * Math.cos(40 * D) - Math.sqrt(a0 * a0 - (c0 * Math.sin(40 * D)) ** 2); // the second spot for SSA
+  const HLleg = 5, HLhyp = 7, HLh = Math.sqrt(HLhyp * HLhyp - HLleg * HLleg);
+
+  const S = t => `<span class="L-S">${t}</span>`, An = t => `<span class="L-A">${t}</span>`;
+  const CASES = {
+    SSS: { ok: true, pat: S("SSS"), words: "Side, Side, Side", key: "Three pairs of sides.",
+      given: `${S("AB = 7")}, ${S("AC = 7.5")}, ${S("BC = 5")}`,
+      steps: ["Lay down side AB = 7.", "AC = 7.5, so C is somewhere on this circle around A.", "BC = 5, so C is also on this circle around B.", "The circles cross at one spot. Drag C: BC is 5 only there."],
+      verdict: "Only one triangle fits. Three sides lock the shape and the size.",
+      param: [20, 110], start: 40, targets: [40], tol: 3 },
+    SAS: { ok: true, pat: `${S("S")}${An("A")}${S("S")}`, words: "Side, Angle, Side", key: "The angle is <b>between</b> the two sides.",
+      given: `${S("AB = 7")}, ${An("∠A = 40°")}, ${S("AC = 7.5")}`,
+      steps: ["Lay down side AB = 7.", "∠A = 40° points the next side in one direction.", "AC = 7.5 along that ray marks one spot for C.", "Join B to C. Drag C: AC is 7.5 only at one spot."],
+      verdict: "Only one triangle fits. The angle between the sides locks it.",
+      param: [1.2, 9.5], start: b0, targets: [b0], tol: 0.25 },
+    ASA: { ok: true, pat: `${An("A")}${S("S")}${An("A")}`, words: "Angle, Side, Angle", key: "The side is <b>between</b> the two angles.",
+      given: `${An("∠A = 40°")}, ${S("AB = 7")}, ${An("∠B = 75°")}`,
+      steps: ["Lay down side AB = 7.", "∠A = 40°: C is on this ray from A.", "∠B = 75°: C is also on this ray from B.", "The rays cross at one spot. Drag C: ∠B is 75° only there."],
+      verdict: "Only one triangle fits. Two angles and the side between them lock it.",
+      param: [1.2, 9.5], start: b0, targets: [b0], tol: 0.25 },
+    AAS: { ok: true, pat: `${An("AA")}${S("S")}`, words: "Angle, Angle, Side", key: "The side is <b>not</b> between the angles. It still works.",
+      given: `${An("∠A = 40°")}, ${An("∠B = 75°")}, ${S("BC = 5")}`,
+      steps: ["∠A = 40° and ∠B = 75° set the shape.", "Angles add to 180°, so ∠C = 65°. The shape is set, but not the size.", "BC = 5 sets the size. Drag B: BC is 5 at only one size."],
+      verdict: "Only one triangle fits. Knowing two angles means you know all three, so any one side sets the size.",
+      param: [0.45, 1.25], start: 1, targets: [1], tol: 0.035 },
+    HL: { ok: true, pat: `${S("H")}${S("L")}`, words: "Hypotenuse, Leg", key: "Right triangles only.",
+      given: `${S("AB = 5")} (leg), ${An("∠B = 90°")}, ${S("AC = 7")} (hypotenuse)`,
+      steps: ["Lay down leg AB = 5.", "∠B = 90°: C is on this line straight up from B.", "Hypotenuse AC = 7: C is also on this circle around A.", "They meet at one spot. Drag C: AC is 7 only there."],
+      verdict: "Only one triangle fits. HL is the one side-side-angle that works, because the angle is 90°.",
+      param: [1, 6.4], start: HLh, targets: [HLh], tol: 0.22 },
+    SSA: { ok: false, pat: `${S("SS")}${An("A")}`, words: "Side, Side, Angle", key: "The angle is <b>not</b> between the two sides.",
+      given: `${S("AB = 7")}, ${An("∠A = 40°")}, ${S("BC = 5")}`,
+      steps: ["Lay down side AB = 7.", "∠A = 40°: C is somewhere on this ray.", "BC = 5: C is also on this circle around B.", "The circle hits the ray <b>twice</b>. Drag C along the ray and find both spots."],
+      verdict: "Two different triangles fit, so SSA does not prove congruence.",
+      param: [1.2, 9.5], start: b0, targets: [b0, tSSA2], tol: 0.25 },
+    AAA: { ok: false, pat: An("AAA"), words: "Angle, Angle, Angle", key: "No sides at all.",
+      given: `${An("∠A = 40°")}, ${An("∠B = 75°")}, ${An("∠C = 65°")}`,
+      steps: ["All three angles are known.", "Drag B. The angles never change, but the size does."],
+      verdict: "Same shape, any size. These triangles are similar, not congruent.",
+      param: [0.45, 1.25], start: 1, targets: [], tol: 0 },
+  };
+  const GOOD = ["SSS", "SAS", "ASA", "AAS", "HL"], BAD = ["SSA", "AAA"];
+  const L = { cas: "SAS", step: 0, v: 0, found: new Set() };
+
+  function caseFrame(cas) {
+    const box = { SSS: [-2.7, 7.6, 0, 7.6], SAS: [-0.3, 7.7, 0, 6.3], ASA: [-0.3, 7.7, 0, 6.3], SSA: [-0.3, 7.7, 0, 6.3],
+      AAS: [-0.3, 8.9, 0, 6.1], AAA: [-0.3, 8.9, 0, 6.1], HL: [-0.3, 6.2, 0, 6.6] }[cas];
+    const k = Math.min(80, (W - 160) / (box[1] - box[0]), (H - 120) / (box[3] - box[2]));
+    const ox = W / 2 - k * (box[0] + box[1]) / 2, oy = H / 2 + k * (box[2] + box[3]) / 2 + 10;
+    return { k, ox, oy, s: p => P(ox + p.x * k, oy - p.y * k), m: q => P((q.x - ox) / k, (oy - q.y) / k) };
+  }
+  let F = caseFrame("SAS");
+
+  // Where the free corner is, for the current case and value v.
+  function corners(cas, v) {
+    if (cas === "SSS") return [A0, B0, mul(dir(v), b0)];
+    if (cas === "HL") return [P(0, 0), P(HLleg, 0), P(HLleg, v)];
+    if (cas === "AAS" || cas === "AAA") return [A0, mul(B0, v), mul(C0, v)];
+    return [A0, B0, mul(dir(40), v)];
+  }
+  function measure(cas, v) {
+    const [A, B, C] = corners(cas, v);
+    if (cas === "SSS" || cas === "SSA" || cas === "AAS") return { name: "BC", val: dist(B, C), need: a0, unit: "" };
+    if (cas === "SAS") return { name: "AC", val: v, need: b0, unit: "" };
+    if (cas === "ASA") return { name: "∠B", val: angAt(B, A, C), need: 75, unit: "°" };
+    if (cas === "HL") return { name: "AC", val: dist(A, C), need: HLhyp, unit: "" };
+    return null;
+  }
+  const near = (cas, v) => CASES[cas].targets.findIndex(t => Math.abs(t - v) < 1e-6);
+  const shown = (val, unitS) => unitS === "°" ? Math.round(val) + "°" : r1(val);
+
+  function drawLearn() {
+    svg.textContent = "";
+    const cas = L.cas, C = CASES[cas], st = L.step, last = st === C.steps.length - 1;
+    F = caseFrame(cas);
+    const s = F.s, k = F.k;
+    const [Am, Bm, Cm] = corners(cas, last ? L.v : C.start);
+    const A = s(Am), B = s(Bm), Cc = s(Cm), mid = centroid([A, B, s(C0)]);
+
+    if (cas === "SSS") {
+      if (st >= 1) {
+        el("path", { d: `M${s(mul(dir(20), b0)).x} ${s(mul(dir(20), b0)).y} A${b0 * k} ${b0 * k} 0 0 0 ${s(mul(dir(110), b0)).x} ${s(mul(dir(110), b0)).y}`, class: "track" }, svg);
+        chip(s(mul(dir(100), b0 + 0.55)), "AC = 7.5", "S");
+      }
+      if (st >= 2) {
+        const p1 = add(B0, mul(dir(80), a0)), p2 = add(B0, mul(dir(130), a0));
+        el("path", { d: `M${s(p1).x} ${s(p1).y} A${a0 * k} ${a0 * k} 0 0 0 ${s(p2).x} ${s(p2).y}`, class: "track", style: "stroke: var(--pt)" }, svg);
+        chip(s(add(B0, mul(dir(72), a0 + 0.2))), "BC = 5", "S");
+      }
+      if (st >= 3) el("circle", { cx: s(C0).x, cy: s(C0).y, r: 16, class: "target" }, svg);
+    }
+    if (cas === "SAS" || cas === "ASA" || cas === "SSA") {
+      if (st >= 1) {
+        line(A, s(mul(dir(40), 9.5)), "ray");
+        el("path", { d: arcPath(A, B, s(dir(40)), 62, true), class: "wedge" }, svg);
+        chip(s(mul(dir(20), 1.55)), "40°", "A");
+      }
+      if (cas === "SAS" && st >= 2) {
+        if (!last) line(A, s(C0), "giv");
+        el("circle", { cx: s(C0).x, cy: s(C0).y, r: 16, class: "target" }, svg);
+        if (!last) sideChip(A, s(C0), mid, "AC = 7.5", "S", 34);
+      }
+      if (cas === "ASA" && st >= 2) {
+        line(B, s(add(B0, mul(dir(105), 6.3))), "ray");
+        el("path", { d: arcPath(B, A, s(add(B0, dir(105))), 52, true), class: "wedge" }, svg);
+        chip(s(add(B0, mul(dir(142), 1.25))), "75°", "A");
+        el("circle", { cx: s(C0).x, cy: s(C0).y, r: 16, class: "target" }, svg);
+      }
+      if (cas === "SSA" && st >= 2) {
+        const p1 = add(B0, mul(dir(85), a0)), p2 = add(B0, mul(dir(172), a0));
+        el("path", { d: `M${s(p1).x} ${s(p1).y} A${a0 * k} ${a0 * k} 0 0 0 ${s(p2).x} ${s(p2).y}`, class: "track", style: "stroke: var(--pt)" }, svg);
+        chip(s(add(B0, mul(dir(78), a0 + 0.3))), "BC = 5", "S");
+        if (st >= 3) [b0, tSSA2].forEach(t => { const q = s(mul(dir(40), t)); el("circle", { cx: q.x, cy: q.y, r: 16, class: "target" }, svg); });
+      }
+    }
+    if (cas === "HL") {
+      if (st >= 1) {
+        line(B, s(P(HLleg, 6.4)), "ray");
+        rightSq(B, A, s(P(HLleg, 1)), 28, "ra");
+      }
+      if (st >= 2) {
+        const p1 = mul(dir(30), HLhyp), p2 = mul(dir(62), HLhyp);
+        el("path", { d: `M${s(p1).x} ${s(p1).y} A${HLhyp * k} ${HLhyp * k} 0 0 0 ${s(p2).x} ${s(p2).y}`, class: "track", style: "stroke: var(--pt)" }, svg);
+        chip(s(mul(dir(60), HLhyp + 0.45)), "AC = 7", "S");
+        if (st >= 3) { const q = s(P(HLleg, HLh)); el("circle", { cx: q.x, cy: q.y, r: 16, class: "target" }, svg); }
+      }
+    }
+
+    // Spots already found (ghost triangles) on the last step.
+    if (last) for (const i of L.found) {
+      const [a, b, c] = corners(cas, C.targets[i]).map(s);
+      el("polygon", { points: [a, b, c].map(p => `${p.x},${p.y}`).join(" "), class: "tri ghost" }, svg);
+    }
+
+    // The triangle (or the part of it built so far).
+    const m = last ? measure(cas, L.v) : null;
+    const fits = m ? Math.abs(m.val - m.need) < 0.02 * Math.max(1, m.need) : false;
+    if (cas === "AAS" || cas === "AAA") {
+      if (!last) for (const f of [0.6, 1.2]) {
+        const [a, b, c] = corners(cas, f).map(s);
+        el("polygon", { points: [a, b, c].map(p => `${p.x},${p.y}`).join(" "), class: "tri shape" }, svg);
+      }
+      el("polygon", { points: [A, B, Cc].map(p => `${p.x},${p.y}`).join(" "), class: "tri" }, svg);
+      const cen = centroid([A, B, Cc]);
+      const sc = last ? L.v : C.start;
+      el("path", { d: arcPath(A, B, Cc, 46, true), class: "wedge" }, svg); chip(bis(A, B, Cc, 92), "40°", "A");
+      el("path", { d: arcPath(B, A, Cc, 40, true), class: "wedge" }, svg); chip(bis(B, A, Cc, 84), "75°", "A");
+      if (cas === "AAA" || st >= 1) { el("path", { d: arcPath(Cc, A, B, 40, true), class: "wedge" + (cas === "AAS" ? " p" : "") }, svg); chip(bis(Cc, A, B, 84), "65°", cas === "AAS" ? "P" : "A"); }
+      if (cas === "AAS" && st >= 2) {
+        line(B, Cc, fits ? "ok" : "bad");
+        sideChip(B, Cc, cen, "BC = " + r1(a0 * sc), fits ? "G" : "R");
+      }
+      if (cas === "AAA" && last) {
+        sideChip(A, B, cen, "AB = " + r1(7 * sc), "S");
+        sideChip(B, Cc, cen, "BC = " + r1(a0 * sc), "S");
+        sideChip(A, Cc, cen, "AC = " + r1(b0 * sc), "S");
+      }
+      [A, B, Cc].forEach(p => el("circle", { cx: p.x, cy: p.y, r: 6, class: "vdot" }, svg));
+      vname(A, cen, "A"); vname(B, cen, "B"); vname(Cc, cen, "C");
+      if (last) handle(B);
+    } else {
+      const cen = centroid([A, B, last ? Cc : s(C0)]);
+      if (last) {
+        el("polygon", { points: [A, B, Cc].map(p => `${p.x},${p.y}`).join(" "), class: "tri" }, svg);
+        // The given sides stay blue; the side (or angle) being tested is green when it fits, red when it does not.
+        if (cas === "SSS") { line(A, B, "giv"); line(A, Cc, "giv"); line(B, Cc, fits ? "ok" : "bad"); sideChip(B, Cc, cen, "BC = " + r1(m.val), fits ? "G" : "R"); }
+        if (cas === "SAS") { line(A, B, "giv"); line(A, Cc, fits ? "ok" : "bad"); line(B, Cc, "plain"); sideChip(A, Cc, cen, "AC = " + r1(m.val), fits ? "G" : "R", 36); }
+        if (cas === "ASA") {
+          line(A, B, "giv");
+          el("path", { d: arcPath(B, A, Cc, 44, true), class: "wedge", style: fits ? "" : "stroke: var(--warn); fill: var(--warn)" }, svg);
+          chip(bis(B, A, Cc, 92), shown(m.val, "°"), fits ? "G" : "R");
+        }
+        if (cas === "SSA") { line(A, B, "giv"); line(B, Cc, fits ? "ok" : "bad"); sideChip(B, Cc, cen, "BC = " + r1(m.val), fits ? "G" : "R"); }
+        if (cas === "HL") { line(A, B, "giv"); line(A, Cc, fits ? "ok" : "bad"); sideChip(A, Cc, cen, "AC = " + r1(m.val), fits ? "G" : "R", 36); }
+      } else {
+        line(A, B, "giv");
+      }
+      if (cas !== "SSS" && !(last && cas !== "HL" && false)) {}
+      sideChip(A, B, P(A.x, A.y - 100), "AB = " + (cas === "HL" ? 5 : 7), "S", 34);
+      [A, B].forEach(p => el("circle", { cx: p.x, cy: p.y, r: 6, class: "vdot" }, svg));
+      vname(A, cen, "A"); vname(B, cen, "B");
+      if (last) { vname(Cc, cen, "C"); handle(Cc); }
+    }
+    hintLearn(m, fits);
+  }
+
+  function hintLearn(m, fits) {
+    const C = CASES[L.cas], h = $("hint");
+    if (L.step !== C.steps.length - 1) { h.innerHTML = "Press <b>Next step</b> to keep building."; return; }
+    const who = L.cas === "AAS" || L.cas === "AAA" ? "B" : "C";
+    if (L.cas === "AAA") { h.innerHTML = `Drag <b class="c-orange">${who}</b>. Every size has angles 40°, 75° and 65°.`; return; }
+    const need = m.name + " = " + shown(m.need, m.unit);
+    if (L.cas === "SSA") {
+      if (L.found.size === 2) { h.innerHTML = `<span class="c-warn">Both spots fit.</span> Same marks, two different triangles!`; return; }
+      if (fits) { h.innerHTML = `<span class="c-green">✓ ${need} here.</span> Keep dragging <b class="c-orange">C</b>. There is another spot.`; return; }
+    } else if (fits) { h.innerHTML = `<span class="c-green">✓ ${need}. It fits.</span> Try to find another spot. There isn't one.`; return; }
+    h.innerHTML = `Drag <b class="c-orange">${who}</b>. Now ${m.name} = ${shown(m.val, m.unit)}, but it needs ${shown(m.need, m.unit)}.`;
+  }
+
+  // The orange corner the student drags (C, or B when the size changes).
+  function handle(p) {
+    const g = el("g", { class: "handle", tabindex: 0, role: "slider", "aria-label": "Drag the corner" }, svg);
+    el("circle", { cx: p.x, cy: p.y, r: 30, fill: "transparent" }, g);
+    el("circle", { cx: p.x, cy: p.y, r: 22, class: "ring" }, g);
+    el("circle", { cx: p.x, cy: p.y, r: 11, class: "dot" }, g);
+    g.addEventListener("pointerdown", e => startDrag(e, g));
+    g.addEventListener("keydown", e => {
+      const C = CASES[L.cas], stepV = (C.param[1] - C.param[0]) / 80;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") { setV(L.v + stepV, false); e.preventDefault(); }
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") { setV(L.v - stepV, false); e.preventDefault(); }
+      requestAnimationFrame(() => svg.querySelector(".handle")?.focus());
+    });
+  }
+  function valueAt(q) {
+    const cas = L.cas;
+    if (cas === "SSS") { let a = Math.atan2(q.y, q.x) / D; if (a < -90) a += 360; return a; }
+    if (cas === "HL") return q.y;
+    if (cas === "AAS" || cas === "AAA") return q.x / 7;
+    const d = dir(40); return q.x * d.x + q.y * d.y;
+  }
+  function setV(v, snap = true) {
+    const C = CASES[L.cas];
+    v = Math.max(C.param[0], Math.min(C.param[1], v));
+    C.targets.forEach((t, i) => { if (Math.abs(v - t) < (snap ? C.tol : 1e-3)) { v = t; L.found.add(i); } });
+    if (!snap) C.targets.forEach((t, i) => { if (Math.abs(v - t) < C.tol / 2) { v = t; L.found.add(i); } });
+    L.v = v; drawLearn();
+  }
+  function startDrag(e, g) {
+    e.preventDefault();
+    g.classList.add("drag");
+    const toModel = ev => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return F.m(pt.matrixTransform(svg.getScreenCTM().inverse())); };
+    const move = ev => setV(valueAt(toModel(ev)));
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  }
+
+  function renderLearnPanel() {
+    const C = CASES[L.cas];
+    document.querySelectorAll(".cbtns button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.c === L.cas)));
+    $("pat").innerHTML = C.pat; $("words").textContent = C.words; $("keyNote").innerHTML = C.key; $("given").innerHTML = "Given: " + C.given;
+    $("steps").innerHTML = C.steps.slice(0, L.step + 1).map((t, i) => `<li class="step ${i === L.step ? "now" : "old"}"><span class="n">${i + 1}</span><span>${t}</span></li>`).join("");
+    $("back").disabled = L.step === 0;
+    $("next").disabled = L.step === C.steps.length - 1;
+    const v = $("verdict"), last = L.step === C.steps.length - 1;
+    v.hidden = !last;
+    v.className = "verdict-card" + (C.ok ? "" : " no");
+    v.innerHTML = `<span class="tag">${C.ok ? "Proves it" : "Not enough"}</span>${C.verdict}`;
+  }
+  function setCase(cas) { L.cas = cas; L.step = 0; L.v = CASES[cas].start; L.found = new Set(); renderLearn(); }
+  function goStep(n) {
+    const C = CASES[L.cas];
+    L.step = Math.max(0, Math.min(C.steps.length - 1, n));
+    L.v = C.start; L.found = new Set();
+    if (L.step === C.steps.length - 1) C.targets.forEach((t, i) => { if (t === C.start) L.found.add(i); });
+    renderLearn();
+  }
+  function renderLearn() { renderLearnPanel(); drawLearn(); }
+
+  for (const [id, list] of [["good", GOOD], ["bad", BAD]])
+    $(id).innerHTML = list.map(c => `<button type="button" data-c="${c}" aria-pressed="false">${c}</button>`).join("");
+  document.querySelectorAll(".cbtns button").forEach(b => b.addEventListener("click", () => setCase(b.dataset.c)));
+  $("next").addEventListener("click", () => goStep(L.step + 1));
+  $("back").addEventListener("click", () => goStep(L.step - 1));
+
+  // ================= PRACTICE =================
+  const RULES = ["SSS", "SAS", "ASA", "AAS", "HL"];
+  const Q = { n: 0, right: 0, total: 0 };
+  let q = null;
+
+  function makeTri(right) {
+    for (;;) {
+      let ang;
+      if (right) { const x = rnd(28, 62); if (Math.abs(x - 45) < 8) continue; ang = shuffle([90, x, 90 - x]); }
+      else {
+        const a = rnd(35, 100), b = rnd(35, 100), c = 180 - a - b;
+        if (c < 35 || c > 100) continue;
+        ang = [a, b, c];
+        const s = ang.slice().sort((x, y) => x - y);
+        if (s[1] - s[0] < 12 || s[2] - s[1] < 12 || ang.some(v => Math.abs(v - 90) < 9)) continue;
+      }
+      const b = 6 * Math.sin(ang[1] * D) / Math.sin(ang[2] * D);
+      return { P: [P(0, 0), P(6, 0), mul(dir(ang[0]), b)], ang };
+    }
+  }
+  const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+  function partsFor(crit, T) {
+    for (const [u, v, w] of shuffle(PERMS)) {
+      if (crit === "SSS") return { sides: shuffle([[u, v], [v, w], [u, w]]), angles: [] };
+      if (crit === "SAS") return { sides: [[u, v], [u, w]], angles: [u] };
+      if (crit === "ASA") return { sides: [[u, v]], angles: [u, v] };
+      if (crit === "AAS") return { sides: [[v, w]], angles: [u, v] };
+      if (crit === "HL") { if (T.ang[u] !== 90) continue; return { sides: [[v, w], [u, v]], angles: [u], right: u }; }
+      if (crit === "SSA") { if (T.ang[w] - T.ang[u] < 18) continue; return { sides: [[u, v], [v, w]], angles: [u], ssa: [u, v, w] }; }
+      if (crit === "AAA") return { sides: [], angles: [u, v, w] };
+    }
+    return null;
+  }
+  const rotate = (p, a) => P(p.x * Math.cos(a * D) - p.y * Math.sin(a * D), p.x * Math.sin(a * D) + p.y * Math.cos(a * D));
+  const reflectLine = (p, a, b) => { const d = unit(sub(b, a)), v = sub(p, a), t = v.x * d.x + v.y * d.y; return sub(mul(add(a, mul(d, t)), 2), p); };
+  function fitInto(pts, x0, y0, w, h, k) {
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return pts.map(p => P(x0 + w / 2 + (p.x - cx) * k, y0 + h / 2 - (p.y - cy) * k));
+  }
+  const span = pts => { const xs = pts.map(p => p.x), ys = pts.map(p => p.y); return [Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; };
+
+  function buildQ() {
+    const crit = pick(["SSS", "SAS", "SAS", "ASA", "ASA", "AAS", "AAS", "HL", "SSA", "SSA", "SSA", "AAA"]);
+    let T, parts;
+    do { T = makeTri(crit === "HL"); parts = partsFor(crit, T); } while (!parts);
+    const kinds = ["sep", "sep"];
+    if (crit !== "AAA") kinds.push("side", "side");
+    if (!["SSS", "HL"].includes(crit)) kinds.push("vert", "vert");
+    const kind = pick(kinds);
+    let pts, t1 = [0, 1, 2], t2, hidden = null, alt = false, letters;
+    const m = 70;
+    if (kind === "sep") {
+      let P2 = T.P.slice();
+      if (crit === "SSA" && Math.random() < 0.5) { // the other triangle these marks also fit
+        const [u, v, w] = parts.ssa, uv = dist(T.P[u], T.P[v]), vw = dist(T.P[v], T.P[w]), th = T.ang[u] * D;
+        const t2 = uv * Math.cos(th) - Math.sqrt(vw * vw - (uv * Math.sin(th)) ** 2);
+        if (t2 > 1.2) { P2[w] = add(T.P[u], mul(unit(sub(T.P[w], T.P[u])), t2)); alt = true; }
+      }
+      if (crit === "AAA" && Math.random() < 0.6) { const f = pick([0.65, 1.4]), c = centroid(P2); P2 = P2.map(p => add(c, mul(sub(p, c), f))); alt = true; }
+      const flip = Math.random() < 0.5;
+      const A1 = T.P.map(p => rotate(p, rnd(0, 359)));
+      const r2 = rnd(0, 359);
+      const A2 = P2.map(p => rotate(flip ? P(-p.x, p.y) : p, r2));
+      const s1 = span(A1), s2 = span(A2);
+      const k = Math.min((W / 2 - 2 * m) / Math.max(s1[0], s2[0]), (H - 2 * m) / Math.max(s1[1], s2[1]));
+      pts = [...fitInto(A1, 0, 0, W / 2, H, k), ...fitInto(A2, W / 2, 0, W / 2, H, k)];
+      t2 = [3, 4, 5];
+      const set = pick([["ABC", "DEF"], ["PQR", "XYZ"], ["JKL", "MNO"], ["ABC", "XYZ"], ["RST", "UVW"]]);
+      letters = [...shuffle([...set[0]]), ...shuffle([...set[1]])];
+    } else if (kind === "side") {
+      const [i, j] = pick(parts.sides), kk = 3 - i - j;
+      let Pk;
+      if (crit !== "HL" && Math.random() < 0.5) { Pk = sub(add(T.P[i], T.P[j]), T.P[kk]); t2 = []; t2[i] = j; t2[j] = i; t2[kk] = 3; }
+      else { Pk = reflectLine(T.P[kk], T.P[i], T.P[j]); t2 = []; t2[i] = i; t2[j] = j; t2[kk] = 3; }
+      hidden = { side: [i, j] };
+      const r = rnd(0, 359), all = [...T.P, Pk].map(p => rotate(p, r)), sp = span(all);
+      pts = fitInto(all, 0, 0, W, H, Math.min((W - 2 * m) / sp[0], (H - 2 * m) / sp[1], 120));
+      letters = shuffle([...pick(["ABCD", "PQRS", "JKLM", "WXYZ"])]);
+    } else {
+      const v = pick(parts.angles), [a, b] = [0, 1, 2].filter(x => x !== v), V = T.P[v];
+      let Qa, Qb;
+      if (Math.random() < 0.5) { Qa = sub(mul(V, 2), T.P[a]); Qb = sub(mul(V, 2), T.P[b]); }
+      else { Qa = add(V, mul(unit(sub(V, T.P[b])), dist(V, T.P[a]))); Qb = add(V, mul(unit(sub(V, T.P[a])), dist(V, T.P[b]))); }
+      t2 = []; t2[v] = v; t2[a] = 3; t2[b] = 4;
+      hidden = { angle: v };
+      const r = rnd(0, 359), all = [...T.P, Qa, Qb].map(p => rotate(p, r)), sp = span(all);
+      pts = fitInto(all, 0, 0, W, H, Math.min((W - 2 * m) / sp[0], (H - 2 * m) / sp[1], 120));
+      letters = shuffle([...pick(["ABCDE", "PQRST", "JKLMN", "VWXYZ"])]);
+    }
+    const ok = RULES.includes(crit);
+    const order = shuffle([0, 1, 2]);
+    const name1 = order.map(i => letters[t1[i]]).join(""), right2 = order.map(i => letters[t2[i]]).join("");
+    const wrong = shuffle(PERMS.map(p => p.map(i => right2[i]).join("")).filter(s => s !== right2)).slice(0, 3);
+    q = { crit, ok, kind, parts, pts, t1, t2, hidden, alt, letters, name1, right2, opts: shuffle([right2, ...wrong]), answered: false, done2: false };
+  }
+
+  const lab = i => q.letters[i];
+  const sideName = (t, [i, j]) => lab(t[i]) + lab(t[j]);
+  const angName = (t, v) => { const o = [0, 1, 2].filter(x => x !== v); return "∠" + lab(t[o[0]]) + lab(t[v]) + lab(t[o[1]]); };
+  const isHidden = (kind, x) => q.hidden && (kind === "side" ? q.hidden.side && q.hidden.side.join() === x.join() : q.hidden.angle === x);
+
+  function drawPractice() {
+    svg.textContent = "";
+    const pts = q.pts;
+    const T1 = q.t1.map(i => pts[i]), T2 = q.t2.map(i => pts[i]);
+    el("polygon", { points: T1.map(p => `${p.x},${p.y}`).join(" "), class: "tri" }, svg);
+    el("polygon", { points: T2.map(p => `${p.x},${p.y}`).join(" "), class: "tri t2" }, svg);
+    const reveal = q.answered && q.hidden;
+    if (reveal && q.hidden.side) { const [i, j] = q.hidden.side; line(T1[i], T1[j], "shared flash"); }
+    for (const T of [T1, T2]) {
+      const sz = Math.min(dist(T[0], T[1]), dist(T[1], T[2]), dist(T[0], T[2]));
+      let n = 0;
+      for (const sd of q.parts.sides) {
+        if (isHidden("side", sd)) continue;
+        n++;
+        const p = T[sd[0]], r = T[sd[1]], mid = mul(add(p, r), 0.5), d = unit(sub(r, p)), nn = P(-d.y, d.x);
+        for (let t = 0; t < n; t++) {
+          const c = add(mid, mul(d, (t - (n - 1) / 2) * 9));
+          line(add(c, mul(nn, 11)), sub(c, mul(nn, 11)), "tick");
+        }
+      }
+      let na = 0;
+      for (const v of q.parts.angles) {
+        const o = [0, 1, 2].filter(x => x !== v);
+        if (isHidden("angle", v)) {
+          if (reveal) el("path", { d: arcPath(T[v], T[o[0]], T[o[1]], Math.min(34, sz * 0.3), true), class: "parc flash" }, svg);
+          continue;
+        }
+        if (q.parts.right === v) { rightSq(T[v], T[o[0]], T[o[1]], Math.min(22, sz * 0.2), "msq"); continue; }
+        na++;
+        for (let t = 0; t < na; t++) el("path", { d: arcPath(T[v], T[o[0]], T[o[1]], Math.min(30, sz * 0.26) + t * 7), class: "marc" }, svg);
+      }
+    }
+    // Corner letters: pushed away from the middle of every triangle that uses the corner.
+    pts.forEach((p, i) => {
+      const owners = [T1, T2].filter((T, ti) => (ti === 0 ? q.t1 : q.t2).includes(i));
+      let away = centroid(owners.map(centroid));
+      if (dist(away, p) < 1) { const o = owners[0], c = centroid(o); away = add(p, P(-(c.y - p.y), c.x - p.x)); }
+      el("circle", { cx: p.x, cy: p.y, r: 5, class: "vdot" }, svg);
+      vname(p, away, lab(i));
+    });
+    if (reveal && q.hidden.side) { const [i, j] = q.hidden.side; sideChip(T1[i], T1[j], centroid(T1), "shared", "P", 34); }
+    if (reveal && q.hidden.angle !== undefined) { const v = q.hidden.angle; const o = [0, 1, 2].filter(x => x !== v); chip(bis(T1[v], T1[o[0]], T1[o[1]], -54), "vertical", "P"); }
+    $("hint").innerHTML = "Same marks mean equal parts. A shared side or vertical angles count too, even without marks.";
+  }
+
+  function explain() {
+    const t = q.t1, p = q.parts, out = [];
+    const sides = p.sides.map(sd => sideName(t, sd)), angs = p.angles.map(v => angName(t, v));
+    if (q.hidden && q.hidden.side) out.push(`<b class="c-purple">${sideName(t, q.hidden.side)}</b> is a side of both triangles (shared side).`);
+    if (q.hidden && q.hidden.angle !== undefined) out.push(`<b class="c-purple">${angName(t, q.hidden.angle)}</b> and ${angName(q.t2, q.hidden.angle)} are vertical angles, so they are equal.`);
+    const c = q.crit;
+    if (c === "SSS") out.push(`Three pairs of sides match: ${sides.join(", ")}.`);
+    if (c === "SAS") out.push(`${angs[0]} is <b>between</b> ${sides[0]} and ${sides[1]}.`);
+    if (c === "ASA") out.push(`${sides[0]} is <b>between</b> ${angs[0]} and ${angs[1]}.`);
+    if (c === "AAS") out.push(`${sides[0]} is <b>not between</b> ${angs[0]} and ${angs[1]}.`);
+    if (c === "HL") out.push(`Right triangles with hypotenuse ${sides[0]} and leg ${sides[1]}.`);
+    if (c === "SSA") out.push(`${angs[0]} is <b>not between</b> ${sides[0]} and ${sides[1]}. That is SSA: two different triangles can fit these marks.${q.alt ? " Here they really are different!" : ""}`);
+    if (c === "AAA") out.push(`Only angles match. Same shape, but the size can change.${q.alt ? " Look at the sizes here!" : ""}`);
+    return out.join(" ");
+  }
+
+  function renderPractice() {
+    $("qnum").textContent = "Question " + Q.n;
+    $("score").textContent = Q.right + " / " + Q.total;
+    $("rules").innerHTML = [...RULES, "none"].map(r => `<button type="button" data-r="${r}"${r === "none" ? ' class="wide"' : ""}>${r === "none" ? "Not enough to prove it" : r}</button>`).join("");
+    $("rules").querySelectorAll("button").forEach(b => b.addEventListener("click", () => answer1(b.dataset.r)));
+    $("fb1").innerHTML = ""; $("stmt").hidden = true; $("nextQ").hidden = true;
+    drawPractice();
+  }
+  function answer1(r) {
+    if (q.answered) return;
+    q.answered = true;
+    const correct = q.ok ? q.crit : "none", good = r === correct;
+    Q.total++; if (good) Q.right++;
+    $("rules").querySelectorAll("button").forEach(b => { b.disabled = true; if (b.dataset.r === correct) b.classList.add("right"); else if (b.dataset.r === r) b.classList.add("wrong"); });
+    let extra = "";
+    if (!good) {
+      if (q.crit === "SSA" && r === "SAS") extra = " For SAS the angle must sit between the two sides.";
+      else if (q.crit === "AAS" && r === "ASA") extra = " For ASA the side must sit between the two angles.";
+      else if (q.crit === "ASA" && r === "AAS") extra = " Here the side is between the angles.";
+      else if (q.crit === "SAS" && r === "none") extra = " The angle is between the two sides, so this one works.";
+      else if (q.hidden && r === "none") extra = " Look again for the part that has no marks.";
+    }
+    $("fb1").innerHTML = `<span class="head ${good ? "yes" : "no"}">${good ? "Yes!" : "Not quite."} ${q.ok ? q.crit : "Not enough."}</span>${explain()}${extra}`;
+    $("score").textContent = Q.right + " / " + Q.total;
+    drawPractice();
+    if (q.ok) {
+      $("stmt").hidden = false;
+      $("stmtEq").textContent = `△${q.name1} ≅ △ ? ? ?`;
+      $("fb2").innerHTML = "";
+      $("opts").innerHTML = q.opts.map(o => `<button type="button" data-o="${o}">△${o}</button>`).join("");
+      $("opts").querySelectorAll("button").forEach(b => b.addEventListener("click", () => answer2(b.dataset.o)));
+    } else $("nextQ").hidden = false;
+  }
+  function answer2(o) {
+    if (q.done2) return;
+    q.done2 = true;
+    const good = o === q.right2;
+    Q.total++; if (good) Q.right++;
+    $("opts").querySelectorAll("button").forEach(b => { b.disabled = true; if (b.dataset.o === q.right2) b.classList.add("right"); else if (b.dataset.o === o) b.classList.add("wrong"); });
+    $("stmtEq").textContent = `△${q.name1} ≅ △${q.right2}`;
+    const pairs = [...q.name1].map((c, i) => `${c} ↔ ${q.right2[i]}`).join(", ");
+    $("fb2").innerHTML = `<span class="head ${good ? "yes" : "no"}">${good ? "Yes!" : "Not quite."}</span>Corners with the same marks go in the same order: ${pairs}.`;
+    $("score").textContent = Q.right + " / " + Q.total;
+    $("nextQ").hidden = false;
+  }
+  function newQ() { Q.n++; buildQ(); renderPractice(); }
+  $("nextQ").addEventListener("click", newQ);
+  $("newQ").addEventListener("click", newQ);
+
+  // ================= Mode switch =================
+  let mode = "learn";
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+    $("learnP").hidden = m !== "learn"; $("pracP").hidden = m !== "practice"; $("newQ").hidden = m !== "practice";
+    svg.setAttribute("aria-label", m === "learn" ? "Building a triangle from the given parts" : "Two triangles with marked equal parts");
+    if (m === "learn") renderLearn(); else { if (!q) newQ(); else renderPractice(); }
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest?.(".handle") || e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") goStep(L.step + 1);
+    if (e.key === "ArrowLeft") goStep(L.step - 1);
+  });
+  setCase("SAS");
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    const fr = dict[key];
+    if (fr == null) return false;
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
