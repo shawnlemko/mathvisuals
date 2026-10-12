@@ -200,6 +200,8 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
 .score { font-size: 1.05rem; color: var(--muted); margin: 0; }
 .score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
 .toggles { margin-top: 10px; }
+#practice .fb:empty { display: none; }
+#practice .ask input { height: 40px; }
 
 /* Board drawing */
 .tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
@@ -295,9 +297,11 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
 
     <div class="panel" id="practice" hidden>
       <section class="card">
-        <p class="label">Questions</p>
         <div class="seg-btns kinds" role="group" aria-label="Question kind" id="pkinds"></div>
-        <div class="toggles"><label><input type="checkbox" id="askMean" checked> Ask what it means first</label></div>
+        <div class="row" style="justify-content: space-between">
+          <label class="toggles" style="margin: 0"><input type="checkbox" id="askMean" checked> Ask what it means first</label>
+          <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+        </div>
       </section>
       <section class="card" id="meanCard">
         <p class="label">What does it mean?</p>
@@ -311,18 +315,16 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
             <input id="aw" type="text" inputmode="numeric" autocomplete="off" aria-label="Whole number part (leave empty if none)">
             <span class="stack"><input id="an" type="text" inputmode="numeric" autocomplete="off" aria-label="Numerator"><hr><input id="ad" type="text" inputmode="numeric" autocomplete="off" aria-label="Denominator"></span>
           </div>
-          <div class="btns"><button type="button" class="go" id="check">Check</button></div>
+          <div class="btns"><button type="button" class="go" id="check">Check</button><button type="button" id="newq">New question</button></div>
         </div>
         <p class="fb" id="ansFb" aria-live="polite"></p>
-        <p class="say" id="psay" style="min-height: 0; margin-top: 6px"></p>
+        <p class="say" id="psay" style="min-height: 0"></p>
       </section>
       <div class="btns">
-        <button type="button" id="hint">Show the picture</button>
+        <button type="button" id="hint">Picture hint</button>
         <button type="button" id="showme">Show me</button>
-        <button type="button" class="go" id="newq">New question</button>
         <button type="button" id="learnThis">Learn this one</button>
       </div>
-      <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
     </div>
   </div>
 </div>
@@ -682,7 +684,7 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
       if (s >= 2) {
         mk(E("rect", { x, y, width: n * cw, height: ch, class: "take" }), 2, 0, "pop");
         if (Math.min(cw, ch) >= 24) for (let q = 0; q < n; q++) mk(lbl(x + (q + 0.5) * cw, y + ch / 2 + 7, q + 1, "", Math.min(22, cw * 0.5, ch * 0.6)), 2, q, "pop", 80);
-        const X = 640;
+        const X = 670;
         mk(lbl(X, 300, "one share:", "m", 24), 2, 0, "fade").setAttribute("text-anchor", "start");
         mk(lbl(X, 340, `${n} ${pl(n, "piece", "pieces")}`, "A", 28), 2, 1, "fade", 250).setAttribute("text-anchor", "start");
         mk(lbl(X, 400, "whole:", "m", 24), 2, 2, "fade", 250).setAttribute("text-anchor", "start");
@@ -903,7 +905,7 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
     if (m[1]) {
       b.classList.add("right"); S.meaningDone = true;
       $("#meanFb").textContent = "Yes!"; $("#meanFb").className = "fb ok";
-      $("#ansCard").style.opacity = 1; $("#check").disabled = false;
+      $("#ansCard").style.opacity = 1; $("#meanCard").hidden = true; $("#check").disabled = false;
       render(S.q, 0, { question: true });
       setTimeout(() => $("#an").focus(), 50);
     } else {
@@ -959,16 +961,15 @@ header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
   $("#newq").onclick = newQuestion;
   $("#hint").onclick = () => {
     if (S.done) return;
-    if (!S.meaningDone) { S.meaningDone = true; $("#opts").querySelectorAll("button").forEach((b, i) => { if ($("#opts").__opts[i][1]) b.classList.add("right"); }); $("#ansCard").style.opacity = 1; $("#check").disabled = false; }
+    if (!S.meaningDone) { S.meaningDone = true; $("#opts").querySelectorAll("button").forEach((b, i) => { if ($("#opts").__opts[i][1]) b.classList.add("right"); }); $("#ansCard").style.opacity = 1; $("#meanCard").hidden = true; $("#check").disabled = false; }
     play(0, K[key(S.q)].steps - 2, true);
   };
   $("#showme").onclick = () => {
     if (!S.done) {
       if (S.first) { S.first = false; S.total++; $("#total").textContent = S.total; }
       S.meaningDone = true; $("#opts").querySelectorAll("button").forEach((b, i) => { if ($("#opts").__opts[i][1]) b.classList.add("right"); });
-      $("#ansCard").style.opacity = 1;
-      const a = answer(S.q);
-      $("#ansFb").innerHTML = `The answer is ${hv(a)}${a[0] > a[1] && a[1] > 1 ? ` = <span class="n">${Math.floor(a[0] / a[1])}</span>${hf(a[0] % a[1], a[1])}` : ""}.`; $("#ansFb").className = "fb mid";
+      $("#ansCard").style.opacity = 1; $("#meanCard").hidden = true;
+            $("#ansFb").textContent = ""; $("#ansFb").className = "fb";
       S.done = true; $("#check").disabled = true;
     }
     play(0, K[key(S.q)].steps - 1, false);
@@ -1167,8 +1168,11 @@ window.I18N_COMMON = {
     let fr = dict[key];
     if (fr == null) {
       const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
-      if (t == null) return false;
-      let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? "");
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
     }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);

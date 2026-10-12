@@ -231,7 +231,7 @@ div.tb { cursor: default; }
 .fml .hi { align-self: flex-start; margin-top: -10px; }
 .fml .in.a { border-left: 6px solid var(--a); } .fml .in.b { border-left: 6px solid var(--b); }
 .key { font-family: var(--font-num); }
-.in.typeset { display: inline-flex; align-items: center; min-height: 1.9em; padding: 2px 12px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
+.in.typeset { border: 2px solid var(--green); border-radius: 8px; background: color-mix(in srgb, var(--green) 12%, var(--sheet)); color: var(--green); display: inline-flex; align-items: center; min-height: 1.9em; padding: 2px 12px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
 .in.typeset .fr { font-size: 0.75em; }
 </style>
 
@@ -809,7 +809,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -869,8 +869,12 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t == null) return false;
+      let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? "");
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];
