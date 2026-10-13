@@ -181,6 +181,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 /* Table: a CSS grid so the jump brackets can sit between two rows. */
 @media (max-width: 600px) { .tbl { gap: 0 4px; } .td { font-size: 1.3rem; } .td.how, .td.nrow { font-size: 1.1rem; } .tbl input { font-size: 1.3rem; } }
+.td .given { min-width: 2.2em; text-align: center; border: 3px solid var(--green); border-radius: 10px; padding: 0 4px; color: var(--green); }
+.td.pop { animation: pop 0.5s both; }
+@keyframes pop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .td.pop { animation: none; } }
 .td .mult { font-size: 1.2rem; white-space: nowrap; }
 .tcard { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 10px; }
 .tcard { flex: 2 1 0; } .graph { flex: 1 1 0; min-width: 0; }
@@ -371,7 +375,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const signed = b => b > 0 ? ` + ${b}` : b < 0 ? ` − ${-b}` : "";
 
   let P, S, step = 1, level = "medium";
-  const fresh = () => { S = { in: {}, mark: {}, done: { 1: false, 2: false, 3: false, 4: false }, timesDone: false, chained: false, hint: "", rule: null }; };
+  const fresh = () => { S = { in: {}, mark: {}, done: { 1: false, 2: false, 3: false, 4: false }, timesDone: true, timesShown: false, hint: "", rule: null }; };
 
   // A pattern is value = m × term + b. Tiles are drawn when they fit; otherwise each term is a number card.
   function makePattern(m, b, N, typed) {
@@ -442,7 +446,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Step 3 has two parts: multiply by the jump, then find what to add.
     $("say3").innerHTML = !S.timesDone
       ? `Times each <b class="p">term number</b> by the jump, <b class="g">${m}</b>.`
-      : !S.done[3] ? `What do you add to get the value? Fill the <b class="o">orange</b> boxes. (Take away? Type − first.)`
+      : !S.done[3] ? `It goes up <b class="g">${m}</b> each time. That means <b class="g">times ${m}</b>! Now: what do you add to get the value? Fill the <b class="o">orange</b> boxes. (Take away? Type − first.)`
       : `Every row: times <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}. Look at row <b class="p">n</b>!`;
     $("chk3").hidden = $("row3").hidden = S.done[3];
     $("hWhy").textContent = `Why × ${m}?`;
@@ -478,6 +482,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function renderTable() {
     const tbl = $("tbl"); tbl.replaceChildren();
     const cols = columns(), s = S.done[1] ? step : 1;
+    if (s === 3) setTimeout(() => { S.timesShown = true; });
     const ghost = s === 3 && S.hint === "zero";
     // Row n sits under the last term in step 3: the rule for any term.
     const rows = (ghost ? [0] : []).concat(P.vals.map((_, i) => i + 1), s === 3 ? ["n"] : []);
@@ -516,7 +521,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         else if (c === "times") {
           // Say the multiplication in the cell: "1 × 5 = [ ]", so students see what to do.
           if (g) e = hd("div", "td ghost", "0");
-          else { e = hd("div", "td"); e.innerHTML = `<span class="mult"><span class="c-pt">${n}</span> <span class="g">× ${P.m}</span> =</span>`; e.appendChild(input(`times-${i}`, "g")); }
+          else {
+            // Given, not typed: rows slide in one at a time the first time step 3 opens.
+            e = hd("div", "td" + (S.timesShown ? "" : " pop"));
+            e.style.animationDelay = `${0.2 + i * 0.6}s`;
+            e.innerHTML = `<span class="mult"><span class="c-pt">${n}</span> <span class="g">× ${P.m}</span> =</span><b class="given">${n * P.m}</b>`;
+          }
         }
         else if (c === "add") { e = g ? hd("div", "td ghost addv", fmt(P.b)) : wrapIn(input(`add-${i}`, "o")); e.appendChild(hd("span", "arr", "→")); }
         else if (c === "rule") e = hd("div", "td rule", res ? fmt(res[i]) : "");
