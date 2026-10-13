@@ -210,6 +210,15 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
 .lbl.l1 { fill: var(--l1); } .lbl.l2 { fill: var(--l2); } .lbl.hp { fill: var(--help); } .lbl.sol { fill: var(--green); font-size: 24px; }
 .sol-dot { fill: var(--green); stroke: var(--sheet); stroke-width: 4; }
 .sol-ring { fill: none; stroke: var(--green); stroke-width: 3; opacity: 0.45; }
+/* Substitution: the bracket slides out of the rearranged equation into the letter it replaces. */
+.stp { position: relative; }
+.row .mark { color: var(--from); text-decoration: underline 3px; text-underline-offset: 5px; }
+.row.src { color: var(--muted); font-size: 1.25rem; margin-bottom: 6px; }
+.row.src .tg { color: var(--from); font-family: var(--font-display); }
+.row.src .fly, .slot .new, .flyer { color: var(--from); }
+.slot { display: inline-block; white-space: nowrap; transition: width 3s ease-in-out; }
+.slot .old { display: none; transition: opacity 1.2s; }
+.flyer { position: absolute; margin: 0; white-space: nowrap; pointer-events: none; z-index: 2; }
 @media (prefers-reduced-motion: reduce) { .ln.pulse, .hl.new { animation: none; } }
 </style>
 
@@ -648,12 +657,15 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
   function substitution() {
     const F = E.map(q => ({ ...q, a: q.fr.a, b: q.fr.b, c: q.fr.c }));
     const nv = (q, v) => val(co(q, v));
-    // Pick the equation and letter that are easiest to get alone (y = ... ties win: that's slope-intercept form).
+    // Pick the equation and letter that are easiest to get alone: already alone, then a plain +1 letter (one move),
+    // then −1 (an extra divide by −1), then other numbers, with a penalty when dividing leaves fractions. y wins ties.
     let best = null;
     [0, 1].forEach(i => ["y", "x"].forEach(v => {
       const k = nv(F[i], v), l = nv(F[i], other(v)), kj = nv(F[1 - i], v);
       if (!k) return;
-      const score = (F[i].iso === v ? -1 : !l ? 0 : Math.abs(k) === 1 ? 1 : 2 + Math.abs(k)) + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + (k < 0 ? 0.1 : 0) + i * 0.01;
+      const K = R(co(F[i], v)), frac = [div(R(co(F[i], other(v))), K), div(R(F[i].c), K)].some(r => r.d !== 1);
+      const score = (F[i].iso === v ? -1 : !l ? 0 : Math.abs(k) === 1 ? 1 : 2 + Math.abs(k)) + (k < 0 ? 0.5 : 0) + (frac ? 1 : 0)
+        + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + i * 0.01;
       if (!best || score < best.score) best = { i, v, score };
     }));
     const { i, v } = best, u = other(v), j = 1 - i, q = F[i], Q = F[j];
@@ -685,8 +697,17 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
     } else {
       const put = [kj, "(", Ex], mine = [lj, u];
       const r1 = both(v === "x" ? [put, mine] : [mine, put], [[cj, ""]]);
+      // Start from equation j as it is, with its v marked in the colour of the equation the bracket comes from.
+      const start = both(std(Q), [[cj, ""]]).h;
+      scene({ hi: j });
+      push(`Start with equation ${T(j)}. Find the ${v} in it.`, `<div class="row" style="--from: var(--l${i + 1})">${start.replace(`<i>${v}</i>`, `<i class="mark">${v}</i>`)}</div>`);
+      // Then the bracket slides out of the rearranged equation and into v's place (animated in show()).
+      const slot = `<span class="slot"><i class="old mark">${v}</i><span class="new">(${Ex(true)})</span></span>`;
+      const into = eqn(v === "x" ? [[kj, "(", () => "\u0001"], mine] : [mine, [kj, "(", () => "\u0001"]], [[cj, ""]], true).replace("(\u0001)", slot);
       scene({}); if (s) setHelp(u, s[u], r1.t); else sc.hi = 2;
-      push(`Put (${Ex(false)}) in place of ${v} in equation ${T(j)}.` + (s ? ` With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.` : ""), rowH(r1.h));
+      push(`Put (${Ex(false)}) in place of ${v} in equation ${T(j)}.` + (s ? ` With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.` : ""),
+        `<div class="row src" style="--from: var(--l${i + 1})"><span class="tg">${T(i)}</span> <i>${v}</i> = <span class="fly">${Ex(true)}</span></div>` +
+        `<div class="row" style="--from: var(--l${i + 1})">${into}</div>`);
       const a1 = [mul(kj, pp), u], a2 = [mul(kj, qq), ""];
       const r2 = both(v === "x" ? [a1, a2, mine] : [mine, a1, a2], [[cj, ""]]);
       scene({}); if (s) setHelp(u, s[u], r2.t); else sc.hi = 2;
@@ -840,6 +861,38 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
     $("next").disabled = !steps.length;
     $("next").textContent = at === steps.length - 1 ? "Start over ↺" : "Next step ▶";
     draw();
+    if (play) slide(work.lastElementChild);
+    play = false;
+  }
+
+  // Slowly slide the bracket from the rearranged equation into the letter's place: the letter glows, the bracket
+  // lifts off and travels down while the gap opens up, then it settles in. Only on Next, never on Back.
+  let play = false, run = 0;
+  function slide(stp) {
+    const slot = stp && stp.querySelector(".slot"), src = stp && stp.querySelector(".fly");
+    if (!slot || !src || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = ++run, old = slot.querySelector(".old"), nw = slot.querySelector(".new");
+    const box = stp.getBoundingClientRect(), rel = r => ({ x: r.left - box.left, y: r.top - box.top, w: r.width });
+    const end = rel(nw.getBoundingClientRect()), wNew = slot.offsetWidth;
+    old.style.display = "inline"; nw.style.display = "none";
+    const wOld = slot.offsetWidth;
+    slot.style.width = wOld + "px";
+    const fly = document.createElement("div");
+    fly.className = "row flyer"; fly.style.setProperty("--from", getComputedStyle(src).color);
+    fly.innerHTML = nw.innerHTML;
+    stp.appendChild(fly);
+    const from = rel(src.getBoundingClientRect());
+    from.x -= (fly.offsetWidth - from.w) / 2;
+    fly.style.left = from.x + "px"; fly.style.top = from.y + "px";
+    src.style.opacity = "0.35";
+    const later = (ms, f) => setTimeout(() => { if (id === run && stp.isConnected) f(); }, ms);
+    fly.animate([{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }], { duration: 1000 });
+    later(1000, () => {
+      slot.style.width = wNew + "px"; old.style.opacity = "0";
+      fly.animate([{ transform: "translate(0, 0)" }, { transform: `translate(${end.x - from.x}px, ${end.y - from.y}px)` }],
+        { duration: 3000, easing: "ease-in-out", fill: "forwards" });
+    });
+    later(4000, () => { fly.remove(); src.style.opacity = ""; old.style.display = ""; nw.style.display = ""; slot.style.width = ""; });
   }
 
   function read() {
@@ -863,7 +916,7 @@ table.el { border-collapse: collapse; font-family: var(--font-num); font-weight:
     $("tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
     if (E[0] && E[1]) { build(); show(); }
   });
-  $("next").addEventListener("click", () => { at = at === steps.length - 1 ? 0 : at + 1; show(); });
+  $("next").addEventListener("click", () => { at = at === steps.length - 1 ? 0 : at + 1; play = at > 0; show(); });
   $("back").addEventListener("click", () => { if (at > 0) { at--; show(); } });
 
   read();
@@ -998,6 +1051,7 @@ window.I18N_PAGE = {
  "Move the x term to the other side.": "Déplace le terme en x de l’autre côté.",
  "Move the y term to the other side.": "Déplace le terme en y de l’autre côté.",
  "~Put \\((.+)\\) in place of (.+) in equation (.+)\\.": "Remplace $2 par ($1) dans l’équation $3.",
+ "~Start with equation (.+)\\. Find the (.+) in it\\.": "Commence avec l’équation $1. Trouve le $2.",
  "Multiply to clear the brackets.": "Multiplie pour enlever les parenthèses.",
  "~Combine the (.+)'s\\.": "Regroupe les $1.",
  "Work it out.": "Calcule.",
