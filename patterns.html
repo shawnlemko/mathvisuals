@@ -186,8 +186,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 @keyframes pop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .td.pop { animation: none; } }
 .td .mult { font-size: 1.2rem; white-space: nowrap; }
-.tcard { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 10px; }
-.tcard { flex: 2 1 0; } .graph { flex: 1 1 0; min-width: 0; }
+.tcard { flex: 1 1 auto; overflow: auto; display: flex; padding: 8px; }
+.tcard > .tbl { margin: auto; }
+.tcard { flex: 2 1 0; min-width: 0; } .graph { flex: 1 1 0; min-width: 230px; }
 .tbl { display: grid; gap: 0 10px; align-items: center; justify-items: center; }
 .th { font-weight: 700; font-size: 0.95rem; color: var(--muted); text-align: center; line-height: 1.15; padding: 0 4px 6px; align-self: end;
   border-bottom: 3px solid var(--ink); width: 100%; }
@@ -204,7 +205,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .td.okc.yes { color: var(--green); } .td.okc.no { color: var(--warn); }
 .td.rule { color: var(--orange); }
 .td .arr { color: var(--muted); font-size: 1.2rem; }
-.tbl input { width: 3.2ch; font: 700 1.55rem var(--font-num); text-align: center; height: 2.3rem; padding: 0; border: 3px solid var(--grid-major);
+.tbl input { width: 3.2ch; font: 700 1.55rem var(--font-num); text-align: center; height: min(2.3rem, 92%); padding: 0; border: 3px solid var(--grid-major);
   border-radius: 10px; background: var(--paper); color: var(--ink); }
 .tbl input.term-in { color: var(--pt); }
 .tbl input.g { border-color: var(--green); }
@@ -325,13 +326,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <div class="row" id="row2"><button type="button" id="show2">Show me</button></div>
         <label class="chk" id="newWrap"><input type="checkbox" id="showNew"> Show what's new</label>
         <div id="down" hidden>
-          <p class="say">Going down works, but you always need the term before.</p>
+          <p class="say">Adding works. But you always need the one before it.</p>
           <button type="button" class="next" data-to="3" id="next2">Next: Find a shortcut →</button>
         </div>
       </div>
       <!-- 3 Across the table -->
       <div class="card" id="c3" hidden>
-        <p class="ask">Across the table</p>
+        <p class="ask">The shortcut</p>
         <p class="say" id="say3"></p>
         <button type="button" class="go" id="chk3">Check</button>
         <p class="fb" id="fb3" aria-live="polite"></p>
@@ -342,8 +343,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <div id="ruleBox" hidden>
           <div class="rulebox"><div class="small">Pattern rule</div><div class="big" id="ruleBig"></div><div class="small" id="ruleSmall"></div></div>
           <div class="vs" style="margin-top:10px">
-            <div class="down"><h3>Down ↓</h3><div id="vsDown"></div></div>
-            <div class="across"><h3>Across →</h3><div id="vsAcross"></div></div>
+            <div class="down"><h3>Adding ↓</h3><div id="vsDown"></div></div>
+            <div class="across"><h3>Shortcut →</h3><div id="vsAcross"></div></div>
           </div>
           <p class="say" id="vsEx" style="margin-top:8px"></p>
           <button type="button" class="next" data-to="4" style="margin-top:8px;width:100%">Next: Check a rule →</button>
@@ -352,7 +353,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <!-- 4 Check a rule -->
       <div class="card" id="c4" hidden>
         <p class="ask">Check a rule</p>
-        <p class="say">Type a rule. Use <b class="p">n</b> for the term number.</p>
+        <p class="say">Type your rule. <b class="p">n</b> means the term.</p>
         <input class="rule-in" id="ruleIn" type="text" autocomplete="off" spellcheck="false" placeholder="n × ? + ?" aria-label="Rule">
         <div class="keys" id="keys"><button type="button" data-k="n">n</button><button type="button" data-k=" × ">×</button><button type="button" data-k=" + ">+</button><button type="button" data-k=" − ">−</button><button type="button" data-k=" ÷ ">÷</button><button type="button" data-k="(">(</button><button type="button" data-k=")">)</button><button type="button" data-k="back" aria-label="Delete">⌫</button></div>
         <button type="button" class="go" id="chk4">Check my rule</button>
@@ -399,8 +400,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (ns.length > 6) return "Type up to 6 numbers.";
     if (ns.some(v => !Number.isInteger(v))) return "Use whole numbers.";
     const m = ns[1] - ns[0];
-    if (ns.some((v, i) => i && v - ns[i - 1] !== m)) return "The jumps are not all the same. Try a pattern that grows by the same amount each time.";
-    if (m <= 0) return "Try a pattern that grows: the numbers go up.";
+    if (ns.some((v, i) => i && v - ns[i - 1] !== m)) return "The jumps must all be the same. Try again!";
+    if (m <= 0) return "The numbers must go up. Try again!";
     const p = makePattern(m, ns[0] - m, ns.length, true); p.missing = -1;
     usePattern(p);
     return "";
@@ -446,7 +447,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Step 3 has two parts: multiply by the jump, then find what to add.
     $("say3").innerHTML = !S.timesDone
       ? `Times each <b class="p">term number</b> by the jump, <b class="g">${m}</b>.`
-      : !S.done[3] ? `It goes up <b class="g">${m}</b> each time. That means <b class="g">times ${m}</b>! Now: what do you add to get the value? Fill the <b class="o">orange</b> boxes. (Take away? Type − first.)`
+      : !S.done[3] ? `It goes up <b class="g">${m}</b> each time. So <b class="g">times ${m}</b>! What do you add to get the value? Fill the <b class="o">orange</b> boxes.`
       : `Every row: times <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}. Look at row <b class="p">n</b>!`;
     $("chk3").hidden = $("row3").hidden = S.done[3];
     $("hWhy").textContent = `Why × ${m}?`;
@@ -462,8 +463,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (S.done[3]) {
       $("ruleBig").innerHTML = `Term number × <span class="g">${m}</span><span class="o-t">${signed(b)}</span>`;
       $("ruleSmall").textContent = `or  ${m === 1 ? "" : m}n${signed(b)}`;
-      $("vsDown").innerHTML = `<b class="g">+${m}</b> each time. You need the term before.`;
-      $("vsAcross").innerHTML = `<b class="g">× ${m}</b><b class="o-t">${signed(b)}</b>. Works for any term.`;
+      $("vsDown").innerHTML = `Add <b class="g">${m}</b> again and again. Slow!`;
+      $("vsAcross").innerHTML = `<b class="g">× ${m}</b><b class="o-t">${signed(b)}</b>. Fast! Works for any term.`;
       $("vsEx").innerHTML = "";
     }
   }
@@ -477,7 +478,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (s === 3) return S.done[3] ? ["term", "how", "val"] : S.timesDone ? ["term", "times", "add", "val"] : ["term", "times", "val"];
     return ["term", "val", "rule", "okc"];
   }
-  const head = { term: "Term<br>number", val: "Term<br>value", jump: "Jump", how: "Rule", times: "", add: "Add", rule: "Rule<br>gives", okc: "" };
+  const head = { term: "Term", val: "Value", jump: "Jump", how: "Rule", times: "", add: "Add", rule: "Rule<br>gives", okc: "" };
 
   function renderTable() {
     const tbl = $("tbl"); tbl.replaceChildren();
@@ -487,7 +488,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Row n sits under the last term in step 3: the rule for any term.
     const rows = (ghost ? [0] : []).concat(P.vals.map((_, i) => i + 1), s === 3 ? ["n"] : []);
     tbl.style.gridTemplateColumns = cols.map(() => "auto").join(" ");
-    tbl.style.gridTemplateRows = `auto repeat(${rows.length}, 3.1rem)`;
+    tbl.style.gridTemplateRows = `auto repeat(${rows.length}, clamp(2.3rem, (100dvh - 470px) / ${rows.length}, 3.1rem))`;
     const place = (e, r, c) => { e.style.gridRow = r; e.style.gridColumn = c; tbl.appendChild(e); return e; };
     cols.forEach((c, ci) => {
       const th = hd("div", "th" + (c === "jump" || c === "lbl" || c === "okc" ? " empty" : ""));
@@ -592,7 +593,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   $("chk3").onclick = () => {
     if (!S.timesDone) {
       const keys = P.vals.map((_, i) => `times-${i}`);
-      S.timesDone = checkKeys(keys, P.vals.map((_, i) => (i + 1) * P.m), "fb3", "Yes! Now compare with the value.");
+      S.timesDone = checkKeys(keys, P.vals.map((_, i) => (i + 1) * P.m), "fb3", "Yes!");
     } else {
       const keys = P.vals.map((_, i) => `add-${i}`);
       const b = P.b, msg = b === 0 ? "Yes! Nothing to add." : `Yes! You ${b > 0 ? "add" : "take away"} ${Math.abs(b)} every time.`;
@@ -641,7 +642,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (bad) return { err: `I don't know the word "${bad}". Use n for the term number.` };
     const vars = new Set(toks.filter(t => /^[a-z]$/.test(t)));
     if (vars.size > 1) return { err: "Use just one letter, n, for the term number." };
-    if (toks.find(t => !/^(\d|[a-z]|[-+*/()])/.test(t))) return { err: "I can't read that rule. Try something like n × 2 + 1." };
+    if (toks.find(t => !/^(\d|[a-z]|[-+*/()])/.test(t))) return { err: "I can't read that. Try like this: n × 2 + 1" };
     toks = toks.map(t => /^[a-z]$/.test(t) ? "n" : t);
     if (["*", "/", "+"].includes(toks[0]) || (toks[0] === "-" && !vars.size)) toks.unshift("n");
     let i = 0;
@@ -666,9 +667,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       throw 0;
     };
     let ast;
-    try { ast = expr(); if (i !== toks.length) throw 0; } catch { return { err: "I can't read that rule. Try something like n × 2 + 1." }; }
+    try { ast = expr(); if (i !== toks.length) throw 0; } catch { return { err: "I can't read that. Try like this: n × 2 + 1" }; }
     const hasVar = nd => nd.t === "var" || (nd.a && hasVar(nd.a)) || (nd.b && hasVar(nd.b));
-    if (!hasVar(ast)) return { err: "Your rule needs the term number, n, in it." };
+    if (!hasVar(ast)) return { err: "Your rule needs n in it." };
     const ev = (nd, n) => nd.t === "num" ? nd.v : nd.t === "var" ? n : nd.t === "neg" ? -ev(nd.a, n) : nd.t === "par" ? ev(nd.a, n)
       : nd.op === "+" ? ev(nd.a, n) + ev(nd.b, n) : nd.op === "-" ? ev(nd.a, n) - ev(nd.b, n) : nd.op === "*" ? ev(nd.a, n) * ev(nd.b, n) : ev(nd.a, n) / ev(nd.b, n);
     const sym = { "+": "+", "-": "−", "*": "×", "/": "÷" };
@@ -689,19 +690,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     let msg;
     if (hits.every(Boolean)) {
       S.done[4] = true; fb.className = "fb ok";
-      fb.innerHTML = `Your rule works for every term! ✓<small>${r.show()}</small>`;
+      fb.innerHTML = `Your rule works! ✓<small>${r.show()}</small>`;
       $("far").hidden = false; farOut();
     } else {
       fb.className = "fb no";
       if (P.m !== 1 && got.every((g, i) => same(g, i + 1 + P.m)))
-        msg = `Adding ${P.m} is the jump down the table. A rule goes across: it starts with the term number. What do you multiply it by?`;
+        msg = `Adding ${P.m} is the slow way. Start with n. What do you times n by?`;
       else if (grow.every(d => same(d, grow[0])) && !same(grow[0], P.m))
-        msg = `Your rule goes up ${fmt(grow[0])} each term. The pattern goes up ${P.m}. Check what you multiply by.`;
+        msg = `Your rule jumps by ${fmt(grow[0])}. The pattern jumps by ${P.m}. Fix the × number.`;
       else if (diffs.every(d => same(d, diffs[0])))
-        msg = `Your rule gives ${fmt(Math.abs(diffs[0]))} too ${diffs[0] > 0 ? "many" : "few"} every time. Check what you add or take away.`;
-      else msg = "Look at the rows with ✗ and try again.";
+        msg = `Your rule is ${fmt(Math.abs(diffs[0]))} too ${diffs[0] > 0 ? "big" : "small"} every time. Fix the + or − number.`;
+      else msg = "Look at the ✗ rows. Try again!";
       const k = hits.filter(Boolean).length;
-      fb.innerHTML = `${k ? `It works for ${k} of ${N} terms.` : "It doesn't match the table yet."}<small>${msg}</small>`;
+      fb.innerHTML = `${k ? `It works for ${k} of ${N} rows.` : "Not yet!"}<small>${msg}</small>`;
     }
     renderAll();
   }
@@ -803,8 +804,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     for (let y = 0; y <= ymax; y += ystep) { el("line", { x1: X(0), x2: X(xmax), y1: Y(y), y2: Y(y), class: "g-line" }, svg); if (y) el("text", { x: X(0) - 6, y: Y(y) + 5, class: "g-tick", "text-anchor": "end" }, svg).textContent = y; }
     el("line", { x1: X(0), x2: X(xmax), y1: Y(0), y2: Y(0), class: "g-axis" }, svg);
     el("line", { x1: X(0), x2: X(0), y1: Y(0), y2: Y(ymax), class: "g-axis" }, svg);
-    el("text", { x: (X(0) + X(xmax)) / 2, y: H - 6, class: "g-name", "text-anchor": "middle" }, svg).textContent = "Term number";
-    el("text", { x: 4, y: 16, class: "g-name" }, svg).textContent = "Term value";
+    el("text", { x: (X(0) + X(xmax)) / 2, y: H - 6, class: "g-name", "text-anchor": "middle" }, svg).textContent = "Term";
+    el("text", { x: 4, y: 16, class: "g-name" }, svg).textContent = "Value";
     // Points come from the table: only rows typed in right.
     const known = P.vals.map((v, i) => S.done[1] || (S.mark[`term-${i}`] === "ok" && S.mark[`val-${i}`] === "ok"));
     if (step === 2 && S.done[1]) for (let i = 0; i < N - 1; i++) {
