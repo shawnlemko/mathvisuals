@@ -373,18 +373,18 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     const DOT = 15; // arrows stop short of the dots so the arrowheads show
 
     if (shown.has("rate")) {
-      // A staircase between each row and the next: run across, then rise up (or down).
+      // A staircase between each row and the next: rise up (or down) first, then run across (Shawn).
       const play = animStep === "rate", per = Math.min(1100, 6000 / md.pairs.length);
       md.pairs.forEach((q, i) => {
         const ok = same(q.rate, md.m), cls = ok ? "rate" : "bad";
         const px = X(q.a.x), py = Y(q.a.y), cx = X(q.b.x), qy = Y(q.b.y), d = i * per;
-        const up = qy <= py, wide = cx - px;
-        if (wide > DOT + 8) arrow(px + DOT, py, cx, py, "g-run" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d, per * 0.4);
-        if (Math.abs(qy - py) > DOT + 8) arrow(cx, py, cx, qy + (up ? DOT : -DOT), "g-rise" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d + per * 0.45, per * 0.4);
+        const up = qy <= py, wide = cx - px, tall = Math.abs(qy - py);
+        if (tall > DOT + 8) arrow(px, py + (up ? -DOT : DOT), px, qy, "g-rise" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d, per * 0.4);
+        if (wide > DOT + 8) arrow(px, qy, cx - DOT, qy, "g-run" + (ok ? "" : " bad"), ok ? "rate" : "bad", play, d + per * 0.45, per * 0.4);
         if (wide >= 44 || i === 0) {
-          label((px + cx) / 2, py + (up ? 30 : -14), signed(q.run), cls, "middle", play, d + per * 0.3);
-          const right = cx < L + PW - 90;
-          label(cx + (right ? 12 : -12), (py + qy) / 2 + 8, signed(q.rise), cls, right ? "start" : "end", play, d + per * 0.75);
+          const right = px < L + PW - 90;
+          label(px + (right ? -12 : 12), (py + qy) / 2 + 8, signed(q.rise), cls, right ? "end" : "start", play, d + per * 0.3);
+          label((px + cx) / 2, qy + (up ? -14 : 30), signed(q.run), cls, "middle", play, d + per * 0.75);
         }
       });
     }
@@ -394,10 +394,11 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
       if (!md.hasZero) {
         // Walk back from the first row to n = 0 at the same rate (dashed: it is not in the table).
         const f = md.first, px = X(f.x), py = Y(f.y), up = sy0 < py, dur = 700;
-        if (px - sx0 > DOT + 8) arrow(px - DOT, py, sx0, py, "g-back", "back", play, 0, dur);
-        if (Math.abs(sy0 - py) > 12) arrow(sx0, py, sx0, sy0, "g-back", "back", play, dur, dur);
-        label((px + sx0) / 2, py + (up ? 30 : -14), signed(-f.x), "back", "middle", play, dur * 0.6);
-        label(sx0 + 12, (py + sy0) / 2 + 8, signed(-f.x * md.m), "back", "start", play, dur * 1.6);
+        // Rise first, then run, like the staircase.
+        if (Math.abs(sy0 - py) > DOT + 8) arrow(px, py + (up ? -DOT : DOT), px, sy0, "g-back", "back", play, 0, dur);
+        if (px - sx0 > 30) arrow(px, sy0, sx0 + 24, sy0, "g-back", "back", play, dur, dur);
+        label(px + 12, (py + sy0) / 2 + 8, signed(-f.x * md.m), "back", "start", play, dur * 0.6);
+        label((px + sx0) / 2, sy0 + (up ? -14 : 30), signed(-f.x), "back", "middle", play, dur * 1.6);
         wait = dur * 2;
         el("circle", { cx: sx0, cy: sy0, r: 11, class: "g-startpt" }, g);
       }
