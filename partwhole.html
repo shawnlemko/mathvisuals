@@ -173,7 +173,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
 .ask .stack { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; }
 .ask .stack hr { width: 100%; border: 0; border-top: 3px solid var(--green); margin: 0; }
 .ask .q { color: var(--muted); }
-.say { font-size: 1.15rem; font-weight: 700; margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); min-height: 3.3em; }
+.say { font-size: 1.15rem; font-weight: 700; margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); min-height: 2.4em; }
 .panel { gap: 12px; }
 .panel .card { padding: 12px 16px; }
 .err { margin: 8px 0 0; color: var(--warn); font-weight: 700; }
@@ -193,8 +193,8 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
 
 /* Procedure: the written steps, one line per board step */
 #proc { margin-top: 8px; border-top: 1px dashed var(--grid-major); padding-top: 10px; }
-.proc .eq { font-size: 1.2rem; gap: 4px 8px; }
-.proc .eq + .eq { margin-top: 6px; }
+.proc .eq { font-size: 1.15rem; gap: 4px 8px; }
+.proc .eq + .eq { margin-top: 2px; }
 .proc .note { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); font-weight: 700; }
 .proc .frac { font-size: 0.85em; }
 .proc .res { color: var(--green); font-weight: 700; }
@@ -242,8 +242,12 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
 .cx > s { text-decoration-color: var(--warn); text-decoration-thickness: 3px; }
 .cx > sup { position: absolute; top: -0.9em; right: -0.75em; font-size: 0.7em; color: var(--warn); }
 .cx > .bx.sup { position: absolute; top: -1.35em; right: -1.3em; font-size: 0.55em; width: 2.4ch; height: 1.5em; }
+.cx.dn > sup { top: auto; bottom: -0.8em; }
+.cx.dn > .bx.sup { top: auto; bottom: -1.35em; }
+.proc .eq .frac > span:last-child { padding-top: 1px; padding-bottom: 6px; }
+.pl .frac > span:last-child { padding-bottom: 12px; }
 .proc .eq .frac > span { padding-inline: 10px; }
-.proc .eq .frac > span:first-child { padding-top: 8px; }
+.proc .eq .frac > span:first-child { padding-top: 6px; padding-bottom: 1px; }
 
 /* Practice board (HTML, replaces the picture in Practice) */
 .pb { display: flex; flex-direction: column; justify-content: center; gap: 20px; padding: 8px 18px; min-height: 0; flex: 1 1 auto; overflow: auto; font-family: var(--font-num); font-weight: 700; }
@@ -593,7 +597,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   // ---------- procedure (written steps, top to bottom; each line appears at its board step) ----------
   // Fraction notation only (no ÷): "of" becomes ×, whole numbers go over 1, and common factors cancel.
   const hf = (n, d, c = "") => `<span class="frac ${c}"><span>${n}</span><span>${d}</span></span>`;
-  const cxs = (v, nv) => `<span class="cx"><s>${v}</s><sup>${nv}</sup></span>`;
+  const cxs = (v, nv, dn) => `<span class="cx${dn ? " dn" : ""}"><s>${v}</s><sup>${nv}</sup></span>`;
   function procLines(p) {
     const I = info(p), lines = [];
     const add = (step, html, note) => lines.push([step, html + (note ? ` <span class="note">${note}</span>` : "")]);
@@ -602,20 +606,16 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     if (p.skill === "part") {
       const g = gcd(p.n, I.b);
       add(0, `${F} of ${p.n}`);
-      if (p.form === "pct") add(1, `= ${hf(p.p, 100)} × ${hf(p.n, 1)}`, "% means out of 100");
-      add(p.form === "pct" ? 1 : 0, `= ${hf(I.a, I.b)} × ${hf(p.n, 1)}`, p.form === "pct" ? `simplify ${p.p}/100` : "“of” means ×");
-      add(2, `= ${hf(`${I.a} × ${cxs(p.n, p.n / g)}`, `${cxs(I.b, I.b / g)} × 1`)}`, `cancel: both share ${g}` );
-      add(3, `= ${hf(I.ans, 1)}`);
-      add(4, `= ${res(I.ans)}`);
+      add(p.form === "pct" ? 1 : 0, `= ${hf(I.a, I.b)} × ${hf(p.n, 1)}`, p.form === "pct" ? `${p.p}% = ${p.p}/100 = ${I.a}/${I.b}` : "“of” means ×");
+      add(2, `= ${hf(`${I.a} × ${cxs(p.n, p.n / g)}`, `${cxs(I.b, I.b / g, true)} × 1`)}`, `cancel: both share ${g}` );
+      add(3, `= ${hf(I.ans, 1)} = ${res(I.ans)}`);
     } else {
       const g = gcd(p.n, I.a);
       add(0, `${F} of ? = ${p.n}`);
-      if (p.form === "pct") add(1, `${hf(p.p, 100)} × ? = ${p.n}`, "% means out of 100");
-      add(1, `${hf(I.a, I.b)} × ? = ${p.n}`, p.form === "pct" ? `simplify ${p.p}/100` : "“of” means ×");
+      add(1, `${hf(I.a, I.b)} × ? = ${p.n}`, p.form === "pct" ? `${p.p}% = ${p.p}/100 = ${I.a}/${I.b}` : "“of” means ×");
       add(3, `? = ${hf(p.n, 1)} × ${hf(I.b, I.a)}`, `multiply by the flip of ${I.a}/${I.b}`);
-      if (g > 1) add(4, `= ${hf(`${cxs(p.n, p.n / g)} × ${I.b}`, `1 × ${cxs(I.a, I.a / g)}`)}`, `cancel: both share ${g}`);
-      add(5, `= ${hf(I.ans, 1)}`);
-      add(5, `= ${res(I.ans)}`);
+      if (g > 1) add(4, `= ${hf(`${cxs(p.n, p.n / g)} × ${I.b}`, `1 × ${cxs(I.a, I.a / g, true)}`)}`, `cancel: both share ${g}`);
+      add(5, `= ${hf(I.ans, 1)} = ${res(I.ans)}`);
     }
     return lines;
   }
@@ -716,7 +716,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   let pSkill = "mix", pForm = "mix", pWay = "strip", right = 0, tried = 0;
   const pb = $("pb");
   const bx = (id, cls = "") => `<input id="${id}" class="bx ${cls}" type="text" inputmode="numeric" autocomplete="off" aria-label="Box">`;
-  const cxb = (v, id) => `<span class="cx"><s>${v}</s>${bx(id, "sup")}</span>`;
+  const cxb = (v, id, dn) => `<span class="cx${dn ? " dn" : ""}"><s>${v}</s>${bx(id, "sup")}</span>`;
   const fq = p => p.form === "pct" ? `<span class="f">${p.p}%</span>` : `<span class="f">${hf(p.a, p.b)}</span>`;
 
   function newQuestion() {
@@ -748,13 +748,13 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     if (p.skill === "part") return `<div class="plines">
       ${L(`${F} of <span class="n">${p.n}</span>`)}${conv}
       ${L(`= ${hf(I.a, I.b)} × ${hf(p.n, 1)}`, "“of” means ×")}
-      ${L(`= ${hf(`${I.a} × ${cxb(p.n, "c1")}`, `${cxb(I.b, "c2")} × 1`)}`, "cancel")}
+      ${L(`= ${hf(`${I.a} × ${cxb(p.n, "c1")}`, `${cxb(I.b, "c2", true)} × 1`)}`, "cancel")}
       ${L(`= ${bx("pa", "ans")}`)}</div>`;
     return `<div class="plines">
       ${L(`${F} of ? = <span class="n">${p.n}</span>`)}${conv}
       ${L(`${hf(I.a, I.b)} × ? = ${p.n}`, "“of” means ×")}
       ${L(`? = ${hf(p.n, 1)} × ${hf(bx("f1"), bx("f2"))}`, `multiply by the flip of ${I.a}/${I.b}`)}
-      ${gcd(p.n, I.a) > 1 ? L(`= ${hf(`${cxb(p.n, "c1")} × ${I.b}`, `1 × ${cxb(I.a, "c2")}`)}`, "cancel") : ""}
+      ${gcd(p.n, I.a) > 1 ? L(`= ${hf(`${cxb(p.n, "c1")} × ${I.b}`, `1 × ${cxb(I.a, "c2", true)}`)}`, "cancel") : ""}
       ${L(`= ${bx("pa", "ans")}`)}</div>`;
   }
   function renderP() {
@@ -851,7 +851,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     seg("[data-mode]", x => x.classList.toggle("on", x === b));
     const pr = mode === "practice";
     $("learn").hidden = pr; $("practice").hidden = !pr;
-    svg.hidden = pr; pb.hidden = !pr; $("procCard").hidden = pr;
+    svg.style.display = pr ? "none" : ""; pb.hidden = !pr; $("procCard").hidden = pr;  // an <svg> has no .hidden property
     if (pr) { if (!pq) newQuestion(); }
     else exRender();
   }));
