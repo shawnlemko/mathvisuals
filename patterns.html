@@ -181,8 +181,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 /* Table: a CSS grid so the jump brackets can sit between two rows. */
 @media (max-width: 600px) { .tbl { gap: 0 4px; } .td { font-size: 1.3rem; } .td.how, .td.nrow { font-size: 1.1rem; } .tbl input { font-size: 1.3rem; } }
+.td .mult { font-size: 1.2rem; white-space: nowrap; }
 .tcard { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 10px; }
-.graph { flex: 1 1 46%; min-width: 0; }
+.tcard { flex: 2 1 0; } .graph { flex: 1 1 0; min-width: 0; }
 .tbl { display: grid; gap: 0 10px; align-items: center; justify-items: center; }
 .th { font-weight: 700; font-size: 0.95rem; color: var(--muted); text-align: center; line-height: 1.15; padding: 0 4px 6px; align-self: end;
   border-bottom: 3px solid var(--ink); width: 100%; }
@@ -485,7 +486,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const place = (e, r, c) => { e.style.gridRow = r; e.style.gridColumn = c; tbl.appendChild(e); return e; };
     cols.forEach((c, ci) => {
       const th = hd("div", "th" + (c === "jump" || c === "lbl" || c === "okc" ? " empty" : ""));
-      th.innerHTML = c === "times" ? `Term<br>× <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
+      th.innerHTML = c === "times" ? `Times <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
       place(th, 1, ci + 1);
     });
     const input = (key, cls) => {
@@ -500,7 +501,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       if (n === "n") {
         const rule = `n × ${P.m}${signed(P.b)}`;
         cols.forEach((c, ci) => {
-          const t = c === "term" ? "n" : c === "times" ? (S.timesDone ? `n × ${P.m}` : "?") : c === "add" ? (S.done[3] ? fmt(P.b) : "?")
+          const t = c === "term" ? "n" : c === "times" ? `n × ${P.m}` : c === "add" ? (S.done[3] ? fmt(P.b) : "?")
             : c === "how" ? rule : c === "val" ? (S.done[3] ? rule : "?") : "";
           const e = hd("div", "td nrow " + c, t); if (c === "how") e.innerHTML = howHTML("n");
           if (c === "val" && S.done[3]) e.innerHTML = `<span><span class="g">${P.m === 1 ? "" : P.m}</span><span class="c-pt">n</span>&nbsp;<span class="o-t">${signed(P.b).trim()}</span></span>`; place(e, r, ci + 1);
@@ -512,7 +513,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         if (c === "term") e = s === 1 ? wrapIn(input(`term-${i}`, "term-in")) : hd("div", "td term" + (g ? " ghost" : ""), String(n));
         else if (c === "val") e = s === 1 ? wrapIn(input(`val-${i}`)) : hd("div", "td val" + (g ? " ghost" : ""), fmt(v));
         else if (c === "how") { e = hd("div", "td how"); e.innerHTML = howHTML(n); }
-        else if (c === "times") e = g ? hd("div", "td ghost", "0") : wrapIn(input(`times-${i}`, "g"));
+        else if (c === "times") {
+          // Say the multiplication in the cell: "1 × 5 = [ ]", so students see what to do.
+          if (g) e = hd("div", "td ghost", "0");
+          else { e = hd("div", "td"); e.innerHTML = `<span class="mult"><span class="c-pt">${n}</span> <span class="g">× ${P.m}</span> =</span>`; e.appendChild(input(`times-${i}`, "g")); }
+        }
         else if (c === "add") { e = g ? hd("div", "td ghost addv", fmt(P.b)) : wrapIn(input(`add-${i}`, "o")); e.appendChild(hd("span", "arr", "→")); }
         else if (c === "rule") e = hd("div", "td rule", res ? fmt(res[i]) : "");
         else if (c === "okc") { const ok = res && Math.abs(res[i] - v) < 1e-9; e = hd("div", "td okc " + (res ? (ok ? "yes" : "no") : ""), res ? (ok ? "✓" : "✗") : ""); }
