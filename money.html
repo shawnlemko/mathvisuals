@@ -360,16 +360,25 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     const art = `<g fill="${artC.art}" stroke="${artC.art}" stroke-width="0" transform="translate(0 ${nums ? artY : 0}) scale(${nums ? artK : artK0})">${ART[k.art]}</g>`;
     s += art;
-    if (nums) s += `<text class="val" y="${textY}" font-size="${textF}" fill="${artC.text}">${k.label}</text>`;
+    if (nums) s += `<text class="val" y="${textY}" font-size="${textF}" fill="${artC.text}">${k.v < 100 ? cts(k.v) : dol(k.v)}</text>`;
     return s;
   }
 
   // ---------- Money words ----------
-  const fmt = c => c < 100 ? `${c}¢` : `$${(c / 100).toFixed(2)}`;
-  const both = c => c < 100 ? `${c}¢ (that's $${(c / 100).toFixed(2)})` : `$${(c / 100).toFixed(2)} (that's ${c}¢)`;
+  // French writes money with a comma and the sign after: 2,35 $ and 85 ¢.
+  const isFr = () => window.I18N ? I18N.lang === "fr" : document.documentElement.lang === "fr";
+  const dol = c => isFr() ? `${(c / 100).toFixed(c % 100 ? 2 : 0).replace(".", ",")} $` : `$${c % 100 ? (c / 100).toFixed(2) : c / 100}`;
+  const dolFull = c => isFr() ? `${(c / 100).toFixed(2).replace(".", ",")} $` : `$${(c / 100).toFixed(2)}`;
+  const cts = c => isFr() ? `${c} ¢` : `${c}¢`;
+  const fmt = c => c < 100 ? cts(c) : dolFull(c);
+  const both = c => isFr()
+    ? (c < 100 ? `${cts(c)} (c’est ${dolFull(c)})` : `${dolFull(c)} (c’est ${cts(c)})`)
+    : (c < 100 ? `${c}¢ (that's ${dolFull(c)})` : `${dolFull(c)} (that's ${c}¢)`);
   // Accepts 85, 85¢, 85c, 85 cents, $0.85, 0.85, $1.35, 1.35, 135¢, $3, 3 dollars.
   function readMoney(str) {
-    let s = str.toLowerCase().replace(/\s+/g, "").replace(/,/g, "");
+    let s = str.toLowerCase().replace(/\s+/g, "");
+    // 2,35 (French) is 2.35; 1,000 is not a coin amount here.
+    s = /,\d{1,2}(\D*)$/.test(s) ? s.replace(",", ".") : s.replace(/,/g, "");
     const cents = /(¢|c|cents?)$/.test(s);
     const dollars = /\$|dollars?|\./.test(s);
     s = s.replace(/[^0-9.]/g, "");
@@ -792,6 +801,14 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   }
   document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
 
+  // Switching language redraws the money amounts in that language's style.
+  window.addEventListener("langchange", () => {
+    updateTotal();
+    if (games.make.target) $("target").textContent = fmt(games.make.target);
+    $("muchFb").textContent = ""; $("makeFb").textContent = "";
+    rebuild();
+  });
+
   newMuch();
   newMake();
   setMode("much");
@@ -919,7 +936,13 @@ window.I18N_PAGE = {
  "{0} Show numbers on coins": "{0} Afficher les nombres sur les pièces",
  "BAG": "SAC",
  "The bag is empty. Drag some coins in.": "Le sac est vide. Glisses-y des pièces.",
- "None of these coins fit. Turn on a smaller coin.": "Aucune de ces pièces ne convient. Active une plus petite pièce."
+ "None of these coins fit. Turn on a smaller coin.": "Aucune de ces pièces ne convient. Active une plus petite pièce.",
+ "Yes! There is {0}.": "Oui! Il y a {0}.",
+ "There is {0}.": "Il y a {0}.",
+ "Yes! You made {0}.": "Oui! Tu as formé {0}.",
+ "Not enough yet. The bag has {0}. Add more.": "Pas encore assez. Le sac contient {0}. Ajoutes-en.",
+ "Too much! The bag has {0}. Take some out.": "Trop! Le sac contient {0}. Enlèves-en.",
+ "⠿ {n} coins": "⠿ {n} pièces"
 };
 </script>
 <script>
