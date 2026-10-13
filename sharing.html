@@ -156,6 +156,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .stage { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
 .board svg { aspect-ratio: 1000 / 700; }
+/* Left: big action buttons sit right on top of the counters. Right: the question, then the teacher's settings. */
+.play { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; overflow: hidden !important; }
+.play .board { flex: 1 1 auto; min-height: 0; }
+.tools { display: flex; gap: 10px; flex: none; }
+.tools button { flex: 1 1 0; min-height: 64px; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; line-height: 1.15; padding: 6px 10px; border-width: 2px; border-radius: 12px; background: var(--sheet); }
+.tools button[hidden] { display: none; }
+.settings { border-style: dashed; }
+.settings .seg { align-self: stretch; }
+.settings .seg button { flex: 1 1 0; }
 .tray { fill: var(--paper); stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 10 7; }
 .tray-lbl { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 22px; }
 .grp { fill: var(--chip); stroke: var(--ink); stroke-width: 4; }
@@ -164,7 +173,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .grp.empty { cursor: pointer; }
 .grp-n { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
 .grp-n.ok { fill: var(--green); }
-.ctr { fill: var(--pt); stroke: var(--sheet); stroke-width: 2.5; cursor: grab; transition: transform 0.28s ease; }
+.ctr { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; cursor: grab; transition: transform 0.28s ease; }
 .ctr.drag { transition: none; cursor: grabbing; stroke: var(--ink); }
 .hidecounts .grp-n { display: none; }
 
@@ -187,9 +196,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .div small { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); max-width: 7em; text-align: center; line-height: 1.2; }
 .div .q { color: var(--muted); }
 .div .a { color: var(--green); }
-.row { display: flex; gap: 8px; flex-wrap: wrap; }
-.row button { flex: 1 1 auto; min-height: 48px; font-size: 1.05rem; }
-#show { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.tools #show { background: var(--green); color: var(--sheet); border-color: var(--green); }
 button:disabled { opacity: 0.45; cursor: default; }
 .toggles { margin-top: 0; }
 @media (min-width: 861px) and (max-height: 820px) {
@@ -198,7 +205,8 @@ button:disabled { opacity: 0.45; cursor: default; }
   .ask { font-size: 1.25rem; }
   #ans { height: 60px; font-size: 2.3rem; }
   .div > span { font-size: 1.8rem; }
-  .step button, .row button, #new { min-height: 42px; }
+  .step button, #new { min-height: 42px; }
+  .tools button { min-height: 56px; font-size: 1.15rem; }
   .step output { font-size: 1.7rem; }
   .fb { font-size: 1.15rem; }
 }
@@ -208,19 +216,19 @@ button:disabled { opacity: 0.45; cursor: default; }
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Sharing and Grouping</h1></div>
-    <div class="opts">
-      <span class="seg" id="mode"><button type="button" data-v="share" aria-pressed="true">Share equally</button><button type="button" data-v="groups" aria-pressed="false">Groups of</button></span>
-    </div>
   </header>
 
   <div class="stage">
-    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Counters and groups"></svg></div>
-    <div class="panel">
-      <div class="card">
-        <div class="step"><label for="tot-o">Counters</label><button type="button" data-k="tot" data-d="-1" aria-label="Fewer counters">−</button><output id="tot-o">6</output><button type="button" data-k="tot" data-d="1" aria-label="More counters">+</button></div>
-        <div class="step"><label for="per-o" id="per-l">Groups</label><button type="button" data-k="per" data-d="-1" aria-label="Less">−</button><output id="per-o">3</output><button type="button" data-k="per" data-d="1" aria-label="More">+</button></div>
-        <button type="button" id="new">New problem</button>
+    <div class="play">
+      <div class="tools">
+        <button type="button" id="deal"></button>
+        <button type="button" id="add">+ New group</button>
+        <button type="button" id="show">Show me</button>
+        <button type="button" id="back">Put all back</button>
       </div>
+      <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Counters and groups"></svg></div>
+    </div>
+    <div class="panel">
       <div class="card">
         <p class="ask" id="ask"></p>
         <div class="answer-row">
@@ -230,15 +238,11 @@ button:disabled { opacity: 0.45; cursor: default; }
         <p class="fb" id="fb" aria-live="polite"></p>
         <div class="div" id="div"></div>
       </div>
-      <div class="card">
-        <div class="row">
-          <button type="button" id="deal"></button>
-          <button type="button" id="add">+ New group</button>
-        </div>
-        <div class="row">
-          <button type="button" id="show">Show me</button>
-          <button type="button" id="back">Put all back</button>
-        </div>
+      <div class="card settings">
+        <span class="seg" id="mode"><button type="button" data-v="share" aria-pressed="true">Share equally</button><button type="button" data-v="groups" aria-pressed="false">Groups of</button></span>
+        <div class="step"><label for="tot-o">Counters</label><button type="button" data-k="tot" data-d="-1" aria-label="Fewer counters">−</button><output id="tot-o">6</output><button type="button" data-k="tot" data-d="1" aria-label="More counters">+</button></div>
+        <div class="step"><label for="per-o" id="per-l">Groups</label><button type="button" data-k="per" data-d="-1" aria-label="Less">−</button><output id="per-o">3</output><button type="button" data-k="per" data-d="1" aria-label="More">+</button></div>
+        <button type="button" id="new">New problem</button>
         <div class="toggles"><label><input type="checkbox" id="counts" checked> Show how many in each group</label></div>
       </div>
     </div>
@@ -250,7 +254,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   const $ = id => document.getElementById(id);
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg");
-  const W = 1000, TRAY = { x: 14, y: 12, w: 972, h: 128 }, TOP = 158, BOT = 692;
+  const W = 1000, TRAY = { x: 14, y: 10, w: 972, h: 162 }, TOP = 186, BOT = 694;
   const MAXTOT = 30, MAXPER = 10;
   const el = (tag, attrs, parent = svg) => {
     const e = document.createElementNS(NS, tag);
@@ -276,7 +280,7 @@ button:disabled { opacity: 0.45; cursor: default; }
     groups = mode === "share" ? Array.from({ length: per }, () => []) : [];
     turn = 0; solved = false;
     while (dots.length < tot) {
-      const c = el("circle", { r: 17, class: "ctr" }, gDots);
+      const c = el("circle", { r: 26, class: "ctr" }, gDots);
       c.dataset.id = dots.length;
       dots.push(c);
     }
@@ -321,18 +325,21 @@ button:disabled { opacity: 0.45; cursor: default; }
     // One counter size for every circle, so equal groups look equal.
     const most = Math.max(1, ...groups.map(g => g.length));
     const c = Math.ceil(Math.sqrt(most)), rr = Math.ceil(most / c);
-    cs = Math.min(44, (0.9 * R) / (Math.hypot(c - 1, rr - 1) / 2 + 0.42));
+    cs = Math.min(76, (0.92 * R) / (Math.hypot(c - 1, rr - 1) / 2 + 0.44));
   }
   function inGroup(k, i) {
     const c = Math.ceil(Math.sqrt(k)), r = Math.ceil(k / c), row = Math.floor(i / c);
     const inRow = Math.min(c, k - row * c);
     return [(i % c - (inRow - 1) / 2) * cs, (row - (r - 1) / 2) * cs];
   }
-  // The pile: rows of 20, in fives like a ten-frame.
+  // The pile: two rows of big counters in fives (rows of 10 up to 20 counters, rows of 15 above that).
+  const big = () => tot <= 20;
+  const PR = () => (big() ? 32 : 26);
   function inPile(i) {
-    const row = Math.floor(i / 20), j = i % 20;
-    const x = 70 + j * 41 + Math.floor(j / 5) * 18;
-    return [x, TRAY.y + 42 + row * 44];
+    const n = big() ? 10 : 15, sp = big() ? 76 : 58, gap = big() ? 40 : 22;
+    const row = Math.floor(i / n), j = i % n;
+    const x0 = (W - ((n - 1) * sp + (n / 5 - 1) * gap)) / 2;
+    return [x0 + j * sp + Math.floor(j / 5) * gap, TRAY.y + 44 + row * (big() ? 76 : 70)];
   }
 
   function render() {
@@ -350,10 +357,10 @@ button:disabled { opacity: 0.45; cursor: default; }
       const t = el("text", { x: W / 2, y: (TOP + BOT) / 2, class: "tray-lbl", "text-anchor": "middle" }, gGroups);
       t.textContent = "Press + New group to make a circle";
     }
-    pile.forEach((id, i) => place(id, ...inPile(i), 17));
+    pile.forEach((id, i) => place(id, ...inPile(i), PR()));
     groups.forEach((g, gi) => g.forEach((id, i) => {
       const [dx, dy] = inGroup(g.length, i);
-      place(id, spots[gi].x + dx, spots[gi].y + dy, cs * 0.4);
+      place(id, spots[gi].x + dx, spots[gi].y + dy, cs * 0.42);
     }));
     $("deal").disabled = busy || pile.length < per;
     $("show").disabled = busy || isDone();
