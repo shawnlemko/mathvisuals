@@ -360,16 +360,25 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     }
     const art = `<g fill="${artC.art}" stroke="${artC.art}" stroke-width="0" transform="translate(0 ${nums ? artY : 0}) scale(${nums ? artK : artK0})">${ART[k.art]}</g>`;
     s += art;
-    if (nums) s += `<text class="val" y="${textY}" font-size="${textF}" fill="${artC.text}">${k.label}</text>`;
+    if (nums) s += `<text class="val" y="${textY}" font-size="${textF}" fill="${artC.text}">${k.v < 100 ? cts(k.v) : dol(k.v)}</text>`;
     return s;
   }
 
   // ---------- Money words ----------
-  const fmt = c => c < 100 ? `${c}¢` : `$${(c / 100).toFixed(2)}`;
-  const both = c => c < 100 ? `${c}¢ (that's $${(c / 100).toFixed(2)})` : `$${(c / 100).toFixed(2)} (that's ${c}¢)`;
+  // French writes money with a comma and the sign after: 2,35 $ and 85 ¢.
+  const isFr = () => window.I18N ? I18N.lang === "fr" : document.documentElement.lang === "fr";
+  const dol = c => isFr() ? `${(c / 100).toFixed(c % 100 ? 2 : 0).replace(".", ",")} $` : `$${c % 100 ? (c / 100).toFixed(2) : c / 100}`;
+  const dolFull = c => isFr() ? `${(c / 100).toFixed(2).replace(".", ",")} $` : `$${(c / 100).toFixed(2)}`;
+  const cts = c => isFr() ? `${c} ¢` : `${c}¢`;
+  const fmt = c => c < 100 ? cts(c) : dolFull(c);
+  const both = c => isFr()
+    ? (c < 100 ? `${cts(c)} (c’est ${dolFull(c)})` : `${dolFull(c)} (c’est ${cts(c)})`)
+    : (c < 100 ? `${c}¢ (that's ${dolFull(c)})` : `${dolFull(c)} (that's ${c}¢)`);
   // Accepts 85, 85¢, 85c, 85 cents, $0.85, 0.85, $1.35, 1.35, 135¢, $3, 3 dollars.
   function readMoney(str) {
-    let s = str.toLowerCase().replace(/\s+/g, "").replace(/,/g, "");
+    let s = str.toLowerCase().replace(/\s+/g, "");
+    // 2,35 (French) is 2.35; 1,000 is not a coin amount here.
+    s = /,\d{1,2}(\D*)$/.test(s) ? s.replace(",", ".") : s.replace(/,/g, "");
     const cents = /(¢|c|cents?)$/.test(s);
     const dollars = /\$|dollars?|\./.test(s);
     s = s.replace(/[^0-9.]/g, "");
@@ -792,12 +801,150 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   }
   document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
 
+  // Switching language redraws the money amounts in that language's style.
+  window.addEventListener("langchange", () => {
+    updateTotal();
+    if (games.make.target) $("target").textContent = fmt(games.make.target);
+    $("muchFb").textContent = ""; $("makeFb").textContent = "";
+    rebuild();
+  });
+
   newMuch();
   newMake();
   setMode("much");
 })();
 </script>
 
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Counting Canadian Coins (money.html). */
+window.I18N_PAGE = {
+ "Counting Canadian Coins": "Compter la monnaie canadienne",
+ "Counting Coins": "Compter les pièces de monnaie",
+ "Game": "Jeu",
+ "Sort coins": "Trier les pièces",
+ "How much?": "Combien?",
+ "Make the amount": "Forme le montant",
+ "Canadian coins to drag and sort": "Pièces canadiennes à glisser et trier",
+ "Sort the coins": "Trie les pièces",
+ "Drag coins up from the bottom. Drop a coin on another coin to make a pile. Drag the blue tab to move a pile.": "Glisse des pièces à partir du bas. Dépose une pièce sur une autre pour faire une pile. Glisse l’onglet bleu pour déplacer une pile.",
+ "Coins each drag: {0} {1}": "Pièces par glissement : {0} {1}",
+ "Total": "Total",
+ "Hide total": "Masquer le total",
+ "Show total": "Afficher le total",
+ "How much money is there?": "Combien d’argent y a-t-il?",
+ "Sort the coins into piles. Count them up.": "Trie les pièces en piles. Compte-les.",
+ "How much money": "Combien d’argent",
+ "New coins": "Nouvelles pièces",
+ "Put this much in the bag:": "Mets ce montant dans le sac :",
+ "Drag coins from the bottom into the bag.": "Glisse des pièces du bas dans le sac.",
+ "New amount": "Nouveau montant",
+ "Empty the bag": "Vider le sac",
+ "Coins to use": "Pièces à utiliser",
+ "Nickel": "5 cents",
+ "Dime": "10 cents",
+ "Quarter": "25 cents",
+ "Loonie": "Huard",
+ "Toonie": "2 dollars",
+ "Up to ${n}": "Jusqu’à {n} $",
+ "{0} Show numbers on coins": "{0} Afficher les nombres sur les pièces",
+ "BAG": "SAC",
+ "The bag is empty. Drag some coins in.": "Le sac est vide. Glisses-y des pièces.",
+ "None of these coins fit. Turn on a smaller coin.": "Aucune de ces pièces ne convient. Active une plus petite pièce.",
+ "Yes! There is {0}.": "Oui! Il y a {0}.",
+ "There is {0}.": "Il y a {0}.",
+ "Yes! You made {0}.": "Oui! Tu as formé {0}.",
+ "Not enough yet. The bag has {0}. Add more.": "Pas encore assez. Le sac contient {0}. Ajoutes-en.",
+ "Too much! The bag has {0}. Take some out.": "Trop! Le sac contient {0}. Enlèves-en.",
+ "⠿ {n} coins": "⠿ {n} pièces"
+};
+</script>
 <script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
@@ -816,7 +963,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -831,6 +978,12 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -870,8 +1023,15 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

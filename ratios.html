@@ -692,6 +692,61 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Ratios and Scale Factors (ratios.html). */
+window.I18N_PAGE = {
+ "Ratios and Scale Factors": "Rapports et facteurs d’échelle",
+ "Two equivalent ratios joined by scale factor arrows, over a picture of the ratio as groups of blue and orange squares.": "Deux rapports équivalents reliés par des flèches de facteur d’échelle, au-dessus d’une image du rapport en groupes de carrés bleus et orange.",
+ "Skill": "Habileté",
+ "Find the scale factor": "Trouver le facteur d’échelle",
+ "Find the new ratio": "Trouver le nouveau rapport",
+ "Write ratios": "Écrire des rapports",
+ "Ratio form": "Forme du rapport",
+ "Words": "Mots",
+ "First term": "Premier terme",
+ "Second term": "Deuxième terme",
+ "Multiply or divide": "Multiplier ou diviser",
+ "Smaller scale factor": "Facteur d’échelle plus petit",
+ "Bigger scale factor": "Facteur d’échelle plus grand",
+ "First thing": "Première chose",
+ "Second thing": "Deuxième chose",
+ "How do you get from {n} : {n} to {n} : {n}?": "Comment passe-t-on de {n} : {n} à {n} : {n}?",
+ "New example": "Nouvel exemple",
+ "Practice skill": "Habileté à pratiquer",
+ "Scale factor": "Facteur d’échelle",
+ "New ratio": "Nouveau rapport",
+ "Mixed": "Mélangé",
+ "Practice ratio form": "Forme à pratiquer",
+ "Show me": "Montre-moi",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "boys": "garçons",
+ "to": "à",
+ "girls": "filles",
+ "What scale factor takes the first ratio to the second?": "Quel facteur d’échelle mène du premier rapport au deuxième?",
+ "cups of juice": "tasses de jus",
+ "cups of water": "tasses d’eau",
+ "cups of juice to": "tasses de jus pour",
+ "boys to": "garçons pour",
+ "red cars": "autos rouges",
+ "blue cars": "autos bleues",
+ "apples": "pommes",
+ "oranges": "oranges",
+ "~(.+) to": "$1 pour",
+ "Divide the first ratio by {n}. What is the new ratio?": "Divise le premier rapport par {n}. Quel est le nouveau rapport?",
+ "Multiply the first ratio by {n}. What is the new ratio?": "Multiplie le premier rapport par {n}. Quel est le nouveau rapport?",
+ "Type a number in each box.": "Tape un nombre dans chaque case.",
+ "New ratio: {n} : {n}. It is {n} groups of {n} : {n}.": "Nouveau rapport : {n} : {n}. C’est {n} groupes de {n} : {n}.",
+ "~Scale factor: (.+) \\(the same as (.+)\\)": "Facteur d’échelle : $1 (pareil que $2)",
+ "~Scale factor: (.+)": "Facteur d’échelle : $1",
+ "teachers": "enseignants",
+ "students": "élèves",
+ "wins": "victoires",
+ "losses": "défaites",
+ "cats": "chats",
+ "dogs": "chiens",
+ "Type a whole number in the box.": "Tape un nombre entier dans la case."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -709,7 +764,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -724,6 +779,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -763,8 +824,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

@@ -301,7 +301,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       return b;
     }));
   }
-  const fixedSize = () => st.fam === "as" && (st.strat.as === "five" || st.strat.as === "ten");
+  const fixedSize = () => st.fam === "as" && ["five", "ten", "tricky"].includes(st.strat.as);
 
   function drawControls() {
     pickRow($("fam"), FAMS, st.fam, v => { if (v === st.fam) return; st.fam = v; st.op = v === "as" ? "add" : "mul"; drawControls(); });
@@ -328,7 +328,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // ---------- Fact pools ----------
   function addPairs(strat, N) {
     const out = [];
-    const lim = strat === "five" ? 5 : strat === "ten" ? 10 : N;
+    const lim = strat === "five" ? 5 : strat === "ten" ? 10 : strat === "tricky" ? 8 : N;
     const on = (a, b) => (a >= 1 && a <= 3) || (b >= 1 && b <= 3);
     for (let a = 0; a <= lim; a++) for (let b = 0; b <= lim; b++) {
       const s = a + b;
@@ -339,7 +339,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         dbl: a === b,
         near: Math.abs(a - b) === 1,
         nine: a === 9 || b === 9,
-        tricky: s > 10 && a > 0 && b > 0 && !on(a, b) && a !== b && Math.abs(a - b) !== 1 && a !== 9 && b !== 9,
+        // Shawn: sums 11 to 14 whose numbers differ by 2 to 5, no nines: 7 & 4, 8 & 3, 7 & 5, 8 & 4, 8 & 5, 8 & 6.
+        tricky: s >= 11 && s <= 14 && Math.abs(a - b) >= 2 && Math.abs(a - b) <= 5,
         mix: true,
       }[strat];
       if (ok) out.push([a, b]);
@@ -495,6 +496,131 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </script>
 
 <script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Math Fact Practice (facts.html). */
+window.I18N_PAGE = {
+ "Math Fact Practice": "Pratique des faits numériques",
+ "Kind of facts": "Type de faits",
+ "{0} Add & Subtract": "{0} Addition et soustraction",
+ "{0} Multiply & Divide": "{0} Multiplication et division",
+ "Operation": "Opération",
+ "{0} Add": "{0} Addition",
+ "{0} Subtract": "{0} Soustraction",
+ "{0} Mix": "{0} Mélange",
+ "{0} Multiply": "{0} Multiplication",
+ "{0} Divide": "{0} Division",
+ "Numbers up to": "Nombres jusqu’à",
+ "How many questions?": "Combien de questions?",
+ "Start ▶": "Commencer ▶",
+ "Pick a strategy": "Choisis une stratégie",
+ "Facts to five": "Faits jusqu’à cinq",
+ "Facts to ten": "Faits jusqu’à dix",
+ "Counting on": "Compter à partir de",
+ "Doubles": "Doubles",
+ "Near doubles": "Presque doubles",
+ "Fast nines": "Neuf rapides",
+ "Tricky ones": "Les difficiles",
+ "Mixed": "Mélangé",
+ "Question {0} of {1}": "Question {0} sur {1}",
+ "Show timer": "Afficher le chronomètre",
+ "Number keys": "Touches numériques",
+ "Erase": "Effacer",
+ "right": "bonnes",
+ "seconds": "secondes",
+ "question": "question",
+ "Practice again": "Pratiquer encore",
+ "Change practice": "Changer la pratique",
+ "Pick a times table": "Choisis une table",
+ "1 and 0": "1 et 0"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -512,7 +638,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -527,6 +653,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -566,8 +698,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

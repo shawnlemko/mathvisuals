@@ -682,6 +682,35 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Linear Contexts (contexts.html). */
+window.I18N_PAGE = {
+ "Linear Contexts": "Contextes linéaires",
+ "First column heading (horizontal axis)": "Titre de la première colonne (axe horizontal)",
+ "Second column heading (vertical axis)": "Titre de la deuxième colonne (axe vertical)",
+ "Draw line": "Tracer la droite",
+ "Hide line": "Masquer la droite",
+ "Not linear": "Non linéaire",
+ "Build function": "Construire la fonction",
+ "First-quadrant grid showing the table values as ordered pairs": "Quadrillage du premier quadrant montrant les valeurs du tableau en couples ordonnés",
+ "scale {0}": "échelle {0}",
+ "max {0}": "max {0}",
+ "Horizontal axis scale": "Échelle de l’axe horizontal",
+ "Horizontal axis maximum (blank fits the values)": "Maximum de l’axe horizontal (vide : s’ajuste aux valeurs)",
+ "Vertical axis scale": "Échelle de l’axe vertical",
+ "Vertical axis maximum (blank fits the values)": "Maximum de l’axe vertical (vide : s’ajuste aux valeurs)",
+ "Type at least two rows.": "Tape au moins deux rangées.",
+ "Start value": "Valeur initiale",
+ "start value": "valeur initiale",
+ "Rate of change": "Taux de variation",
+ "rate of change": "taux de variation",
+ "Rate changes: not linear": "Le taux change : non linéaire",
+ "the function": "la fonction",
+ "~Start value \\((.+) = 0\\)": "Valeur initiale ($1 = 0)",
+ "~Next: (.+)": "Suivant : $1",
+ "One input has two outputs: not a function.": "Une entrée a deux sorties : ce n’est pas une fonction."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -699,7 +728,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -714,6 +743,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -753,8 +788,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

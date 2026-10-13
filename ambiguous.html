@@ -934,6 +934,45 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for The Ambiguous Case (ambiguous.html). */
+window.I18N_PAGE = {
+ "The Ambiguous Case": "Le cas ambigu",
+ "The {0}": "Le {0}",
+ "Ambiguous Case": "cas ambigu",
+ "Learn or practice": "Apprendre ou pratiquer",
+ "Learn": "Apprendre",
+ "Angle A acute or obtuse": "Angle A aigu ou obtus",
+ "∠A acute": "∠A aigu",
+ "∠A obtuse": "∠A obtus",
+ "Angle A, side b and side a swinging from C to meet the base": "Angle A, côté b et côté a qui pivote depuis C pour rejoindre la base",
+ "▶ Swing side a": "▶ Faire pivoter le côté a",
+ "Show me:": "Montre-moi :",
+ "{n} triangles": "{n} triangles",
+ "1 right triangle": "1 triangle rectangle",
+ "1 triangle": "1 triangle",
+ "Given: ∠A, side b, and side a (across from ∠A)": "Donnés : ∠A, côté b et côté a (en face de ∠A)",
+ "1 · How many triangles?": "1 · Combien de triangles?",
+ "compare a with h and b": "compare a avec h et b",
+ "{0} h < a < b: side a reaches the base twice.": "{0} h < a < b : le côté a touche la base deux fois.",
+ "2 · Find ∠B with the sine law": "2 · Trouve ∠B avec la loi des sinus",
+ "same sine": "même sinus",
+ "Check:": "Vérification :",
+ "✓ fits, 2 triangles": "✓ convient, 2 triangles",
+ "First try: {0}": "Premier essai : {0}",
+ "{n} of {n}": "{n} sur {n}",
+ "a = {n} swings from C": "a = {n} pivote depuis C",
+ "Work out the count first. Then watch side a swing.": "Trouve d’abord le nombre. Puis regarde le côté a pivoter.",
+ "In △ABC, {0}, {1}, {2}.{3}How many triangles are possible? Find every ∠B to the nearest tenth.": "Dans △ABC, {0}, {1}, {2}.{3}Combien de triangles sont possibles? Trouve chaque ∠B au dixième près.",
+ "{0}Find the height h{1}": "{0}Trouve la hauteur h{1}",
+ "h is how high C is above the base: {0}": "h est la hauteur de C au-dessus de la base : {0}",
+ "Show me": "Montre-moi",
+ "{0}How many triangles?{1}": "{0}Combien de triangles?{1}",
+ "{0}Find ∠B{1}": "{0}Trouve ∠B{1}",
+ "{0}Compare a with b{1}": "{0}Compare a avec b{1}",
+ "∠A is obtuse, so it is the biggest angle. The side across from it, a, must be the longest side. Is it?": "∠A est obtus, donc c’est le plus grand angle. Le côté en face, a, doit être le plus long côté. L’est-il?"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -951,7 +990,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -1011,8 +1050,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

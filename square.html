@@ -1133,6 +1133,35 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Completing the Square (square.html). */
+window.I18N_PAGE = {
+ "Completing the Square": "Compléter le carré",
+ "Algebra tiles workspace with a square corner to build in. Drag tiles; more tiles are in the tray on the right.": "Espace de tuiles algébriques avec un coin carré pour construire. Glisse des tuiles; il y en a d’autres dans le plateau à droite.",
+ "Trash": "Corbeille",
+ "Add a zero pair: one positive and one negative unit tile": "Ajouter une paire nulle : une tuile unité positive et une négative",
+ "Zero pair": "Paire nulle",
+ "Rotate left": "Pivoter à gauche",
+ "Rotate right": "Pivoter à droite",
+ "Duplicate": "Dupliquer",
+ "Delete": "Supprimer",
+ "Type ax² + bx + c": "Tape ax² + bx + c",
+ "Expression such as x² + 6x + 5 or 2x² + 8x + 3. a is 1 to 4 and b must split evenly into a squares.": "Expression comme x² + 6x + 5 ou 2x² + 8x + 3. a va de 1 à 4 et b doit se partager également en a carrés.",
+ "Make tiles": "Créer les tuiles",
+ "Show steps": "Afficher les étapes",
+ "Show steps again": "Revoir les étapes",
+ "Ready to split?": "Prêt à partager?",
+ "Show dimensions": "Afficher les dimensions",
+ "Hide dimensions": "Masquer les dimensions",
+ "Type it like 2x² + 8x + 3": "Tape-la comme 2x² + 8x + 3",
+ "The number in front of x² can be 1 to 4": "Le nombre devant x² peut être de 1 à 4",
+ "It needs an x term": "Il faut un terme en x",
+ "The x number must be even": "Le nombre devant x doit être pair",
+ "With {n}x², the x number must be a multiple of {n}": "Avec {n}x², le nombre devant x doit être un multiple de {n}",
+ "With {n}x², the x number can be up to {n}": "Avec {n}x², le nombre devant x peut aller jusqu’à {n}",
+ "The last number can be −30 to 30": "Le dernier nombre peut être de −30 à 30"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -1150,7 +1179,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -1165,6 +1194,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -1204,8 +1239,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

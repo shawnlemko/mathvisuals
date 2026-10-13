@@ -822,6 +822,45 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Fraction and Percent of a Number (partwhole.html). */
+window.I18N_PAGE = {
+ "Fraction and Percent of a Number": "Fraction et pourcentage d’un nombre",
+ "{0} Show the procedure": "{0} Afficher la démarche",
+ "Learn": "Apprendre",
+ "A fraction or percent of a number shown on a number line cut into equal parts, or as equal groups of tens and ones.": "Une fraction ou un pourcentage d’un nombre montré sur une droite numérique coupée en parties égales, ou en groupes égaux de dizaines et d’unités.",
+ "of": "de",
+ "the whole = {0}": "le tout = {0}",
+ "Find": "Trouver",
+ "The part": "La partie",
+ "The whole": "Le tout",
+ "Use": "Utiliser",
+ "Fraction or percent": "Fraction ou pourcentage",
+ "Fraction": "Fraction",
+ "Percent": "Pourcentage",
+ "Number": "Nombre",
+ "What is {n}/{n} of {n}?": "Combien font {n}/{n} de {n}?",
+ "New example": "Nouvel exemple",
+ "Practice: find": "Pratique : trouver",
+ "Mixed": "Mélangé",
+ "Practice: fraction or percent": "Pratique : fraction ou pourcentage",
+ "Fractions": "Fractions",
+ "Percents": "Pourcentages",
+ "Show me": "Montre-moi",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "Procedure": "Démarche",
+ "{0} of {n} = {1} × {n} {2}": "{0} de {n} = {1} × {n} {2}",
+ "{n}% of {n} = {n}% × {n} {0}": "{n} % de {n} = {n} % × {n} {0}",
+ "“of” means ×": "« de » veut dire ×",
+ "is": "est",
+ "{0} is {1} of what number?": "{0} est {1} de quel nombre?",
+ "What is {0} of {1}?": "Combien font {0} de {1}?",
+ "Type a whole number in the box.": "Tape un nombre entier dans la case.",
+ "Find the part": "Trouver la partie",
+ "Find the whole": "Trouver le tout",
+ "Type the answer": "Tape la réponse"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -839,7 +878,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -899,8 +938,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];
