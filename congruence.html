@@ -198,9 +198,11 @@ h1 .m { color: var(--pt); }
 .q { margin: 0; font-size: 1.2rem; font-weight: 700; }
 .score { display: flex; justify-content: space-between; align-items: baseline; }
 .score b { font-family: var(--font-num); font-size: 1.3rem; }
-.rules { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rules { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.rules button { grid-column: span 2; }
 .rules button { font-family: var(--font-num); font-size: 1.2rem; padding: 10px 6px; }
-.rules button.wide { grid-column: span 3; font-family: var(--font-body); }
+.rules button.wide { grid-column: span 3; }
+.rules button.wide small { display: block; font-family: var(--font-body); font-size: 0.8rem; }
 .opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .opts button { font-family: var(--font-num); font-size: 1.3rem; padding: 8px 6px; }
 button.right { background: var(--green); color: var(--sheet); border-color: var(--green); }
@@ -794,7 +796,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   function renderPractice() {
     $("qnum").textContent = "Question " + Q.n;
     $("score").textContent = Q.right + " / " + Q.total;
-    $("rules").innerHTML = [...RULES, "none"].map(r => `<button type="button" data-r="${r}"${r === "none" ? ' class="wide"' : ""}>${r === "none" ? "Not enough to prove it" : r}</button>`).join("");
+    $("rules").innerHTML = [...RULES, "AAA", "SSA"].map(r => RULES.includes(r) ? `<button type="button" data-r="${r}">${r}</button>` : `<button type="button" data-r="${r}" class="wide">${r}<small>Not enough to prove it</small></button>`).join("");
     $("rules").querySelectorAll("button").forEach(b => b.addEventListener("click", () => answer1(b.dataset.r)));
     $("fb1").innerHTML = ""; $("stmt").hidden = true; $("nextQ").hidden = true;
     drawPractice();
@@ -802,7 +804,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   function answer1(r) {
     if (q.answered) return;
     q.answered = true;
-    const correct = q.ok ? q.crit : "none", good = r === correct;
+    const correct = q.crit, good = r === correct;
     Q.total++; if (good) Q.right++;
     $("rules").querySelectorAll("button").forEach(b => { b.disabled = true; if (b.dataset.r === correct) b.classList.add("right"); else if (b.dataset.r === r) b.classList.add("wrong"); });
     let extra = "";
@@ -810,10 +812,10 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
       if (q.crit === "SSA" && r === "SAS") extra = " For SAS the angle must sit between the two sides.";
       else if (q.crit === "AAS" && r === "ASA") extra = " For ASA the side must sit between the two angles.";
       else if (q.crit === "ASA" && r === "AAS") extra = " Here the side is between the angles.";
-      else if (q.crit === "SAS" && r === "none") extra = " The angle is between the two sides, so this one works.";
-      else if (q.hidden && r === "none") extra = " Look again for the part that has no marks.";
+      else if (q.crit === "SAS" && r === "SSA") extra = " The angle is between the two sides, so this one works.";
+      else if (q.hidden && !RULES.includes(r)) extra = " Look again for the part that has no marks.";
     }
-    $("fb1").innerHTML = `<span class="head ${good ? "yes" : "no"}">${good ? "Yes!" : "Not quite."} ${q.ok ? q.crit : "Not enough."}</span>${explain()}${extra}`;
+    $("fb1").innerHTML = `<span class="head ${good ? "yes" : "no"}">${good ? "Yes!" : "Not quite."} ${q.ok ? q.crit : q.crit + ": not enough."}</span>${explain()}${extra}`;
     $("score").textContent = Q.right + " / " + Q.total;
     drawPractice();
     if (q.ok) {
@@ -980,6 +982,10 @@ window.I18N_PAGE = {
  "Not enough to prove it": "Pas assez pour le prouver",
  "~\\{0\\}(.+) is \\{1\\} (.+) and (.+)\\. That is SSA: two different triangles can fit these marks\\.": "{0}$1 n’est {1} $2 et $3. C’est CCA : deux triangles différents peuvent correspondre à ces marques.",
  "Not quite. Not enough.": "Pas tout à fait. Pas assez.",
+ "Not quite. SSA: not enough.": "Pas tout à fait. CCA : pas assez.",
+ "Yes! SSA: not enough.": "Oui ! CCA : pas assez.",
+ "Not quite. AAA: not enough.": "Pas tout à fait. AAA : pas assez.",
+ "Yes! AAA: not enough.": "Oui ! AAA : pas assez.",
  "Not quite. SAS": "Pas tout à fait. CAC",
  "~\\{0\\}\\{1\\} is a side of both triangles \\(shared side\\)\\. (.+) is \\{2\\} (.+) and (.+)\\.": "{0}{1} est un côté des deux triangles (côté commun). $1 est {2} $2 et $3.",
  "~\\{0\\}Corners with the same marks go in the same order: (.+)\\.": "{0}Les sommets avec les mêmes marques vont dans le même ordre : $1."
