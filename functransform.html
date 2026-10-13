@@ -164,6 +164,7 @@ h1 .m { color: var(--pt); }
 .fns button, .sub button { font-family: var(--font-num); padding: 6px 4px; min-height: 40px; background: var(--sheet); }
 .fns button[aria-pressed="true"], .sub button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .fns button.wide { grid-column: span 2; font-family: var(--font-body); }
+.fns button[data-fn="pw"] { font-family: var(--font-body); font-size: 0.85rem; }
 .sub { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .sub > span { color: var(--muted); font-size: 0.9rem; font-weight: 700; }
 .sub button { min-height: 34px; padding: 4px 10px; }
@@ -257,6 +258,27 @@ table.kp td.out { opacity: 0.5; }
 .end-o { fill: var(--sheet); stroke-width: 3; }
 .ip { fill: none; stroke: var(--pink); stroke-width: 4; }
 .ip.q { stroke: var(--purple); }
+/* v2 (Shawn 2026-10-13): typed piecewise, window settings, no trig, equations on the graph, any base. */
+.pwin { margin-top: 8px; }
+.pwin textarea { width: 100%; font: 700 0.95rem/1.45 var(--font-num); color: var(--ink); background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 8px; padding: 4px 8px; resize: vertical; }
+.pwin textarea.bad { border-color: var(--warn); }
+.pwin .note.bad { color: var(--warn); font-weight: 700; }
+.sub input { width: 4.2em; font: 700 1rem var(--font-num); color: var(--ink); background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 8px; padding: 3px 6px; min-height: 34px; }
+.sub input.bad { border-color: var(--warn); }
+.eqbox { position: absolute; top: 16px; right: 16px; max-width: calc(100% - 32px); display: grid; grid-template-columns: auto auto auto; gap: 0 6px; align-items: center;
+  font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; line-height: 1.55; background: color-mix(in srgb, var(--sheet) 93%, transparent);
+  border: 1px solid var(--grid-major); border-radius: 8px; padding: 4px 10px; pointer-events: none; }
+.eqbox .lhs { text-align: right; white-space: nowrap; }
+.eqbox .raw { color: var(--muted); }
+.eqbox .rule { grid-column: 1 / -1; border-top: 1px dashed var(--grid-major); margin: 2px 0; }
+.eqbox .frac { font-size: 0.72em; vertical-align: middle; }
+.eqbox sup, .eqbox sub { font-size: 0.68em; }
+.win { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 14px; font-size: 0.85rem; font-weight: 700; padding-top: 4px; flex: none; }
+.win span { display: inline-flex; align-items: center; gap: 4px; }
+.win em { font-family: var(--font-num); font-style: italic; }
+.win input { width: 3.4em; font: 700 0.9rem var(--font-num); color: var(--ink); background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 6px; padding: 2px 4px; text-align: center; }
+.win input.bad { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--sheet)); }
+.win button { padding: 2px 10px; font-size: 0.85rem; }
 </style>
 
 <div class="wrap">
@@ -271,19 +293,20 @@ table.kp td.out { opacity: 0.5; }
       <div class="card">
         <p class="label">Parent function y = f(x)</p>
         <div class="fns" id="fns" role="group" aria-label="Parent function"></div>
-        <div class="sub" id="baseRow" hidden><span>Base</span></div>
-        <div class="sub" id="unitRow" hidden><span>Angles</span>
-          <button type="button" data-units="rad" aria-pressed="true">Radians</button>
-          <button type="button" data-units="deg" aria-pressed="false">Degrees</button>
+        <div class="sub" id="baseRow" hidden><span>Base</span>
+          <button type="button" data-base="2">2</button>
+          <button type="button" data-base="3">3</button>
+          <button type="button" data-base="10">10</button>
+          <button type="button" data-base="1/2">½</button>
+          <input id="baseIn" autocomplete="off" spellcheck="false" aria-label="Base">
         </div>
-        <div class="pw" id="pwDef" hidden>
-          <span>f(x) =</span><span class="brace">{</span>
-          <span>2x + 6, <small>−4 ≤ x &lt; −2</small><br>2, <small>−2 ≤ x ≤ 1</small><br>−x + 3, <small>1 &lt; x ≤ 4</small></span>
+        <div class="pwin" id="pwIn" hidden>
+          <textarea id="pwText" rows="3" spellcheck="false" aria-label="Piecewise function, one piece per line"></textarea>
+          <p class="note" id="pwMsg">One piece per line: rule, condition</p>
         </div>
       </div>
       <div class="card">
         <div class="lbl-row"><p class="label">Parameters</p><button type="button" id="reset">Reset</button></div>
-        <div class="eqn gen">y = <span class="ca">a</span>f(<span class="cb">b</span>(x − <span class="cb">h</span>)) + <span class="ca">k</span></div>
         <div class="sl v"><label for="sa">a</label><input type="range" id="sa" min="0" max="13" step="1" value="10" aria-describedby="oa"><output id="oa"></output></div>
         <div class="sl hz"><label for="sb">b</label><input type="range" id="sb" min="0" max="13" step="1" value="10" aria-describedby="ob"><output id="ob"></output></div>
         <div class="sl hz"><label for="sh">h</label><input type="range" id="sh" min="-8" max="8" step="1" value="0" aria-describedby="oh"><output id="oh"></output></div>
@@ -292,6 +315,7 @@ table.kp td.out { opacity: 0.5; }
       <div class="card">
         <p class="label">Show</p>
         <div class="chips" id="chips">
+          <label><input type="checkbox" data-t="eqg" checked>Equation on graph</label>
           <label><input type="checkbox" data-t="base" checked>Original f(x)</label>
           <label><input type="checkbox" data-t="keys" checked>Key points</label>
           <label><input type="checkbox" data-t="map" checked>Mapping notation</label>
@@ -307,7 +331,15 @@ table.kp td.out { opacity: 0.5; }
 
     <div class="board">
       <svg id="svg" viewBox="0 0 860 860" role="img" aria-label="Graph of the parent function and its transformed image"></svg>
+      <div class="eqbox" id="eqbox"></div>
       <div class="legend" id="legend"></div>
+      <div class="win" id="win">
+        <span><em>x</em> <input id="wx0" aria-label="x minimum"> to <input id="wx1" aria-label="x maximum"></span>
+        <span>scale <input id="wxs" aria-label="x scale"></span>
+        <span><em>y</em> <input id="wy0" aria-label="y minimum"> to <input id="wy1" aria-label="y maximum"></span>
+        <span>scale <input id="wys" aria-label="y scale"></span>
+        <button type="button" id="wreset">Standard</button>
+      </div>
     </div>
 
     <div class="panel" id="props">
@@ -361,55 +393,200 @@ table.kp td.out { opacity: 0.5; }
     return e;
   };
   const MINUS = "−";
-  const PI = Math.PI;
 
-  // ---------- exact fractions ----------
+  // ---------- exact fractions (ap = an approximate value, shown with ≈) ----------
   const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
-  const Q = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return { n: n / g, d: d / g }; };
-  const qa = (p, q) => Q(p.n * q.d + q.n * p.d, p.d * q.d);
-  const qs = (p, q) => Q(p.n * q.d - q.n * p.d, p.d * q.d);
-  const qm = (p, q) => Q(p.n * q.n, p.d * q.d);
-  const qd = (p, q) => Q(p.n * q.d, p.d * q.n);
+  const Q = (n, d = 1, ap) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; const q = { n: n / g, d: d / g }; if (ap) q.ap = true; return q; };
+  const qa = (p, q) => Q(p.n * q.d + q.n * p.d, p.d * q.d, p.ap || q.ap);
+  const qs = (p, q) => Q(p.n * q.d - q.n * p.d, p.d * q.d, p.ap || q.ap);
+  const qm = (p, q) => Q(p.n * q.n, p.d * q.d, p.ap || q.ap);
+  const qd = (p, q) => Q(p.n * q.d, p.d * q.n, p.ap || q.ap);
   const qv = p => p.n / p.d;
-  const qeq = (p, n) => p.n === n * p.d;
-  const qneg = p => Q(-p.n, p.d);
-  const qabs = p => Q(Math.abs(p.n), p.d);
+  const qeq = (p, n) => !p.ap && p.n === n * p.d;
+  const qabs = p => Q(Math.abs(p.n), p.d, p.ap);
+  const qpow = (p, e) => (e >= 0 ? Q(p.n ** e, p.d ** e) : Q(p.d ** -e, p.n ** -e));
   const ONE = Q(1), ZERO = Q(0);
+  // A decimal as an exact fraction when it is one with a small denominator, else rounded to hundredths and marked ≈.
+  const toQ = v => {
+    for (let d = 1; d <= 60; d++) { const n = Math.round(v * d); if (Math.abs(v - n / d) < 1e-9) return Q(n, d); }
+    return Q(Math.round(v * 100), 100, true);
+  };
+  // "3", "-2.5", "1/2", "−3/4"
+  const parseNum = s => {
+    s = String(s).replace(/[−–]/g, "-").replace(/\s+/g, "");
+    let m = s.match(/^(-?\d+)\/(\d+)$/);
+    if (m && +m[2] !== 0) return Q(+m[1], +m[2]);
+    m = s.match(/^-?(\d+\.?\d*|\.\d+)$/);
+    if (m) { const v = +s; const p = (s.split(".")[1] || "").length; return Q(Math.round(v * 10 ** p), 10 ** p); }
+    return null;
+  };
 
   // ---------- state ----------
   const AB = [-4, -3, -2, -1, Q(-1, 2), Q(-1, 3), Q(-1, 4), Q(1, 4), Q(1, 3), Q(1, 2), 1, 2, 3, 4].map(v => typeof v === "number" ? Q(v) : v);
-  const S = { fn: "abs", base: 2, units: "rad", t: {} };
+  const S = { fn: "abs", base: Q(2), t: {} };
   document.querySelectorAll("#chips input").forEach(c => (S.t[c.dataset.t] = c.checked));
+  const STD = { x0: -10, x1: 10, xs: 1, y0: -10, y1: 10, ys: 1 };
+  const WIN = { ...STD };
+
+  // ---------- typed piecewise function ----------
+  // Rules use x, numbers, + − × ÷ ^, brackets, |x| and sqrt( ); 2x and 3(x + 1) multiply.
+  function compile(src) {
+    let s = src.replace(/[−–]/g, "-").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/²/g, "^2").replace(/³/g, "^3").replace(/√/g, "sqrt").replace(/\s+/g, "").toLowerCase();
+    if (!s) return null;
+    const toks = s.match(/sqrt|abs|\d*\.?\d+|x|[-+*/^()|]/g);
+    if (!toks || toks.join("") !== s) return null;
+    let i = 0, bars = 0;
+    const peek = () => toks[i];
+    const startsFactor = t => t !== undefined && (/^[\d.]/.test(t) || t === "x" || t === "(" || t === "sqrt" || t === "abs" || (t === "|" && bars === 0));
+    function expr() {
+      let v = term();
+      while (peek() === "+" || peek() === "-") { const op = toks[i++]; const r = term(); const l = v; v = op === "+" ? x => l(x) + r(x) : x => l(x) - r(x); }
+      return v;
+    }
+    function term() {
+      let v = unary();
+      for (;;) {
+        if (peek() === "*" || peek() === "/") { const op = toks[i++]; const r = unary(); const l = v; v = op === "*" ? x => l(x) * r(x) : x => l(x) / r(x); }
+        else if (startsFactor(peek())) { const r = power(); const l = v; v = x => l(x) * r(x); }
+        else return v;
+      }
+    }
+    function unary() { if (peek() === "-") { i++; const r = unary(); return x => -r(x); } if (peek() === "+") { i++; return unary(); } return power(); }
+    function power() { const b = atom(); if (peek() === "^") { i++; const e = unary(); return x => Math.pow(b(x), e(x)); } return b; }
+    function atom() {
+      const t = toks[i++];
+      if (t === undefined) throw 0;
+      if (/^[\d.]/.test(t)) { const c = +t; if (isNaN(c)) throw 0; return () => c; }
+      if (t === "x") return x => x;
+      if (t === "(") { const v = expr(); if (toks[i++] !== ")") throw 0; return v; }
+      if (t === "sqrt" || t === "abs") { if (toks[i++] !== "(") throw 0; const v = expr(); if (toks[i++] !== ")") throw 0; return t === "sqrt" ? x => Math.sqrt(v(x)) : x => Math.abs(v(x)); }
+      if (t === "|") { bars++; const v = expr(); bars--; if (toks[i++] !== "|") throw 0; return x => Math.abs(v(x)); }
+      throw 0;
+    }
+    try { const f = expr(); if (i !== toks.length) return null; f(1.2345); return f; } catch (e) { return null; }
+  }
+  // Conditions: −4 ≤ x < −2, x < 1, x ≥ 2, 1 < x ≤ 4, 4 ≥ x > 1, all (or blank).
+  function condition(src) {
+    let s = src.replace(/[−–]/g, "-").replace(/≤/g, "<=").replace(/≥/g, ">=").replace(/\s+/g, "").toLowerCase();
+    if (s === "" || s === "all" || s === "x∈r") return { lo: null, hi: null, loC: false, hiC: false };
+    const parts = s.split("x");
+    if (parts.length !== 2) return null;
+    const out = { lo: null, hi: null, loC: false, hiC: false };
+    const side = (txt, left) => {
+      if (!txt) return true;
+      const m = left ? txt.match(/^(.+?)(<=|<|>=|>)$/) : txt.match(/^(<=|<|>=|>)(.+)$/);
+      if (!m) return false;
+      const num = parseNum(left ? m[1] : m[2]), op = left ? m[2] : m[1];
+      if (!num) return false;
+      // left side "a < x" means x > a; right side "x < b" means x < b
+      const lower = left ? op[0] === "<" : op[0] === ">";
+      const closed = op.length === 2;
+      if (lower) { if (out.lo) return false; out.lo = num; out.loC = closed; } else { if (out.hi) return false; out.hi = num; out.hiC = closed; }
+      return true;
+    };
+    if (!side(parts[0], true) || !side(parts[1], false)) return null;
+    if (out.lo && out.hi && qv(out.lo) >= qv(out.hi)) return null;
+    return out;
+  }
+  const PW_DEFAULT = "2x + 6, −4 ≤ x < −2\n2, −2 ≤ x ≤ 1\n−x + 3, 1 < x ≤ 4";
+  let PIECES = [];
+  function readPieces() {
+    const lines = $("pwText").value.split("\n").map(l => l.trim()).filter(Boolean);
+    const out = [];
+    let bad = 0;
+    lines.forEach((l, n) => {
+      const c = l.lastIndexOf(",");
+      const rule = c < 0 ? l : l.slice(0, c), cnd = c < 0 ? "" : l.slice(c + 1);
+      const f = compile(rule.replace(/^[a-z]\(x\)=|^y=/i, "")), I = condition(cnd);
+      if (!f || !I) { if (!bad) bad = n + 1; return; }
+      out.push({ f, ...I });
+    });
+    out.sort((p, q) => (p.lo === null ? -Infinity : qv(p.lo)) - (q.lo === null ? -Infinity : qv(q.lo)));
+    let overlap = false;
+    for (let j = 1; j < out.length; j++) {
+      const a = out[j - 1], b = out[j];
+      if (a.hi === null || b.lo === null || qv(a.hi) > qv(b.lo) || (qv(a.hi) === qv(b.lo) && a.hiC && b.loC)) overlap = true;
+    }
+    const msg = $("pwMsg");
+    if (bad) { msg.textContent = `Check line ${bad}: write it like 2x + 6, −4 ≤ x < −2`; msg.className = "note bad"; }
+    else if (overlap) { msg.textContent = "Two pieces overlap. Each x can belong to only one piece."; msg.className = "note bad"; }
+    else if (!out.length) { msg.textContent = "Type at least one piece."; msg.className = "note bad"; }
+    else { msg.textContent = "One piece per line: rule, condition"; msg.className = "note"; }
+    $("pwText").classList.toggle("bad", !!(bad || overlap || !out.length));
+    if (!bad && !overlap && out.length) PIECES = out;
+  }
+  const inPiece = (p, u) => (p.lo === null || u > qv(p.lo) || (p.loC && u === qv(p.lo))) && (p.hi === null || u < qv(p.hi) || (p.hiC && u === qv(p.hi)));
+  const pwf = u => { for (const p of PIECES) if (inPiece(p, u)) return p.f(u); return NaN; };
+  // Domain: the pieces' intervals, joined where they touch.
+  function pwDomain() {
+    const parts = [];
+    PIECES.forEach(p => {
+      const last = parts[parts.length - 1];
+      if (last && last.hi !== null && p.lo !== null && qv(last.hi) === qv(p.lo) && (last.hiC || p.loC)) { last.hi = p.hi; last.hiC = p.hiC; }
+      else parts.push({ kind: "int", lo: p.lo, hi: p.hi, loC: p.loC, hiC: p.hiC });
+    });
+    return parts.length === 1 ? parts[0] : { kind: "union", parts };
+  }
+  // Range: each piece's lowest and highest values (found by sampling), joined where they overlap.
+  function pwRange() {
+    const ints = [];
+    PIECES.forEach(p => {
+      const lo = p.lo === null ? null : qv(p.lo), hi = p.hi === null ? null : qv(p.hi);
+      const a = lo === null ? (hi === null ? -200 : hi - 200) : lo, b = hi === null ? a + 400 : hi;
+      let mn = Infinity, mx = -Infinity, mnU = a, mxU = a;
+      for (let j = 0; j <= 4000; j++) {
+        const u = a + (b - a) * j / 4000, v = p.f(u);
+        if (!isFinite(v)) continue;
+        if (v < mn - 1e-12) { mn = v; mnU = u; } if (v > mx + 1e-12) { mx = v; mxU = u; }
+      }
+      if (mn === Infinity) return;
+      const atOpen = u => (u === lo && !p.loC) || (u === hi && !p.hiC);
+      const runaway = (u, v) => ((lo === null && u === a) || (hi === null && u === b)) && Math.abs(v) > 50;
+      ints.push({ lo: runaway(mnU, mn) ? null : toQ(mn), loC: !atOpen(mnU), hi: runaway(mxU, mx) ? null : toQ(mx), hiC: !atOpen(mxU) });
+    });
+    ints.sort((p, q) => (p.lo === null ? -Infinity : qv(p.lo)) - (q.lo === null ? -Infinity : qv(q.lo)));
+    const out = [];
+    ints.forEach(r => {
+      const last = out[out.length - 1];
+      if (last && (last.hi === null || r.lo === null || qv(r.lo) < qv(last.hi) || (qv(r.lo) === qv(last.hi) && (last.hiC || r.loC)))) {
+        if (last.hi !== null && (r.hi === null || qv(r.hi) > qv(last.hi))) { last.hi = r.hi; last.hiC = r.hiC; }
+        else if (last.hi !== null && r.hi !== null && qv(r.hi) === qv(last.hi)) last.hiC = last.hiC || r.hiC;
+        if (r.lo !== null && last.lo !== null && qv(r.lo) === qv(last.lo)) last.loC = last.loC || r.loC;
+      } else out.push({ kind: "int", ...r });
+    });
+    return out.length === 1 ? out[0] : { kind: "union", parts: out };
+  }
+  // Key points: each piece's ends (open or closed) and middle whole-number points.
+  function pwKeys() {
+    const out = [];
+    PIECES.forEach(p => {
+      const ends = [];
+      if (p.lo !== null) ends.push([p.lo, p.loC]);
+      if (p.hi !== null) ends.push([p.hi, p.hiC]);
+      if (!ends.length) [-1, 0, 1].forEach(u => ends.push([Q(u), true]));
+      else if (ends.length === 1) { const e = qv(ends[0][0]); ends.push([Q(p.lo === null ? Math.floor(e) - 2 : Math.ceil(e) + 2), true]); }
+      ends.forEach(([u, c]) => { const v = p.f(qv(u)); if (isFinite(v)) out.push([u, toQ(v), c]); });
+    });
+    return out;
+  }
 
   // ---------- parent functions ----------
-  // Intervals: {kind:"all"} | {kind:"int", lo, hi, loC, hiC} (lo/hi null = infinite) | {kind:"except", c} | {kind:"tan"}.
+  // Intervals: {kind:"all"} | {kind:"int", lo, hi, loC, hiC} (lo/hi null = infinite) | {kind:"except", c} | {kind:"union", parts}.
   const ALL = { kind: "all" };
   const iv = (lo, hi, loC, hiC) => ({ kind: "int", lo: lo === null ? null : Q(lo), hi: hi === null ? null : Q(hi), loC, hiC });
-  const PW = [[-4, -2], [-2, 2], [1, 2], [4, -1]];
-  const pwf = u => {
-    if (u < -4 - 1e-12 || u > 4 + 1e-12) return NaN;
-    for (let i = 0; i < 3; i++) {
-      const [x1, y1] = PW[i], [x2, y2] = PW[i + 1];
-      if (u <= x2 + 1e-12) return y1 + (y2 - y1) * (u - x1) / (x2 - x1);
-    }
-    return NaN;
-  };
-  const expKeys = { 2: [[-1, Q(1, 2)], [0, 1], [1, 2], [2, 4], [3, 8]], 3: [[-1, Q(1, 3)], [0, 1], [1, 3], [2, 9]], "0.5": [[-3, 8], [-2, 4], [-1, 2], [0, 1], [1, Q(1, 2)]] };
-  const logKeys = { 2: [[Q(1, 2), -1], [1, 0], [2, 1], [4, 2], [8, 3]], 3: [[Q(1, 3), -1], [1, 0], [3, 1], [9, 2]], 10: [[Q(1, 10), -1], [1, 0], [10, 1]] };
+  const bv = () => qv(S.base);
+  const expKeys = () => (bv() > 1 ? [-1, 0, 1, 2] : [-2, -1, 0, 1]).map(u => [Q(u), qpow(S.base, u)]);
   const F = {
-    abs:  { btn: "|x|", f: u => Math.abs(u), dom: ALL, rng: iv(0, null, true, false), keys: () => [[-2, 2], [-1, 1], [0, 0], [1, 1], [2, 2]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
-    sqrt: { btn: "√x", f: u => Math.sqrt(u), dom: iv(0, null, true, false), rng: iv(0, null, true, false), keys: () => [[0, 0], [1, 1], [4, 2], [9, 3]], one: true },
-    sq:   { btn: "x²", f: u => u * u, dom: ALL, rng: iv(0, null, true, false), keys: () => [[-2, 4], [-1, 1], [0, 0], [1, 1], [2, 4]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
-    cube: { btn: "x³", f: u => u * u * u, dom: ALL, rng: ALL, keys: () => [[-2, -8], [-1, -1], [0, 0], [1, 1], [2, 8]], one: true },
-    exp:  { btn: "bˣ", f: u => Math.pow(S.base, u), dom: ALL, rng: iv(0, null, false, false), keys: () => expKeys[S.base], asyH: [0], one: true, bases: [2, 3, 0.5] },
-    log:  { btn: "log x", f: u => Math.log(u) / Math.log(S.base), dom: iv(0, null, false, false), rng: ALL, keys: () => logKeys[S.base], asyV: [0], one: true, bases: [2, 3, 10] },
-    rec:  { btn: "1/x", f: u => 1 / u, dom: { kind: "except", c: ZERO }, rng: { kind: "except", c: ZERO }, keys: () => [[-2, Q(-1, 2)], [-1, -1], [Q(-1, 2), -2], [Q(1, 2), 2], [1, 1], [2, Q(1, 2)]], asyV: [0], asyH: [0], one: true },
-    pw:   { btn: "Piecewise f(x)", wide: true, f: pwf, dom: iv(-4, 4, true, true), rng: iv(-2, 2, true, true), keys: () => PW, res: { dom: iv(-4, -2, true, true), rng: iv(-2, 2, true, true) } },
-    sin:  { btn: "sin x", trig: true, f: u => Math.sin(u), dom: ALL, rng: iv(-1, 1, true, true), keys: () => [[0, 0], [Q(1, 2), 1], [1, 0], [Q(3, 2), -1], [2, 0]] },
-    cos:  { btn: "cos x", trig: true, f: u => Math.cos(u), dom: ALL, rng: iv(-1, 1, true, true), keys: () => [[0, 1], [Q(1, 2), 0], [1, -1], [Q(3, 2), 0], [2, 1]] },
-    tan:  { btn: "tan x", trig: true, f: u => Math.tan(u), dom: { kind: "tan" }, rng: ALL, keys: () => [[Q(-1, 4), -1], [0, 0], [Q(1, 4), 1]] },
+    abs:  { btn: "|x|", f: u => Math.abs(u), dom: () => ALL, rng: () => iv(0, null, true, false), keys: () => [[-2, 2], [-1, 1], [0, 0], [1, 1], [2, 2]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
+    sqrt: { btn: "√x", f: u => Math.sqrt(u), dom: () => iv(0, null, true, false), rng: () => iv(0, null, true, false), keys: () => [[0, 0], [1, 1], [4, 2], [9, 3]], one: true },
+    sq:   { btn: "x²", f: u => u * u, dom: () => ALL, rng: () => iv(0, null, true, false), keys: () => [[-2, 4], [-1, 1], [0, 0], [1, 1], [2, 4]], res: { dom: iv(0, null, true, false), rng: iv(0, null, true, false) } },
+    cube: { btn: "x³", f: u => u * u * u, dom: () => ALL, rng: () => ALL, keys: () => [[-2, -8], [-1, -1], [0, 0], [1, 1], [2, 8]], one: true },
+    exp:  { btn: "bˣ", f: u => Math.pow(bv(), u), dom: () => ALL, rng: () => iv(0, null, false, false), keys: expKeys, asyH: [0], one: true, bases: true },
+    log:  { btn: "log x", f: u => Math.log(u) / Math.log(bv()), dom: () => iv(0, null, false, false), rng: () => ALL, keys: () => expKeys().map(([u, v]) => [v, u]), asyV: [0], one: true, bases: true },
+    rec:  { btn: "1/x", f: u => 1 / u, dom: () => ({ kind: "except", c: ZERO }), rng: () => ({ kind: "except", c: ZERO }), keys: () => [[-2, Q(-1, 2)], [-1, -1], [Q(-1, 2), -2], [Q(1, 2), 2], [1, 1], [2, Q(1, 2)]], asyV: [0], asyH: [0], one: true },
+    pw:   { btn: "Piecewise", wide: false, f: u => pwf(u), dom: pwDomain, rng: pwRange, keys: pwKeys, pw: true },
   };
-  const ORDER = ["abs", "sqrt", "sq", "cube", "exp", "log", "rec", "sin", "cos", "tan", "pw"];
+  const ORDER = ["abs", "sqrt", "sq", "cube", "exp", "log", "rec", "pw"];
   const fnBox = $("fns");
   ORDER.forEach(id => {
     const b = document.createElement("button");
@@ -418,199 +595,148 @@ table.kp td.out { opacity: 0.5; }
     b.setAttribute("aria-pressed", id === S.fn);
     fnBox.appendChild(b);
   });
-
   const fn = () => F[S.fn];
-  const trig = () => !!fn().trig;
-  const restricted = () => S.t.restrict && !!fn().res && !trig();
+  const restricted = () => S.t.restrict && !!fn().res;
 
   // ---------- parameters ----------
-  const par = () => {
-    const a = AB[+$("sa").value], b = AB[+$("sb").value];
-    const hv = +$("sh").value, k = Q(+$("sk").value);
-    const h = trig() ? Q(hv, 12) : Q(hv); // trig: h in multiples of π/12
-    return { a, b, h, k };
-  };
+  const par = () => ({ a: AB[+$("sa").value], b: AB[+$("sb").value], h: Q(+$("sh").value), k: Q(+$("sk").value) });
 
   // ---------- number formatting ----------
   const fint = n => (n < 0 ? MINUS + Math.abs(n) : String(n));
-  const fq = q => (q.d === 1 ? fint(q.n) : (q.n < 0 ? MINUS : "") + Math.abs(q.n) + "/" + q.d);
-  // An angle q means q·π radians.
-  const fang = q => {
-    if (S.units === "deg") {
-      const v = qv(q) * 180, r = Math.round(v);
-      return (Math.abs(v - r) < 1e-9 ? fint(r) : (v < 0 ? MINUS : "") + Math.abs(v).toFixed(1)) + "°";
-    }
-    if (q.n === 0) return "0";
-    const s = q.n < 0 ? MINUS : "", n = Math.abs(q.n);
-    return s + (n === 1 ? "" : n) + "π" + (q.d === 1 ? "" : "/" + q.d);
-  };
-  const fv = (q, angle) => (angle ? fang(q) : fq(q));
+  const fdec = v => { const r = Math.abs(v).toFixed(2).replace(/\.?0+$/, ""); return (v < 0 ? MINUS : "") + r; };
+  const fq = q => (q.ap ? "≈" + fdec(qv(q)) : q.d === 1 ? fint(q.n) : (q.n < 0 ? MINUS : "") + Math.abs(q.n) + "/" + q.d);
+  const fv = q => fq(q);
   const fracH = (top, bot) => `<span class="frac"><span>${top}</span><span>${bot}</span></span>`;
-  // HTML for a fraction (stacked), keeping the sign in front.
-  const qH = (q, angle) => {
-    const s = q.n < 0 ? MINUS : "", n = Math.abs(q.n);
-    if (angle) {
-      if (S.units === "deg") return fang(q);
-      if (q.n === 0) return "0";
-      const top = (n === 1 ? "" : n) + "π";
-      return s + (q.d === 1 ? top : fracH(top, q.d));
-    }
-    return s + (q.d === 1 ? n : fracH(n, q.d));
-  };
-  // A decimal value shown exactly when it is a simple fraction (of π for angles), otherwise ≈ 2 decimals.
-  const nice = (v, angle) => {
-    const w = angle ? v / PI : v;
-    for (let d = 1; d <= 12; d++) {
-      const n = Math.round(w * d);
-      if (Math.abs(w - n / d) < 1e-7) return fv(Q(n, d), angle);
-    }
-    if (angle && S.units === "deg") return "≈" + fint(+(v * 180 / PI).toFixed(1)).replace("-", MINUS) + "°";
-    const r = v.toFixed(2);
-    return "≈" + (v < 0 ? MINUS + r.slice(1) : r);
-  };
+  const qH = q => (q.ap ? fq(q) : (q.n < 0 ? MINUS : "") + (q.d === 1 ? Math.abs(q.n) : fracH(Math.abs(q.n), q.d)));
+  const nice = v => fq(toQ(v));
   const pt = (x, y) => `(${x}, ${y})`;
+  const baseH = () => (S.base.d === 1 ? String(S.base.n) : `(${qH(S.base)})`);
+  const baseSub = () => (S.base.d === 1 ? String(S.base.n) : fq(S.base));
 
   // ---------- intervals: image of a set under v → m·v + c ----------
   function mapSet(I, m, c) {
     if (I.kind === "all") return I;
     if (I.kind === "except") return { kind: "except", c: qa(qm(I.c, m), c) };
-    if (I.kind === "tan") return { kind: "tan", m, c };
+    if (I.kind === "union") {
+      const parts = I.parts.map(p => mapSet(p, m, c));
+      if (qv(m) < 0) parts.reverse();
+      return { kind: "union", parts };
+    }
     const f = v => (v === null ? null : qa(qm(v, m), c));
     if (qv(m) > 0) return { kind: "int", lo: f(I.lo), hi: f(I.hi), loC: I.loC, hiC: I.hiC };
     return { kind: "int", lo: f(I.hi), hi: f(I.lo), loC: I.hiC, hiC: I.loC };
   }
-  // tan excludes u = π/2 + nπ; after x = u/b + h that is x = x0 + n·p with p = π/|b|.
-  function tanParts(I) {
-    const p = qabs(I.m);
-    let x0 = qa(qm(Q(1, 2), I.m), I.c);
-    const t = Math.floor(qv(qd(x0, p)));
-    x0 = qs(x0, qm(Q(t), p));
-    return { x0, p };
-  }
-  function interval(I, angle) {
-    const F = q => fv(q, angle);
+  function interval(I) {
     if (I.kind === "all") return `(${MINUS}∞, ∞)`;
-    if (I.kind === "except") return `(${MINUS}∞, ${F(I.c)}) ∪ (${F(I.c)}, ∞)`;
-    if (I.kind === "tan") {
-      const { x0, p } = tanParts(I);
-      return `… ∪ (${F(qs(x0, p))}, ${F(x0)}) ∪ (${F(x0)}, ${F(qa(x0, p))}) ∪ …`;
-    }
-    return (I.lo === null ? `(${MINUS}∞` : (I.loC ? "[" : "(") + F(I.lo)) + ", " + (I.hi === null ? "∞)" : F(I.hi) + (I.hiC ? "]" : ")"));
+    if (I.kind === "except") return `(${MINUS}∞, ${fv(I.c)}) ∪ (${fv(I.c)}, ∞)`;
+    if (I.kind === "union") return I.parts.map(interval).join(" ∪ ");
+    if (I.lo !== null && I.hi !== null && qv(I.lo) === qv(I.hi)) return `{${fv(I.lo)}}`;
+    return (I.lo === null ? `(${MINUS}∞` : (I.loC ? "[" : "(") + fv(I.lo)) + ", " + (I.hi === null ? "∞)" : fv(I.hi) + (I.hiC ? "]" : ")"));
   }
-  function cond(I, v, angle) {
-    const F = q => fv(q, angle);
+  function cond(I, v) {
     if (I.kind === "all") return null;
-    if (I.kind === "except") return `${v} ≠ ${F(I.c)}`;
-    if (I.kind === "tan") {
-      const { x0, p } = tanParts(I);
-      const np = qeq(p, 1) && angle && S.units === "rad" ? "nπ" : "n(" + F(p) + ")";
-      return `${v} ≠ ${F(x0)} + ${np}, n ∈ I`;
-    }
-    if (I.lo !== null && I.hi !== null) return `${F(I.lo)} ${I.loC ? "≤" : "<"} ${v} ${I.hiC ? "≤" : "<"} ${F(I.hi)}`;
-    if (I.lo !== null) return `${v} ${I.loC ? "≥" : ">"} ${F(I.lo)}`;
-    return `${v} ${I.hiC ? "≤" : "<"} ${F(I.hi)}`;
+    if (I.kind === "except") return `${v} ≠ ${fv(I.c)}`;
+    if (I.kind === "union") return I.parts.map(p => cond(p, v)).join(" or ");
+    if (I.lo !== null && I.hi !== null && qv(I.lo) === qv(I.hi)) return `${v} = ${fv(I.lo)}`;
+    if (I.lo !== null && I.hi !== null) return `${fv(I.lo)} ${I.loC ? "≤" : "<"} ${v} ${I.hiC ? "≤" : "<"} ${fv(I.hi)}`;
+    if (I.lo !== null) return `${v} ${I.loC ? "≥" : ">"} ${fv(I.lo)}`;
+    return `${v} ${I.hiC ? "≤" : "<"} ${fv(I.hi)}`;
   }
-  const setB = (I, v, angle) => { const c = cond(I, v, angle); return `{${v} | ${c ? c + ", " : ""}${v} ∈ R}`; };
+  const setB = (I, v) => { const c = cond(I, v); return `{${v} | ${c ? c + ", " : ""}${v} ∈ R}`; };
 
-  // ---------- the current function, exactly ----------
+  // ---------- the current function ----------
   function model() {
-    const P = par(), f = fn(), T = trig();
-    const dom0 = restricted() ? f.res.dom : f.dom, rng0 = restricted() ? f.res.rng : f.rng;
+    const P = par(), f = fn();
+    const dom0 = restricted() ? f.res.dom : f.dom(), rng0 = restricted() ? f.res.rng : f.rng();
     const dom = mapSet(dom0, qd(ONE, P.b), P.h);
     const rng = mapSet(rng0, P.a, P.k);
     const tr = (u, v) => [qa(qd(u, P.b), P.h), qa(qm(v, P.a), P.k)];
-    const inDom0 = u => {
-      const I = dom0;
+    const inI = (I, u) => {
       if (I.kind === "all") return true;
       if (I.kind === "except") return Math.abs(u - qv(I.c)) > 1e-12;
-      if (I.kind === "tan") return true;
+      if (I.kind === "union") return I.parts.some(p => inI(p, u));
       return (I.lo === null || u > qv(I.lo) - 1e-12) && (I.hi === null || u < qv(I.hi) + 1e-12);
     };
-    const keys = f.keys().map(([u, v]) => [typeof u === "number" ? Q(u) : u, typeof v === "number" ? Q(v) : v]).filter(([u]) => inDom0(qv(u)));
-    return { P, f, T, dom0, rng0, dom, rng, tr, keys, inDom0 };
+    const inDom0 = u => inI(dom0, u) && isFinite(f.f(u));
+    const keys = f.keys().map(([u, v, c]) => [typeof u === "number" ? Q(u) : u, typeof v === "number" ? Q(v) : v, c !== false]).filter(([u]) => inI(dom0, qv(u)));
+    return { P, f, dom0, rng0, dom, rng, tr, keys, inDom0 };
   }
 
   // ---------- board ----------
-  const W = 860, PAD = 30, UNIT = 40, GMIN = -10, GMAX = 10;
-  const gx = x => (trig() ? x / (PI / 4) : x);         // real x → grid units
-  const SX = x => PAD + (gx(x) - GMIN) * UNIT;
-  const SY = y => PAD + (GMAX - y) * UNIT;
-  const XMIN = () => (trig() ? GMIN * PI / 4 : GMIN), XMAX = () => (trig() ? GMAX * PI / 4 : GMAX);
-  const uval = q => qv(q) * (trig() ? PI : 1);       // exact value → real number
+  const W = 860, PAD = 34, PL = W - 2 * PAD;
+  const SX = x => PAD + (x - WIN.x0) / (WIN.x1 - WIN.x0) * PL;
+  const SY = y => PAD + (WIN.y1 - y) / (WIN.y1 - WIN.y0) * PL;
+  const onBoard = (X, Y) => X >= PAD - 1 && X <= W - PAD + 1 && Y >= PAD - 1 && Y <= W - PAD + 1;
+  const tickTxt = v => { const r = Math.round(v * 1e6) / 1e6; return (r < 0 ? MINUS : "") + Math.abs(r); };
 
   function grid(g) {
-    for (let i = GMIN; i <= GMAX; i++) {
-      const cls = i === 0 ? "g-axis" : trig() && i % 2 === 0 ? "g-major" : "g-minor";
-      el("line", { x1: PAD + (i - GMIN) * UNIT, y1: SY(GMIN), x2: PAD + (i - GMIN) * UNIT, y2: SY(GMAX), class: cls }, g);
-      el("line", { x1: PAD, y1: SY(i), x2: W - PAD, y2: SY(i), class: i === 0 ? "g-axis" : "g-minor" }, g);
-    }
-    for (let i = GMIN; i <= GMAX; i++) {
-      if (i === 0) continue;
-      if (!trig() || i % 2 === 0) {
-        const t = trig() ? fang(Q(i, 4)) : fint(i);
-        el("text", { x: PAD + (i - GMIN) * UNIT, y: SY(0) + 21, class: "tick", "text-anchor": "middle" }, g).textContent = t;
-      }
-      el("text", { x: SX(0) - 6, y: SY(i) + 6, class: "tick", "text-anchor": "end" }, g).textContent = fint(i);
-    }
-    el("text", { x: W - PAD - 4, y: SY(0) - 9, class: "tick", "text-anchor": "end" }, g).textContent = "x";
-    el("text", { x: SX(0) + 8, y: PAD + 14, class: "tick" }, g).textContent = "y";
+    const lines = (lo, hi, s) => { const out = []; for (let i = Math.ceil(lo / s - 1e-9); i * s <= hi + 1e-9; i++) out.push(i * s); return out; };
+    const xs = lines(WIN.x0, WIN.x1, WIN.xs), ys = lines(WIN.y0, WIN.y1, WIN.ys);
+    const ax = Math.min(Math.max(0, WIN.x0), WIN.x1), ay = Math.min(Math.max(0, WIN.y0), WIN.y1);
+    xs.forEach(x => el("line", { x1: SX(x), y1: PAD, x2: SX(x), y2: W - PAD, class: Math.abs(x) < 1e-9 ? "g-axis" : "g-minor" }, g));
+    ys.forEach(y => el("line", { x1: PAD, y1: SY(y), x2: W - PAD, y2: SY(y), class: Math.abs(y) < 1e-9 ? "g-axis" : "g-minor" }, g));
+    // Every line labeled while they fit (Shawn); crowded grids label every 2nd or 5th line.
+    const every = n => (n <= 24 ? 1 : n <= 48 ? 2 : 5);
+    const ex = every(xs.length), ey = every(ys.length);
+    const lyX = Math.min(SY(ay) + 21, W - PAD + 20), lxY = Math.max(SX(ax) - 6, PAD + 26);
+    xs.forEach(x => { const i = Math.round(x / WIN.xs); if (Math.abs(x) < 1e-9 || i % ex) return; el("text", { x: SX(x), y: lyX, class: "tick", "text-anchor": "middle" }, g).textContent = tickTxt(x); });
+    ys.forEach(y => { const i = Math.round(y / WIN.ys); if (Math.abs(y) < 1e-9 || i % ey) return; el("text", { x: lxY, y: SY(y) + 6, class: "tick", "text-anchor": "end" }, g).textContent = tickTxt(y); });
+    if (WIN.y0 <= 0 && WIN.y1 >= 0) el("text", { x: W - PAD - 4, y: SY(0) - 9, class: "tick", "text-anchor": "end" }, g).textContent = "x";
+    if (WIN.x0 <= 0 && WIN.x1 >= 0) el("text", { x: SX(0) + 8, y: PAD + 14, class: "tick" }, g).textContent = "y";
   }
 
-  // Continuous pieces of the parent's domain (real u), each end tagged "closed", "open" or "inf".
-  function uPieces(dom0, ulo, uhi) {
+  // Continuous pieces of the parent's domain, each end tagged "closed", "open" or "inf", with the rule that draws it.
+  function uPieces(f, dom0, ulo, uhi) {
     const out = [];
-    const add = (a, b, ta, tb) => {
+    const add = (a, b, ta, tb, pf) => {
       const s = Math.max(a, ulo), e = Math.min(b, uhi);
-      if (s < e) out.push([s, e, s === a ? ta : "inf", e === b ? tb : "inf"]);
+      if (s < e || (s === e && ta === "closed" && tb === "closed")) out.push([s, e, s === a ? ta : "inf", e === b ? tb : "inf", pf]);
     };
-    if (dom0.kind === "all") add(-Infinity, Infinity, "inf", "inf");
-    else if (dom0.kind === "except") { const c = uval(dom0.c); add(-Infinity, c, "inf", "open"); add(c, Infinity, "open", "inf"); }
-    else if (dom0.kind === "tan") {
-      for (let n = Math.floor(ulo / PI) - 1; n <= Math.ceil(uhi / PI) + 1; n++) add((n - 0.5) * PI, (n + 0.5) * PI, "open", "open");
-    } else add(dom0.lo === null ? -Infinity : uval(dom0.lo), dom0.hi === null ? Infinity : uval(dom0.hi), dom0.lo === null ? "inf" : dom0.loC ? "closed" : "open", dom0.hi === null ? "inf" : dom0.hiC ? "closed" : "open");
+    const addI = (I, pf) => add(I.lo === null ? -Infinity : qv(I.lo), I.hi === null ? Infinity : qv(I.hi), I.lo === null ? "inf" : I.loC ? "closed" : "open", I.hi === null ? "inf" : I.hiC ? "closed" : "open", pf);
+    if (f.pw && !restricted()) PIECES.forEach(p => addI(p, p.f));
+    else if (dom0.kind === "all") add(-Infinity, Infinity, "inf", "inf", f.f);
+    else if (dom0.kind === "except") { const c = qv(dom0.c); add(-Infinity, c, "inf", "open", f.f); add(c, Infinity, "open", "inf", f.f); }
+    else if (dom0.kind === "union") dom0.parts.forEach(p => addI(p, f.f));
+    else addI(dom0, f.f);
     return out;
   }
-  // Points of y = a f(b(x − h)) + k (optionally swapped for the inverse) as SVG path pieces plus endpoint dots.
-  function trace(M, P, dom0, swap) {
-    const f = M.f.f, a = qv(P.a), b = qv(P.b), h = uval(P.h), k = qv(P.k);
-    const xr = [XMIN(), XMAX()], yr = [GMIN, GMAX];
-    // For the inverse, the window limits the original's y; sample the whole x range that can matter.
-    const span = swap ? [Math.min(xr[0], yr[0] * (trig() ? 1 : 1)) - 12, Math.max(xr[1], yr[1]) + 12] : [xr[0] - 0.5, xr[1] + 0.5];
+  // Points of y = a f(b(x − h)) + k (swapped for the inverse) as SVG path pieces plus endpoint dots.
+  function trace(M, P, dom0, swap, keyU) {
+    const a = qv(P.a), b = qv(P.b), h = qv(P.h), k = qv(P.k);
+    const xr = swap ? [WIN.y0, WIN.y1] : [WIN.x0, WIN.x1];
+    const span = swap ? [Math.min(WIN.x0, WIN.y0) - 1000, Math.max(WIN.x1, WIN.y1) + 1000] : [xr[0] - 0.02 * (xr[1] - xr[0]), xr[1] + 0.02 * (xr[1] - xr[0])];
     const u1 = b * (span[0] - h), u2 = b * (span[1] - h);
-    const pieces = uPieces(dom0, Math.min(u1, u2), Math.max(u1, u2));
-    const keyU = M.f.keys().map(([u]) => uval(typeof u === "number" ? Q(u) : u));
-    if (S.fn === "pw") PW.forEach(([u]) => keyU.push(u));
+    const pieces = uPieces(M.f, dom0, Math.min(u1, u2), Math.max(u1, u2));
+    const BIG = 50 * (WIN.y1 - WIN.y0 + WIN.x1 - WIN.x0);
     const paths = [], ends = [];
-    const toXY = u => {
-      let y = a * f(u) + k;
-      if (!isFinite(y)) y = y > 0 ? 80 : -80;
-      y = Math.max(-80, Math.min(80, y));
-      const x = u / b + h;
-      return swap ? [y, x] : [x, y];
-    };
-    for (const [s, e, ts, te] of pieces) {
+    for (const [s, e, ts, te, pf] of pieces) {
+      const toXY = u => {
+        let y = a * pf(u) + k;
+        if (!isFinite(y)) y = y > 0 ? BIG : -BIG;
+        y = Math.max(-BIG, Math.min(BIG, y));
+        const x = u / b + h;
+        return swap ? [y, x] : [x, y];
+      };
       const us = [];
-      const N = 700;
-      for (let i = 0; i <= N; i++) us.push(s + (e - s) * i / N);
-      keyU.forEach(u => { if (u > s && u < e) us.push(u); });
+      const lo = isFinite(s) ? s : Math.min(u1, u2), hi = isFinite(e) ? e : Math.max(u1, u2);
+      const N = swap ? 3000 : 900;
+      for (let i = 0; i <= N; i++) us.push(lo + (hi - lo) * i / N);
+      keyU.forEach(u => { if (u > lo && u < hi) us.push(u); });
       // Crowd samples toward open ends so curves run into their asymptotes.
       [[s, ts, 1], [e, te, -1]].forEach(([p, t, dir]) => {
-        if (t === "open") for (let j = 1; j <= 9; j++) us.push(p + dir * Math.pow(10, -j) * Math.min(1, e - s));
+        if (t === "open") for (let j = 1; j <= 12; j++) us.push(p + dir * Math.pow(10, -j) * Math.min(1, hi - lo));
       });
       us.sort((m, n) => m - n);
       let d = "";
-      us.forEach((u, i) => {
-        if (u < s || u > e || (ts === "open" && u === s) || (te === "open" && u === e)) return;
+      us.forEach(u => {
+        if (u < lo || u > hi || (ts === "open" && u === s) || (te === "open" && u === e)) return;
         const [x, y] = toXY(u);
-        const X = PAD + ((swap ? x : gx(x)) - GMIN) * UNIT, Y = PAD + (GMAX - (swap ? y : y)) * UNIT;
-        // the inverse of a non-trig function keeps plain units on both axes
-        d += (d ? "L" : "M") + X.toFixed(1) + " " + Y.toFixed(1);
+        if (!isFinite(x) || !isFinite(y) || isNaN(pf(u))) return;
+        d += (d ? "L" : "M") + SX(x).toFixed(1) + " " + SY(y).toFixed(1);
       });
       if (d) paths.push(d);
       [[s, ts], [e, te]].forEach(([u, t]) => {
-        if (t === "inf") return;
-        const yv = f(u);
-        if (!isFinite(yv)) return;
+        if (t === "inf" || !isFinite(pf(u))) return;
         const [x, y] = toXY(u);
         ends.push({ x, y, closed: t === "closed" });
       });
@@ -626,178 +752,177 @@ table.kp td.out { opacity: 0.5; }
     el("line", { x1: x1 + ux * 8, y1: y1 + uy * 8, x2: ex, y2: ey, class: "k-arrow" }, g);
     el("path", { d: `M${ex + ux * 2} ${ey + uy * 2} L${ex - ux * 9 - uy * 5} ${ey - uy * 9 + ux * 5} L${ex - ux * 9 + uy * 5} ${ey - uy * 9 - ux * 5} Z`, class: "k-arrow-head" }, g);
   }
-  const onBoard = (X, Y) => X >= PAD - 1 && X <= W - PAD + 1 && Y >= PAD - 1 && Y <= W - PAD + 1;
 
   // ---------- invariant points ----------
-  // Fixed points of (x, y) → (x/b + h, ay + k) that lie on the graph.
-  function invariants(M) {
-    const { a, b, h, k } = M.P, f = M.f.f, T = M.T;
-    const idX = qeq(b, 1), idY = qeq(a, 1);
-    if (idX && idY && h.n === 0 && k.n === 0) return { all: true, note: "No transformation yet, so every point is invariant." };
-    if ((idX && h.n !== 0) || (idY && k.n !== 0)) return { pts: [], note: idX && h.n !== 0 ? "A horizontal translation moves every point, so nothing stays put." : "A vertical translation moves every point, so nothing stays put." };
-    const x0 = idX ? null : qd(qm(h, b), qs(b, ONE)); // x = hb/(b − 1)
-    const y0 = idY ? null : qd(k, qs(ONE, a));       // y = k/(1 − a)
-    if (x0 && y0) {
-      const u = uval(x0);
-      const on = M.inDom0(u) && Math.abs(f(u) - qv(y0)) < 1e-9;
-      return { pts: on ? [[u, qv(y0)]] : [], note: on ? "The only point the mapping leaves fixed is on the graph." : `The mapping only fixes ${pt(fv(x0, T), fq(y0))}, which is not on the graph, so there are none.` };
-    }
-    if (x0) {
-      const u = uval(x0);
-      const on = M.inDom0(u) && isFinite(f(u));
-      return { pts: on ? [[u, f(u)]] : [], note: `Points on the line x = ${fv(x0, T)} do not move.` + (on ? "" : " The graph does not reach it.") };
-    }
-    // y0: roots of f(u) = y0 inside the window
-    const Y = qv(y0), pts = [];
-    let seg = null;
-    if (S.fn === "pw") {
-      for (let i = 0; i < 3; i++) {
-        let [u1, v1] = PW[i], [u2, v2] = PW[i + 1];
-        if (M.dom0.kind === "int") { const lo = qv(M.dom0.lo), hi = qv(M.dom0.hi); if (u2 < lo - 1e-9 || u1 > hi + 1e-9) continue; }
-        if (v1 === v2) { if (Math.abs(v1 - Y) < 1e-9) seg = [[u1, Y], [u2, Y]]; continue; }
-        const u = u1 + (Y - v1) * (u2 - u1) / (v2 - v1);
-        if (u >= u1 - 1e-9 && u <= u2 + 1e-9 && !pts.some(p => Math.abs(p[0] - u) < 1e-7)) pts.push([u, Y]);
-      }
-    } else roots(u => f(u) - Y, M, XMIN(), XMAX()).forEach(u => pts.push([u, Y]));
-    let note = `Points on the line y = ${fq(y0)} do not move.`;
-    if (seg) note += ` The whole flat piece from ${pt(nice(seg[0][0]), nice(Y))} to ${pt(nice(seg[1][0]), nice(Y))} is invariant.`;
-    if (!pts.length && !seg) note += " The graph does not cross it.";
-    return { pts, note, seg };
-  }
-  function roots(g, M, lo, hi) {
-    const out = [], N = 4000;
-    let pu = null, pv = null;
+  // Roots of g in [lo, hi]; a run of exact zeros (a flat piece) comes back as a segment.
+  function roots(g, ok, lo, hi) {
+    const pts = [], segs = [], N = 4000;
+    let pu = null, pv = null, run = null;
+    const endRun = () => { if (run) { if (run[1] - run[0] > (hi - lo) * 2 / N) segs.push(run); else pts.push(run[0]); run = null; } };
     for (let i = 0; i <= N; i++) {
       const u = lo + (hi - lo) * i / N;
-      if (!M.inDom0(u)) { pu = null; continue; }
+      if (!ok(u)) { endRun(); pu = null; continue; }
       const v = g(u);
-      if (!isFinite(v)) { pu = null; continue; }
-      if (Math.abs(v) < 1e-12) out.push(u);
-      else if (pu !== null && pv * v < 0) {
-        let A = pu, B = u, fa = pv;
-        for (let j = 0; j < 80; j++) { const m = (A + B) / 2, fm = g(m); if (fa * fm <= 0) B = m; else { A = m; fa = fm; } }
-        const r = (A + B) / 2;
-        if (Math.abs(g(r)) < 1e-6) out.push(r);
+      if (!isFinite(v)) { endRun(); pu = null; continue; }
+      if (Math.abs(v) < 1e-10) { if (run) run[1] = u; else run = [u, u]; }
+      else {
+        endRun();
+        if (pu !== null && pv * v < 0 && Math.abs(pv) >= 1e-10) {
+          let A = pu, B = u, fa = pv;
+          for (let j = 0; j < 80; j++) { const m = (A + B) / 2, fm = g(m); if (fa * fm <= 0) B = m; else { A = m; fa = fm; } }
+          const r = (A + B) / 2;
+          if (Math.abs(g(r)) < 1e-6) pts.push(r);
+        }
       }
       pu = u; pv = v;
     }
-    return out.filter((u, i) => i === 0 || Math.abs(u - out[i - 1]) > 1e-6);
+    endRun();
+    return { pts: pts.filter((u, i) => i === 0 || Math.abs(u - pts[i - 1]) > 1e-6), segs };
   }
-  // Points where the (restricted) image meets y = x: they stay put under the reflection.
+  // Fixed points of (x, y) → (x/b + h, ay + k) that lie on the graph.
+  function invariants(M) {
+    const { a, b, h, k } = M.P, f = M.f.f;
+    const idX = qeq(b, 1), idY = qeq(a, 1);
+    if (idX && idY && h.n === 0 && k.n === 0) return { all: true, pts: [], note: "No transformation yet, so every point is invariant." };
+    if (idX && h.n !== 0) return { pts: [], note: "A horizontal translation moves every point, so nothing stays put." };
+    if (idY && k.n !== 0) return { pts: [], note: "A vertical translation moves every point, so nothing stays put." };
+    const x0 = idX ? null : qd(qm(h, b), qs(b, ONE)); // x = hb/(b − 1)
+    const y0 = idY ? null : qd(k, qs(ONE, a));       // y = k/(1 − a)
+    if (x0 && y0) {
+      const u = qv(x0);
+      const on = M.inDom0(u) && Math.abs(f(u) - qv(y0)) < 1e-9;
+      return { pts: on ? [[u, qv(y0)]] : [], note: on ? "The only point the mapping leaves fixed is on the graph." : `The mapping only fixes ${pt(fq(x0), fq(y0))}, which is not on the graph, so there are none.` };
+    }
+    if (x0) {
+      const u = qv(x0), on = M.inDom0(u);
+      return { pts: on ? [[u, f(u)]] : [], note: `Points on the line x = ${fq(x0)} do not move.` + (on ? "" : " The graph does not reach it.") };
+    }
+    const Y = qv(y0);
+    const R = roots(u => f(u) - Y, M.inDom0, WIN.x0, WIN.x1);
+    let note = `Points on the line y = ${fq(y0)} do not move.`;
+    R.segs.forEach(([s, e]) => (note += ` The whole flat piece from ${pt(nice(s), nice(Y))} to ${pt(nice(e), nice(Y))} is invariant.`));
+    if (!R.pts.length && !R.segs.length) note += " The graph does not cross it.";
+    return { pts: R.pts.map(u => [u, Y]), segs: R.segs.map(([s, e]) => [[s, Y], [e, Y]]), note };
+  }
+  // Points where the image meets y = x stay put under the reflection.
   function inverseInvariants(M) {
     const { a, b, h, k } = M.P, f = M.f.f;
     const A = qv(a), B = qv(b), H = qv(h), K = qv(k);
-    const inX = x => M.inDom0(B * (x - H));
-    const g = x => A * f(B * (x - H)) + K - x;
-    return roots(g, { inDom0: inX }, GMIN, GMAX).map(x => [x, x]);
+    const R = roots(x => A * f(B * (x - H)) + K - x, x => M.inDom0(B * (x - H)), Math.max(WIN.x0, WIN.y0), Math.min(WIN.x1, WIN.y1));
+    return R.pts.map(x => [x, x]).concat(R.segs.flatMap(([s, e]) => [[s, s], [e, e]]));
   }
 
   // ---------- equations ----------
-  function eqHTML(P, v, lhs) {
-    const T = trig(), { a, b, h, k } = P;
-    const coef = (q, cls) => (qeq(q, 1) ? "" : qeq(q, -1) ? `<span class="${cls}">${MINUS}</span>` : `<span class="${cls}">${qH(q)}</span>`);
-    const hT = h.n === 0 ? v : `${v} ${h.n > 0 ? MINUS : "+"} <span class="cb">${qH(qabs(h), T)}</span>`;
-    const bare = qeq(b, 1) && h.n === 0;
-    let s = qeq(b, 1) ? hT : coef(b, "cb") + (h.n === 0 ? v : `(${hT})`);
+  const coef = (q, cls) => (qeq(q, 1) ? "" : qeq(q, -1) ? `<span class="${cls}">${MINUS}</span>` : `<span class="${cls}">${qH(q)}</span>`);
+  // The parent's rule wrapped around an inside s ("x" when bare).
+  function parentHTML(s, bare, A) {
     const wrap = x => (bare ? x : `(${x})`);
+    switch (S.fn) {
+      case "abs": return `${A}|${s}|`;
+      case "sqrt": return `${A}√<span class="rad">${s}</span>`;
+      case "sq": return `${A}${wrap(s)}<sup>2</sup>`;
+      case "cube": return `${A}${wrap(s)}<sup>3</sup>`;
+      case "exp": return /frac|\d/.test(A) && S.base.d === 1 ? `${A}(${baseH()})<sup>${s}</sup>` : `${A}${baseH()}<sup>${s}</sup>`;
+      case "log": return `${A}log<sub>${baseSub()}</sub> ${wrap(s)}`;
+      case "rec": return `${A}${fracH(1, s)}`;
+      default: return `${A}f(${s})`;
+    }
+  }
+  // Simplified: y = 2|−½(x + 3)| − 1 (parent) or g(x) = 2f(−½(x + 3)) − 1 (function notation).
+  function eqHTML(P, v, lhs, useF) {
+    const { a, b, h, k } = P;
+    const hT = h.n === 0 ? v : `${v} ${h.n > 0 ? MINUS : "+"} <span class="cb">${qH(qabs(h))}</span>`;
+    const bare = qeq(b, 1) && h.n === 0;
+    const s = qeq(b, 1) ? hT : coef(b, "cb") + (h.n === 0 ? v : `(${hT})`);
     const A = coef(a, "ca");
     const K = k.n === 0 ? "" : ` ${k.n > 0 ? "+" : MINUS} <span class="ca">${Math.abs(k.n)}</span>`;
     let r;
-    switch (S.fn) {
-      case "abs": r = `${A}|${s}|`; break;
-      case "sqrt": r = `${A}√<span class="rad">${s}</span>`; break;
-      case "sq": r = `${A}${wrap(s)}<sup>2</sup>`; break;
-      case "cube": r = `${A}${wrap(s)}<sup>3</sup>`; break;
-      case "exp": {
-        const base = S.base === 0.5 ? `(${fracH(1, 2)})` : String(S.base);
-        r = A === "" || qeq(a, -1) ? `${A}${base}<sup>${s}</sup>` : `${A}(${S.base === 0.5 ? fracH(1, 2) : S.base})<sup>${s}</sup>`;
-        break;
-      }
-      case "log": r = `${A}log<sub>${S.base}</sub> ${wrap(s)}`; break;
-      case "rec":
-        r = a.d === 1 ? (a.n < 0 ? `<span class="ca">${MINUS}</span>` : "") + fracH(`<span class="ca">${Math.abs(a.n)}</span>`, s) : `${A}${fracH(1, s)}`;
-        if (a.d === 1 && Math.abs(a.n) === 1) r = (a.n < 0 ? `<span class="ca">${MINUS}</span>` : "") + fracH(1, s);
-        break;
-      case "pw": r = `${A}f(${s})`; break;
-      default: {
-        const arg = bare ? v : qv(b) < 0 || qeq(b, 1) ? `(${s})` : s;
-        r = `${A}${S.fn} ${arg}`;
-      }
-    }
-    return `${lhs} = ${r}${K}`;
+    if (useF) r = `${A}f(${s})`;
+    else if (S.fn === "rec" && a.d === 1) r = (a.n < 0 ? `<span class="ca">${MINUS}</span>` : "") + fracH(Math.abs(a.n) === 1 ? 1 : `<span class="ca">${Math.abs(a.n)}</span>`, s);
+    else r = parentHTML(s, bare, A);
+    return (lhs ? `${lhs} = ` : "") + r + K;
+  }
+  // Raw: every parameter substituted as it is, negatives in brackets: g(x) = 2f(−½(x − (−3))) + (−1).
+  function rawHTML(P, useF) {
+    const { a, b, h, k } = P;
+    const R = (q, cls) => `<span class="${cls}">${q.n < 0 ? "(" + qH(q) + ")" : qH(q)}</span>`;
+    const s = `${R(b, "cb")}(x ${MINUS} ${R(h, "cb")})`;
+    const A = R(a, "ca");
+    let r;
+    if (useF) r = `${A}f(${s})`;
+    else r = parentHTML(s, false, A);
+    return r + ` + ${R(k, "ca")}`;
   }
   function mapHTML(P) {
-    const T = trig(), { a, b, h, k } = P, p = qd(ONE, b);
+    const { a, b, h, k } = P, p = qd(ONE, b);
     const c = (q, cls, w) => (qeq(q, 1) ? w : qeq(q, -1) ? `<span class="${cls}">${MINUS}</span>${w}` : `<span class="${cls}">${qH(q)}</span>${w}`);
-    const xs = c(p, "cb", "x") + (h.n === 0 ? "" : ` ${h.n > 0 ? "+" : MINUS} <span class="cb">${qH(qabs(h), T)}</span>`);
+    const xs = c(p, "cb", "x") + (h.n === 0 ? "" : ` ${h.n > 0 ? "+" : MINUS} <span class="cb">${qH(qabs(h))}</span>`);
     const ys = c(a, "ca", "y") + (k.n === 0 ? "" : ` ${k.n > 0 ? "+" : MINUS} <span class="ca">${Math.abs(k.n)}</span>`);
     return `(x, y) → (${xs}, ${ys})`;
   }
   function steps(P) {
-    const T = trig(), { a, b, h, k } = P, out = [];
+    const { a, b, h, k } = P, out = [];
     const B = qabs(b), A = qabs(a);
     if (!qeq(B, 1)) out.push(`<span class="cb">Horizontal stretch</span> about the y-axis by a factor of ${qH(qd(ONE, B))}`);
     if (qv(b) < 0) out.push(`<span class="cb">Reflection in the y-axis</span>`);
     if (!qeq(A, 1)) out.push(`<span class="ca">Vertical stretch</span> about the x-axis by a factor of ${qH(A)}`);
     if (qv(a) < 0) out.push(`<span class="ca">Reflection in the x-axis</span>`);
-    if (h.n !== 0) out.push(`<span class="cb">Horizontal translation</span> ${qH(qabs(h), T)} ${T && S.units === "deg" ? "" : Math.abs(qv(h)) === 1 && !T ? "unit " : "units "}${h.n > 0 ? "right" : "left"}`.replace("  ", " "));
+    if (h.n !== 0) out.push(`<span class="cb">Horizontal translation</span> ${Math.abs(h.n)} ${Math.abs(h.n) === 1 ? "unit" : "units"} ${h.n > 0 ? "right" : "left"}`);
     if (k.n !== 0) out.push(`<span class="ca">Vertical translation</span> ${Math.abs(k.n)} ${Math.abs(k.n) === 1 ? "unit" : "units"} ${k.n > 0 ? "up" : "down"}`);
     if (!out.length) out.push("No transformation: the image is y = f(x)");
-    if (S.t.inverse && !T) out.push(`<span class="ci">Reflection in the line y = x</span> for the inverse`);
+    if (S.t.inverse) out.push(`<span class="ci">Reflection in the line y = x</span> for the inverse`);
     return out;
   }
 
   // ---------- render ----------
   function render() {
-    const M = model(), P = M.P, T = M.T;
-    // outputs
-    $("oa").textContent = fq(P.a); $("ob").textContent = fq(P.b); $("oh").innerHTML = qH(P.h, T); $("ok").innerHTML = fq(P.k);
-    // chip availability
-    const canInv = !T, canRes = !!M.f.res && !T;
-    $("lInverse").classList.toggle("off", !canInv); $("lInverse").querySelector("input").disabled = !canInv;
+    const M = model(), P = M.P;
+    $("oa").textContent = fq(P.a); $("ob").textContent = fq(P.b); $("oh").textContent = fq(P.h); $("ok").textContent = fq(P.k);
+    const canRes = !!M.f.res;
     $("lRestrict").classList.toggle("off", !canRes); $("lRestrict").querySelector("input").disabled = !canRes;
-    const showInv = S.t.inverse && canInv;
+    const showInv = S.t.inverse;
     let note = "";
-    if (T) note = "Inverses and restricted domains are not used with trig functions in Math 30-1.";
+    if (M.f.pw) note = showInv ? "Check the inverse with the vertical line test: it is a function only if no vertical line crosses it twice." : "";
     else if (!M.f.res) note = "This function is one-to-one, so its inverse is a function without restricting the domain.";
     else if (showInv && !restricted()) note = "The inverse is not a function. Restrict the domain to make it one.";
     $("chipNote").textContent = note; $("chipNote").hidden = !note;
 
-    // equation
-    const restr = restricted() ? `<span class="restr">, ${cond(M.dom, "x", T)}</span>` : "";
-    $("eq").innerHTML = eqHTML(P, "x", "y") + restr;
+    // equations
+    const restr = v => (restricted() ? `<span class="restr">, ${cond(M.dom, v)}</span>` : "");
+    $("eq").innerHTML = eqHTML(P, "x", "y") + restr("x");
     $("eqAlt").innerHTML = P.k.n === 0 ? "" : eqHTML({ ...P, k: ZERO }, "x", `y ${P.k.n > 0 ? MINUS : "+"} <span class="ca">${Math.abs(P.k.n)}</span>`);
     $("eqInv").hidden = !showInv;
-    if (showInv) $("eqInv").innerHTML = "Inverse: " + eqHTML(P, "y", "x") + (restricted() ? `<span class="restr">, ${cond(M.dom, "y", false)}</span>` : "");
+    if (showInv) $("eqInv").innerHTML = "Inverse: " + eqHTML(P, "y", "x") + restr("y");
     $("steps").innerHTML = steps(P).map(s => `<li>${s}</li>`).join("");
+    // On the graph: values substituted first, then simplified, = signs lined up (Shawn).
+    $("eqbox").hidden = !S.t.eqg;
+    const row = (l, r, raw) => `<span class="lhs${raw ? " raw" : ""}">${l}</span><span${raw ? ' class="raw"' : ""}>=</span><span${raw ? ' class="raw"' : ""}>${r}</span>`;
+    $("eqbox").innerHTML =
+      row("g(x)", rawHTML(P, true), true) + row("", eqHTML(P, "x", "", true) + restr("x")) +
+      (M.f.pw ? "" : `<span class="rule"></span>` + row("y", rawHTML(P, false), true) + row("", eqHTML(P, "x", "") + restr("x")));
 
-    // mapping
     $("cMap").hidden = !S.t.map;
     $("map").innerHTML = mapHTML(P);
     $("mapInv").hidden = !showInv;
     $("mapInv").innerHTML = "Inverse: (x, y) → (y, x)";
 
-    // domain and range
     $("cDR").hidden = !S.t.dr;
     $("drLabel").textContent = restricted() ? "Domain and range (restricted domain)" : "Domain and range";
-    const drRows = (D, R, dAng, rAng) => `<dt>Domain</dt><dd>${interval(D, dAng)}<small>${setB(D, "x", dAng)}</small></dd><dt>Range</dt><dd>${interval(R, rAng)}<small>${setB(R, "y", rAng)}</small></dd>`;
-    $("dr").innerHTML = drRows(M.dom, M.rng, T, false);
+    const drRows = (D, R) => `<dt>Domain</dt><dd>${interval(D)}<small>${setB(D, "x")}</small></dd><dt>Range</dt><dd>${interval(R)}<small>${setB(R, "y")}</small></dd>`;
+    $("dr").innerHTML = drRows(M.dom, M.rng);
     $("drInvWrap").hidden = !showInv;
-    if (showInv) $("drInv").innerHTML = drRows(M.rng, M.dom, false, false);
+    if (showInv) $("drInv").innerHTML = drRows(M.rng, M.dom);
 
-    // key points table
     $("cKeys").hidden = !S.t.keys;
-    const img = M.keys.map(([u, v]) => M.tr(u, v));
-    const inWin = (x, y) => Math.abs(gx(uval(x))) <= GMAX + 1e-9 && Math.abs(qv(y)) <= GMAX + 1e-9;
-    $("kp").innerHTML = `<tr><th>y = f(x)</th><th>Image</th>${showInv ? "<th>Inverse</th>" : ""}</tr>` + M.keys.map(([u, v], i) => {
-      const [x, y] = img[i], o = inWin(x, y) ? "" : " out";
-      return `<tr><td>${pt(fv(u, T), fq(v))}</td><td class="im${o}">${pt(fv(x, T), fq(y))}</td>${showInv ? `<td class="iv${o}">${pt(fq(y), fq(x))}</td>` : ""}</tr>`;
+    const inWin = (x, y) => qv(x) >= WIN.x0 - 1e-9 && qv(x) <= WIN.x1 + 1e-9 && qv(y) >= WIN.y0 - 1e-9 && qv(y) <= WIN.y1 + 1e-9;
+    $("kp").innerHTML = `<tr><th>y = f(x)</th><th>Image</th>${showInv ? "<th>Inverse</th>" : ""}</tr>` + M.keys.map(([u, v, c]) => {
+      const [x, y] = M.tr(u, v), o = inWin(x, y) ? "" : " out", oc = c ? "" : " ∘";
+      return `<tr><td>${pt(fq(u), fq(v))}${oc}</td><td class="im${o}">${pt(fq(x), fq(y))}${oc}</td>${showInv ? `<td class="iv${o}">${pt(fq(y), fq(x))}${oc}</td>` : ""}</tr>`;
     }).join("");
 
-    // invariant points
     $("cInv").hidden = !S.t.inv;
     const IV = invariants(M);
-    $("invList").innerHTML = IV.all ? "" : IV.pts.length ? IV.pts.slice(0, 8).map(([x, y]) => `<li>${pt(nice(x, T), nice(y))}</li>`).join("") + (IV.pts.length > 8 ? "<li>…</li>" : "") : IV.seg ? "" : "<li>None</li>";
+    $("invList").innerHTML = IV.all ? "" : IV.pts.length ? IV.pts.slice(0, 8).map(([x, y]) => `<li>${pt(nice(x), nice(y))}</li>`).join("") + (IV.pts.length > 8 ? "<li>…</li>" : "") : (IV.segs || []).length ? "" : "<li>None</li>";
     $("invNote").textContent = IV.note;
     const IQ = showInv ? inverseInvariants(M) : [];
     $("invQ").hidden = !showInv;
@@ -805,103 +930,90 @@ table.kp td.out { opacity: 0.5; }
       $("invListQ").innerHTML = IQ.length ? IQ.slice(0, 6).map(([x, y]) => `<li>${pt(nice(x), nice(y))}</li>`).join("") : "<li>None</li>";
       $("invNoteQ").textContent = "Reflecting in y = x leaves points on the line y = x in place, so these are on the graph and its inverse.";
     }
-
     draw(M, IV, IQ, showInv);
   }
 
   function draw(M, IV, IQ, showInv) {
-    const P = M.P, T = M.T;
+    const P = M.P;
     svg.innerHTML = "";
     const defs = el("defs", {}, svg);
     const cp = el("clipPath", { id: "win" }, defs);
-    el("rect", { x: PAD, y: PAD, width: W - 2 * PAD, height: W - 2 * PAD }, cp);
-    const g = el("g", {}, svg);
-    grid(g);
+    el("rect", { x: PAD, y: PAD, width: PL, height: PL }, cp);
+    grid(el("g", {}, svg));
     const L = el("g", { "clip-path": "url(#win)" }, svg);
     const top = el("g", {}, svg);
     const legend = [];
+    const keyU = M.f.keys().map(([u]) => qv(typeof u === "number" ? Q(u) : u));
+    const ay = Math.min(Math.max(0, WIN.y0), WIN.y1);
 
-    // restricted domain band on the x-axis
     if (restricted() && M.dom.kind === "int") {
-      const lo = M.dom.lo === null ? XMIN() : uval(M.dom.lo), hi = M.dom.hi === null ? XMAX() : uval(M.dom.hi);
-      el("rect", { x: SX(lo), y: SY(0) - 9, width: Math.max(0, SX(hi) - SX(lo)), height: 18, class: "band" }, L);
-      [[M.dom.lo, lo], [M.dom.hi, hi]].forEach(([q, x]) => { if (q !== null) el("line", { x1: SX(x), y1: SY(0) - 14, x2: SX(x), y2: SY(0) + 14, class: "band-end" }, L); });
+      const lo = M.dom.lo === null ? WIN.x0 : qv(M.dom.lo), hi = M.dom.hi === null ? WIN.x1 : qv(M.dom.hi);
+      el("rect", { x: SX(lo), y: SY(ay) - 9, width: Math.max(0, SX(hi) - SX(lo)), height: 18, class: "band" }, L);
+      [[M.dom.lo, lo], [M.dom.hi, hi]].forEach(([q, x]) => { if (q !== null) el("line", { x1: SX(x), y1: SY(ay) - 14, x2: SX(x), y2: SY(ay) + 14, class: "band-end" }, L); });
       legend.push(`<span><i style="border-color: color-mix(in srgb, var(--pt) 35%, transparent); border-top-width: 10px"></i>Restricted domain</span>`);
     }
 
-    // asymptotes
-    const drawV = (x, cls, label) => { const X = SX(x); if (X < PAD || X > W - PAD) return; el("line", { x1: X, y1: PAD, x2: X, y2: W - PAD, class: "asy " + cls }, L); if (label) el("text", { x: X + 6, y: PAD + 18, class: "asy-lbl " + cls }, top).textContent = label; };
-    const drawH = (y, cls, label) => { const Y = SY(y); if (Y < PAD || Y > W - PAD) return; el("line", { x1: PAD, y1: Y, x2: W - PAD, y2: Y, class: "asy " + cls }, L); if (label) el("text", { x: W - PAD - 6, y: Y - 7, class: "asy-lbl " + cls, "text-anchor": "end" }, top).textContent = label; };
+    const drawV = (x, cls, label) => { const X = SX(x); if (X < PAD || X > W - PAD) return; el("line", { x1: X, y1: PAD, x2: X, y2: W - PAD, class: "asy " + cls }, L); el("text", { x: X + 6, y: W - PAD - 10, class: "asy-lbl " + cls }, top).textContent = label; };
+    const drawH = (y, cls, label) => { const Y = SY(y); if (Y < PAD || Y > W - PAD) return; el("line", { x1: PAD, y1: Y, x2: W - PAD, y2: Y, class: "asy " + cls }, L); el("text", { x: PAD + 6, y: Y - 7, class: "asy-lbl " + cls }, top).textContent = label; };
     if (S.t.asy) {
       let any = false;
-      (M.f.asyV || []).forEach(c => { const x = qa(qd(Q(c), P.b), P.h); drawV(uval(x), "", "x = " + fv(x, T)); any = true; if (showInv) drawH(qv(x), "i", "y = " + fq(x)); });
+      (M.f.asyV || []).forEach(c => { const x = qa(qd(Q(c), P.b), P.h); drawV(qv(x), "", "x = " + fq(x)); any = true; if (showInv) drawH(qv(x), "i", "y = " + fq(x)); });
       (M.f.asyH || []).forEach(c => { const y = qa(qm(Q(c), P.a), P.k); drawH(qv(y), "", "y = " + fq(y)); any = true; if (showInv) drawV(qv(y), "i", "x = " + fq(y)); });
-      if (S.fn === "tan") {
-        const { x0, p } = tanParts(mapSet({ kind: "tan" }, qd(ONE, P.b), P.h));
-        const step = uval(p);
-        for (let x = uval(x0) - 12 * step; x <= XMAX() + 1e-9; x += step) if (x >= XMIN() - 1e-9) { drawV(x, "", ""); any = true; }
-      }
       if (any) legend.push(`<span><i class="dash" style="border-color: var(--warn); border-top-style: dotted"></i>Asymptote</span>`);
     }
 
-    // y = x
-    if (showInv) { el("line", { x1: SX(GMIN), y1: SY(GMIN), x2: SX(GMAX), y2: SY(GMAX), class: "yx" }, L); el("text", { x: SX(9.6), y: SY(9.6) + 20, class: "asy-lbl i", "text-anchor": "end" }, top).textContent = "y = x"; }
+    if (showInv) {
+      const lo = Math.max(WIN.x0, WIN.y0), hi = Math.min(WIN.x1, WIN.y1);
+      if (lo < hi) { el("line", { x1: SX(lo), y1: SY(lo), x2: SX(hi), y2: SY(hi), class: "yx" }, L); el("text", { x: SX(hi) - 6, y: SY(hi) + 20, class: "asy-lbl i", "text-anchor": "end" }, top).textContent = "y = x"; }
+    }
 
-    // original
     const ID = { a: ONE, b: ONE, h: ZERO, k: ZERO };
+    const endDots = (ends, color) => ends.sort((p, q) => p.closed - q.closed).forEach(e => {
+      const X = SX(e.x), Y = SY(e.y);
+      if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 7, class: e.closed ? "end-c" : "end-o", style: e.closed ? `fill: ${color}` : `stroke: ${color}` }, top);
+    });
     if (S.t.base) {
-      trace(M, ID, M.f.dom, false).paths.forEach(d => el("path", { d, class: "c-base" }, L));
+      const bt = trace(M, ID, M.f.dom(), false, keyU);
+      bt.paths.forEach(d => el("path", { d, class: "c-base" }, L));
+      if (M.f.pw) endDots(bt.ends, "var(--muted)");
       legend.push(`<span><i class="dash" style="border-color: var(--muted)"></i>y = f(x)</span>`);
     }
-    // image (full graph faint when the domain is restricted)
-    if (restricted()) trace(M, P, M.f.dom, false).paths.forEach(d => el("path", { d, class: "c-ghost" }, L));
-    const im = trace(M, P, M.dom0, false);
+    if (restricted()) trace(M, P, M.f.dom(), false, keyU).paths.forEach(d => el("path", { d, class: "c-ghost" }, L));
+    const im = trace(M, P, M.dom0, false, keyU);
     im.paths.forEach(d => el("path", { d, class: "c-img" }, L));
     legend.push(`<span><i style="border-color: var(--pt)"></i>Image</span>`);
     let inv = null;
     if (showInv) {
-      inv = trace(M, P, M.dom0, true);
+      inv = trace(M, P, M.dom0, true, keyU);
       inv.paths.forEach(d => el("path", { d, class: "c-inv" }, L));
       legend.push(`<span><i style="border-color: var(--purple)"></i>Inverse</span>`);
     }
-    // endpoints
-    const endDot = (x, y, color, closed, swap) => {
-      const X = swap ? PAD + (x - GMIN) * UNIT : SX(x), Y = SY(y);
-      if (!onBoard(X, Y)) return;
-      el("circle", { cx: X, cy: Y, r: 7, class: closed ? "end-c" : "end-o", style: closed ? `fill: ${color}` : `stroke: ${color}` }, top);
-    };
-    im.ends.forEach(e => endDot(e.x, e.y, "var(--pt)", e.closed));
-    if (inv) inv.ends.forEach(e => endDot(e.x, e.y, "var(--purple)", e.closed, true));
+    endDots(im.ends, "var(--pt)");
+    if (inv) endDots(inv.ends, "var(--purple)");
 
-    // key points
     if (S.t.keys) {
-      M.keys.forEach(([u, v]) => {
+      M.keys.forEach(([u, v, c]) => {
         const [x, y] = M.tr(u, v);
-        const BX = SX(uval(u)), BY = SY(qv(v)), IX = SX(uval(x)), IY = SY(qv(y));
+        const BX = SX(qv(u)), BY = SY(qv(v)), IX = SX(qv(x)), IY = SY(qv(y));
         if (S.t.base && S.t.map && onBoard(BX, BY) && onBoard(IX, IY)) arrowLine(L, BX, BY, IX, IY);
-        if (S.t.base && onBoard(BX, BY)) el("circle", { cx: BX, cy: BY, r: 5.5, class: "k-base" }, top);
-        if (onBoard(IX, IY)) {
-          const c = el("circle", { cx: IX, cy: IY, r: 7, class: "k-img" }, top);
-          el("title", {}, c).textContent = `${pt(fv(u, T), fq(v))} → ${pt(fv(x, T), fq(y))}`;
+        if (S.t.base && c && onBoard(BX, BY)) el("circle", { cx: BX, cy: BY, r: 5.5, class: "k-base" }, top);
+        if (c && onBoard(IX, IY)) {
+          const dot = el("circle", { cx: IX, cy: IY, r: 7, class: "k-img" }, top);
+          el("title", {}, dot).textContent = `${pt(fq(u), fq(v))} → ${pt(fq(x), fq(y))}`;
         }
-        if (inv) {
-          const VX = PAD + (qv(y) - GMIN) * UNIT, VY = SY(qv(x));
-          if (onBoard(VX, VY)) { const c = el("circle", { cx: VX, cy: VY, r: 7, class: "k-inv" }, top); el("title", {}, c).textContent = pt(fq(y), fq(x)); }
+        if (inv && c) {
+          const VX = SX(qv(y)), VY = SY(qv(x));
+          if (onBoard(VX, VY)) { const dot = el("circle", { cx: VX, cy: VY, r: 7, class: "k-inv" }, top); el("title", {}, dot).textContent = pt(fq(y), fq(x)); }
         }
       });
       legend.push(`<span><i class="dot" style="background: var(--pt)"></i>Key points</span>`);
     }
 
-    // invariant points
     if (S.t.inv) {
-      const pts = IV.all ? [] : IV.pts.slice();
-      if (IV.seg) {
-        const [[u1, y], [u2]] = IV.seg;
-        el("line", { x1: SX(u1), y1: SY(y), x2: SX(u2), y2: SY(y), class: "ip", "stroke-width": 9, opacity: 0.5 }, top);
-      }
-      pts.forEach(([x, y]) => { const X = SX(x), Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip" }, top); });
-      IQ.forEach(([x, y]) => { const X = PAD + (x - GMIN) * UNIT, Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip q" }, top); });
-      if (pts.length || IV.seg) legend.push(`<span><i class="ring" style="border-color: var(--pink)"></i>Invariant</span>`);
+      (IV.segs || []).forEach(([[u1, y], [u2]]) => el("line", { x1: SX(u1), y1: SY(y), x2: SX(u2), y2: SY(y), class: "ip", "stroke-width": 9, opacity: 0.5 }, top));
+      IV.pts.forEach(([x, y]) => { const X = SX(x), Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip" }, top); });
+      IQ.forEach(([x, y]) => { const X = SX(x), Y = SY(y); if (onBoard(X, Y)) el("circle", { cx: X, cy: Y, r: 12, class: "ip q" }, top); });
+      if (IV.pts.length || (IV.segs || []).length) legend.push(`<span><i class="ring" style="border-color: var(--pink)"></i>Invariant</span>`);
       if (IQ.length) legend.push(`<span><i class="ring" style="border-color: var(--purple)"></i>On y = x</span>`);
     }
     $("legend").innerHTML = legend.join("");
@@ -909,47 +1021,56 @@ table.kp td.out { opacity: 0.5; }
 
   // ---------- events ----------
   function setFn(id) {
-    const wasTrig = trig();
     S.fn = id;
     fnBox.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.fn === id));
-    const f = fn();
-    if (f.bases) {
-      if (!f.bases.includes(S.base)) S.base = f.bases[0];
-      const row = $("baseRow");
-      row.querySelectorAll("button").forEach(b => b.remove());
-      f.bases.forEach(bs => {
-        const b = document.createElement("button");
-        b.type = "button"; b.dataset.base = bs; b.innerHTML = bs === 0.5 ? "½" : bs;
-        b.setAttribute("aria-pressed", bs === S.base);
-        row.appendChild(b);
-      });
-    }
-    $("baseRow").hidden = !f.bases;
-    $("unitRow").hidden = !f.trig;
-    $("pwDef").hidden = id !== "pw";
-    if (wasTrig !== trig()) {
-      const sh = $("sh");
-      if (trig()) { sh.min = -24; sh.max = 24; } else { sh.min = -8; sh.max = 8; }
-      sh.value = 0;
-    }
+    $("baseRow").hidden = !F[id].bases;
+    $("pwIn").hidden = id !== "pw";
+    showBase();
     render();
+  }
+  function showBase() {
+    $("baseRow").querySelectorAll("button").forEach(b => { const q = parseNum(b.dataset.base); b.setAttribute("aria-pressed", q.n === S.base.n && q.d === S.base.d); });
+    if (document.activeElement !== $("baseIn")) $("baseIn").value = fq(S.base);
+    $("baseIn").classList.remove("bad");
   }
   fnBox.addEventListener("click", e => { const b = e.target.closest("button"); if (b) setFn(b.dataset.fn); });
   $("baseRow").addEventListener("click", e => {
     const b = e.target.closest("button[data-base]"); if (!b) return;
-    S.base = +b.dataset.base;
-    $("baseRow").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
-    render();
+    S.base = parseNum(b.dataset.base); $("baseIn").value = fq(S.base); showBase(); render();
   });
-  $("unitRow").addEventListener("click", e => {
-    const b = e.target.closest("button[data-units]"); if (!b) return;
-    S.units = b.dataset.units;
-    $("unitRow").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
-    render();
+  $("baseIn").addEventListener("input", () => {
+    const q = parseNum($("baseIn").value);
+    const ok = q && qv(q) > 0 && qv(q) !== 1 && q.n <= 1000 && q.d <= 1000;
+    $("baseIn").classList.toggle("bad", !ok);
+    if (ok) { S.base = q; $("baseRow").querySelectorAll("button").forEach(b => { const p = parseNum(b.dataset.base); b.setAttribute("aria-pressed", p.n === q.n && p.d === q.d); }); render(); }
   });
+  $("baseIn").addEventListener("blur", showBase);
+  $("pwText").value = PW_DEFAULT;
+  readPieces();
+  $("pwText").addEventListener("input", () => { readPieces(); render(); });
   ["sa", "sb", "sh", "sk"].forEach(id => $(id).addEventListener("input", render));
   $("reset").addEventListener("click", () => { $("sa").value = 10; $("sb").value = 10; $("sh").value = 0; $("sk").value = 0; render(); });
   $("chips").addEventListener("change", e => { const c = e.target; if (c.dataset.t) { S.t[c.dataset.t] = c.checked; render(); } });
+
+  // Window: x and y from min to max with a grid scale (Standard = −10 to 10 by 1).
+  const WIDS = { wx0: "x0", wx1: "x1", wxs: "xs", wy0: "y0", wy1: "y1", wys: "ys" };
+  const showWin = () => Object.entries(WIDS).forEach(([id, k]) => { $(id).value = tickTxt(WIN[k]); $(id).classList.remove("bad"); });
+  function readWin() {
+    const v = {};
+    let ok = true;
+    Object.entries(WIDS).forEach(([id, k]) => { const q = parseNum($(id).value); v[k] = q ? qv(q) : NaN; });
+    const bad = new Set();
+    if (!(v.x0 < v.x1)) { bad.add("wx0"); bad.add("wx1"); }
+    if (!(v.y0 < v.y1)) { bad.add("wy0"); bad.add("wy1"); }
+    if (!(v.xs > 0) || (v.x1 - v.x0) / v.xs > 200) bad.add("wxs");
+    if (!(v.ys > 0) || (v.y1 - v.y0) / v.ys > 200) bad.add("wys");
+    Object.keys(WIDS).forEach(id => { if (isNaN(v[WIDS[id]])) bad.add(id); $(id).classList.toggle("bad", bad.has(id)); });
+    ok = !bad.size;
+    if (ok) { Object.assign(WIN, v); render(); }
+  }
+  Object.keys(WIDS).forEach(id => { $(id).addEventListener("input", readWin); $(id).addEventListener("blur", () => { if (!$(id).classList.contains("bad")) showWin(); }); });
+  $("wreset").addEventListener("click", () => { Object.assign(WIN, STD); showWin(); render(); });
+  showWin();
 
   setFn("abs");
 })();
@@ -1045,6 +1166,19 @@ window.I18N_COMMON = {
 <script>
 /* French for Function Transformations (functransform.html). */
 window.I18N_PAGE = {
+ "Piecewise": "Par parties",
+ "{0}Equation on graph": "{0}Équation sur le graphique",
+ "One piece per line: rule, condition": "Une partie par ligne : règle, condition",
+ "~Check line (\\d+): write it like .*": "Vérifie la ligne $1 : écris-la comme 2x + 6, −4 ≤ x < −2",
+ "Two pieces overlap. Each x can belong to only one piece.": "Deux parties se chevauchent. Chaque x ne peut appartenir qu’à une seule partie.",
+ "Type at least one piece.": "Écris au moins une partie.",
+ "Check the inverse with the vertical line test: it is a function only if no vertical line crosses it twice.": "Vérifie la réciproque avec le test de la droite verticale : c’est une fonction seulement si aucune droite verticale ne la coupe deux fois.",
+ "Piecewise function, one piece per line": "Fonction définie par parties, une partie par ligne",
+ "{0} {1} to {2}": "{0} {1} à {2}",
+ "scale {0}": "échelle {0}",
+ "Standard": "Standard",
+ "x minimum": "x minimum", "x maximum": "x maximum", "x scale": "échelle de x",
+ "y minimum": "y minimum", "y maximum": "y maximum", "y scale": "échelle de y",
  "Function Transformations": "Transformations de fonctions",
  "Function {0}": "{0} de fonctions",
  "Transformations": "Transformations",

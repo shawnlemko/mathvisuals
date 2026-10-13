@@ -180,8 +180,8 @@ header .tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: cen
 .col .def { margin: 0; font-size: 1rem; line-height: 1.3; }
 .dir { display: flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 0; }
 .dir svg { width: 34px; height: 14px; flex: none; }
-.steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; border-top: 2px dashed var(--grid); padding-top: 8px; }
-.steps li { font-size: 1.08rem; line-height: 1.3; padding: 4px 8px; border-radius: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; animation: rise .45s ease-out; }
+.steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; border-top: 2px dashed var(--grid); padding-top: 8px; }
+.steps li { font-size: 1.08rem; line-height: 1.25; padding: 3px 8px; border-radius: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; animation: rise .45s ease-out; }
 .steps li[hidden] { display: none; }
 .steps li.lit { background: var(--chip); }
 .steps li .note { flex-basis: 100%; color: var(--muted); font-size: .95rem; }
@@ -197,8 +197,8 @@ header .tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: cen
 @media (prefers-reduced-motion: reduce) { .steps li, .shake { animation: none !important; } }
 
 /* Dot pictures */
-.pic { height: 2.3em; flex: none; overflow: visible; }
-.pic.tall { height: 3.6em; }
+.pic { height: 1.9em; flex: none; overflow: visible; }
+.pic.tall { height: 3em; }
 .pic .a { fill: var(--pt); } .pic .b { fill: var(--green); } .pic .s { fill: var(--muted); }
 .pic .x { fill: var(--orange); }
 .pic .join { fill: none; stroke: var(--purple); stroke-width: 2.5; stroke-dasharray: 4 3; }
@@ -255,7 +255,7 @@ header .tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: cen
 .remind p { margin: 0; font-size: .98rem; line-height: 1.3; }
 .remind div.lit { background: var(--chip); border-radius: 0 8px 8px 0; }
 @media (min-width: 861px) and (min-height: 520px) { .main .panel { overflow-y: auto; } }
-@media (max-height: 760px) and (min-width: 861px) { .steps li { font-size: 1rem; } .col .def { font-size: .95rem; } .claim { font-size: 1.3rem; } .arg { font-size: 1.25rem; } }
+@media (max-height: 800px) and (min-width: 861px) { .dir { display: none; } .steps li { font-size: .98rem; } .steps li .note { font-size: .88rem; } .col .def { font-size: .95rem; } .claim { font-size: 1.3rem; } .arg { font-size: 1.25rem; } }
 </style>
 
 <div class="wrap">
@@ -393,7 +393,7 @@ function bars(hs, move) {
   return svgWrap(12 + 2 * 30 + 12, H, out, true);
 }
 function svgWrap(w, h, inner, tall) {
-  const hEm = tall ? 3.6 : 2.3;
+  const hEm = tall ? 3 : 1.9;
   return `<svg class="pic${tall ? ' tall' : ''}" viewBox="0 0 ${w} ${h}" style="width:${(w / h * hEm).toFixed(2)}em" aria-hidden="true">${inner}</svg>`;
 }
 
@@ -664,18 +664,18 @@ function newQuestion() {
   const ans = $('#answers'), arg = $('#arg'), proof = $('#proof');
   ans.className = 'answers'; proof.hidden = true;
   if (t === 'kind') {
-    q = { t, ...draw('kind', KIND[dom]) };
+    q = { ...draw('kind', KIND[dom]), type: t };
     $('#qtype').textContent = 'Is this inductive or deductive reasoning?';
     arg.innerHTML = `<span class="lbl">Read the argument</span><span id="argtxt">${esc(q.t)}</span>`;
     ans.innerHTML = `<button type="button" class="big i" data-a="i">Inductive<small>examples → a guess</small></button><button type="button" class="big d" data-a="d">Deductive<small>always-true rule → a sure answer</small></button>`;
   } else if (t === 'cex') {
-    q = { t, ...draw('cex', CEX[dom]) };
+    q = { ...draw('cex', CEX[dom]), type: t };
     q.ch = shuffle(q.ch.slice());
     $('#qtype').textContent = 'Find the counterexample.';
     arg.innerHTML = `<span class="lbl">Conjecture</span><b>${esc(q.c)}</b><br><span style="color:var(--muted);font-size:.9em">Evidence: ${esc(q.ex)}</span>`;
     ans.innerHTML = q.ch.map((c, i) => `<button type="button" data-i="${i}">${esc(c[0])}</button>`).join('');
   } else {
-    q = { t, ...draw('order', ORDER[dom]) };
+    q = { ...draw('order', ORDER[dom]), type: t };
     let order; do { order = shuffle(q.st.map((_, i) => i)); } while (order.every((v, i) => v === i));
     q.order = order;
     $('#qtype').textContent = 'Put the steps in order. Tap the first step.';
@@ -701,7 +701,7 @@ function highlightClue() {
 
 $('#answers').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || done || b.disabled) return;
-  if (q.t === 'kind') {
+  if (q.type === 'kind') {
     const ok = b.dataset.a === q.k;
     [...$('#answers').children].forEach(x => { x.disabled = true; if (x.dataset.a === q.k) x.classList.add('right'); else if (x === b) x.classList.add('wrong'); });
     $(q.k === 'i' ? '#remI' : '#remD').classList.add('lit');
@@ -710,7 +710,7 @@ $('#answers').addEventListener('click', e => {
       (q.k === 'i' ? '<p>It looks at some examples and guesses a rule. The guess could still be wrong.</p>'
                    : '<p>It starts from a rule or fact that is always true and uses it. The conclusion must be true.</p>');
     finish(ok);
-  } else if (q.t === 'cex') {
+  } else if (q.type === 'cex') {
     const c = q.ch[+b.dataset.i];
     if (c[2]) {
       b.classList.add('right');
@@ -746,8 +746,8 @@ $('#answers').addEventListener('click', e => {
 $('#showans').onclick = () => {
   if (done) return;
   firstTry = false;
-  if (q.t === 'kind') { $(`#answers [data-a="${q.k}"]`).click(); return; }
-  if (q.t === 'cex') { const i = q.ch.findIndex(c => c[2]); $(`#answers [data-i="${i}"]`).click(); return; }
+  if (q.type === 'kind') { $(`#answers [data-a="${q.k}"]`).click(); return; }
+  if (q.type === 'cex') { const i = q.ch.findIndex(c => c[2]); $(`#answers [data-i="${i}"]`).click(); return; }
   while (orderAt < q.st.length) $(`#answers [data-s="${orderAt}"]`).click();
 };
 $('#nextq').onclick = newQuestion;

@@ -279,6 +279,16 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
 .guide { stroke-width: 2.5; stroke-dasharray: 7 6; fill: none; }
 .chipbg { fill: var(--sheet); stroke-width: 2; }
 .chiptx { font-size: 19px; stroke: none; }
+.board { position: relative; }
+/* Window settings: a small card floating over the graph's top-right corner. */
+.wincard { position: absolute; top: 14px; right: 14px; z-index: 2; padding: 10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); border-color: var(--grid-major); }
+.winset { display: grid; grid-template-columns: auto repeat(3, 5.2rem); gap: 6px 8px; align-items: center; }
+.winset span { font-size: 0.85rem; font-weight: 700; color: var(--muted); text-align: center; }
+.winset b { font-family: var(--font-display); font-style: italic; font-size: 1.4rem; }
+.winset input { width: 100%; min-width: 0; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; color: var(--ink); padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); }
+.winset input.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, var(--sheet)); }
+.winfoot { display: flex; justify-content: flex-end; margin-top: 8px; }
+.winfoot button { font-size: 1rem; }
 @media (prefers-reduced-motion: reduce) { td.new, .pt.now, .bstep, .go .sw .b { animation: none; } }
 </style>
 
@@ -298,7 +308,15 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
       </section>
       <section class="card build" id="build" aria-live="polite"></section>
     </div>
-    <div class="board"><svg id="svg" viewBox="0 0 720 720" role="img" aria-label="Graph of the functions and the plotted points"></svg></div>
+    <div class="board"><svg id="svg" viewBox="0 0 720 720" role="img" aria-label="Graph of the functions and the plotted points"></svg>
+      <div class="card wincard" id="winCard" hidden>
+        <div class="winset">
+          <span></span><span>min</span><span>max</span><span>scale</span>
+          <b>x</b><input id="wxlo" aria-label="x min" inputmode="decimal" autocomplete="off" spellcheck="false"><input id="wxhi" aria-label="x max" inputmode="decimal" autocomplete="off" spellcheck="false"><input id="wxst" aria-label="x scale" inputmode="decimal" autocomplete="off" spellcheck="false">
+          <b>y</b><input id="wylo" aria-label="y min" inputmode="decimal" autocomplete="off" spellcheck="false"><input id="wyhi" aria-label="y max" inputmode="decimal" autocomplete="off" spellcheck="false"><input id="wyst" aria-label="y scale" inputmode="decimal" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="winfoot"><button type="button" id="winAuto">Auto grid</button></div>
+      </div></div>
   </div>
 </div>
 
@@ -730,6 +748,7 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
     const it = t => t.replace(/[fghx]/g, m => `<i class="v">${m}</i>`);
     $("tools").innerHTML = used().map(k => `<button type="button" class="tog" data-t="${k}" aria-pressed="${view[k]}">Show <span class="c-${k}">${it(k)}</span></button>`).join("")
       + `<button type="button" class="tog" data-t="r" aria-pressed="${view.r}">Show ${it(pc(combo.ast, null, {}, true))}</button>`
+      + `<button type="button" class="tog" id="winBtn" aria-pressed="${!$("winCard").hidden}">Grid</button>`
       + '<button type="button" id="newEx">New example</button>';
     renderBuild();
   }
@@ -1014,8 +1033,12 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
     for (const p of pts) R = Math.max(R, Math.ceil(Math.max(Math.abs(p.x), Math.abs(p.y))) + 1);
     R = Math.min(R, 1e6);
     const step = niceStep(R); R = Math.ceil(R / step) * step;
-    const u = (S - 2 * PAD) / (2 * R);
-    const sx = x => PAD + (x + R) * u, sy = y => PAD + (R - y) * u;
+    // The window: the teacher's own (Grid button), or auto, growing to fit the points.
+    W = win || { xlo: -R, xhi: R, xst: step, ylo: -R, yhi: R, yst: step };
+    fillWin();
+    const { xlo, xhi, ylo, yhi } = W, xspan = xhi - xlo, yspan = yhi - ylo;
+    const ux = (S - 2 * PAD) / xspan, uy = (S - 2 * PAD) / yspan;
+    const sx = x => PAD + (x - xlo) * ux, sy = y => PAD + (yhi - y) * uy;
 
     const clip = el("clipPath", { id: "plane" }, el("defs", {}));
     el("rect", { x: PAD, y: PAD, width: S - 2 * PAD, height: S - 2 * PAD }, clip);
@@ -1024,31 +1047,42 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
       el("path", { d: "M0,0 L10,5 L0,10 z", class: "k-" + k }, m);
     });
     const grid = el("g", {});
-    for (let i = -R; i <= R; i += step) {
-      const cls = i === 0 ? "ga" : "gm";
-      el("line", { x1: sx(i), y1: sy(-R), x2: sx(i), y2: sy(R), class: cls }, grid);
-      el("line", { x1: sx(-R), y1: sy(i), x2: sx(R), y2: sy(i), class: cls }, grid);
+    // Grid lines every scale step; the axes sit at 0, or along the edge when 0 is off the grid.
+    const ticks = (lo, hi, st) => { const out = []; for (let i = Math.ceil(lo / st - 1e-9); i * st <= hi + 1e-9; i++) out.push(+(i * st).toPrecision(12)); return out; };
+    const xs = ticks(xlo, xhi, W.xst), ys = ticks(ylo, yhi, W.yst);
+    const ax = Math.max(xlo, Math.min(xhi, 0)), ay = Math.max(ylo, Math.min(yhi, 0));
+    for (const x of xs) if (x !== 0) el("line", { x1: sx(x), y1: sy(ylo), x2: sx(x), y2: sy(yhi), class: "gm" }, grid);
+    for (const y of ys) if (y !== 0) el("line", { x1: sx(xlo), y1: sy(y), x2: sx(xhi), y2: sy(y), class: "gm" }, grid);
+    el("line", { x1: sx(ax), y1: sy(ylo), x2: sx(ax), y2: sy(yhi), class: "ga" }, grid);
+    el("line", { x1: sx(xlo), y1: sy(ay), x2: sx(xhi), y2: sy(ay), class: "ga" }, grid);
+    // Every line is labeled unless they would crowd; then every 2nd, 5th, ... line.
+    const every = n => [1, 2, 5, 10, 20, 50, 100].find(k => n / k <= 21) || Math.ceil(n / 21);
+    const xe = every(xs.length), ye = every(ys.length);
+    const xBelow = sy(ay) + 21 <= S - 4; // x labels go above the axis when it sits on the bottom edge
+    const yLeft = sx(ax) - 6 >= 30;       // y labels go right of the axis when it sits on the left edge
+    for (const x of xs) {
+      if (x === 0 || Math.round(x / W.xst) % xe) continue;
+      el("text", { x: sx(x), y: sy(ay) + (xBelow ? 21 : -8), class: "mb-tick", "text-anchor": "middle" }, grid).textContent = minus(x);
     }
-    for (let i = -R; i <= R; i += step) {
-      if (i === 0) continue;
-      el("text", { x: sx(i), y: sy(0) + 21, class: "mb-tick", "text-anchor": "middle" }, grid).textContent = minus(i);
-      el("text", { x: sx(0) - 6, y: sy(i) + 6, class: "mb-tick", "text-anchor": "end" }, grid).textContent = minus(i);
+    for (const y of ys) {
+      if (y === 0 || Math.round(y / W.yst) % ye) continue;
+      el("text", { x: sx(ax) + (yLeft ? -6 : 6), y: sy(y) + 6, class: "mb-tick", "text-anchor": yLeft ? "end" : "start" }, grid).textContent = minus(y);
     }
-    el("text", { x: sx(R) - 4, y: sy(0) - 10, class: "mb-tick", "text-anchor": "end" }, grid).textContent = "x";
-    el("text", { x: sx(0) + 8, y: sy(R) + 16, class: "mb-tick" }, grid).textContent = "y";
+    el("text", { x: sx(xhi) - 4, y: sy(ay) - 10, class: "mb-tick", "text-anchor": "end" }, grid).textContent = "x";
+    el("text", { x: sx(ax) + 8, y: sy(yhi) + 16, class: "mb-tick" }, grid).textContent = "y";
 
     const plane = el("g", { "clip-path": "url(#plane)" });
     const names = [];
     const curve = (f, cls, name) => {
       const N = 900; let d = "", prev = null; const spots = [];
       for (let i = 0; i <= N; i++) {
-        const x = -R + (2 * R * i) / N;
+        const x = xlo + (xspan * i) / N;
         let y; try { y = f(x); } catch (e) { y = NaN; }
-        if (!Number.isFinite(y) || Math.abs(y) > 6 * R) { prev = null; continue; }
-        if (prev != null && Math.abs(y - prev) > 2 * R) prev = null; // jump across an asymptote
+        if (!Number.isFinite(y) || y > yhi + 3 * yspan || y < ylo - 3 * yspan) { prev = null; continue; }
+        if (prev != null && Math.abs(y - prev) > yspan) prev = null; // jump across an asymptote
         d += (prev == null ? "M" : "L") + sx(x).toFixed(1) + "," + sy(y).toFixed(1);
         prev = y;
-        if (Math.abs(y) < R * 0.86 && Math.abs(x) < R * 0.92) spots.push({ x, y });
+        if (y > ylo + 0.07 * yspan && y < yhi - 0.07 * yspan && x > xlo + 0.04 * xspan && x < xhi - 0.04 * xspan) spots.push({ x, y });
       }
       if (!d) return;
       el("path", { d, class: "curve " + cls }, plane);
@@ -1113,10 +1147,38 @@ small.ck.ok, .ckline.ok .ckw { color: var(--green); } small.ck.no, .ckline.no .c
     }
   }
 
+  // ---------- Window settings (Grid button) ----------
+  let win = null, W = null;         // win: the teacher's window, or null for auto; W: the window drawn now
+  const WIN = ["wxlo", "wxhi", "wxst", "wylo", "wyhi", "wyst"], WKEY = ["xlo", "xhi", "xst", "ylo", "yhi", "yst"];
+  function fillWin() {
+    if ($("winCard").hidden || !W) return;
+    WIN.forEach((id, i) => { if (document.activeElement !== $(id)) { $(id).value = minus(+W[WKEY[i]].toPrecision(12)); $(id).className = ""; } });
+  }
+  function readWin() {
+    const v = WIN.map(id => { const t = $(id).value.replace(/[−–]/g, "-").replace(/\s/g, ""); return /^-?(\d+\.?\d*|\.\d+)$/.test(t) ? +t : NaN; });
+    const bad = new Set(v.flatMap((n, i) => (Number.isFinite(n) ? [] : [i])));
+    for (const o of [0, 3]) {
+      const [lo, hi, st] = v.slice(o, o + 3);
+      if (lo >= hi) { bad.add(o); bad.add(o + 1); }
+      if (st <= 0 || (hi - lo) / st > 200) bad.add(o + 2);
+    }
+    WIN.forEach((id, i) => ($(id).className = bad.has(i) ? "bad" : ""));
+    if (bad.size) return;
+    win = Object.fromEntries(WKEY.map((k, i) => [k, v[i]]));
+    draw();
+  }
+  WIN.forEach(id => $(id).addEventListener("input", readWin));
+  $("winAuto").addEventListener("click", () => { win = null; draw(); });
+
   // ---------- Header buttons ----------
   $("tools").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.id === "newEx") return newExample();
+    if (b.id === "winBtn") {
+      const on = $("winCard").hidden;
+      $("winCard").hidden = !on; b.setAttribute("aria-pressed", on);
+      return fillWin();
+    }
     const k = b.dataset.t; view[k] = !view[k]; b.setAttribute("aria-pressed", view[k]); draw();
   });
   const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -1296,7 +1358,17 @@ window.I18N_PAGE = {
  "~Put (.+) in for every (.+) in (.+)\\.": "Remplace chaque $2 par $1 dans $3.",
  "Expand and combine like terms.": "Développe et regroupe les termes semblables.",
  "Drop the brackets that aren't needed.": "Enlève les parenthèses inutiles.",
- "The new function:": "La nouvelle fonction :"
+ "The new function:": "La nouvelle fonction :",
+ "min": "min",
+ "max": "max",
+ "scale": "échelle",
+ "x min": "x min",
+ "x max": "x max",
+ "x scale": "échelle x",
+ "y min": "y min",
+ "y max": "y max",
+ "y scale": "échelle y",
+ "Auto grid": "Quadrillage auto"
 };
 </script>
 <script>

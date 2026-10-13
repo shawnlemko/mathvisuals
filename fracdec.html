@@ -178,7 +178,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .q input.good { border-color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--paper)); }
 .q input:disabled { opacity: 1; -webkit-text-fill-color: currentColor; }
 .q .tag { font-family: var(--font-body); font-size: 0.32em; font-weight: 700; color: var(--muted); display: block; text-align: center; letter-spacing: 0.04em; }
-.q .col { display: inline-flex; flex-direction: column; align-items: center; }
+/* Ratios (Shawn 2026-10-13): each ratio and the decimal is its own boxed object, label on top, so the line does not run together. */
+.q.cards { font-size: clamp(1.4rem, 2.2vw, 2.8rem); gap: 0.4em 0.4em; flex-wrap: nowrap; }
+.q.cards input { width: 3.2ch; } .q.cards input.dec { width: 5ch; }
+.q .col { display: inline-flex; flex-direction: column; align-items: center; gap: 0.15em; background: var(--paper); border: 2px solid var(--grid-major); border-radius: 14px; padding: 0.2em 0.45em 0.3em; }
+.q .col .tag { order: -1; font-size: 0.42em; text-transform: uppercase; letter-spacing: 0.08em; }
+.q .col .body { display: inline-flex; align-items: center; gap: 0.25em; white-space: nowrap; }
+.q.cards .op { font-size: 0.8em; }
 .rep { text-decoration: overline; text-decoration-thickness: 0.07em; }
 .typing { margin: 0; font-size: 0.95rem; color: var(--muted); text-align: center; }
 .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; }
@@ -369,17 +375,18 @@ function render() {
     typing.textContent = '';
   } else if (q.dir === 'r2d') {
     ask.textContent = 'The ratio is part : whole. Scale it, then write it as a decimal.';
-    qEl.innerHTML = `<span class="col"><span>${q.n} : ${q.d}</span><span class="tag">part : whole</span></span><span class="op">=</span>` +
-      `<span class="col"><span>${inp('a1', '', 'part')} : ${q.T}</span><span class="tag">part : ${q.T}</span></span><span class="op">=</span>` +
-      `<span class="col">${inp('a2', 'dec', 'decimal')}<span class="tag">decimal</span></span>`;
+    qEl.innerHTML = `<span class="col"><span class="body">${q.n} : ${q.d}</span><span class="tag">part : whole</span></span><span class="op">=</span>` +
+      `<span class="col"><span class="body">${inp('a1', '', 'part')} : ${q.T}</span><span class="tag">part : ${q.T}</span></span><span class="op">=</span>` +
+      `<span class="col"><span class="body">${inp('a2', 'dec', 'decimal')}</span><span class="tag">decimal</span></span>`;
     typing.textContent = '';
   } else {
     ask.textContent = 'Write the decimal as a part : whole ratio, then simplify.';
-    qEl.innerHTML = `<span class="col"><span>${q.dec.html}</span><span class="tag">decimal</span></span><span class="op">=</span>` +
-      `<span class="col"><span>${inp('a1', '', 'part')} : ${q.T}</span><span class="tag">part : ${q.T}</span></span><span class="op">=</span>` +
-      `<span class="col"><span>${inp('a2', '', 'part')} : ${inp('a3', '', 'whole')}</span><span class="tag">simplest</span></span>`;
+    qEl.innerHTML = `<span class="col"><span class="body">${q.dec.html}</span><span class="tag">decimal</span></span><span class="op">=</span>` +
+      `<span class="col"><span class="body">${inp('a1', '', 'part')} : ${q.T}</span><span class="tag">part : ${q.T}</span></span><span class="op">=</span>` +
+      `<span class="col"><span class="body">${inp('a2', '', 'part')} : ${inp('a3', '', 'whole')}</span><span class="tag">simplest</span></span>`;
     typing.textContent = '';
   }
+  qEl.classList.toggle('cards', mode === 'ratio');
   qEl.querySelectorAll('input').forEach(i => {
     i.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); solved || revealed ? newQuestion() : check(); } });
     i.addEventListener('input', () => { i.classList.remove('bad', 'close', 'good'); });

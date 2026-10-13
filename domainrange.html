@@ -160,6 +160,8 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
 
 .panel { gap: 10px; }
 .panel .card { padding: 12px 16px; }
+/* Check, Show answer and New graph stay in view when the answers make the panel scroll. */
+.panel > .card:last-child { position: sticky; bottom: 0; z-index: 1; box-shadow: 0 -6px 12px -8px rgb(0 0 0 / 0.25); }
 .ans .label { display: flex; align-items: baseline; gap: 10px; font-size: 1rem; margin-bottom: 6px; }
 .ans .label b { font-family: var(--font-display); font-size: 1.5rem; text-transform: none; letter-spacing: 0; }
 .ans.dom .label b { color: var(--pt); } .ans.rng .label b { color: var(--orange); }
@@ -176,9 +178,10 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
 .fb .big { display: block; font-family: var(--font-num); font-size: 1.5rem; margin-top: 2px; }
 .ex { margin: 0; color: var(--muted); font-size: 1.05rem; }
 .ex code { font-family: var(--font-num); font-weight: 700; color: var(--ink); background: var(--chip); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
-.keys { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
-.keys button { font-family: var(--font-num); font-size: 1.35rem; min-width: 44px; min-height: 46px; padding: 4px 10px; background: var(--sheet); }
-.keys.words button { font-family: var(--font-body); font-size: 1.1rem; }
+.keys { display: flex; flex-wrap: wrap; gap: 5px; margin: 4px 0 0; }
+.ans .ex { margin-top: 6px; font-size: 0.95rem; }
+.keys button { font-family: var(--font-num); font-size: 1.15rem; min-width: 34px; min-height: 38px; padding: 2px 6px; background: var(--sheet); }
+.keys.words button { font-family: var(--font-body); font-size: 1rem; }
 .btns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .btns button { font-size: 1.15rem; min-height: 54px; padding: 10px 18px; }
 .btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
@@ -227,16 +230,18 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
       <section class="card ans dom" id="domCard">
         <label class="label" for="dIn"><b>Domain</b> the x-values</label>
         <input id="dIn" autocomplete="off" spellcheck="false" aria-describedby="dFb">
+        <p class="ex" id="dEx"></p>
+        <div class="keys" id="dKeys"></div>
         <p class="fb" id="dFb" aria-live="polite"></p>
       </section>
       <section class="card ans rng" id="rngCard">
         <label class="label" for="rIn"><b>Range</b> the y-values</label>
         <input id="rIn" autocomplete="off" spellcheck="false" aria-describedby="rFb">
+        <p class="ex" id="rEx"></p>
+        <div class="keys" id="rKeys"></div>
         <p class="fb" id="rFb" aria-live="polite"></p>
       </section>
       <section class="card">
-        <p class="ex" id="ex"></p>
-        <div class="keys" id="keys"></div>
         <div class="btns">
           <button type="button" class="go" id="checkBtn">Check</button>
           <button type="button" id="showBtn">Show answer</button>
@@ -784,11 +789,11 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
   function redrawProj() { proj.replaceChildren(); ["d", "r"].forEach(w => state.done[w] && drawProj(w)); }
 
   // ---------- controls ----------
-  const EX = {
-    words: `Example: <code>x is greater than −2 and less than or equal to 5</code>`,
-    set: `Example: <code>{x | −2 &lt; x ≤ 5, x ∈ R}</code> Points? <code>{x | x = −3, 1, 4}</code>`,
+  const EX = v => ({
+    words: `Example: <code>${v} is greater than −2 and less than or equal to 5</code>`,
+    set: `Example: <code>{${v} | −2 &lt; ${v} ≤ 5, ${v} ∈ R}</code> Points? <code>{${v} | ${v} = −3, 1, 4}</code>`,
     interval: `Example: <code>(−2, 5]</code> or <code>[1, ∞)</code> Points? <code>{−3, 1, 4}</code>`
-  };
+  });
   const KEYS = {
     words: ["all real numbers", "greater than", "less than", "or equal to", "and", "−"],
     set: ["{", "}", "|", "x", "y", "=", "≤", "<", "≥", ">", "∈", "R", ",", "−"],
@@ -807,14 +812,16 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
   function setNote(n) {
     note = n;
     document.querySelectorAll("#noteBtns button").forEach(x => x.classList.toggle("on", x.dataset.n === n));
-    $("ex").innerHTML = EX[n];
-    const k = $("keys"); k.replaceChildren(); k.className = "keys" + (n === "words" ? " words" : "");
-    KEYS[n].concat(["⌫"]).forEach(t => {
+    [["d", "x"], ["r", "y"]].forEach(([w, v]) => {
+    const inp = $(w + "In");
+    $(w + "Ex").innerHTML = EX(v)[n];
+    const k = $(w + "Keys"); k.replaceChildren(); k.className = "keys" + (n === "words" ? " words" : "");
+    KEYS[n].filter(t => t !== (v === "x" ? "y" : "x")).concat(["⌫"]).forEach(t => {
       const btn = document.createElement("button"); btn.type = "button"; btn.textContent = t;
       btn.setAttribute("aria-label", t === "⌫" ? "Delete" : "Type " + t);
       btn.addEventListener("pointerdown", e => e.preventDefault()); // keep the cursor in the box
       btn.addEventListener("click", () => {
-        const inp = lastInput, s = inp.selectionStart ?? inp.value.length, f = inp.selectionEnd ?? s;
+        const s = inp.selectionStart ?? inp.value.length, f = inp.selectionEnd ?? s;
         let ins = t === "R" ? "R" : t;
         if (n === "words") ins = (s && !/\s$/.test(inp.value.slice(0, s)) ? " " : "") + t + (t === "−" ? "" : " ");
         if (t === "⌫") { const a = s === f ? Math.max(0, s - 1) : s; inp.value = inp.value.slice(0, a) + inp.value.slice(f); inp.setSelectionRange(a, a); }
@@ -822,6 +829,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
         inp.focus();
       });
       k.appendChild(btn);
+    });
     });
     document.querySelectorAll(".ans").forEach(c => c.classList.toggle("words", n === "words"));
     $("dIn").placeholder = { words: "x is …", set: "{x | … }", interval: "( , )" }[n];

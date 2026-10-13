@@ -149,7 +149,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    Headings are editable (e.g. n and C) and name the axes. Each axis has its own scale and max inputs;
    the grid grows past the largest value so points never sit on the edge. */
 .wrap { max-width: 1400px; }
-.lc { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.lc { display: grid; grid-template-columns: minmax(300px, 470px) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 860px) { .lc { grid-template-columns: 1fr; } }
 /* Fit the window: the table scrolls inside its card, Draw line stays in view. */
 @media (min-width: 861px) and (min-height: 520px) { .lc > .card { display: flex; flex-direction: column; overflow: hidden; } .tvs { flex: 1 1 auto; min-height: 0; overflow-y: auto; } .fit { flex: none; } }
@@ -202,6 +202,12 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
 .g-dlab.rate { fill: var(--orange); } .g-dlab.back { fill: var(--green); } .g-dlab.bad { fill: var(--warn); }
 .g-start { fill: none; stroke: var(--green); stroke-width: 5; transform-box: fill-box; transform-origin: center; }
 .g-startpt { fill: var(--green); stroke: var(--sheet); stroke-width: 3; }
+/* Development column (Shawn): each row written as start value + rate × input, ending in the equation. */
+.tv th.dev, .tv td.dev { font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; padding: 0 8px; white-space: nowrap; text-align: left; }
+.tv th.dev { font-family: var(--font-display); font-style: italic; font-size: 1.6rem; color: var(--pt); }
+.tv td.dev .s { color: var(--green); } .tv td.dev .r { color: var(--orange); }
+.deq { margin: 10px 0 0; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; }
+.deq i { color: var(--pt); } .deq .s { color: var(--green); } .deq .r { color: var(--orange); }
 .g-pair { fill: var(--pt); font-family: var(--font-num); font-size: 22px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
 </style>
 
@@ -217,9 +223,11 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
         <thead><tr>
           <th><input id="hx" value="x" maxlength="12" aria-label="First column heading (horizontal axis)"></th>
           <th><input id="hy" value="y" maxlength="12" aria-label="Second column heading (vertical axis)"></th>
+          <th class="dev" id="hdev">y =</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table></div>
+      <div class="deq" id="deq" aria-live="polite" hidden></div>
       <div class="fit">
         <button type="button" id="fitBtn" aria-pressed="false">Draw line</button>
         <p id="fitNote" aria-live="polite" hidden>Not linear</p>
@@ -261,7 +269,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
   const MIN = 8, rows = $("rows");
   function addRow() {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td><input inputmode="decimal" autocomplete="off"></td><td><input inputmode="decimal" autocomplete="off"></td>`;
+    tr.innerHTML = `<td><input inputmode="decimal" autocomplete="off"></td><td><input inputmode="decimal" autocomplete="off"></td><td class="dev"></td>`;
     rows.appendChild(tr);
   }
   for (let i = 0; i < MIN; i++) addRow();
@@ -432,17 +440,20 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     const put = (txt, cls, tag = "span") => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; eq.appendChild(e); return e; };
     const knowM = shown.has("rate"), knowB = shown.has("start"), m = md.m, b = md.b;
     put(hy, "", "i"); put(" = ");
+    // Start value first, then the rate, the same order as the development column: C = 5 + 2n.
     const short = hx.length === 1;
-    if (!knowM) { put("", "e-blank"); short ? put(hx, "", "i") : (put(" × "), put(hx, "", "i")); }
-    else if (!same(m, 0) || !knowB) {
-      const coef = short && same(m, 1) ? "" : short && same(m, -1) ? MINUS : short && fmt(m).includes("/") ? `(${fmt(m)})` : fmt(m);
-      if (coef) put(coef, "e-rate");
-      if (!short && coef) put(" × ");
+    if (!knowB) put("", "e-blank"); else put(fmt(b), "e-start");
+    if (knowM && same(m, 0)) { /* no rate term */ }
+    else {
+      put(knowM && m < 0 ? ` ${MINUS} ` : " + ");
+      if (!knowM) put("", "e-blank");
+      else {
+        const a = Math.abs(m), c = fmt(a);
+        if (!same(a, 1)) put(short && c.includes("/") ? `(${c})` : c, "e-rate");
+        if (!short && !same(a, 1)) put(" × ");
+      }
       put(hx, "", "i");
     }
-    if (!knowB) { put(" + "); put("", "e-blank"); }
-    else if (knowM && same(m, 0)) put(fmt(b), "e-start");
-    else if (!same(b, 0)) { put(b < 0 ? ` ${MINUS} ` : " + "); put(fmt(Math.abs(b)), "e-start"); }
     eq.classList.toggle("long", eq.textContent.length > 12);
     box.appendChild(eq);
     if (animStep && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -453,6 +464,39 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     }
   }
   let buildMsg = "";
+
+  // Development column: once the table is linear, each row reads start + rate(input), e.g. C = 5 + 2(3),
+  // and the equation under the table generalizes it: C = 5 + 2n.
+  function showDev(md) {
+    const hx = $("hx").value.trim() || "x", hy = $("hy").value.trim() || "y";
+    $("hdev").textContent = hy + " =";
+    const span = (txt, cls) => { const e = document.createElement("span"); if (cls) e.className = cls; e.textContent = txt; return e; };
+    const termOf = (xTxt, isVar) => {
+      const m = md.m, a = Math.abs(m), parts = [];
+      if (same(m, 0)) return parts;
+      parts.push(span(m < 0 ? ` ${MINUS} ` : " + "));
+      const coef = fmt(a), frac = coef.includes("/");
+      if (isVar) {
+        if (!same(a, 1)) parts.push(span(frac ? `(${coef})` : coef, "r"));
+        if (hx.length > 1 && !same(a, 1)) parts.push(span(" × "));
+        parts.push(Object.assign(document.createElement("i"), { textContent: hx }));
+      } else parts.push(span(frac ? `(${coef})` : coef, "r"), span(`(${xTxt})`));
+      return parts;
+    };
+    for (const tr of rows.children) {
+      const cell = tr.querySelector("td.dev"), [a, b] = tr.querySelectorAll("input");
+      cell.textContent = "";
+      if (!md.linear || build > 0 || a.value.trim() === "" || b.value.trim() === "") continue;
+      const x = parse(a); if (x == null) continue;
+      cell.append(span(fmt(md.b), "s"));
+      if (!same(x, 0)) cell.append(...termOf(fmt(x), false));
+    }
+    const deq = $("deq");
+    deq.hidden = !md.linear || build > 0; deq.textContent = "";
+    if (md.linear) {
+      deq.append(Object.assign(document.createElement("i"), { textContent: hy }), span(" = "), span(fmt(md.b), "s"), ...termOf("", "i"));
+    }
+  }
 
   function currentPts() {
     const pts = [];
@@ -468,6 +512,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     tidyRows();
     const pts = currentPts();
     const md = model(pts), steps = md.steps;
+    showDev(md);
     if (build > steps.length) build = steps.length;
     if (!animStep) setBuildBtn(steps);
     const shown = new Set(steps.slice(0, build)), fnShown = shown.has("fn");
