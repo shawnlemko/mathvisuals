@@ -249,6 +249,10 @@ i { font-family: var(--font-display); font-weight: 800; font-style: italic; }
 .acell { display: grid; place-items: center; text-align: center; min-width: 4.5em; min-height: 3.2em; padding: 6px 10px; border: 2px solid var(--k); border-radius: 8px; background: color-mix(in srgb, var(--k) 12%, var(--sheet)); }
 .acell small { display: block; font-size: 0.6em; color: var(--muted); font-weight: 500; }
 .acell.cut { opacity: 0.35; text-decoration: line-through; }
+.dist { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 2rem); }
+.dtop { margin-bottom: 6px; }
+.drow { display: grid; grid-template-columns: auto auto auto; gap: 14px; justify-content: start; padding: 2px 10px; border-left: 4px solid var(--grid-major); }
+.drow.cut > span:last-child { text-decoration: line-through; opacity: 0.4; }
 .tiles { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .tgrp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tcount { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-width: 4.2em; color: var(--k); }
@@ -871,6 +875,13 @@ function genMult(ctx, useVars) {
       steps: [ST(`${coefH(ab)}${rad(radiH(p * q, vp))}`, "Multiply outside by outside, inside by inside.", lanes), ...rs.steps.slice(1)] };
   }
 }
+/* distributive property: each term of the first bracket times each term of the second, one line per product */
+function distH(A, B, cells, res, note) {
+  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"];
+  const top = `<div class="dtop">(${A.map((t, i) => C("c" + cA[i % 2], (i && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})(${B.map((t, j) => C("c" + cB[j % 2], (j && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})</div>`;
+  const rows = A.map((a, i) => B.map((b, j) => { const c = cells[i][j]; return `<div class="drow ${c.s || ""}"><span>${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}</span><span>=</span><span>${c.sub ? c.sub.replace(/^\+/, "") + " = " : ""}${c.h.replace(/^\+/, "")}</span></div>`; }).join("")).join("");
+  return { t: "html", h: `<div class="dist">${top}${rows}</div>` + (res ? resH(res) : "") + (note ? `<p class="note">${note}</p>` : "") };
+}
 function genDist() {
   for (;;) {
     const form = pick(["mono", "bin", "conj", "sq"]);
@@ -888,10 +899,10 @@ function genDist() {
     const cells = A.map(a => B.map(b => { const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r); return { h: rxSignedH(sm), sub: raw.r !== sm.r ? rxSignedH(raw) : "", k: sm.r === 1 ? "p" : "b" }; }));
     const sumOpp = prods.length === 4 && prods[1].r === prods[2].r && prods[1].c === -prods[2].c && prods[1].r !== 1;
     const cut = cells.map((row, i) => row.map((c, j) => sumOpp && i + j === 1 ? { ...c, s: "cut" } : c));
-    const area = cs => ({ t: "area", rows: A.map(t => rxSignedH(t).replace(/^\+/, "")), cols: B.map(t => rxSignedH(t).replace(/^\+/, "")), cells: cs });
-    const steps = [ST("", "Multiply every term in the first bracket by every term in the second.", area(cells)),
+    const area = cs => distH(A, B, cs);
+    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", area(cells)),
       ST(rxH(prods), "Write all the products. Simplify each radical.", area(cells)),
-      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : "Combine like terms.", { ...area(cut), res: rxH(fin) })];
+      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : "Combine like terms.", distH(A, B, cut, rxH(fin)))];
     return { ask: "Expand and simplify.", q: qh, a: rxT(fin), kind: "rad", val: () => rxVal(fin), hint: "Multiply every term by every term, simplify each radical, then combine like terms.", steps };
   }
 }
@@ -940,7 +951,7 @@ function genRatBin() {
     if (top.length > 3) continue;
     const topH = rxH(top), fin = d === 1 ? topH : fr(topH, d), finT = d === 1 ? rxT(top) : `(${rxT(top)})/${d}`;
     const cells = [den, conj].length && den.map((a, i) => conj.map((b, j) => { const sm = rx(a.c * b.c, a.r * b.r); return { h: rxSignedH(sm), k: sm.r === 1 ? "p" : "b", s: i !== j ? "cut" : "" }; }));
-    const area = { t: "area", rows: den.map(t => rxSignedH(t).replace(/^\+/, "")), cols: conj.map(t => rxSignedH(t).replace(/^\+/, "")), cells, res: M(D), note: "The middle terms are opposites, so the radicals cancel." };
+    const area = distH(den, conj, cells, M(D), "The middle terms are opposites, so the radicals cancel.");
     const rawTop = rxCombine(rxMul(numer, conj));
     const steps = [ST(`${fr(rxH(numer), rxH(den))} × ${fr(C("cg", rxH(conj)), C("cg", rxH(conj)))}`, `Multiply the top and bottom by the conjugate ${rxH(conj)} (change the sign between the terms).`, null),
       ST(fr(`${rxH(numer)}(${rxH(conj)})`, M(D)), "Bottom: the conjugates multiply to a whole number.", area),
@@ -978,7 +989,7 @@ const SKILLS = [
   { id: "entire", g: ROOT, name: "Mixed to entire radicals", own: [...TEN, ...TWENTY], gen: genEntire, key: `<p>3${rad(5)} = ${rad("3² · 5")} = ${rad(45)}<span class="means">A factor goes in as index-many equal factors.</span></p>` },
   { id: "addsub", g: ROOT, name: "Add and subtract radicals", own: [...TEN, ...TWENTY], gen: genAddSub, key: `<p>3${rad(2)} + 5${rad(2)} = 8${rad(2)}<span class="means">Like radicals: same index and radicand. Simplify first.</span></p>` },
   { id: "mult", g: ROOT, name: "Multiply radicals", own: TWENTY, gen: genMult, key: `<p>a${rad("b")} × c${rad("d")} = ac${rad("bd")}<span class="means">Outside × outside, inside × inside, then simplify.</span></p>` },
-  { id: "dist", g: ROOT, name: "Distribute and expand", own: TWENTY, gen: genDist, key: `<p>(2 + ${rad(3)})(1 − ${rad(3)}) = −1 − ${rad(3)}<span class="means">Every term times every term, then combine like terms.</span></p>` },
+  { id: "dist", g: ROOT, name: "Distribute and expand", own: TWENTY, gen: genDist, key: `<p>(2 + ${rad(3)})(1 − ${rad(3)}) = −1 − ${rad(3)}<span class="means">Distribute: each term times each term, then combine like terms.</span></p>` },
   { id: "div", g: ROOT, name: "Divide radicals", own: TWENTY, gen: genDiv, key: `<p>${fr("a" + rad("b"), "c" + rad("d"))} = ${fr("a", "c")}${rad(fr("b", "d"))}<span class="means">Outside ÷ outside, inside ÷ inside.</span></p>` },
   { id: "ratmono", g: ROOT, name: "Rationalize a monomial denominator", own: TWENTY, gen: genRatMono, key: `<p>${fr(6, rad(3))} × ${fr(rad(3), rad(3))} = ${fr("6" + rad(3), 3)} = 2${rad(3)}<span class="means">No radical left in the denominator.</span></p>` },
   { id: "ratbin", g: ROOT, name: "Rationalize a binomial denominator (conjugates)", own: ["20-1"], gen: genRatBin, key: `<p>(a + ${rad("b")})(a − ${rad("b")}) = ${P("a", 2)} − b<span class="means">Multiply by the conjugate: the radicals cancel.</span></p>` },
@@ -1403,6 +1414,171 @@ window.I18N_COMMON = {
   "or": "ou",
   "Language / Langue": "Langue / Language",
   "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Powers and Roots (powers.html). */
+window.I18N_PAGE = {
+ "Powers and Roots": "Puissances et racines",
+ "Learn": "Apprendre",
+ "Course": "Cours",
+ "Skills": "Habiletés",
+ "~Skills: (.+)": "Habiletés : $1",
+ "~Review: (.+)": "Révision : $1",
+ "Powers": "Puissances",
+ "~Practice (.+)": "Pratiquer $1",
+ "Powers as repeated multiplication": "Les puissances comme multiplication répétée",
+ "Product law": "Loi du produit",
+ "Quotient law": "Loi du quotient",
+ "Power of a power": "Puissance d’une puissance",
+ "Power of a product or quotient": "Puissance d’un produit ou d’un quotient",
+ "Zero exponent": "Exposant zéro",
+ "Negative exponents": "Exposants négatifs",
+ "Exponent laws together": "Lois des exposants ensemble",
+ "Exponent laws with variables": "Lois des exposants avec des variables",
+ "Rational exponents and radicals": "Exposants rationnels et radicaux",
+ "Evaluate rational exponents": "Évaluer des exposants rationnels",
+ "Exponent laws with rational exponents": "Lois des exposants avec des exposants rationnels",
+ "Roots and radicals": "Racines et radicaux",
+ "Square roots: perfect squares and estimates": "Racines carrées : carrés parfaits et estimations",
+ "Cube roots and nth roots": "Racines cubiques et racines n-ièmes",
+ "Entire to mixed radicals (simplify)": "Radicaux entiers en radicaux composés (simplifier)",
+ "Mixed to entire radicals": "Radicaux composés en radicaux entiers",
+ "Add and subtract radicals": "Additionner et soustraire des radicaux",
+ "Multiply radicals": "Multiplier des radicaux",
+ "Distribute and expand": "Distribuer et développer",
+ "Divide radicals": "Diviser des radicaux",
+ "Rationalize a monomial denominator": "Rationaliser un dénominateur monôme",
+ "Rationalize a binomial denominator (conjugates)": "Rationaliser un dénominateur binôme (conjugués)",
+ "Radicals with variable radicands": "Radicaux avec des radicandes variables",
+ "Checked skills go into Practice. Tap a skill's name to learn it.": "Les habiletés cochées vont dans Pratique. Touche le nom d’une habileté pour l’apprendre.",
+ "~Example: (.+)": "Exemple : $1",
+ "Numbers": "Nombres",
+ "◀ Back": "◀ Retour",
+ "Next step ▶": "Étape suivante ▶",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "Key idea": "Idée clé",
+ "Steps": "Étapes",
+ "Simplify. Use positive exponents only.": "Simplifie. Utilise seulement des exposants positifs.",
+ "Sort the factors by base.": "Classe les facteurs par base.",
+ "Sort by base: numbers, then each variable.": "Classe par base : les nombres, puis chaque variable.",
+ "Final answers use positive exponents.": "Les réponses finales utilisent des exposants positifs.",
+ "Sort by base. Multiply the numbers. Same base: add the exponents.": "Classe par base. Multiplie les nombres. Même base : additionne les exposants.",
+ "Negative exponents move to the denominator and become positive.": "Les exposants négatifs passent au dénominateur et deviennent positifs.",
+ "New example": "Nouvel exemple",
+ "Your answer": "Ta réponse",
+ "Type your answer": "Tape ta réponse",
+ "Show me": "Montre-moi",
+ "Correct: {0} {1}": "Bonnes réponses : {0} {1}",
+ "{n} of {n}": "{n} sur {n}",
+ "(first try counts)": "(le premier essai compte)",
+ "Every factor in the brackets gets the exponent. Power of a power: multiply.": "Chaque facteur entre parenthèses reçoit l’exposant. Puissance d’une puissance : multiplie.",
+ "Evaluate.": "Évalue.",
+ "Denominator 3: take the cube root first.": "Dénominateur 3 : prends d’abord la racine cubique.",
+ "Denominator 2: take the square root first.": "Dénominateur 2 : prends d’abord la racine carrée.",
+ "{0} = {1}: one of 3 equal factors.": "{0} = {1} : un de 3 facteurs égaux.",
+ "{0} = {1}: one of 2 equal factors.": "{0} = {1} : un de 2 facteurs égaux.",
+ "Numerator 1: raise it to the power 1.": "Numérateur 1 : élève-le à l’exposant 1.",
+ "Negative exponent: take the reciprocal.": "Exposant négatif : prends l’inverse.",
+ "A number. Fractions like 3/4 are fine.": "Un nombre. Les fractions comme 3/4 sont acceptées.",
+ "Write as a single power.": "Écris sous forme d’une seule puissance.",
+ "Write each power as its factors.": "Écris chaque puissance avec ses facteurs.",
+ "Multiplying puts all the factors together.": "Multiplier met tous les facteurs ensemble.",
+ "Count them: {n} + {n} = {n}. Add the exponents.": "Compte-les : {n} + {n} = {n}. Additionne les exposants.",
+ "One power, like 2^7. Use ^ for the exponent.": "Une puissance, comme 2^7. Utilise ^ pour l’exposant.",
+ "Use ^ for exponents and / for fractions: 3x^2/(4y^3).": "Utilise ^ pour les exposants et / pour les fractions : 3x^2/(4y^3).",
+ "Divide and simplify.": "Divise et simplifie.",
+ "Divide outside by outside, inside by inside.": "Divise l’extérieur par l’extérieur, l’intérieur par l’intérieur.",
+ "Nothing more comes out of the radical.": "Rien d’autre ne sort du radical.",
+ "Type √ before the radicand: 6√2, (3+√5)/2, 3x√(2x).": "Tape √ avant le radicande : 6√2, (3+√5)/2, 3x√(2x).",
+ "Simplify (write as a mixed radical). (variables are positive)": "Simplifie (écris sous forme de radical composé). (les variables sont positives)",
+ "Write the radicand as prime factors.": "Écris le radicande en facteurs premiers.",
+ "Index 2: circle each pair of equal factors.": "Indice 2 : encercle chaque paire de facteurs égaux.",
+ "Each circled group comes out of the radical as one factor.": "Chaque groupe encerclé sort du radical comme un seul facteur.",
+ "~Multiply: outside (.+), inside (.+)\\.": "Multiplie : extérieur $1, intérieur $2.",
+ "{n} factors": "{n} facteurs",
+ "The exponent 3 says how many times the base 3 is a factor.": "L’exposant 3 dit combien de fois la base 3 est un facteur.",
+ "n factors of the base a": "n facteurs de la base a",
+ "Brackets decide what the base is.": "Les parenthèses déterminent la base.",
+ "Write the base as a factor that many times.": "Écris la base comme facteur autant de fois.",
+ "Multiply.": "Multiplie.",
+ "Same base, multiplying: add the exponents.": "Même base, multiplication : additionne les exposants.",
+ "Write the top and the bottom as factors.": "Écris le haut et le bas en facteurs.",
+ "Same base, dividing: subtract the exponents.": "Même base, division : soustrais les exposants.",
+ "Each 10 ÷ 10 = 1, so 2 pairs cancel.": "Chaque 10 ÷ 10 = 1, donc 2 paires s’annulent.",
+ "{n} − {n} = {n} factors are left. Subtract the exponents.": "Il reste {n} − {n} = {n} facteurs. Soustrais les exposants.",
+ "The outside exponent 2 means 2 copies of 5{0}.": "L’exposant extérieur 2 veut dire 2 copies de 5{0}.",
+ "Multiply the exponents.": "Multiplie les exposants.",
+ "2 groups of 3 factors: 3 × 2 = 6. Multiply the exponents.": "2 groupes de 3 facteurs : 3 × 2 = 6. Multiplie les exposants.",
+ "3 copies of the bracket.": "3 copies de la parenthèse.",
+ "Every factor in the brackets gets the exponent.": "Chaque facteur entre parenthèses reçoit l’exposant.",
+ "Regroup: every factor in the bracket gets the exponent.": "Regroupe : chaque facteur de la parenthèse reçoit l’exposant.",
+ "Evaluate each power, then multiply.": "Évalue chaque puissance, puis multiplie.",
+ "Follow the pattern: each step down divides by 4.": "Suis la régularité : chaque étape vers le bas divise par 4.",
+ "for any base a ≠ 0": "pour toute base a ≠ 0",
+ "Dividing a power by itself gives 1 and an exponent of 0.": "Diviser une puissance par elle-même donne 1 et un exposant de 0.",
+ "The whole bracket is the base, so the answer is 1.": "Toute la parenthèse est la base, donc la réponse est 1.",
+ "Keep dividing by 3 past the exponent 0.": "Continue de diviser par 3 après l’exposant 0.",
+ "A negative exponent means the reciprocal.": "Un exposant négatif veut dire l’inverse.",
+ "Leftover factors on the bottom: a negative exponent means the reciprocal.": "Facteurs restants en bas : un exposant négatif veut dire l’inverse.",
+ "Evaluate the bottom.": "Évalue le bas.",
+ "Top": "Haut",
+ "Bottom": "Bas",
+ "Every power has the same base, so work with the exponents.": "Chaque puissance a la même base, alors travaille avec les exposants.",
+ "× add ÷ subtract ( ){0} multiply{1}": "× additionne ÷ soustrais ( ){0} multiplie{1}",
+ "Same base: work with the exponents.": "Même base : travaille avec les exposants.",
+ "Multiplying on top: add the exponents.": "Multiplication en haut : additionne les exposants.",
+ "Dividing: subtract the bottom exponent.": "Division : soustrais l’exposant du bas.",
+ "Sort by base. Divide the numbers. Same base: subtract the exponents.": "Classe par base. Divise les nombres. Même base : soustrais les exposants.",
+ "Numerator 1: the power": "Numérateur 1 : l’exposant",
+ "Denominator 2: the root (square root)": "Dénominateur 2 : la racine (racine carrée)",
+ "Read the exponent as power over root.": "Lis l’exposant comme puissance sur racine.",
+ "{0} over {1}": "{0} sur {1}",
+ "power": "puissance",
+ "root": "racine",
+ "Root 2 (a square root has no index written), power 1.": "Racine 2 (une racine carrée n’a pas d’indice écrit), puissance 1.",
+ "{0} = 2 equal factors": "{0} = 2 facteurs égaux",
+ "Root first, then the power.": "La racine d’abord, puis la puissance.",
+ "Negative: take the reciprocal.": "Négatif : prends l’inverse.",
+ "Multiply": "Multiplie",
+ "Power of a power: multiply the exponents.": "Puissance d’une puissance : multiplie les exposants.",
+ "The same laws work with fraction exponents.": "Les mêmes lois fonctionnent avec les exposants fractionnaires.",
+ "Simplify the exponent.": "Simplifie l’exposant.",
+ "estimating the square root of 99": "estimer la racine carrée de 99",
+ "99 is between the perfect squares 81 and 100.": "99 est entre les carrés parfaits 81 et 100.",
+ "the side of a square with area 49": "le côté d’un carré d’aire 49",
+ "between {0} = 6 and {1} = 7": "entre {0} = 6 et {1} = 7",
+ "So the side {0} is between 9 and 10.": "Donc le côté {0} est entre 9 et 10.",
+ "99 is closer to 100. Check: 9.9 × 9.9 = 98.01.": "99 est plus proche de 100. Vérifie : 9,9 × 9,9 = 98,01.",
+ "3 equal factors": "3 facteurs égaux",
+ "{0} asks: what number, used 3 times as a factor, makes −64?": "{0} demande : quel nombre, utilisé 3 fois comme facteur, donne −64?",
+ "2 × 2 × 2 = 8: one of 3 equal factors": "2 × 2 × 2 = 8 : un de 3 facteurs égaux",
+ "(−4) × (−4) × (−4) = −64. An odd number of negatives stays negative.": "(−4) × (−4) × (−4) = −64. Un nombre impair de négatifs reste négatif.",
+ "Each group of index-many equal factors comes out as one factor.": "Chaque groupe d’autant de facteurs égaux que l’indice sort comme un seul facteur.",
+ "Every factor outside goes inside as a group of 2 equal factors.": "Chaque facteur extérieur entre comme un groupe de 2 facteurs égaux.",
+ "A factor goes in as index-many equal factors.": "Un facteur entre comme autant de facteurs égaux que l’indice.",
+ "4 = {0}: it goes in as 4 × 4.": "4 = {0} : il entre comme 4 × 4.",
+ "Multiply everything inside.": "Multiplie tout ce qui est à l’intérieur.",
+ "These are not like radicals yet: different radicands. Simplify each one.": "Ce ne sont pas encore des radicaux semblables : radicandes différents. Simplifie chacun.",
+ "Like radicals: same index and radicand. Simplify first.": "Radicaux semblables : même indice et même radicande. Simplifie d’abord.",
+ "Simplify: {0} = 2{1}. Now the radicals match.": "Simplifie : {0} = 2{1}. Maintenant les radicaux correspondent.",
+ "Add the coefficients of like radicals. Unlike radicals stay separate.": "Additionne les coefficients des radicaux semblables. Les radicaux différents restent séparés.",
+ "Outside": "Extérieur",
+ "Inside": "Intérieur",
+ "Multiply outside by outside, inside by inside.": "Multiplie l’extérieur par l’extérieur, l’intérieur par l’intérieur.",
+ "Outside × outside, inside × inside, then simplify.": "Extérieur × extérieur, intérieur × intérieur, puis simplifie.",
+ "Multiply every term in the first bracket by every term in the second.": "Multiplie chaque terme de la première parenthèse par chaque terme de la deuxième.",
+ "Every term times every term, then combine like terms.": "Chaque terme fois chaque terme, puis regroupe les termes semblables.",
+ "Write all the products. Simplify each radical.": "Écris tous les produits. Simplifie chaque radical.",
+ "The middle terms are opposites: they cancel. Combine what is left.": "Les termes du milieu sont opposés : ils s’annulent. Regroupe ce qui reste.",
+ "Outside ÷ outside, inside ÷ inside.": "Extérieur ÷ extérieur, intérieur ÷ intérieur.",
+ "square with side root 7 and area 7": "carré de côté racine de 7 et d’aire 7",
+ "area": "aire",
+ "Multiply by {0}, which equals 1, so the value does not change.": "Multiplie par {0}, qui égale 1, donc la valeur ne change pas.",
+ "No radical left in the denominator.": "Plus de radical au dénominateur.",
+ "Bottom: {0} × {1} = 7, the area of this square. Top: multiply the radicals.": "Bas : {0} × {1} = 7, l’aire de ce carré. Haut : multiplie les radicaux.",
+ "Reduce: divide the top and bottom by 2.": "Réduis : divise le haut et le bas par 2.",
+ "Variables come out in groups too (x ≥ 0).": "Les variables sortent aussi en groupes (x ≥ 0)."
 };
 </script>
 <script>

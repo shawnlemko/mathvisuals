@@ -180,6 +180,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .graph svg { height: 320px; }
 
 /* Table: a CSS grid so the jump brackets can sit between two rows. */
+@media (max-width: 600px) { .tbl { gap: 0 4px; } .td { font-size: 1.3rem; } .td.how, .td.nrow { font-size: 1.1rem; } .tbl input { font-size: 1.3rem; } }
 .tcard { flex: 1 1 auto; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 10px; }
 .graph { flex: 1 1 46%; min-width: 0; }
 .tbl { display: grid; gap: 0 10px; align-items: center; justify-items: center; }
@@ -191,7 +192,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .td.term { color: var(--pt); }
 .td.ghost { opacity: 0.6; }
 .td.ghost.val, .td.addv { color: var(--orange); }
-.td.lbl { font-size: 1.15rem; color: var(--green); white-space: nowrap; border-bottom-color: transparent; }
+.td.how { font-size: 1.35rem; color: var(--green); white-space: nowrap; }
+.td.nrow { color: var(--pt); font-size: 1.35rem; white-space: nowrap; border-top: 3px dashed var(--grid-major); }
+.td.nrow.val, .td.nrow.how { color: var(--orange); }
 .td.okc { font-size: 1.5rem; border-bottom-color: transparent; }
 .td.okc.yes { color: var(--green); } .td.okc.no { color: var(--warn); }
 .td.rule { color: var(--orange); }
@@ -246,6 +249,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 /* Pattern and graph drawing */
 .t-blue { fill: var(--pt); } .t-green { fill: var(--green); } .t-green2 { fill: var(--green); fill-opacity: 0.68; } .t-orange { fill: var(--orange); }
+.t-hidden { fill: var(--chip); stroke: var(--muted); stroke-width: 2.5; stroke-dasharray: 7 5; }
 .t-miss { fill: none; stroke: var(--warn); stroke-width: 2.5; stroke-dasharray: 5 4; }
 .t-ghost { fill: var(--orange); fill-opacity: 0.4; stroke: var(--orange); stroke-width: 2; stroke-dasharray: 4 3; }
 .flabel { font-family: var(--font-body); font-weight: 700; font-size: 18px; fill: var(--ink); text-anchor: middle; }
@@ -310,17 +314,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <!-- 2 Down the table -->
       <div class="card" id="c2" hidden>
         <p class="ask">Down the table</p>
-        <p class="say">How much does the value go up each time? Fill the <b class="g">green</b> boxes.</p>
+        <p class="say">How much does it go up each time? Fill the <b class="g">green</b> boxes.</p>
         <button type="button" class="go" id="chk2">Check</button>
         <p class="fb" id="fb2" aria-live="polite"></p>
         <div class="row" id="row2"><button type="button" id="show2">Show me</button></div>
         <label class="chk" id="newWrap"><input type="checkbox" id="showNew"> Show what's new</label>
         <div id="down" hidden>
-          <p class="say" id="downSay"></p>
-          <button type="button" id="goDown"></button>
-          <div class="chain" id="chain" aria-live="polite"></div>
-          <p class="say" id="chainMsg"></p>
-          <button type="button" class="next" data-to="3" id="next2" hidden>Next: Find a shortcut →</button>
+          <p class="say">Going down works, but you always need the term before.</p>
+          <button type="button" class="next" data-to="3" id="next2">Next: Find a shortcut →</button>
         </div>
       </div>
       <!-- 3 Across the table -->
@@ -334,7 +335,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <p class="hint-t" id="hintT"></p>
         <label class="chk" id="grpWrap"><input type="checkbox" id="showGroups"> Show the groups</label>
         <div id="ruleBox" hidden>
-          <div class="rulebox"><div class="small">The pattern rule</div><div class="big" id="ruleBig"></div><div class="small" id="ruleSmall"></div></div>
+          <div class="rulebox"><div class="small">Pattern rule</div><div class="big" id="ruleBig"></div><div class="small" id="ruleSmall"></div></div>
           <div class="vs" style="margin-top:10px">
             <div class="down"><h3>Down ↓</h3><div id="vsDown"></div></div>
             <div class="across"><h3>Across →</h3><div id="vsAcross"></div></div>
@@ -383,7 +384,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       else if (level === "medium") { m = rnd(2, 5); b = rnd(1, 6); }
       else { m = rnd(2, 6); b = Math.random() < 0.5 ? rnd(4, 9) : -rnd(1, m - 1); }
     } while (P && P.m === m && P.b === b && ++tries < 20);
-    usePattern(makePattern(m, b, 4, false));
+    const p = makePattern(m, b, 4, false);
+    p.missing = level === "hard" ? rnd(1, 2) : -1;
+    usePattern(p);
   }
   function typed(text) {
     const ns = (text.replace(/[−–]/g, "-").match(/-?\d+(\.\d+)?/g) || []).map(Number);
@@ -393,12 +396,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const m = ns[1] - ns[0];
     if (ns.some((v, i) => i && v - ns[i - 1] !== m)) return "The jumps are not all the same. Try a pattern that grows by the same amount each time.";
     if (m <= 0) return "Try a pattern that grows: the numbers go up.";
-    usePattern(makePattern(m, ns[0] - m, ns.length, true));
+    const p = makePattern(m, ns[0] - m, ns.length, true); p.missing = -1;
+    usePattern(p);
     return "";
   }
   function usePattern(p) {
     P = p; fresh();
-    $("chain").replaceChildren(); $("chainMsg").textContent = ""; $("next2").hidden = true;
     $("ruleIn").value = ""; $("far").hidden = true;
     for (const k of [1, 2, 3, 4]) $("fb" + k).textContent = "";
     setStep(1);
@@ -425,41 +428,38 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function renderPanel() {
     const { m, b } = P;
     $("say1").innerHTML = P.tiles
-      ? 'Type each <b class="p">term number</b>. Count the tiles to get its <b>value</b>.'
-      : 'Type each <b class="p">term number</b> and its <b>value</b>.';
+      ? 'Type the <b class="p">term number</b>. Count the tiles for the <b>value</b>.'
+      : 'Type the <b class="p">term number</b> and the <b>value</b>.';
+    if (P.missing >= 0 && !S.done[1]) $("say1").innerHTML += ' One term is hidden. Use the pattern to find it!';
     $("chk1").hidden = $("row1").hidden = S.done[1];
     $("next1").hidden = !S.done[1];
 
     $("chk2").hidden = $("row2").hidden = S.done[2];
     $("newWrap").hidden = !P.tiles;
     $("down").hidden = !S.done[2];
-    const far = 10;
-    $("downSay").innerHTML = `How many in term ${far}? Going down, you add <b class="g">${m}</b> again and again.`;
-    $("goDown").textContent = `Keep adding ${m} to term ${far}`;
-    $("goDown").hidden = S.chained;
 
     // Step 3 has two parts: multiply by the jump, then find what to add.
     $("say3").innerHTML = !S.timesDone
-      ? `Go straight from the <b class="p">term number</b> to the value. First, multiply each term number by the jump, <b class="g">${m}</b>.`
-      : !S.done[3] ? `Now look across. What do you add to <b class="g">term × ${m}</b> to get the value? Fill the <b class="o">orange</b> boxes. (Taking away? Type − first.)`
-      : `Every row works the same way: multiply by <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}.`;
+      ? `Times each <b class="p">term number</b> by the jump, <b class="g">${m}</b>.`
+      : !S.done[3] ? `What do you add to get the value? Fill the <b class="o">orange</b> boxes. (Take away? Type − first.)`
+      : `Every row: times <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}. Look at row <b class="p">n</b>!`;
     $("chk3").hidden = $("row3").hidden = S.done[3];
     $("hWhy").textContent = `Why × ${m}?`;
     $("hWhy").setAttribute("aria-pressed", String(S.hint === "why"));
     $("hZero").setAttribute("aria-pressed", String(S.hint === "zero"));
     $("hintT").innerHTML = S.hint === "why"
-      ? (P.tiles ? `Each term adds a group of <b class="g">${m}</b>. Term 1 has 1 group, term 2 has 2 groups, term 3 has 3 groups. So term n has n groups of ${m}: n × ${m}. Turn on Show the groups.`
-                 : `The value goes up ${m} every time the term number goes up 1. So the term number gets multiplied by ${m}.`)
-      : S.hint === "zero" ? `Go back one step from term 1: ${P.vals[0]} − ${m} = <b class="o">${fmt(P.vals[0] - m)}</b>. That is term 0, before the pattern starts. It is the amount you ${b < 0 ? "take away" : "add"}.`
+      ? (P.tiles ? `Term 1 has 1 group of <b class="g">${m}</b>. Term 2 has 2 groups. Term 3 has 3 groups.`
+                 : `It goes up ${m} each time. So times by ${m}.`)
+      : S.hint === "zero" ? `Go back one: ${P.vals[0]} − ${m} = <b class="o">${fmt(P.vals[0] - m)}</b>. That is term 0.`
       : "";
     $("grpWrap").hidden = !P.tiles;
     $("ruleBox").hidden = !S.done[3];
     if (S.done[3]) {
       $("ruleBig").innerHTML = `Term number × <span class="g">${m}</span><span class="o-t">${signed(b)}</span>`;
       $("ruleSmall").textContent = `or  ${m === 1 ? "" : m}n${signed(b)}`;
-      $("vsDown").innerHTML = `<b class="g">+${m}</b> each time. You need the term before it.`;
-      $("vsAcross").innerHTML = `<b class="g">× ${m}</b><b class="o-t">${signed(b)}</b>. Works for any term, right away.`;
-      $("vsEx").innerHTML = `Term 100 = 100 × ${m}${signed(b)} = <b>${fmt(100 * m + b)}</b>. One step, not 99 jumps!`;
+      $("vsDown").innerHTML = `<b class="g">+${m}</b> each time. You need the term before.`;
+      $("vsAcross").innerHTML = `<b class="g">× ${m}</b><b class="o-t">${signed(b)}</b>. Works for any term.`;
+      $("vsEx").innerHTML = "";
     }
   }
 
@@ -469,16 +469,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const s = S.done[1] ? step : 1;
     if (s === 1) return ["term", "val"];
     if (s === 2) return ["term", "val", "jump"];
-    if (s === 3) return S.timesDone ? ["term", "lbl", "times", "add", "val", "jump"] : ["term", "lbl", "times", "val", "jump"];
+    if (s === 3) return S.done[3] ? ["term", "how", "val"] : S.timesDone ? ["term", "times", "add", "val"] : ["term", "times", "val"];
     return ["term", "val", "rule", "okc"];
   }
-  const head = { term: "Term<br>number", val: "Term<br>value", jump: "Jump", lbl: "", times: "", add: "Add", rule: "Rule<br>gives", okc: "" };
+  const head = { term: "Term<br>number", val: "Term<br>value", jump: "Jump", how: "Rule", times: "", add: "Add", rule: "Rule<br>gives", okc: "" };
 
   function renderTable() {
     const tbl = $("tbl"); tbl.replaceChildren();
     const cols = columns(), s = S.done[1] ? step : 1;
     const ghost = s === 3 && S.hint === "zero";
-    const rows = (ghost ? [0] : []).concat(P.vals.map((_, i) => i + 1));
+    // Row n sits under the last term in step 3: the rule for any term.
+    const rows = (ghost ? [0] : []).concat(P.vals.map((_, i) => i + 1), s === 3 ? ["n"] : []);
     tbl.style.gridTemplateColumns = cols.map(() => "auto").join(" ");
     tbl.style.gridTemplateRows = `auto repeat(${rows.length}, 3.1rem)`;
     const place = (e, r, c) => { e.style.gridRow = r; e.style.gridColumn = c; tbl.appendChild(e); return e; };
@@ -496,11 +497,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const res = s === 4 && S.rule && S.rule.fn ? P.vals.map((_, i) => S.rule.fn(i + 1)) : null;
     rows.forEach((n, ri) => {
       const r = ri + 2, i = n - 1, g = n === 0, v = g ? P.b : P.vals[i];
+      if (n === "n") {
+        const rule = `n × ${P.m}${signed(P.b)}`;
+        cols.forEach((c, ci) => {
+          const t = c === "term" ? "n" : c === "times" ? (S.timesDone ? `n × ${P.m}` : "?") : c === "add" ? (S.done[3] ? fmt(P.b) : "?")
+            : c === "how" ? rule : c === "val" ? (S.done[3] ? rule : "?") : "";
+          const e = hd("div", "td nrow " + c, t); if (c === "how") e.innerHTML = howHTML("n");
+          if (c === "val" && S.done[3]) e.innerHTML = `<span><span class="g">${P.m === 1 ? "" : P.m}</span><span class="c-pt">n</span>&nbsp;<span class="o-t">${signed(P.b).trim()}</span></span>`; place(e, r, ci + 1);
+        });
+        return;
+      }
       cols.forEach((c, ci) => {
         let e;
         if (c === "term") e = s === 1 ? wrapIn(input(`term-${i}`, "term-in")) : hd("div", "td term" + (g ? " ghost" : ""), String(n));
         else if (c === "val") e = s === 1 ? wrapIn(input(`val-${i}`)) : hd("div", "td val" + (g ? " ghost" : ""), fmt(v));
-        else if (c === "lbl") e = hd("div", "td lbl", `× ${P.m} →`);
+        else if (c === "how") { e = hd("div", "td how"); e.innerHTML = howHTML(n); }
         else if (c === "times") e = g ? hd("div", "td ghost", "0") : wrapIn(input(`times-${i}`, "g"));
         else if (c === "add") { e = g ? hd("div", "td ghost addv", fmt(P.b)) : wrapIn(input(`add-${i}`, "o")); e.appendChild(hd("span", "arr", "→")); }
         else if (c === "rule") e = hd("div", "td rule", res ? fmt(res[i]) : "");
@@ -517,6 +528,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       j.style.gridRow = `${ri + 2} / span 2`; j.style.gridColumn = jc + 1; tbl.appendChild(j);
     }
   }
+  // One row of the rule, colored: term number blue, × jump green, + amount orange.
+  const howHTML = n => `<span class="c-pt">${n}</span>&nbsp;<span class="g">× ${P.m}</span>&nbsp;<span class="o-t">${signed(P.b).trim()}</span>`;
   const wrapIn = i => { const d = hd("div", "td"); d.appendChild(i); return d; };
 
   $("tbl").addEventListener("input", e => {
@@ -586,24 +599,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   document.querySelectorAll(".next").forEach(b => b.onclick = () => setStep(+b.dataset.to));
   $("hWhy").onclick = () => { S.hint = S.hint === "why" ? "" : "why"; renderAll(); };
   $("hZero").onclick = () => { S.hint = S.hint === "zero" ? "" : "zero"; renderAll(); };
-
-  // Down the table: jump from term 1 to term 10, one add at a time.
-  $("goDown").onclick = () => {
-    S.chained = true; $("goDown").hidden = true;
-    const chain = $("chain"); chain.replaceChildren();
-    let n = 1, v = P.vals[0];
-    chain.appendChild(hd("span", null, fmt(v)));
-    const t = setInterval(() => {
-      n++; v += P.m;
-      chain.appendChild(hd("span", "j", "+" + P.m));
-      chain.appendChild(hd("span", n === 10 ? "end" : null, fmt(v)));
-      if (n === 10) {
-        clearInterval(t);
-        $("chainMsg").innerHTML = `Term 10 is <b>${fmt(v)}</b>. That took 9 jumps! Term 100 would take 99 jumps.`;
-        $("next2").hidden = false;
-      }
-    }, 260);
-  };
 
   /* ---------- Rule checker ---------- */
   // Reads rules like 3n + 2, n × 3 + 2, y = 3x + 2, term × 3 + 2, "multiply by 3 then add 2", × 3 + 2.
@@ -723,12 +718,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const terms = (ghost ? [0] : []).concat(vals.map((_, i) => i + 1));
     const PAD = 12, LBL = mode === "groups" ? 50 : 30, GAP = 1.9;
     const label = (x, y, n) => { const t = el("text", { x, y, class: "flabel" }, svg); t.append("Term "); el("tspan", { class: "n" }, t).textContent = n; };
+    const hiddenTerm = (x, y, w, h, n) => {
+      el("rect", { x: x + 4, y, width: w - 8, height: h, rx: 10, class: "t-hidden" }, svg);
+      el("text", { x: x + w / 2, y: y + h / 2, class: "card-t", style: `font-size:${Math.min(h * 0.6, 60)}px;fill:var(--muted)` }, svg).textContent = "?";
+      label(x + w / 2, y + h + 24, n);
+    };
     const jumpText = (x, y) => el("text", { x, y, class: "jtext" }, svg).textContent = "+" + m + " →";
     if (P.tiles) {
       const rows = Math.max(m, b > 0 ? b : 0);
       const widthOf = n => (n === 0 ? 0 : n) + (b > 0 ? 1 : 0);
       // Each term gets a slot wide enough for its label, even when its tiles are narrow.
-      const MINW = mode === "groups" ? 104 : 80;
+      const MINW = Math.min(mode === "groups" ? 104 : 80, (W - 2 * PAD) / terms.length * 0.8);
       const slot = (n, s) => Math.max(widthOf(n) * s, MINW);
       const fullW = s => terms.reduce((a, n) => a + slot(n, s), 0) + GAP * s * (terms.length - 1);
       let s = Math.min((H - 2 * PAD - LBL) / rows, 56);
@@ -739,6 +739,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const tile = (cx, k, cls) => el("rect", { x: cx + ins, y: base - (k + 1) * s + ins, width: s - 2 * ins, height: s - 2 * ins, rx: s * 0.14, class: cls }, svg);
       terms.forEach((n, fi) => {
         const sw = slot(n, s), x0 = x; let cx = x + (sw - widthOf(n) * s) / 2;
+        if (n - 1 === P.missing && !S.done[1]) { hiddenTerm(x0, base - rows * s, sw, rows * s, n); x += sw + GAP * s; return; }
         if (b > 0) { for (let k = 0; k < b; k++) tile(cx, k, n === 0 ? "t-ghost" : mode === "groups" ? "t-orange" : "t-blue"); cx += s; }
         for (let g = 0; g < n; g++) {
           const miss = g === 0 && b < 0 ? -b : 0;
@@ -764,6 +765,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const cw = Math.min(150, (W - 2 * PAD - gap * (N - 1)) / N), ch = Math.min(cw * 0.75, H - 2 * PAD - LBL);
       let x = (W - (cw * N + gap * (N - 1))) / 2; const y = (H - ch - LBL) / 2;
       terms.forEach((n, fi) => {
+        if (n - 1 === P.missing && !S.done[1]) { hiddenTerm(x, y, cw, ch, n); x += cw + gap; return; }
         el("rect", { x, y, width: cw, height: ch, rx: 12, class: "card-r" }, svg);
         el("text", { x: x + cw / 2, y: y + ch / 2, class: "card-t", style: `font-size:${Math.min(ch * 0.5, cw * 0.32)}px` }, svg).textContent = fmt(P.vals[n - 1]);
         label(x + cw / 2, y + ch + 24, n);
@@ -914,6 +916,67 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Pattern Rules (patterns.html). */
+window.I18N_PAGE = {
+ "Pattern Rules": "Règles de régularité",
+ "{n} Table": "{n} Table",
+ "{n} Down": "{n} Vers le bas",
+ "{n} Across": "{n} De côté",
+ "{n} Check a rule": "{n} Vérifier une règle",
+ "{0} Graph": "{0} Graphique",
+ "New pattern": "Nouvelle régularité",
+ "Type my own": "Taper la mienne",
+ "Pattern numbers": "Nombres de la régularité",
+ "Make it": "Créer",
+ "Growing pattern": "Régularité croissante",
+ "Term {0}": "Terme {0}",
+ "Term{0}number": "Rang{0}du terme",
+ "Term{0}value": "Valeur{0}du terme",
+ "term row {n}": "rangée terme {n}",
+ "val row {n}": "rangée valeur {n}",
+ "Graph of the table": "Graphique de la table",
+ "Fill the table first": "Remplis d’abord la table",
+ "This step uses the table.": "Cette étape utilise la table.",
+ "Go to step 1": "Aller à l’étape 1",
+ "Fill it for me": "Remplis-la pour moi",
+ "Fill the table": "Remplis la table",
+ "Type each {0}. Count the tiles to get its {1}.": "Tape chaque {0}. Compte les tuiles pour obtenir sa {1}.",
+ "term number": "rang du terme",
+ "value": "valeur",
+ "Show me": "Montre-moi",
+ "Next: Down the table →": "Suivant : vers le bas de la table →",
+ "Down the table": "Vers le bas de la table",
+ "How much does the value go up each time? Fill the {0} boxes.": "De combien la valeur augmente-t-elle chaque fois? Remplis les cases {0}.",
+ "green": "vertes",
+ "{0} Show what's new": "{0} Afficher ce qui est nouveau",
+ "How many in term 10? Going down, you add {0} again and again.": "Combien dans le terme 10? En descendant, tu ajoutes {0} encore et encore.",
+ "Keep adding {n} to term {n}": "Continue d’ajouter {n} jusqu’au terme {n}",
+ "Next: Find a shortcut →": "Suivant : trouver un raccourci →",
+ "Across the table": "De côté dans la table",
+ "Go straight from the {0} to the value. First, multiply each term number by the jump, {1}.": "Va directement du {0} à la valeur. D’abord, multiplie chaque rang par le bond, {1}.",
+ "Why × {n}?": "Pourquoi × {n}?",
+ "What about term 0?": "Et le terme 0?",
+ "{0} Show the groups": "{0} Afficher les groupes",
+ "The pattern rule": "La règle de la régularité",
+ "Down ↓": "Vers le bas ↓",
+ "Across →": "De côté →",
+ "Next: Check a rule →": "Suivant : vérifier une règle →",
+ "Check a rule": "Vérifier une règle",
+ "Type a rule. Use {0} for the term number.": "Tape une règle. Utilise {0} pour le rang du terme.",
+ "Rule": "Règle",
+ "Delete": "Supprimer",
+ "Check my rule": "Vérifier ma règle",
+ "{0} Term {1} {2}": "{0} Terme {1} {2}",
+ "Try any term:": "Essaie n’importe quel terme :",
+ "Term number": "Rang du terme",
+ "Term value": "Valeur du terme",
+ "Type at least 3 numbers, like 4, 7, 10, 13.": "Tape au moins 3 nombres, comme 4, 7, 10, 13.",
+ "Fill in the boxes first.": "Remplis d’abord les cases.",
+ "{n} Table{0}": "{n} Table{0}",
+ "Yes! The table is right.": "Oui! La table est bonne."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -931,7 +994,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -991,8 +1054,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];
