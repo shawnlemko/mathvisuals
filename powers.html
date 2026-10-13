@@ -1,0 +1,1805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Powers and Roots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Powers and Roots (Alberta Math 9, 10C, 20-1, 20-2). A course picker turns on the skills that course covers;
+   the checkboxes choose what goes into Practice, and a skill's name opens it in Learn.
+   Learn: a worked example, one step at a time, with a visual (factor chips, radical "house" with groups that come out,
+   area squares, like-radical tiles, multiplication grids). Practice: typed answers checked for value and for form.
+   Colours: blue and orange for the parts being combined, green for results, purple for coefficients. */
+:root { --purple: #6a4fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b39dff; } }
+:root[data-theme="dark"] { --purple: #b39dff; }
+.main { grid-template-columns: minmax(220px, 0.78fr) minmax(0, 2.3fr) minmax(290px, 1fr); }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 46px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+
+/* Skills column */
+.skills { display: flex; flex-direction: column; gap: 4px; padding: 12px; }
+.skills .label { margin: 8px 0 2px; }
+.skills .label:first-child { margin-top: 0; }
+.sk { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 8px; padding: 3px 6px; border-radius: 8px; border: 2px solid transparent; }
+.sk input { width: 20px; height: 20px; accent-color: var(--pt); margin: 0; cursor: pointer; }
+.sk .skn { all: unset; cursor: pointer; font-size: 0.95rem; line-height: 1.25; padding: 3px 0; }
+.sk .skn:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; border-radius: 4px; }
+.sk .tag { grid-column: 2; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.sk.on { border-color: var(--pt); background: color-mix(in srgb, var(--pt) 10%, var(--sheet)); }
+.sk.locked { opacity: 0.42; }
+.sk.locked .skn, .sk.locked input { cursor: not-allowed; }
+.skills .hint { margin: 8px 0 0; font-size: 0.85rem; }
+
+/* Board */
+#board { display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 14px 18px; min-width: 0; }
+.ask { margin: 0; color: var(--muted); font-size: 1.1rem; font-weight: 700; }
+.eqn { font-family: var(--font-num); font-weight: 700; font-size: clamp(1.7rem, 2.3vw + 0.5rem, 3.1rem); line-height: 1.7; color: var(--ink); }
+.eqn .res { color: var(--green); }
+.scene { flex: 1 1 auto; min-height: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 20px; padding: 6px; overflow: auto; }
+.words { margin: 0; font-size: 1.25rem; min-height: 1.6em; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-top: 1px dashed var(--grid-major); padding-top: 10px; }
+.nav button { font-size: 1.1rem; min-height: 50px; padding: 8px 18px; }
+.nav button.go, .btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.nav button:disabled, .btns button:disabled { opacity: 0.4; cursor: default; }
+.nav .stepn { color: var(--muted); font-weight: 700; }
+
+/* Math notation (board, panel, preview) */
+sup { font-size: 0.6em; line-height: 0; vertical-align: 0.95em; margin-left: 0.04em; }
+.fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; font-size: 0.8em; line-height: 1.15; margin: 0 0.08em; }
+.fr > span:first-child { border-bottom: 0.08em solid currentColor; padding: 0 0.2em 0.04em; }
+.fr > span:last-child { padding: 0.04em 0.2em 0; }
+.fr > span { white-space: nowrap; align-self: stretch; text-align: center; }
+sup .fr { font-size: 0.85em; vertical-align: 0.1em; }
+sup .fr > span:first-child { border-bottom-width: 0.1em; }
+.rad { display: inline-flex; align-items: baseline; white-space: nowrap; }
+.rad .ri { font-size: 0.5em; vertical-align: 1.1em; margin-right: -0.32em; line-height: 0; position: relative; top: -0.55em; }
+.rad .rs { font-family: var(--font-body); font-weight: 400; transform: scaleY(1.1); display: inline-block; }
+.rad .rc { border-top: 0.07em solid currentColor; padding: 0.06em 0.08em 0 0.06em; margin-left: -0.04em; line-height: 1.15; }
+.rad .rc .fr { font-size: 0.75em; }
+i { font-family: var(--font-display); font-weight: 800; font-style: italic; }
+.cb { color: var(--pt); } .co { color: var(--orange); } .cg { color: var(--green); } .cp { color: var(--purple); } .cr { color: var(--warn); }
+.k-b { --k: var(--pt); } .k-o { --k: var(--orange); } .k-g { --k: var(--green); } .k-p { --k: var(--purple); } .k-r { --k: var(--warn); } .k-n { --k: var(--muted); }
+
+/* Scenes */
+.chip { display: inline-grid; place-items: center; min-width: 2.1em; height: 2.1em; padding: 0 0.35em; border-radius: 0.5em; font-family: var(--font-num); font-weight: 700; font-size: clamp(1rem, 1.1vw + 0.45rem, 1.7rem); border: 2.5px solid var(--k); background: color-mix(in srgb, var(--k) 16%, var(--sheet)); color: var(--ink); transition: opacity 0.4s; white-space: nowrap; }
+.chip .fr { font-size: 0.7em; }
+.chip.cut { opacity: 0.28; background: var(--sheet); text-decoration: line-through; text-decoration-thickness: 3px; }
+.new { animation: popin 0.5s ease both; }
+@keyframes popin { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .new { animation: none; } }
+.crow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+.grp { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.grp > .items { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding: 7px; border: 2px dashed var(--grid-major); border-radius: 12px; }
+.grp.plain > .items { border-color: transparent; }
+.grp .cap { font-family: var(--font-num); font-weight: 700; color: var(--muted); font-size: 1.05rem; }
+.sep { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--muted); }
+.cfrac { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
+.cfrac .bar { align-self: stretch; height: 4px; border-radius: 2px; background: var(--ink); }
+.cres { font-family: var(--font-num); font-weight: 700; font-size: clamp(1.6rem, 2vw + 0.6rem, 2.8rem); color: var(--green); }
+.ring { display: inline-flex; gap: 4px; padding: 4px; border: 3px solid var(--green); border-radius: 999px; }
+.ring.cut { border-style: dashed; opacity: 0.5; }
+.rhouse { display: inline-flex; align-items: center; gap: 10px; }
+.rout { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rroot { position: relative; display: inline-flex; align-items: stretch; padding-left: 2.2rem; }
+.rroot svg { position: absolute; left: 0; top: 0; width: 2.3rem; height: 100%; overflow: visible; }
+.rroot svg path { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.rroot .ridx { position: absolute; left: 0.1rem; top: 0.6rem; font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; color: var(--pt); }
+.rin { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 4px solid var(--ink); padding: 10px 10px 6px; min-height: 3.4rem; min-width: 3rem; }
+.ladder { display: flex; flex-direction: column; align-items: stretch; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 1.9rem); }
+.lrow { display: grid; grid-template-columns: 4.2em 1.2em minmax(3em, auto); align-items: center; padding: 2px 12px; border-radius: 8px; border: 2px solid transparent; }
+.lrow > span:first-child { text-align: right; }
+.lrow.hl { border-color: var(--k); background: color-mix(in srgb, var(--k) 14%, var(--sheet)); }
+.lop { font-size: 0.6em; color: var(--orange); padding-left: 2.6em; line-height: 1.2; }
+.sortc { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.sortc > div { border: 2px solid var(--k); border-radius: 12px; padding: 8px 14px; min-width: 7.5em; background: color-mix(in srgb, var(--k) 8%, var(--sheet)); }
+.sortc h3 { margin: 0 0 4px; font-size: 0.95rem; color: var(--k); text-transform: uppercase; letter-spacing: 0.05em; }
+.sortc p { margin: 0; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.1rem, 1vw + 0.6rem, 1.6rem); line-height: 1.9; }
+.lanes { display: flex; flex-direction: column; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 2rem); }
+.lanes > div { display: flex; align-items: center; gap: 14px; border-left: 6px solid var(--k); padding: 4px 14px; background: color-mix(in srgb, var(--k) 9%, var(--sheet)); border-radius: 6px; }
+.lanes .ln { font-family: var(--font-body); font-size: 0.6em; color: var(--k); min-width: 5.5em; text-transform: uppercase; letter-spacing: 0.04em; }
+.area { display: grid; gap: 4px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.1rem, 1vw + 0.6rem, 1.7rem); }
+.area .ah { white-space: nowrap; display: grid; place-items: center; padding: 6px 12px; color: var(--muted); }
+.area .ah.col { color: var(--orange); border-bottom: 3px solid var(--orange); }
+.area .ah.row { color: var(--pt); border-right: 3px solid var(--pt); justify-items: end; }
+.acell { display: grid; place-items: center; text-align: center; min-width: 4.5em; min-height: 3.2em; padding: 6px 10px; border: 2px solid var(--k); border-radius: 8px; background: color-mix(in srgb, var(--k) 12%, var(--sheet)); }
+.acell small { display: block; font-size: 0.6em; color: var(--muted); font-weight: 500; }
+.acell.cut { opacity: 0.35; text-decoration: line-through; }
+.dist { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 2rem); }
+.dtop { margin-bottom: 6px; }
+.drow { display: grid; grid-template-columns: auto auto auto; gap: 14px; justify-content: start; padding: 2px 10px; border-left: 4px solid var(--grid-major); }
+.drow.cut > span:last-child { text-decoration: line-through; opacity: 0.4; }
+.tiles { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.tgrp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tcount { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-width: 4.2em; color: var(--k); }
+.tile { display: inline-grid; place-items: center; min-width: 2.8em; height: 2.3em; padding: 0 0.4em; border-radius: 6px; font-family: var(--font-num); font-weight: 700; font-size: clamp(0.95rem, 0.8vw + 0.5rem, 1.4rem); background: color-mix(in srgb, var(--k) 22%, var(--sheet)); border: 2px solid var(--k); }
+.tile.neg { background: var(--sheet); border-style: dashed; color: var(--warn); }
+.tgrp.cut .tile { opacity: 0.3; }
+.mapbox { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; justify-content: center; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.8rem, 2.4vw + 0.6rem, 3.4rem); }
+.mapbox .eqs { color: var(--muted); }
+.legend { flex-basis: 100%; text-align: center; font-family: var(--font-body); font-size: 1.1rem; font-weight: 700; }
+.scene svg.pic { width: min(100%, 520px); height: auto; max-height: 100%; }
+.pic text { font-family: var(--font-num); font-weight: 700; }
+.note { font-size: 1.1rem; color: var(--muted); text-align: center; flex-basis: 100%; margin: 0; }
+
+/* Panel */
+.key { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; line-height: 1.9; }
+.key p { margin: 0; }
+.key .means { font-family: var(--font-body); font-weight: 400; font-size: 1rem; color: var(--muted); display: block; line-height: 1.4; margin-bottom: 4px; }
+ol.steps { margin: 0; padding-left: 1.5em; display: flex; flex-direction: column; gap: 6px; font-size: 1.02rem; }
+ol.steps li { color: var(--muted); cursor: pointer; }
+ol.steps li.now { color: var(--ink); font-weight: 700; }
+ol.steps li.later { opacity: 0.45; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 50px; padding: 8px 14px; }
+#ans { width: 100%; font: 700 1.6rem var(--font-num); padding: 8px 12px; border: 3px solid var(--pt); border-radius: 10px; background: var(--paper); color: var(--ink); }
+#ans.bad { border-color: var(--warn); }
+#ans.good { border-color: var(--green); }
+.preview { min-height: 2.6em; margin: 8px 0; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; line-height: 1.6; color: var(--ink); }
+.preview .err { font-family: var(--font-body); font-size: 1rem; color: var(--muted); font-weight: 400; }
+.keys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.keys button { font-family: var(--font-num); font-size: 1.15rem; min-height: 44px; padding: 4px; }
+.fb { margin: 10px 0 0; font-size: 1.12rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.form { color: var(--orange); }
+.score { margin: 0; color: var(--muted); }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.35rem; }
+.fmt { margin: 0 0 8px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Powers and Roots</h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Mode" id="mode">
+        <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Course" id="course">
+        <button type="button" data-c="9">Math 9</button><button type="button" data-c="10C" class="on">Math 10C</button><button type="button" data-c="20-1">Math 20-1</button><button type="button" data-c="20-2">Math 20-2</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <aside class="card skills" id="skills" aria-label="Skills"></aside>
+
+    <section class="board" id="board" aria-live="polite">
+      <p class="ask" id="ask"></p>
+      <div class="eqn" id="eq"></div>
+      <div class="scene" id="scene"></div>
+      <p class="words" id="say"></p>
+      <div class="nav" id="nav">
+        <button type="button" id="back">◀ Back</button>
+        <span class="stepn" id="stepn"></span>
+        <button type="button" id="next" class="go">Next step ▶</button>
+      </div>
+    </section>
+
+    <div class="panel" id="learnPanel">
+      <div class="card"><p class="label">Key idea</p><div class="key" id="key"></div></div>
+      <div class="card"><p class="label">Steps</p><ol class="steps" id="steps"></ol>
+        <div class="btns" style="margin-top: 12px"><button type="button" id="again">Start over</button><button type="button" id="newEx" class="go">New example</button></div>
+      </div>
+    </div>
+
+    <div class="panel" id="practicePanel" hidden>
+      <div class="card">
+        <p class="label">Your answer</p>
+        <p class="fmt" id="fmt"></p>
+        <input id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" placeholder="Type your answer">
+        <div class="preview" id="preview" aria-live="polite"></div>
+        <div class="keys" id="keys">
+          <button type="button" data-k="√">√</button><button type="button" data-k="∛">∛</button><button type="button" data-k="∜">∜</button><button type="button" data-k="^">xⁿ</button><button type="button" data-k="/">a/b</button>
+          <button type="button" data-k="(">(</button><button type="button" data-k=")">)</button><button type="button" data-k="x"><i>x</i></button><button type="button" data-k="y"><i>y</i></button><button type="button" data-k="⌫">⌫</button>
+        </div>
+        <div class="btns"><button type="button" id="checkBtn" class="go">Check</button><button type="button" id="showBtn">Show me</button><button type="button" id="nextQ">New question</button></div>
+        <p class="fb" id="fb"></p>
+      </div>
+      <div class="card"><p class="score">Correct: <b id="score">0 of 0</b> <span>(first try counts)</span></p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+const $ = s => document.querySelector(s);
+
+/* ---------- small math helpers ---------- */
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+const Q = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d) || 1; return [n / g, d / g]; };
+const Qadd = (a, b) => Q(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
+const Qsub = (a, b) => Q(a[0] * b[1] - b[0] * a[1], a[1] * b[1]);
+const Qmul = (a, b) => Q(a[0] * b[0], a[1] * b[1]);
+const Qv = a => a[0] / a[1];
+/* n = a^k × r with r free of k-th powers */
+function splitRoot(n, k) { let a = 1, r = n; for (let p = 2; p ** k <= r; p++) { const pk = p ** k; while (r % pk === 0) { r /= pk; a *= p; } } return [a, r]; }
+function primes(n) { const out = []; for (let p = 2; p * p <= n; p++) while (n % p === 0) { out.push(p); n /= p; } if (n > 1) out.push(n); return out; }
+const M = n => n < 0 ? "−" + (-n) : String(n);
+const pM = n => n < 0 ? `(${M(n)})` : M(n);
+
+/* ---------- notation as HTML ---------- */
+const P = (b, e) => `${b}<sup>${e}</sup>`;
+const fr = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const C = (c, s) => `<span class="${c}">${s}</span>`;
+const rad = (inner, k = 2) => `<span class="rad">${k > 2 ? `<span class="ri">${k}</span>` : ""}<span class="rs">√</span><span class="rc">${inner}</span></span>`;
+const xi = v => `<i>${v}</i>`;
+const FH = f => f[1] === 1 ? M(f[0]) : (f[0] < 0 ? "−" : "") + fr(Math.abs(f[0]), f[1]);
+const FT = f => f[1] === 1 ? String(f[0]) : `(${f[0]}/${f[1]})`;
+const coefH = c => c === 1 ? "" : c === -1 ? "−" : M(c);
+const coefT = c => c === 1 ? "" : c === -1 ? "-" : String(c);
+const pvH = (v, e) => e === 0 ? "" : e === 1 ? xi(v) : P(xi(v), M(e));
+const pvT = (v, e) => e === 0 ? "" : e === 1 ? v : `${v}^${e < 0 ? `(${e})` : e}`;
+const rootT = k => k === 2 ? "√" : k === 3 ? "∛" : "∜";
+const baseH = b => b < 0 ? `(${M(b)})` : String(b);
+const baseT = b => b < 0 ? `(${b})` : String(b);
+/* radicand: number then variables */
+function radiH(n, vs) { const v = (vs || []).map(([x, e]) => pvH(x, e)).join(""); return (n !== 1 || !v ? String(n) : "") + v; }
+function radiT(n, vs) { const v = (vs || []).filter(([, e]) => e).map(([x, e]) => pvT(x, e)).join(""); return (n !== 1 || !v ? String(n) : "") + v; }
+
+/* square-root expressions: list of terms {c, r}, r square-free (1 = whole number) */
+const rx = (c, r = 1) => { const [a, t] = splitRoot(r, 2); return { c: c * a, r: t }; };
+function rxMul(A, B) { const out = []; for (const a of A) for (const b of B) out.push(rx(a.c * b.c, a.r * b.r)); return out; }
+function rxCombine(T) { const m = new Map(); for (const t of T) m.set(t.r, (m.get(t.r) || 0) + t.c); return [...m].filter(([, c]) => c).map(([r, c]) => ({ c, r })).sort((a, b) => a.r - b.r); }
+const rxTermH = (t, first) => { const s = t.c < 0 ? (first ? "−" : " − ") : (first ? "" : " + "); const a = Math.abs(t.c); return s + (t.r === 1 ? a : (a === 1 ? "" : a) + rad(t.r)); };
+const rxH = T => T.length ? T.map((t, i) => rxTermH(t, i === 0)).join("") : "0";
+const rxSignedH = t => (t.c < 0 ? "−" : "+") + (t.r === 1 ? Math.abs(t.c) : (Math.abs(t.c) === 1 ? "" : Math.abs(t.c)) + rad(t.r));
+const rxTermT = (t, first) => { const s = t.c < 0 ? "-" : (first ? "" : "+"); const a = Math.abs(t.c); return s + (t.r === 1 ? a : (a === 1 ? "" : a) + `√(${t.r})`); };
+const rxT = T => T.length ? T.map((t, i) => rxTermT(t, i === 0)).join("") : "0";
+const rxVal = T => T.reduce((s, t) => s + t.c * Math.sqrt(t.r), 0);
+
+/* ---------- scenes ---------- */
+const ch = (x, k = "b", s = "") => ({ x, k, s });
+const rep = (n, f) => Array.from({ length: n }, (_, i) => f(i));
+const chipH = it => `<span class="chip k-${it.k} ${it.s}">${it.x}</span>`;
+function grpH(g) {
+  const inner = g.rings ? g.rings.map(r => r.ring ? `<span class="ring ${r.s || ""}">${r.items.map(chipH).join("")}</span>` : r.items.map(chipH).join("")).join("") : g.items.map(chipH).join("");
+  return `<span class="grp${g.plain ? " plain" : ""}"><span class="items">${inner}</span>${g.cap ? `<span class="cap">${g.cap}</span>` : ""}</span>`;
+}
+const rowH = row => `<div class="crow">${row.map((g, i) => (i && g.sep !== "" ? `<span class="sep">${g.sep || "×"}</span>` : "") + grpH(g)).join("")}</div>`;
+const resH = r => r ? `<span class="sep">=</span><span class="cres new">${r}</span>` : "";
+const RSVG = `<svg viewBox="0 0 40 100" preserveAspectRatio="none" aria-hidden="true"><path d="M2 62 L10 56 L22 98 L40 0"/></svg>`;
+function sceneH(s) {
+  if (!s) return "";
+  switch (s.t) {
+    case "chips": return (s.frac ? `<div class="cfrac">${rowH(s.rows[0])}<div class="bar"></div>${rowH(s.rows[1])}</div>` : `<div>${s.rows.map(rowH).join("")}</div>`) + resH(s.res) + (s.note ? `<p class="note">${s.note}</p>` : "");
+    case "rad": {
+      const ins = s.ins.map(g => g.ring ? `<span class="ring ${g.s || ""}">${g.items.map(chipH).join("")}</span>` : g.items.map(chipH).join("")).join("");
+      return `<div class="rhouse"><span class="rout">${s.out.map(chipH).join("")}</span><span class="rroot">${RSVG}${s.k > 2 ? `<span class="ridx">${s.k}</span>` : ""}<span class="rin">${ins}</span></span></div>` + resH(s.res) + (s.note ? `<p class="note">${s.note}</p>` : "");
+    }
+    case "ladder": return `<div class="ladder">${s.rows.map((r, i) => `${i ? `<div class="lop">↓ ${s.op}</div>` : ""}<div class="lrow k-${r.k || "g"} ${r.hl ? "hl" : ""}"><span>${r.l}</span><span>=</span><span>${r.r}</span></div>`).join("")}</div>` + (s.note ? `<p class="note">${s.note}</p>` : "");
+    case "sort": return `<div class="sortc">${s.cols.map(c => `<div class="k-${c.k}"><h3>${c.h}</h3>${c.lines.map(l => `<p>${l}</p>`).join("")}</div>`).join("")}</div>`;
+    case "lanes": return `<div class="lanes">${s.rows.map(r => `<div class="k-${r.k}"><span class="ln">${r.l}</span><span>${r.h}</span></div>`).join("")}</div>`;
+    case "area": {
+      let h = `<div class="area" style="grid-template-columns: auto repeat(${s.cols.length}, minmax(0, auto))"><span class="ah">×</span>`;
+      s.cols.forEach(c => h += `<span class="ah col">${c}</span>`);
+      s.rows.forEach((r, i) => { h += `<span class="ah row">${r}</span>`; s.cells[i].forEach(c => h += `<span class="acell k-${c.k || "g"} ${c.s || ""}">${c.sub ? `<small>${c.sub}</small>` : ""}<span>${c.h}</span></span>`); });
+      return h + "</div>" + resH(s.res) + (s.note ? `<p class="note">${s.note}</p>` : "");
+    }
+    case "tiles": return `<div class="tiles">${s.groups.map(g => { const neg = g.n < 0, m = Math.abs(g.n); const t = m <= 12 ? rep(m, () => `<span class="tile ${neg ? "neg" : ""}">${neg ? "−" : ""}${g.lab}</span>`).join("") : `<span class="tile ${neg ? "neg" : ""}">${m} × ${g.lab}</span>`; return `<div class="tgrp k-${g.k} ${g.s || ""}"><span class="tcount">${g.cap}</span>${t}</div>`; }).join("")}</div>` + resH(s.res) + (s.note ? `<p class="note">${s.note}</p>` : "");
+    case "sq": return sqSVG(s);
+    case "bar": return barSVG(s);
+    case "html": return s.h;
+  }
+  return "";
+}
+/* squares: grid (n×n cells, shade m×m), plain (side √q, area q), est (lo² < n < hi²) */
+function sqSVG(s) {
+  const W = 420, H = 280;
+  let g = "";
+  if (s.m === "grid") {
+    const S = 230, x0 = 80, y0 = 18, c = S / s.n;
+    const sh = s.shade * c;
+    g += `<rect x="${x0}" y="${y0 + S - sh}" width="${sh}" height="${sh}" style="fill: var(--pt); fill-opacity: 0.28"/>`;
+    for (let i = 0; i <= s.n; i++) g += `<line x1="${x0 + i * c}" y1="${y0}" x2="${x0 + i * c}" y2="${y0 + S}" style="stroke: var(--grid-major); stroke-width: 1"/><line x1="${x0}" y1="${y0 + i * c}" x2="${x0 + S}" y2="${y0 + i * c}" style="stroke: var(--grid-major); stroke-width: 1"/>`;
+    g += `<rect x="${x0}" y="${y0 + S - sh}" width="${sh}" height="${sh}" style="fill: none; stroke: var(--pt); stroke-width: 4"/>`;
+    if (s.unit) g += `<rect x="${x0}" y="${y0}" width="${S}" height="${S}" style="fill: none; stroke: var(--ink); stroke-width: 2.5"/><text x="${x0 + S + 10}" y="${y0 + 22}" style="fill: var(--ink); font-size: 18px">1 × 1</text>`;
+    g += `<text x="${x0 + sh / 2}" y="${y0 + S + 26}" text-anchor="middle" style="fill: var(--orange); font-size: 22px">${s.side}</text>`;
+    g += `<text x="${x0 - 10}" y="${y0 + S - sh / 2 + 7}" text-anchor="end" style="fill: var(--orange); font-size: 22px">${s.side}</text>`;
+    g += `<text x="${x0 + sh / 2}" y="${y0 + S - sh / 2 + 8}" text-anchor="middle" style="fill: var(--ink); font-size: 22px; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px">${s.area}</text>`;
+    return `<svg class="pic" viewBox="0 0 ${W} ${H}" role="img" aria-label="square with area ${s.area}">${g}</svg>`;
+  }
+  if (s.m === "plain") {
+    const x0 = 120, y0 = 20, S = 200;
+    g += `<rect x="${x0}" y="${y0}" width="${S}" height="${S}" style="fill: var(--green); fill-opacity: 0.18; stroke: var(--green); stroke-width: 4"/>`;
+    g += `<text x="${x0 + S / 2}" y="${y0 + S + 34}" text-anchor="middle" style="fill: var(--orange); font-size: 26px">√${s.q}</text>`;
+    g += `<text x="${x0 - 12}" y="${y0 + S / 2 + 9}" text-anchor="end" style="fill: var(--orange); font-size: 26px">√${s.q}</text>`;
+    g += `<text x="${x0 + S / 2}" y="${y0 + S / 2 - 4}" text-anchor="middle" style="fill: var(--ink); font-size: 22px">area</text><text x="${x0 + S / 2}" y="${y0 + S / 2 + 28}" text-anchor="middle" style="fill: var(--green); font-size: 34px">${s.q}</text>`;
+    return `<svg class="pic" viewBox="0 0 ${W} ${H}" role="img" aria-label="square with side root ${s.q} and area ${s.q}">${g}</svg>`;
+  }
+  /* estimate */
+  const S = 210, x0 = 20, y0 = 30, base = y0 + S, k = S / s.hi;
+  const sq = (side, st) => `<rect x="${x0}" y="${base - side * k}" width="${side * k}" height="${side * k}" style="${st}"/>`;
+  g += sq(s.hi, "fill: var(--orange); fill-opacity: 0.1; stroke: var(--orange); stroke-width: 3");
+  g += sq(Math.sqrt(s.n), "fill: var(--green); fill-opacity: 0.18; stroke: var(--green); stroke-width: 3; stroke-dasharray: 8 5");
+  g += sq(s.lo, "fill: var(--pt); fill-opacity: 0.18; stroke: var(--pt); stroke-width: 3");
+  g += `<text x="${x0 + 6}" y="${base - 8}" style="fill: var(--pt); font-size: 16px">${s.lo}² = ${s.lo * s.lo}</text>`;
+  g += `<text x="${x0 + 6}" y="${base - S + 20}" style="fill: var(--orange); font-size: 16px">${s.hi}² = ${s.hi * s.hi}</text>`;
+  g += `<text x="${x0 + Math.sqrt(s.n) * k - 6}" y="${base - Math.sqrt(s.n) * k + 20}" text-anchor="end" style="fill: var(--green); font-size: 16px">${s.n}</text>`;
+  const L = 260, R = 400, ly = 160, X = v => L + (v - s.lo) * (R - L);
+  g += `<line x1="${L}" y1="${ly}" x2="${R}" y2="${ly}" style="stroke: var(--ink); stroke-width: 3"/>`;
+  for (let i = 0; i <= 10; i++) g += `<line x1="${X(s.lo + i / 10)}" y1="${ly - (i % 5 ? 6 : 12)}" x2="${X(s.lo + i / 10)}" y2="${ly + (i % 5 ? 6 : 12)}" style="stroke: var(--ink); stroke-width: 2"/>`;
+  g += `<text x="${L}" y="${ly + 36}" text-anchor="middle" style="fill: var(--pt); font-size: 20px">${s.lo}</text><text x="${R}" y="${ly + 36}" text-anchor="middle" style="fill: var(--orange); font-size: 20px">${s.hi}</text>`;
+  if (s.show) {
+    const v = Math.sqrt(s.n);
+    g += `<circle cx="${X(v)}" cy="${ly}" r="9" style="fill: var(--green); stroke: var(--sheet); stroke-width: 3"/><text x="${X(v)}" y="${ly - 22}" text-anchor="middle" style="fill: var(--green); font-size: 20px">√${s.n}</text>`;
+  }
+  return `<svg class="pic" viewBox="0 0 ${W} ${H}" role="img" aria-label="estimating the square root of ${s.n}">${g}</svg>`;
+}
+/* fraction exponents on one strip of L parts */
+function barSVG(s) {
+  const W = 440, cell = Math.min(36, 400 / s.L), x0 = 20;
+  let g = "", y = 14;
+  for (const row of s.rows) {
+    for (let i = 0; i < s.L; i++) g += `<rect x="${x0 + i * cell}" y="${y}" width="${cell}" height="30" style="fill: ${i < row.n ? `var(--${row.k})` : "var(--sheet)"}; fill-opacity: ${i < row.n ? 0.45 : 1}; stroke: var(--grid-major); stroke-width: 1.5"/>`;
+    g += `<text x="${x0 + s.L * cell + 12}" y="${y + 22}" style="fill: var(--ink); font-size: 18px">${row.lab}</text>`;
+    y += 44;
+  }
+  return `<svg class="pic" viewBox="0 0 ${W} ${y + 4}" role="img" aria-label="fraction strips">${g}</svg>` + (s.note ? `<p class="note">${s.note}</p>` : "");
+}
+
+/* ---------- problem generators ----------
+   Each returns { ask, q, a (typed answer), kind, val(V), base?, hint, steps: [{e, say, scene}] }
+   The board shows q, then " = " and the step's e. */
+const ST = (e, say, scene, rel) => ({ e, say, scene, rel });
+
+function genMeaning() {
+  const t = pick(["pos", "neg", "negnob", "frac"]);
+  if (t === "frac") {
+    const qd = ri(2, 5); let p; do p = ri(1, qd - 1); while (gcd(p, qd) !== 1);
+    const n = ri(2, 3), f = fr(p, qd), qh = P(`(${f})`, n);
+    const chips = rep(n, () => ch(fr(p, qd), "b"));
+    return { ask: "Evaluate.", q: qh, a: `${p ** n}/${qd ** n}`, kind: "num", val: () => (p / qd) ** n, hint: `Use ${f} as a factor ${n} times: multiply the tops, multiply the bottoms.`,
+      steps: [ST("", `The exponent ${n} says how many times the base ${f} is a factor.`, { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]] }),
+        ST(rep(n, () => f).join(" × "), "Multiply the tops and multiply the bottoms.", { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]] }),
+        ST(C("res", fr(p ** n, qd ** n)), `${rep(n, () => p).join(" × ")} = ${p ** n} and ${rep(n, () => qd).join(" × ")} = ${qd ** n}.`, { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]], res: fr(p ** n, qd ** n) })] };
+  }
+  const b = ri(2, t === "pos" ? 5 : 4), n = b <= 3 ? ri(2, 5) : ri(2, 3);
+  if (t === "pos") {
+    const v = b ** n, chips = rep(n, () => ch(b, "b"));
+    return { ask: "Evaluate.", q: P(b, n), a: String(v), kind: "num", val: () => v, hint: `Write ${b} as a factor ${n} times, then multiply.`,
+      steps: [ST("", `The exponent ${n} says how many times the base ${b} is a factor.`, { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]] }),
+        ST(rep(n, () => b).join(" × "), "Write the base as a factor that many times.", { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]] }),
+        ST(C("res", v), "Multiply.", { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]], res: v })] };
+  }
+  if (t === "neg") {
+    const v = (-b) ** n, chips = rep(n, () => ch(`(−${b})`, "o"));
+    return { ask: "Evaluate.", q: P(`(−${b})`, n), a: String(v), kind: "num", val: () => v, hint: "The brackets make the negative part of the base, so it is a factor every time.",
+      steps: [ST("", `The brackets make −${b} the base. It is a factor ${n} times.`, { t: "chips", rows: [[{ items: chips, cap: `${n} factors` }]] }),
+        ST(rep(n, () => `(−${b})`).join(""), n % 2 ? "An odd number of negative factors gives a negative." : "An even number of negative factors gives a positive.", { t: "chips", rows: [[{ items: chips, cap: `${n} negatives` }]] }),
+        ST(C("res", M(v)), "Multiply.", { t: "chips", rows: [[{ items: chips, cap: `${n} negatives` }]], res: M(v) })] };
+  }
+  const v = -(b ** n), chips = rep(n, () => ch(b, "b"));
+  return { ask: "Evaluate.", q: "−" + P(b, n), a: String(v), kind: "num", val: () => v, hint: `With no brackets the base is only ${b}. Find ${P(b, n)}, then take the opposite.`,
+    steps: [ST("", `No brackets: the base is ${b}, not −${b}. The negative is not repeated.`, { t: "chips", rows: [[{ items: [ch("−", "r")], plain: true, sep: "" }, { items: chips, cap: `${n} factors of ${b}`, sep: "" }]] }),
+      ST(`−(${rep(n, () => b).join(" × ")})`, "Multiply the factors first.", { t: "chips", rows: [[{ items: [ch("−", "r")], plain: true, sep: "" }, { items: chips, cap: `${n} factors of ${b}`, sep: "" }]] }),
+      ST(C("res", M(v)), "Then take the opposite.", { t: "chips", rows: [[{ items: [ch("−", "r")], plain: true, sep: "" }, { items: chips, cap: `${n} factors of ${b}`, sep: "" }]], res: M(v) })] };
+}
+
+function genProduct() {
+  const B = pick([2, 3, 4, 5, 10, -2]), bh = baseH(B);
+  const m = ri(2, 5), n = ri(2, 5), s = m + n;
+  const g1 = { items: rep(m, () => ch(bh, "b")), cap: P(bh, m) }, g2 = { items: rep(n, () => ch(bh, "o")), cap: P(bh, n) };
+  const all = { items: [...rep(m, () => ch(bh, "b")), ...rep(n, () => ch(bh, "o"))], cap: `${m} + ${n} = ${s} factors` };
+  return { ask: "Write as a single power.", q: `${P(bh, C("cb", m))} × ${P(bh, C("co", n))}`, a: `${baseT(B)}^${s}`, kind: "pow", base: B, val: () => B ** s, hint: "Same base, multiplying: add the exponents.",
+    steps: [ST("", "Write each power as its factors.", { t: "chips", rows: [[g1, g2]] }),
+      ST(`(${rep(m, () => bh).join("·")})(${rep(n, () => bh).join("·")})`, "Multiplying puts all the factors together.", { t: "chips", rows: [[g1, g2]] }),
+      ST(C("res", P(bh, s)), `Count them: ${m} + ${n} = ${s}. Add the exponents.`, { t: "chips", rows: [[all]], res: P(bh, s) })] };
+}
+
+function genQuotient() {
+  const B = pick([2, 3, 5, 7, 10]), m = ri(4, 8), n = ri(1, m - 2), d = m - n;
+  const top = st => ({ items: rep(m, i => ch(B, "b", st && i < n ? "cut" : "")), cap: P(B, m) });
+  const bot = st => ({ items: rep(n, () => ch(B, "o", st ? "cut" : "")), cap: P(B, n) });
+  return { ask: "Write as a single power.", q: fr(P(B, C("cb", m)), P(B, C("co", n))), a: `${B}^${d}`, kind: "pow", base: B, val: () => B ** d, hint: "Same base, dividing: subtract the exponents.",
+    steps: [ST("", "Write the top and the bottom as factors.", { t: "chips", frac: true, rows: [[top(false)], [bot(false)]] }),
+      ST(fr(rep(m, () => B).join("·"), rep(n, () => B).join("·")), `Each ${B} ÷ ${B} = 1, so ${n} pairs cancel.`, { t: "chips", frac: true, rows: [[top(true)], [bot(true)]] }),
+      ST(C("res", P(B, d)), `${m} − ${n} = ${d} factors are left. Subtract the exponents.`, { t: "chips", frac: true, rows: [[top(true)], [bot(true)]], res: P(B, d) })] };
+}
+
+function genPower() {
+  const B = pick([2, 3, 5, 10, -2]), bh = baseH(B), m = ri(2, 3), n = ri(2, 4), s = m * n;
+  const groups = rep(n, i => ({ items: rep(m, () => ch(bh, i % 2 ? "o" : "b")), cap: P(bh, m) }));
+  return { ask: "Write as a single power.", q: P(`(${P(bh, C("cb", m))})`, C("co", n)), a: `${baseT(B)}^${s}`, kind: "pow", base: B, val: () => B ** s, hint: "Power of a power: multiply the exponents.",
+    steps: [ST(rep(n, () => P(bh, m)).join(" × "), `The outside exponent ${n} means ${n} copies of ${P(bh, m)}.`, { t: "chips", rows: [groups] }),
+      ST(C("res", P(bh, s)), `${n} groups of ${m} factors: ${m} × ${n} = ${s}. Multiply the exponents.`, { t: "chips", rows: [groups], res: P(bh, s) })] };
+}
+
+function genProdQuot() {
+  const n = ri(2, 3);
+  if (Math.random() < 0.5) {
+    const [a, b] = pick([[2, 3], [2, 5], [3, 4], [2, 7], [3, 5]]), v = (a * b) ** n;
+    const groups = rep(n, () => ({ items: [ch(a, "b"), ch(b, "o")], cap: "" }));
+    return { ask: "Evaluate.", q: P(`(${C("cb", a)} × ${C("co", b)})`, n), a: String(v), kind: "num", val: () => v, hint: `Every factor inside the brackets gets the exponent: ${P(a, n)} × ${P(b, n)}.`,
+      steps: [ST(rep(n, () => `(${a} × ${b})`).join(""), `${n} copies of the bracket.`, { t: "chips", rows: [groups] }),
+        ST(`${P(C("cb", a), n)} × ${P(C("co", b), n)}`, "Regroup: every factor in the bracket gets the exponent.", { t: "chips", rows: [[{ items: rep(n, () => ch(a, "b")), cap: P(a, n) }, { items: rep(n, () => ch(b, "o")), cap: P(b, n) }]] }),
+        ST(`${a ** n} × ${b ** n} = ${C("res", v)}`, "Evaluate each power, then multiply.", { t: "chips", rows: [[{ items: rep(n, () => ch(a, "b")), cap: P(a, n) }, { items: rep(n, () => ch(b, "o")), cap: P(b, n) }]], res: v })] };
+  }
+  const [p, q] = pick([[1, 2], [2, 3], [3, 4], [2, 5], [3, 5], [1, 3]]);
+  return { ask: "Evaluate.", q: P(`(${fr(C("cb", p), C("co", q))})`, n), a: `${p ** n}/${q ** n}`, kind: "num", val: () => (p / q) ** n, hint: `Top and bottom both get the exponent: ${P(p, n)} over ${P(q, n)}.`,
+    steps: [ST(fr(P(C("cb", p), n), P(C("co", q), n)), "The top and the bottom both get the exponent.", { t: "chips", frac: true, rows: [[{ items: rep(n, () => ch(p, "b")), cap: P(p, n) }], [{ items: rep(n, () => ch(q, "o")), cap: P(q, n) }]] }),
+      ST(C("res", fr(p ** n, q ** n)), "Evaluate the top and the bottom.", { t: "chips", frac: true, rows: [[{ items: rep(n, () => ch(p, "b")), cap: P(p, n) }], [{ items: rep(n, () => ch(q, "o")), cap: P(q, n) }]], res: fr(p ** n, q ** n) })] };
+}
+
+function ladder(b, from, to, hlAt) {
+  const rows = [];
+  for (let e = from; e >= to; e--) rows.push({ l: P(baseH(b), M(e)), r: e >= 0 ? String(b ** e) : fr(1, b ** -e), k: e === 0 ? "g" : e < 0 ? "o" : "b", hl: e === hlAt });
+  return { t: "ladder", rows, op: `÷ ${b}` };
+}
+
+function genZero() {
+  const t = pick(["plain", "negb", "nobr", "coef", "frac"]);
+  const b = ri(2, 9), lb = b <= 5 ? b : 2;
+  let q, v, a, tip;
+  if (t === "plain") { const bb = pick([b, ri(11, 99)]); q = P(bb, 0); v = 1; tip = "Any non-zero base to the exponent 0 is 1."; }
+  else if (t === "negb") { q = P(`(−${b})`, 0); v = 1; tip = "The whole bracket is the base, so the answer is 1."; }
+  else if (t === "nobr") { q = "−" + P(b, 0); v = -1; tip = `No brackets: only ${b} has the exponent. −(1) = −1.`; }
+  else if (t === "coef") { const k = ri(2, 9); q = `${k} × ${P(b, 0)}`; v = k; tip = `${P(b, 0)} = 1, so this is ${k} × 1.`; }
+  else { const [p, d] = pick([[2, 3], [3, 4], [5, 7]]); q = P(`(${fr(p, d)})`, 0); v = 1; tip = "Any non-zero base to the exponent 0 is 1."; }
+  a = String(v);
+  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(lb, "b", "cut")), cap: P(lb, 2) }], [{ items: rep(2, () => ch(lb, "o", "cut")), cap: P(lb, 2) }]], res: `${P(lb, 0)} = 1`, note: `${P(lb, 2)} ÷ ${P(lb, 2)}: everything cancels, and the exponent is 2 − 2 = 0.` };
+  return { ask: "Evaluate.", q, a, kind: "num", val: () => v, hint: tip,
+    steps: [ST("", `Follow the pattern: each step down divides by ${lb}.`, ladder(lb, 3, 0, 0)),
+      ST("", "Dividing a power by itself gives 1 and an exponent of 0.", quot),
+      ST(C("res", M(v)), tip, ladder(lb, 3, 0, 0))] };
+}
+
+function genNeg() {
+  const t = pick(["basic", "basic", "frac", "den", "coef"]);
+  const b = ri(2, 5), n = b <= 3 ? ri(1, 3) : ri(1, 2);
+  if (t === "frac") {
+    const [p, q] = pick([[2, 3], [1, 2], [3, 4], [2, 5], [3, 2]]), v = Q(q ** n, p ** n);
+    return { ask: "Evaluate.", q: P(`(${fr(p, q)})`, "−" + n), a: `${v[0]}/${v[1]}`.replace(/\/1$/, ""), kind: "num", val: () => (q / p) ** n, hint: "A negative exponent flips the fraction. Then use the positive exponent.",
+      steps: [ST(P(`(${fr(C("co", q), C("cb", p))})`, n), "A negative exponent means the reciprocal: flip the fraction and make the exponent positive.", { t: "chips", rows: [[{ items: rep(n, () => ch(fr(q, p), "g")), cap: `${n} factors` }]] }),
+        ST(C("res", FH(v)), "Multiply the tops and the bottoms.", { t: "chips", rows: [[{ items: rep(n, () => ch(fr(q, p), "g")), cap: `${n} factors` }]], res: FH(v) })] };
+  }
+  if (t === "den") {
+    const v = b ** n;
+    return { ask: "Evaluate.", q: fr(1, P(b, "−" + n)), a: String(v), kind: "num", val: () => v, hint: "A negative exponent in the denominator moves to the top as a positive exponent.",
+      steps: [ST(fr(1, fr(1, P(b, n))), `${P(b, "−" + n)} means ${fr(1, P(b, n))}.`, ladder(b, 2, -n, -n)),
+        ST(P(b, n), "Dividing by a fraction is multiplying by its reciprocal.", ladder(b, 2, -n, -n)),
+        ST(C("res", v), "Evaluate.", ladder(b, 2, -n, -n))] };
+  }
+  const k = t === "coef" ? ri(2, 7) : 1, v = Q(k, b ** n);
+  const q = (k > 1 ? `${k} × ` : "") + P(b, "−" + n);
+  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(b, "b", "cut")), cap: P(b, 2) }], [{ items: rep(2 + n, i => ch(b, "o", i < 2 ? "cut" : "")), cap: P(b, 2 + n) }]], res: fr(1, P(b, n)), note: `${P(b, 2)} ÷ ${P(b, 2 + n)}: the exponent is 2 − ${2 + n} = −${n}, and ${n} factor${n > 1 ? "s are" : " is"} left on the bottom.` };
+  return { ask: "Evaluate.", q, a: `${v[0]}/${v[1]}`.replace(/\/1$/, ""), kind: "num", val: () => k / b ** n, hint: `${P(b, "−" + n)} = ${fr(1, P(b, n))}: the negative exponent means the reciprocal.`,
+    steps: [ST("", `Keep dividing by ${b} past the exponent 0.`, ladder(b, 2, -n, -n)),
+      ST((k > 1 ? `${k} × ` : "") + fr(1, P(b, n)), "Leftover factors on the bottom: a negative exponent means the reciprocal.", quot),
+      ST(C("res", FH(v)), k > 1 ? `${k} × ${fr(1, b ** n)}` : "Evaluate the bottom.", ladder(b, 2, -n, -n))] };
+}
+
+function genMixed(ctx) {
+  const B = pick([2, 3, 5, 10, -2]), bh = baseH(B), bt = baseT(B), lo = ctx.neg ? -3 : 1;
+  const nz = () => { let v; do v = ri(lo, 6); while (!v); return v; };
+  for (;;) {
+    if (Math.random() < 0.5) {
+      const a = nz(), c = nz(), d = nz(), top = a + c, r = top - d;
+      if (r < 2 || r > 9 || top === 0) continue;
+      const qh = fr(`${P(bh, M(a))} × ${P(bh, M(c))}`, P(bh, M(d)));
+      return { ask: "Write as a single power.", q: qh, a: `${bt}^${r}`, kind: "pow", base: B, val: () => B ** r, hint: "Top: add the exponents. Then subtract the bottom exponent.",
+        steps: [ST("", "Every power has the same base, so work with the exponents.", { t: "lanes", rows: [{ k: "b", l: "Top", h: `${M(a)} + ${pM(c)}` }, { k: "o", l: "Bottom", h: M(d) }] }),
+          ST(fr(P(bh, C("cb", M(top))), P(bh, C("co", M(d)))), "Multiplying on top: add the exponents.", { t: "lanes", rows: [{ k: "b", l: "Top", h: `${M(a)} + ${pM(c)} = ${M(top)}` }, { k: "o", l: "Bottom", h: M(d) }] }),
+          ST(C("res", P(bh, r)), "Dividing: subtract the bottom exponent.", { t: "lanes", rows: [{ k: "b", l: "Top", h: `${M(a)} + ${pM(c)} = ${M(top)}` }, { k: "o", l: "Bottom", h: M(d) }, { k: "g", l: "Answer", h: `${M(top)} − ${pM(d)} = ${r}` }] })] };
+    }
+    const a = nz(), c = ri(2, 3), d = nz(), pw = a * c, r = pw - d;
+    if (r < 2 || r > 9) continue;
+    const qh = `${P(`(${P(bh, M(a))})`, c)} ÷ ${P(bh, M(d))}`;
+    return { ask: "Write as a single power.", q: qh, a: `${bt}^${r}`, kind: "pow", base: B, val: () => B ** r, hint: "Power of a power: multiply. Then subtract for the division.",
+      steps: [ST(`${P(bh, C("cb", M(pw)))} ÷ ${P(bh, M(d))}`, "Power of a power: multiply the exponents.", { t: "lanes", rows: [{ k: "b", l: "Power", h: `${M(a)} × ${c} = ${M(pw)}` }] }),
+        ST(C("res", P(bh, r)), "Dividing: subtract the exponents.", { t: "lanes", rows: [{ k: "b", l: "Power", h: `${M(a)} × ${c} = ${M(pw)}` }, { k: "g", l: "Divide", h: `${M(pw)} − ${pM(d)} = ${r}` }] })] };
+  }
+}
+
+/* monomial c·x^a·y^b; final form with positive exponents */
+function monoH(c, X, a, Y, b) { const v = pvH(X, a) + pvH(Y, b); return (c[1] !== 1 ? FH(c) : (v ? coefH(c[0]) : M(c[0]))) + v; }
+function monoPosH(c, X, a, Y, b) {
+  const top = pvH(X, a > 0 ? a : 0) + pvH(Y, b > 0 ? b : 0), bot = pvH(X, a < 0 ? -a : 0) + pvH(Y, b < 0 ? -b : 0);
+  const n = Math.abs(c[0]), sg = c[0] < 0 ? "−" : "";
+  const T = (n !== 1 || !top ? n : "") + top, D = (c[1] !== 1 || !bot ? c[1] : "") + bot;
+  return sg + (D === 1 ? T : fr(T, D));
+}
+function monoPosT(c, X, a, Y, b) {
+  const top = [pvT(X, a > 0 ? a : 0), pvT(Y, b > 0 ? b : 0)].join(""), bot = [pvT(X, a < 0 ? -a : 0), pvT(Y, b < 0 ? -b : 0)].join("");
+  const n = Math.abs(c[0]), sg = c[0] < 0 ? "-" : "";
+  const T = (n !== 1 || !top ? n : "") + top, D = (c[1] !== 1 || !bot ? c[1] : "") + bot;
+  return sg + (D === 1 ? T : `(${T})/(${D})`);
+}
+function genVarLaws() {
+  const [X, Y] = pick([["x", "y"], ["a", "b"], ["m", "n"]]);
+  const nz = (lo, hi) => { let v; do v = ri(lo, hi); while (!v); return v; };
+  for (;;) {
+    const form = pick(["prod", "pow", "quot"]);
+    let q, cf, ex, ey, cols, say1;
+    if (form === "prod") {
+      const c1 = nz(-5, 6), c2 = nz(-4, 5), a = nz(-3, 5), b = nz(-3, 4), d = nz(-4, 4), e = nz(-3, 4);
+      cf = Q(c1 * c2); ex = a + d; ey = b + e;
+      q = `(${monoH(Q(c1), X, a, Y, b)})(${monoH(Q(c2), X, d, Y, e)})`;
+      cols = [[`${M(c1)} × ${pM(c2)}`, `= ${M(cf[0])}`], [`${pvH(X, a) || "1"} × ${P(xi(X), M(d))}`, `= ${P(xi(X), `${M(a)} + ${pM(d)}`)}`, `= ${P(xi(X), M(ex))}`], [`${P(xi(Y), M(b))} × ${P(xi(Y), M(e))}`, `= ${P(xi(Y), `${M(b)} + ${pM(e)}`)}`, `= ${P(xi(Y), M(ey))}`]];
+      say1 = "Sort by base. Multiply the numbers. Same base: add the exponents.";
+    } else if (form === "pow") {
+      const c = pick([2, 3, -2]), a = nz(-3, 4), b = nz(-2, 3), n = pick([2, 3, -2]);
+      if (n === 3 && Math.abs(c) === 3) continue;
+      cf = n > 0 ? Q(c ** n) : Q(1, c ** -n); ex = a * n; ey = b * n;
+      q = P(`(${monoH(Q(c), X, a, Y, b)})`, M(n));
+      cols = [[P(pM(c), M(n)), `= ${FH(cf)}`], [P(`(${P(xi(X), M(a))})`, M(n)), `= ${P(xi(X), `${M(a)} × ${pM(n)}`)}`, `= ${P(xi(X), M(ex))}`], [P(`(${P(xi(Y), M(b))})`, M(n)), `= ${P(xi(Y), `${M(b)} × ${pM(n)}`)}`, `= ${P(xi(Y), M(ey))}`]];
+      say1 = "Every factor in the brackets gets the exponent. Power of a power: multiply.";
+    } else {
+      const c2 = pick([2, 3, 4, -2, 6]), c1 = c2 * nz(-4, 5) * pick([1, 1, 1, 2]) / pick([1, 1, 2]);
+      if (!Number.isInteger(c1)) continue;
+      const a = nz(-3, 6), b = nz(-2, 5), d = nz(-3, 5), e = nz(-2, 4);
+      cf = Q(c1, c2); ex = a - d; ey = b - e;
+      q = fr(monoH(Q(c1), X, a, Y, b), monoH(Q(c2), X, d, Y, e));
+      cols = [[`${M(c1)} ÷ ${pM(c2)}`, `= ${FH(cf)}`], [`${P(xi(X), M(a))} ÷ ${P(xi(X), M(d))}`, `= ${P(xi(X), `${M(a)} − ${pM(d)}`)}`, `= ${P(xi(X), M(ex))}`], [`${P(xi(Y), M(b))} ÷ ${P(xi(Y), M(e))}`, `= ${P(xi(Y), `${M(b)} − ${pM(e)}`)}`, `= ${P(xi(Y), M(ey))}`]];
+      say1 = "Sort by base. Divide the numbers. Same base: subtract the exponents.";
+    }
+    if (!ex && !ey) continue;
+    if (Math.abs(ex) > 12 || Math.abs(ey) > 12 || Math.abs(cf[0]) > 200) continue;
+    const sortS = n => ({ t: "sort", cols: [{ h: "Numbers", k: "p", lines: cols[0].slice(0, n ? 9 : 1) }, { h: xi(X), k: "b", lines: cols[1].slice(0, n ? 9 : 1) }, { h: xi(Y), k: "o", lines: cols[2].slice(0, n ? 9 : 1) }] });
+    const fin = monoPosH(cf, X, ex, Y, ey), mid = monoH(cf, X, ex, Y, ey);
+    const steps = [ST("", "Sort the factors by base.", sortS(0)), ST(mid, say1, sortS(1))];
+    if (ex < 0 || ey < 0 || cf[1] !== 1) steps.push(ST(C("res", fin), ex < 0 || ey < 0 ? "Negative exponents move to the denominator and become positive." : "Simplify the coefficient.", sortS(1)));
+    else steps[1].e = C("res", mid);
+    return { ask: "Simplify. Use positive exponents only.", q, a: monoPosT(cf, X, ex, Y, ey), kind: "mono", val: V => Qv(cf) * V[X] ** ex * V[Y] ** ey, hint: "Sort by base. Multiply: add exponents. Divide: subtract. Power: multiply.", steps };
+  }
+}
+
+function genRatConvert() {
+  const n = pick([2, 3, 3, 4]); let m; do m = ri(1, 5); while (m === n || gcd(m, n) !== 1 || m > 2 * n);
+  const useVar = Math.random() < 0.6, X = pick(["x", "a", "m"]), b = ri(2, 7);
+  const bh = useVar ? xi(X) : String(b), bt = useVar ? X : String(b);
+  const val = V => (useVar ? V[X] : b) ** (m / n);
+  const expo = fr(C("co", m), C("cb", n)), idx = n === 2 ? "" : n;
+  const r1 = rad(m === 1 ? bh : P(bh, C("co", m)), n), r2 = m === 1 ? rad(bh, n) : P(`(${rad(bh, n)})`, C("co", m));
+  const map = { t: "html", h: `<div class="mapbox"><span>${P(bh, expo)}</span><span class="eqs">=</span><span>${r1}</span>${m > 1 ? `<span class="eqs">=</span><span>${r2}</span>` : ""}<p class="legend"><span class="co">Numerator ${m}: the power</span> &nbsp;·&nbsp; <span class="cb">Denominator ${n}: the root${n === 2 ? " (square root)" : n === 3 ? " (cube root)" : ""}</span></p></div>` };
+  if (Math.random() < 0.5) {
+    const rf = rad(m === 1 ? bh : P(bh, m), n);
+    return { ask: "Write as a radical.", q: P(bh, expo), a: m === 1 ? `${rootT(n)}(${bt})` : `${rootT(n)}(${bt}^${m})`, kind: "to-radical", val, hint: "The denominator is the index of the root. The numerator is the power.",
+      steps: [ST("", "Read the exponent as power over root.", map), ST(C("res", rf), `Root ${n}${idx ? "" : " (a square root has no index written)"}, power ${m}.`, map)] };
+  }
+  const qh = Math.random() < 0.5 ? r1 : r2;
+  return { ask: "Write as a power with a rational exponent.", q: qh, a: `${bt}^(${m}/${n})`, kind: "to-power", val, hint: "The root index goes in the denominator, the power in the numerator.",
+    steps: [ST("", "The root becomes the denominator, the power becomes the numerator.", map), ST(C("res", P(bh, fr(m, n))), "Power over root.", map)] };
+}
+
+function genRatEval() {
+  for (;;) {
+    const n = pick([2, 3, 3, 4]), m = pick([1, 2, 2, 3]), neg = Math.random() < 0.35;
+    if (m === n) continue;
+    let r, rd = 1;
+    if (Math.random() < 0.25) { [r, rd] = pick([[2, 3], [1, 2], [3, 4], [2, 5], [1, 3]]); } else r = ri(2, n === 2 ? 9 : n === 3 ? 5 : 3);
+    const b = r ** n, bd = rd ** n;
+    if (b > 1000 || (r ** m) > 1000) continue;
+    const bh = bd === 1 ? String(b) : `(${fr(b, bd)})`, rh = rd === 1 ? String(r) : fr(r, rd);
+    const ex = (neg ? "−" : "") + fr(C("co", m), C("cb", n));
+    const powv = Q(r ** m, rd ** m), v = neg ? Q(powv[1], powv[0]) : powv;
+    const split = { t: "chips", rows: [[{ items: rep(n, () => ch(rh, "b")), cap: `${bd === 1 ? b : fr(b, bd)} = ${n} equal factors` }]], res: `${rad(bd === 1 ? b : fr(b, bd), n)} = ${rh}` };
+    const powS = { t: "chips", rows: [[{ items: rep(m, () => ch(rh, "o")), cap: `${m} factor${m > 1 ? "s" : ""} of ${rh}` }]], res: FH(powv) };
+    const steps = [ST(P(`(${rad(bd === 1 ? b : fr(b, bd), n)})`, (neg ? "−" : "") + C("co", m)), `Denominator ${n}: take the ${n === 2 ? "square" : n === 3 ? "cube" : "4th"} root first.`, split),
+      ST(P(rd === 1 ? r : `(${rh})`, (neg ? "−" : "") + m), `${rad(bd === 1 ? b : fr(b, bd), n)} = ${rh}: one of ${n} equal factors.`, split),
+      ST(neg ? fr(1, FH(powv)) : C("res", FH(powv)), `Numerator ${m}: raise it to the power ${m}.`, powS)];
+    if (neg) steps.push(ST(C("res", FH(v)), "Negative exponent: take the reciprocal.", powS));
+    return { ask: "Evaluate.", q: P(bh, ex), a: v[1] === 1 ? String(v[0]) : `${v[0]}/${v[1]}`, kind: "num", val: () => Qv(v), hint: "Root first (denominator), then the power (numerator). A negative exponent means the reciprocal.", steps };
+  }
+}
+
+function genRatLaws() {
+  const X = pick(["x", "a", "m"]), XI = xi(X);
+  const rf = () => { const d = pick([2, 3, 4, 5, 6]); let n; do n = ri(1, 5); while (gcd(n, d) !== 1); return Q(n, d); };
+  for (;;) {
+    const form = pick(["prod", "quot", "pow"]), f1 = rf(), f2 = form === "pow" ? pick([rf(), Q(ri(2, 4)), Q(-ri(1, 2))]) : (Math.random() < 0.2 ? Q(-rf()[0], rf()[1]) : rf());
+    const e = form === "prod" ? Qadd(f1, f2) : form === "quot" ? Qsub(f1, f2) : Qmul(f1, f2);
+    if (!e[0] || e[1] > 12 || Math.abs(e[0]) > 12) continue;
+    const E = f => P(XI, FH(f));
+    const q = form === "prod" ? `${E(f1)} · ${E(f2)}` : form === "quot" ? fr(E(f1), E(f2)) : P(`(${E(f1)})`, FH(f2));
+    const fin = e[0] > 0 ? P(XI, FH(e)) : fr(1, P(XI, FH(Q(-e[0], e[1])))), finT = e[0] > 0 ? `${X}^${FT(e)}` : `1/${X}^${FT(Q(-e[0], e[1]))}`;
+    const steps = [];
+    if (form === "pow") {
+      steps.push(ST(P(XI, `${FH(f1)} × ${pM(0) && FH(f2)}`), "Power of a power: multiply the exponents.", { t: "lanes", rows: [{ k: "b", l: "Multiply", h: `${FH(f1)} × ${f2[0] < 0 ? `(${FH(f2)})` : FH(f2)} = ${FH(e)}` }] }));
+    } else {
+      const L = f1[1] * f2[1] / gcd(f1[1], f2[1]), a1 = f1[0] * L / f1[1], a2 = f2[0] * L / f2[1], op = form === "prod" ? "+" : "−";
+      const bar = a1 > 0 && a2 > 0 && e[0] > 0 && L <= 12 && Math.max(a1, a2, Qv(e) * L) <= L * 2 ? { t: "bar", L: Math.max(L, a1, a2, Math.round(Qv(e) * L)), rows: [{ n: a1, k: "pt", lab: `${fr(f1[0], f1[1]).replace(/<[^>]+>/g, "") && f1[0] + "/" + f1[1]} = ${a1}/${L}` }, { n: a2, k: "orange", lab: `${f2[0]}/${f2[1]} = ${a2}/${L}` }, { n: Math.round(Qv(e) * L), k: "green", lab: `${op === "+" ? "sum" : "difference"} = ${Math.round(Qv(e) * L)}/${L}` }], note: `Parts of ${L}: each square is 1/${L}.` } : { t: "lanes", rows: [{ k: "b", l: "Common", h: `${fr(a1, L)} ${op} ${a2 < 0 ? `(${M(a2)}/${L})` : fr(a2, L)} = ${fr(a1 + (op === "+" ? a2 : -a2), L)}` }] };
+      steps.push(ST(P(XI, `${FH(f1)} ${op} ${f2[0] < 0 ? `(${FH(f2)})` : FH(f2)}`), form === "prod" ? "Same base, multiplying: add the exponents." : "Same base, dividing: subtract the exponents.", null));
+      steps.push(ST(P(XI, `${fr(a1, L)} ${op} ${a2 < 0 ? `(${M(a2)}/${L})` : fr(a2, L)}`), `Use the common denominator ${L}.`, bar));
+    }
+    if (e[0] > 0) steps.push(ST(C("res", fin), "Simplify the exponent.", steps[steps.length - 1].scene));
+    else { steps.push(ST(P(XI, FH(e)), "Simplify the exponent.", steps[steps.length - 1].scene)); steps.push(ST(C("res", fin), "Negative exponent: move it to the denominator.", null)); }
+    return { ask: "Simplify. Use positive exponents only.", q, a: finT, kind: "mono", val: V => V[X] ** Qv(e), hint: form === "pow" ? "Multiply the fraction exponents." : "Use a common denominator to add or subtract the exponents.", steps };
+  }
+}
+
+function genSqRoot() {
+  const t = pick(["int", "int", "dec", "frac", "est", "est"]);
+  if (t === "est") {
+    let n; do n = ri(3, 140); while (Number.isInteger(Math.sqrt(n)));
+    const lo = Math.floor(Math.sqrt(n)), hi = lo + 1, v = Math.round(Math.sqrt(n) * 10) / 10;
+    const sc = show => ({ t: "sq", m: "est", n, lo, hi, show });
+    return { ask: "Estimate to one decimal place.", q: rad(n), a: String(v), kind: "est", target: Math.sqrt(n), val: () => Math.sqrt(n), hint: `${n} is between ${lo * lo} and ${hi * hi}, so ${rad(n)} is between ${lo} and ${hi}.`,
+      steps: [ST("", `${n} is between the perfect squares ${lo * lo} and ${hi * hi}.`, sc(false)),
+        ST(`between ${lo} and ${hi}`, `So the side ${rad(n)} is between ${lo} and ${hi}.`, sc(false)),
+        ST(C("res", v), `${n} is ${n - lo * lo < hi * hi - n ? `closer to ${lo * lo}` : `closer to ${hi * hi}`}. Check: ${v} × ${v} = ${Math.round(v * v * 100) / 100}.`, sc(true), "≈")] };
+  }
+  if (t === "frac") {
+    const [p, q] = pick([[1, 2], [2, 3], [3, 4], [2, 5], [4, 5], [3, 7], [5, 8], [1, 3]]);
+    const sc = { t: "sq", m: "grid", n: q, shade: p, unit: true, side: `${p}/${q}`, area: `${p * p}/${q * q}` };
+    return { ask: "Evaluate.", q: rad(fr(p * p, q * q)), a: `${p}/${q}`, kind: "num", val: () => p / q, hint: "Take the square root of the top and of the bottom.",
+      steps: [ST(fr(rad(p * p), rad(q * q)), "Root of the top over root of the bottom.", sc), ST(C("res", fr(p, q)), `${fr(p, q)} × ${fr(p, q)} = ${fr(p * p, q * q)}.`, sc)] };
+  }
+  if (t === "dec") {
+    const s = pick([2, 3, 4, 5, 6, 7, 8, 9, 11, 12]), v = s / 10, sq = (s * s / 100).toString();
+    const sc = { t: "sq", m: "grid", n: Math.max(10, s), shade: s, unit: s <= 10, side: String(v), area: sq };
+    return { ask: "Evaluate.", q: rad(sq), a: String(v), kind: "num", val: () => v, hint: `Think of ${s * s} hundredths: what times itself makes ${sq}?`,
+      steps: [ST("", `A square with area ${sq}. Each small square is 0.01.`, sc), ST(C("res", v), `${v} × ${v} = ${sq}.`, sc)] };
+  }
+  const s = ri(2, 15), n = s * s;
+  const sc = { t: "sq", m: "grid", n: s, shade: s, side: String(s), area: String(n) };
+  return { ask: "Evaluate.", q: rad(n), a: String(s), kind: "num", val: () => s, hint: `What number times itself makes ${n}?`,
+    steps: [ST("", `${rad(n)} asks: a square has area ${n}. How long is each side?`, sc), ST(C("res", s), `${s} × ${s} = ${n}.`, sc)] };
+}
+
+function genNth() {
+  const t = pick(["cube", "cube", "negcube", "four", "five", "frac"]);
+  let k, r, rd = 1, sg = 1;
+  if (t === "cube") { k = 3; r = ri(2, 6); } else if (t === "negcube") { k = 3; r = ri(2, 5); sg = -1; } else if (t === "four") { k = 4; r = ri(2, 4); } else if (t === "five") { k = 5; r = 2; } else { k = 3; [r, rd] = pick([[1, 2], [2, 3], [3, 4], [2, 5]]); }
+  const inner = rd === 1 ? M(sg * r ** k) : fr(r ** k, rd ** k), rh = rd === 1 ? M(sg * r) : fr(r, rd);
+  const chips = rep(k, () => ch(rd === 1 ? M(sg * r) : fr(r, rd), sg < 0 ? "o" : "b"));
+  const sc = { t: "chips", rows: [[{ items: chips, cap: `${k} equal factors` }]], res: rd === 1 ? M(sg * r ** k) : fr(r ** k, rd ** k) };
+  return { ask: "Evaluate.", q: rad(inner, k), a: rd === 1 ? String(sg * r) : `${r}/${rd}`, kind: "num", val: () => sg * r / rd, hint: `What number, used ${k} times as a factor, makes ${inner}?`,
+    steps: [ST("", `${rad(inner, k)} asks: what number, used ${k} times as a factor, makes ${inner}?`, sc),
+      ST(C("res", rh), `${rep(k, () => rd === 1 ? pM(sg * r) : `(${fr(r, rd)})`).join(" × ")} = ${inner}${sg < 0 ? ". An odd number of negatives stays negative." : "."}`, sc)] };
+}
+
+/* radical simplifying (shared by simplify, multiply, divide): coefficient c, radicand n·x^p·y^q, index k */
+function radSteps(c, n, k, vars) {
+  const facs = [...primes(n).map(p => ({ x: String(p), k: "b" }))];
+  for (const [v, e] of vars) for (let i = 0; i < e; i++) facs.push({ x: xi(v), k: v === "x" ? "o" : "p" });
+  const byX = new Map(); for (const f of facs) { if (!byX.has(f.x)) byX.set(f.x, []); byX.get(f.x).push(f); }
+  const outChip = c !== 1 ? [ch(M(c), "n")] : [];
+  const groups = st => { const out = []; for (const [, fs] of byX) { let i = 0; for (; i + k <= fs.length; i += k) out.push({ ring: st > 0, s: st > 1 ? "cut" : "", items: fs.slice(i, i + k).map(f => ch(f.x, f.k, st > 1 ? "cut" : "")) }); if (i < fs.length) out.push({ items: fs.slice(i).map(f => ch(f.x, f.k)) }); } return out; };
+  const pulled = []; for (const [x, fs] of byX) for (let i = 0; i + k <= fs.length; i += k) pulled.push(ch(x, fs[0].k === "b" ? "g" : fs[0].k, "new"));
+  const [a, r] = splitRoot(n, k), vo = vars.map(([v, e]) => [v, Math.floor(e / k)]), vi = vars.map(([v, e]) => [v, e % k]);
+  const inH = radiH(r, vi.filter(([, e]) => e)), hasIn = r !== 1 || vi.some(([, e]) => e);
+  const coef = c * a, outV = vo.map(([v, e]) => pvH(v, e)).join("");
+  const fin = (coef === 1 && (outV || hasIn) ? "" : coef === -1 && (outV || hasIn) ? "−" : M(coef)) + outV + (hasIn ? rad(inH, k) : "");
+  const finT = (coef === 1 && (outV || hasIn) ? "" : coef === -1 && (outV || hasIn) ? "-" : String(coef)) + vo.map(([v, e]) => pvT(v, e)).join("") + (hasIn ? `${rootT(k)}(${radiT(r, vi)})` : "");
+  const word = k === 2 ? "pair of equal factors" : k === 3 ? "group of 3 equal factors" : `group of ${k} equal factors`;
+  const outStr = [c !== 1 ? M(c) : "", ...pulled.map(p => p.x)].filter(Boolean).join(" × ") || "1";
+  return { fin, finT, any: pulled.length > 0, steps: [
+    ST(coefH(c) + rad(facs.map(f => f.x).join(" · "), k), "Write the radicand as prime factors.", { t: "rad", k, out: outChip, ins: groups(0) }),
+    ST(coefH(c) + rad(facs.map(f => f.x).join(" · "), k), `Index ${k}: circle each ${word}.`, { t: "rad", k, out: outChip, ins: groups(1) }),
+    ST("", "Each circled group comes out of the radical as one factor.", { t: "rad", k, out: [...outChip, ...pulled], ins: groups(2) }),
+    ST(C("res", fin), `Multiply: outside ${outStr}${hasIn ? `, inside ${inH}` : ""}.`, { t: "rad", k, out: [...outChip, ...pulled], ins: groups(2), res: fin })] };
+}
+const kFree = k => k === 2 ? [2, 3, 5, 6, 7, 10, 11, 14, 15] : [2, 3, 4, 5, 6, 9, 10];
+function genSimplify(ctx, useVars) {
+  const k = pick(ctx.idx);
+  const r = pick(kFree(k)), a = k === 2 ? ri(2, r > 7 ? 4 : 6) : ri(2, r > 5 ? 2 : 3), c = useVars ? 1 : pick([1, 1, 1, 2, 3]);
+  const n = a ** k * r, vars = useVars ? [["x", ri(k, 2 * k + 1)], ...(Math.random() < 0.4 ? [["y", ri(1, k + 2)]] : [])] : [];
+  const rs = radSteps(c, n, k, vars);
+  return { ask: "Simplify (write as a mixed radical).", q: coefH(c) + rad(radiH(n, vars), k), a: rs.finT, kind: "rad", val: V => c * (n * vars.reduce((s, [v, e]) => s * V[v] ** e, 1)) ** (1 / k), hint: `Find groups of ${k} equal factors in the radicand: each group comes out as one factor.`, steps: rs.steps };
+}
+function genEntire(ctx, useVars) {
+  const k = pick(ctx.idx), a = k === 2 ? ri(2, 6) : ri(2, 3), r = pick(kFree(k).slice(0, 6));
+  const vi = useVars ? ri(0, 1) : 0, vars = useVars ? [["x", k + vi]] : [];
+  const qh = a + (useVars ? xi("x") : "") + rad(radiH(r, vi ? [["x", vi]] : []), k);
+  const n = a ** k * r, fin = rad(radiH(n, vars), k);
+  const outs = [ch(a, "p"), ...(useVars ? [ch(xi("x"), "o")] : [])], insIn = [ch(r, "b"), ...(vi ? [ch(xi("x"), "o")] : [])];
+  const moved = [{ ring: true, items: rep(k, () => ch(a, "p", "new")) }, ...(useVars ? [{ ring: true, items: rep(k, () => ch(xi("x"), "o", "new")) }] : []), { items: insIn }];
+  return { ask: "Write as an entire radical.", q: qh, a: `${rootT(k)}(${radiT(n, vars)})`, kind: "entire", val: V => a * (useVars ? V.x : 1) * (r * (vi ? V.x : 1)) ** (1 / k), hint: `A factor outside goes inside as ${k} equal factors: ${a} = ${rad(a ** k, k)}.`,
+    steps: [ST("", `Every factor outside goes inside as a group of ${k} equal factors.`, { t: "rad", k, out: outs, ins: [{ items: insIn }] }),
+      ST(rad(`${P(a, k)}${useVars ? " · " + P(xi("x"), k) : ""} · ${radiH(r, vi ? [["x", vi]] : [])}`, k), `${a} = ${rad(P(a, k), k)}: it goes in as ${rep(k, () => a).join(" × ")}.`, { t: "rad", k, out: [], ins: moved }),
+      ST(C("res", fin), "Multiply everything inside.", { t: "rad", k, out: [], ins: moved, res: fin })] };
+}
+function genAddSub(ctx) {
+  const k = ctx.idx.includes(3) && Math.random() < 0.25 ? 3 : 2;
+  for (;;) {
+    const r = pick(k === 2 ? [2, 3, 5, 6, 7] : [2, 3, 4]), nT = pick([2, 3, 3]);
+    const terms = rep(nT, i => ({ c: i ? pick([1, 1, 2, 3, -1, -2]) : pick([1, 2, 3]), s: ri(1, k === 2 ? (r > 3 ? 3 : 5) : 3), r }));
+    if (Math.random() < 0.2) { let r2; do r2 = pick(k === 2 ? [2, 3, 5] : [2, 3]); while (r2 === r); terms.push({ c: pick([1, 2, -1]), s: ri(1, 3), r: r2 }); }
+    if (!terms.some(t => t.s > 1) || new Set(terms.map(t => t.s * 100 + t.r)).size < terms.length) continue;
+    const fam = new Map(); for (const t of terms) fam.set(t.r, (fam.get(t.r) || 0) + t.c * t.s);
+    if ([...fam.values()].some(v => !v)) continue;
+    const sgn = (c, i) => (c < 0 ? (i ? " − " : "−") : (i ? " + " : "")) + (Math.abs(c) === 1 ? "" : Math.abs(c));
+    const q = terms.map((t, i) => sgn(t.c, i) + rad(t.s ** k * t.r, k)).join("");
+    const mid = terms.map((t, i) => sgn(t.c * t.s, i) + rad(t.r, k)).join("");
+    const famL = [...fam], fin = famL.map(([rr, c], i) => sgn(c, i) + rad(rr, k)).join("");
+    const finT = famL.map(([rr, c], i) => (c < 0 ? "-" : i ? "+" : "") + (Math.abs(c) === 1 ? "" : Math.abs(c)) + `${rootT(k)}(${rr})`).join("");
+    const colr = rr => rr === r ? "b" : "o";
+    const cols = ["b", "o", "p", "g"];
+    const t1 = { t: "tiles", groups: terms.map((t, i) => ({ lab: rad(t.s ** k * t.r, k), n: t.c, k: cols[i % 4], cap: sgn(t.c, 0) + rad(t.s ** k * t.r, k) })) };
+    const t2 = { t: "tiles", groups: terms.map(t => ({ lab: rad(t.r, k), n: t.c * t.s, k: colr(t.r), cap: sgn(t.c * t.s, 0) + rad(t.r, k) })) };
+    const t3 = { t: "tiles", groups: famL.map(([rr, c]) => ({ lab: rad(rr, k), n: c, k: colr(rr), cap: sgn(c, 0) + rad(rr, k) })), res: fin };
+    const simp = terms.filter(t => t.s > 1).map(t => `${rad(t.s ** k * t.r, k)} = ${t.s}${rad(t.r, k)}`).join(", ");
+    return { ask: "Simplify.", q, a: finT, kind: "rad", val: () => terms.reduce((s, t) => s + t.c * t.s * Math.pow(t.r, 1 / k), 0), hint: "Simplify each radical first. Then add the coefficients of like radicals.",
+      steps: [ST("", "These are not like radicals yet: different radicands. Simplify each one.", t1),
+        ST(mid, `Simplify: ${simp}. Now the radicals match.`, t2),
+        ST(C("res", fin), famL.length > 1 ? "Add the coefficients of like radicals. Unlike radicals stay separate." : "Add the coefficients. The radical stays the same.", t3)] };
+  }
+}
+function genMult(ctx, useVars) {
+  for (;;) {
+    const p = pick([2, 3, 5, 6, 7, 10, 12, 14, 15]), q = pick([2, 3, 5, 6, 8, 10, 14, 15, 21]);
+    if (p === q || splitRoot(p * q, 2)[0] === 1) continue;
+    const a = pick([1, 2, 3, 4, -2]), b = pick([1, 2, 3, 5, -3]);
+    const e1 = useVars ? ri(1, 3) : 0, e2 = useVars ? ri(1, 2) : 0;
+    const v1 = e1 ? [["x", e1]] : [], v2 = e2 ? [["x", e2]] : [], vp = useVars ? [["x", e1 + e2]] : [];
+    const rs = radSteps(a * b, p * q, 2, vp);
+    const lanes = { t: "lanes", rows: [{ k: "p", l: "Outside", h: `${M(a)} × ${pM(b)} = ${M(a * b)}` }, { k: "b", l: "Inside", h: `${rad(radiH(p, v1))} × ${rad(radiH(q, v2))} = ${rad(radiH(p * q, vp))}` }] };
+    const ab = a * b;
+    return { ask: "Multiply and simplify.", q: `${coefH(a)}${rad(radiH(p, v1))} × ${b < 0 ? `(${coefH(b)}${rad(radiH(q, v2))})` : coefH(b) + rad(radiH(q, v2))}`, a: rs.finT, kind: "rad", val: V => a * b * Math.sqrt(p * q * (useVars ? V.x ** (e1 + e2) : 1)), hint: "Multiply outside by outside and inside by inside, then simplify.",
+      steps: [ST(`${coefH(ab)}${rad(radiH(p * q, vp))}`, "Multiply outside by outside, inside by inside.", lanes), ...rs.steps.slice(1)] };
+  }
+}
+/* distributive property: each term of the first bracket times each term of the second, one line per product */
+function distH(A, B, cells, res, note) {
+  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"];
+  const top = `<div class="dtop">(${A.map((t, i) => C("c" + cA[i % 2], (i && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})(${B.map((t, j) => C("c" + cB[j % 2], (j && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})</div>`;
+  const rows = A.map((a, i) => B.map((b, j) => { const c = cells[i][j]; return `<div class="drow ${c.s || ""}"><span>${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}</span><span>=</span><span>${c.sub ? c.sub.replace(/^\+/, "") + " = " : ""}${c.h.replace(/^\+/, "")}</span></div>`; }).join("")).join("");
+  return { t: "html", h: `<div class="dist">${top}${rows}</div>` + (res ? resH(res) : "") + (note ? `<p class="note">${note}</p>` : "") };
+}
+function genDist() {
+  for (;;) {
+    const form = pick(["mono", "bin", "conj", "sq"]);
+    let A, B, qh;
+    const r1 = pick([2, 3, 5, 6, 7]), r2 = pick([2, 3, 5, 6, 10, 15]);
+    const T = (c, r) => ({ c, r });
+    const grp = X => `(${rxH(X)})`;
+    if (form === "mono") { A = [T(pick([1, 2, 3]), r1)]; B = [T(pick([1, 2, 3]), r2), T(pick([-1, -2, 1, 3, -4, 5]), pick([1, r1, 2]))]; qh = `${rxH(A)}${grp(B)}`; }
+    else if (form === "bin") { A = [T(ri(1, 5), 1), T(pick([1, 2, 3, -1, -2]), r1)]; B = [T(ri(1, 5), 1), T(pick([1, 2, -1, -3]), r1)]; qh = grp(A) + grp(B); }
+    else if (form === "conj") { if (Math.random() < 0.5) { const a = ri(1, 6), b = pick([1, 2, 3]); A = [T(a, 1), T(b, r1)]; B = [T(a, 1), T(-b, r1)]; } else { const s = r2 === r1 ? 11 : r2; A = [T(1, r1), T(1, s)]; B = [T(1, r1), T(-1, s)]; } qh = grp(A) + grp(B); }
+    else { A = [T(ri(1, 4), 1), T(pick([1, 2, -1, 3]), r1)]; B = A; qh = P(grp(A), 2); }
+    if (A.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1) || B.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1)) continue;
+    const prods = rxMul(A, B), fin = rxCombine(prods);
+    if (!fin.length || (form === "mono" && A[0].r === B[1].r && B[1].r === 1)) continue;
+    const cells = A.map(a => B.map(b => { const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r); return { h: rxSignedH(sm), sub: raw.r !== sm.r ? rxSignedH(raw) : "", k: sm.r === 1 ? "p" : "b" }; }));
+    const sumOpp = prods.length === 4 && prods[1].r === prods[2].r && prods[1].c === -prods[2].c && prods[1].r !== 1;
+    const cut = cells.map((row, i) => row.map((c, j) => sumOpp && i + j === 1 ? { ...c, s: "cut" } : c));
+    const area = cs => distH(A, B, cs);
+    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", area(cells)),
+      ST(rxH(prods), "Write all the products. Simplify each radical.", area(cells)),
+      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : "Combine like terms.", distH(A, B, cut, rxH(fin)))];
+    return { ask: "Expand and simplify.", q: qh, a: rxT(fin), kind: "rad", val: () => rxVal(fin), hint: "Multiply every term by every term, simplify each radical, then combine like terms.", steps };
+  }
+}
+function genDiv(ctx, useVars) {
+  for (;;) {
+    const q = pick([2, 3, 5, 6, 7]), m = ri(2, 12), p = q * m, b = pick([1, 2, 3]), kk = pick([1, 2, 3, 4, 5]), a = b * kk;
+    const e2 = useVars ? 1 : 0, e1 = useVars ? pick([3, 5]) : 0, vm = useVars ? [["x", e1 - e2]] : [];
+    if (!useVars && Number.isInteger(Math.sqrt(m)) && Math.random() < 0.5) continue;
+    const rs = radSteps(kk, m, 2, vm);
+    const top = coefH(a) + rad(radiH(p, e1 ? [["x", e1]] : [])), bot = coefH(b) + rad(radiH(q, e2 ? [["x", e2]] : []));
+    const lanes = { t: "lanes", rows: [{ k: "p", l: "Outside", h: `${a} ÷ ${b} = ${kk}` }, { k: "b", l: "Inside", h: `${rad(radiH(p, e1 ? [["x", e1]] : []))} ÷ ${rad(radiH(q, e2 ? [["x", e2]] : []))} = ${rad(radiH(m, vm))}` }] };
+    return { ask: "Divide and simplify.", q: fr(top, bot), a: rs.finT, kind: "rad", val: V => kk * Math.sqrt(m * (useVars ? V.x ** (e1 - e2) : 1)), hint: "Divide outside by outside and inside by inside, then simplify.",
+      steps: [ST(coefH(kk) + rad(radiH(m, vm)), "Divide outside by outside, inside by inside.", lanes), ...(rs.any ? rs.steps.slice(1) : [ST(C("res", rs.fin), "Nothing more comes out of the radical.", lanes)])] };
+  }
+}
+function genRatMono() {
+  for (;;) {
+    const form = pick(["a", "ab", "abp", "pq"]), q = pick([2, 3, 5, 6, 7, 10]);
+    const a = form === "pq" ? 1 : ri(1, 9), b = form === "ab" || form === "abp" ? ri(2, 4) : 1, p = form === "abp" || form === "pq" ? pick([2, 3, 5, 6, 7]) : 1;
+    if (p === q) continue;
+    const [s, t] = splitRoot(p * q, 2), num = a * s, den = b * q, g = gcd(num, den), N = num / g, D = den / g;
+    const top = p === 1 ? String(a) : coefH(a) + rad(p), bot = coefH(b) + rad(q);
+    const finH = (t === 1 ? String(N) : coefH(N) + rad(t)), fin = D === 1 ? finH : fr(finH, D);
+    const finT = D === 1 ? (t === 1 ? String(N) : `${coefT(N)}√(${t})`) : `(${t === 1 ? N : `${coefT(N)}√(${t})`})/${D}`;
+    const sq = { t: "sq", m: "plain", q };
+    const steps = [ST(`${fr(top, bot)} × ${fr(C("cg", rad(q)), C("cg", rad(q)))}`, `Multiply by ${fr(rad(q), rad(q))}, which equals 1, so the value does not change.`, sq),
+      ST(fr(coefH(a) + rad(p * q), `${b === 1 ? "" : b + " × "}${q}`), `Bottom: ${rad(q)} × ${rad(q)} = ${q}, the area of this square. Top: multiply the radicals.`, sq)];
+    if (s > 1) steps.push(ST(fr(coefH(num) + rad(t), den).replace(rad(1), ""), `Simplify: ${rad(p * q)} = ${s}${rad(t)}.`, sq));
+    if (g > 1) steps.push(ST(C("res", fin), `Reduce: divide the top and bottom by ${g}.`, sq)); else steps.push(ST(C("res", fin), "No radical left in the denominator.", sq));
+    return { ask: "Rationalize the denominator and simplify.", q: fr(top, bot), a: finT, kind: "rad", val: () => a * Math.sqrt(p) / (b * Math.sqrt(q)), hint: `Multiply the top and bottom by ${rad(q)}.`, steps };
+  }
+}
+function genRatBin() {
+  for (;;) {
+    const q = pick([2, 3, 5, 6, 7]), T = (c, r) => ({ c, r });
+    let den;
+    if (Math.random() < 0.7) den = [T(ri(1, 5), 1), T(pick([1, -1, 2, -2]), q)]; else { const p = pick([2, 3, 5, 7].filter(v => v !== q)); den = [T(1, p), T(pick([1, -1]), q)]; }
+    const conj = [den[0], T(-den[1].c, den[1].r)];
+    const D = den[0].c ** 2 * den[0].r - den[1].c ** 2 * den[1].r;
+    if (!D) continue;
+    const numer = Math.random() < 0.7 ? [T(pick([1, 2, 3, 4, 6, 8, 10, 12].filter(v => v % 1 === 0)) * (Math.random() < 0.5 ? Math.abs(D) : 1), 1)] : [T(1, pick([2, 3, 5]))];
+    let top = rxCombine(rxMul(numer, conj)), d = D;
+    let g = Math.abs(d); for (const t of top) g = gcd(g, t.c);
+    top = top.map(t => ({ c: t.c / g, r: t.r })); d /= g;
+    if (d < 0) { d = -d; top = top.map(t => ({ c: -t.c, r: t.r })); }
+    if (top.length > 3) continue;
+    const topH = rxH(top), fin = d === 1 ? topH : fr(topH, d), finT = d === 1 ? rxT(top) : `(${rxT(top)})/${d}`;
+    const cells = [den, conj].length && den.map((a, i) => conj.map((b, j) => { const sm = rx(a.c * b.c, a.r * b.r); return { h: rxSignedH(sm), k: sm.r === 1 ? "p" : "b", s: i !== j ? "cut" : "" }; }));
+    const area = distH(den, conj, cells, M(D), "The middle terms are opposites, so the radicals cancel.");
+    const rawTop = rxCombine(rxMul(numer, conj));
+    const steps = [ST(`${fr(rxH(numer), rxH(den))} × ${fr(C("cg", rxH(conj)), C("cg", rxH(conj)))}`, `Multiply the top and bottom by the conjugate ${rxH(conj)} (change the sign between the terms).`, null),
+      ST(fr(`${rxH(numer)}(${rxH(conj)})`, M(D)), "Bottom: the conjugates multiply to a whole number.", area),
+      ST(fr(rxH(rawTop), M(D)), "Top: distribute.", area)];
+    if (g > 1 || D < 0 || d === 1) steps.push(ST(C("res", fin), g > 1 ? `Divide every term by ${D < 0 ? -g : g}.` : D < 0 ? "Move the negative to the top." : "Simplify.", null)); else steps[2].e = C("res", fin);
+    return { ask: "Rationalize the denominator and simplify.", q: fr(rxH(numer), rxH(den)), a: finT, kind: "rad", val: () => rxVal(numer) / rxVal(den), hint: `Multiply the top and bottom by the conjugate ${rxH(conj)}.`, steps };
+  }
+}
+function genVarRad(ctx) {
+  const g = pick([genSimplify, genSimplify, genEntire, genMult, genDiv]);
+  const p = g(ctx, true);
+  p.ask += " (variables are positive)";
+  return p;
+}
+
+/* ---------- skills and courses ---------- */
+const POW = "Powers", ROOT = "Roots and radicals";
+const L9 = ["9"], TEN = ["10C"], TWENTY = ["20-1", "20-2"];
+const SKILLS = [
+  { id: "meaning", g: POW, name: "Powers as repeated multiplication", own: L9, gen: genMeaning, key: `<p>${P("a", "n")} = a × a × … × a<span class="means">n factors of the base a</span></p><p>${P("(−2)", 4)} = 16 &nbsp; −${P(2, 4)} = −16<span class="means">Brackets decide what the base is.</span></p>` },
+  { id: "product", g: POW, name: "Product law", own: L9, gen: genProduct, key: `<p>${P("a", "m")} × ${P("a", "n")} = ${P("a", "m + n")}<span class="means">Same base, multiplying: add the exponents.</span></p>` },
+  { id: "quotient", g: POW, name: "Quotient law", own: L9, gen: genQuotient, key: `<p>${P("a", "m")} ÷ ${P("a", "n")} = ${P("a", "m − n")}<span class="means">Same base, dividing: subtract the exponents.</span></p>` },
+  { id: "power", g: POW, name: "Power of a power", own: L9, gen: genPower, key: `<p>${P(`(${P("a", "m")})`, "n")} = ${P("a", "mn")}<span class="means">Multiply the exponents.</span></p>` },
+  { id: "prodquot", g: POW, name: "Power of a product or quotient", own: L9, gen: genProdQuot, key: `<p>${P("(ab)", "n")} = ${P("a", "n")}${P("b", "n")}</p><p>${P(`(${fr("a", "b")})`, "n")} = ${fr(P("a", "n"), P("b", "n"))}<span class="means">Every factor in the brackets gets the exponent.</span></p>` },
+  { id: "zero", g: POW, name: "Zero exponent", own: L9, gen: genZero, key: `<p>${P("a", 0)} = 1<span class="means">for any base a ≠ 0</span></p>` },
+  { id: "neg", g: POW, name: "Negative exponents", own: L9, gen: genNeg, key: `<p>${P("a", "−n")} = ${fr(1, P("a", "n"))}</p><p>${P(`(${fr("a", "b")})`, "−n")} = ${P(`(${fr("b", "a")})`, "n")}<span class="means">A negative exponent means the reciprocal.</span></p>` },
+  { id: "mixed", g: POW, name: "Exponent laws together", own: L9, gen: genMixed, key: `<p>× add &nbsp; ÷ subtract &nbsp; ( )<sup>n</sup> multiply<span class="means">Same base: work with the exponents.</span></p>` },
+  { id: "varlaws", g: POW, name: "Exponent laws with variables", own: TEN, gen: genVarLaws, key: `<p>${P("(3x²y)", 2)} = 9${P(xi("x"), 4)}${P(xi("y"), 2)}<span class="means">Sort by base: numbers, then each variable.</span></p><p>${P(xi("x"), "−3")} = ${fr(1, P(xi("x"), 3))}<span class="means">Final answers use positive exponents.</span></p>` },
+  { id: "ratconv", g: POW, name: "Rational exponents and radicals", own: TEN, gen: genRatConvert, key: `<p>${P("a", fr(C("co", "m"), C("cb", "n")))} = ${rad(P("a", C("co", "m")), C("cb", "n"))} = ${P(`(${rad("a", C("cb", "n"))})`, C("co", "m"))}<span class="means"><span class="co">power</span> over <span class="cb">root</span></span></p>` },
+  { id: "rateval", g: POW, name: "Evaluate rational exponents", own: TEN, gen: genRatEval, key: `<p>${P(8, fr(2, 3))} = ${P(`(${rad(8, 3)})`, 2)} = ${P(2, 2)} = 4<span class="means">Root first, then the power.</span></p><p>${P(8, "−" + fr(2, 3))} = ${fr(1, 4)}<span class="means">Negative: take the reciprocal.</span></p>` },
+  { id: "ratlaws", g: POW, name: "Exponent laws with rational exponents", own: TEN, gen: genRatLaws, key: `<p>${P(xi("x"), fr(1, 2))} · ${P(xi("x"), fr(1, 3))} = ${P(xi("x"), fr(5, 6))}<span class="means">The same laws work with fraction exponents.</span></p>` },
+  { id: "sqroot", g: ROOT, name: "Square roots: perfect squares and estimates", own: L9, gen: genSqRoot, key: `<p>${rad(49)} = 7<span class="means">the side of a square with area 49</span></p><p>${rad(40)} ≈ 6.3<span class="means">between ${rad(36)} = 6 and ${rad(49)} = 7</span></p>` },
+  { id: "nth", g: ROOT, name: "Cube roots and nth roots", own: TEN, gen: genNth, key: `<p>${rad(8, 3)} = 2<span class="means">2 × 2 × 2 = 8: one of 3 equal factors</span></p>` },
+  { id: "simplify", g: ROOT, name: "Entire to mixed radicals (simplify)", own: [...TEN, ...TWENTY], gen: genSimplify, key: `<p>${rad(72)} = ${rad("36 · 2")} = 6${rad(2)}<span class="means">Each group of index-many equal factors comes out as one factor.</span></p>` },
+  { id: "entire", g: ROOT, name: "Mixed to entire radicals", own: [...TEN, ...TWENTY], gen: genEntire, key: `<p>3${rad(5)} = ${rad("3² · 5")} = ${rad(45)}<span class="means">A factor goes in as index-many equal factors.</span></p>` },
+  { id: "addsub", g: ROOT, name: "Add and subtract radicals", own: [...TEN, ...TWENTY], gen: genAddSub, key: `<p>3${rad(2)} + 5${rad(2)} = 8${rad(2)}<span class="means">Like radicals: same index and radicand. Simplify first.</span></p>` },
+  { id: "mult", g: ROOT, name: "Multiply radicals", own: TWENTY, gen: genMult, key: `<p>a${rad("b")} × c${rad("d")} = ac${rad("bd")}<span class="means">Outside × outside, inside × inside, then simplify.</span></p>` },
+  { id: "dist", g: ROOT, name: "Distribute and expand", own: TWENTY, gen: genDist, key: `<p>(2 + ${rad(3)})(1 − ${rad(3)}) = −1 − ${rad(3)}<span class="means">Distribute: each term times each term, then combine like terms.</span></p>` },
+  { id: "div", g: ROOT, name: "Divide radicals", own: TWENTY, gen: genDiv, key: `<p>${fr("a" + rad("b"), "c" + rad("d"))} = ${fr("a", "c")}${rad(fr("b", "d"))}<span class="means">Outside ÷ outside, inside ÷ inside.</span></p>` },
+  { id: "ratmono", g: ROOT, name: "Rationalize a monomial denominator", own: TWENTY, gen: genRatMono, key: `<p>${fr(6, rad(3))} × ${fr(rad(3), rad(3))} = ${fr("6" + rad(3), 3)} = 2${rad(3)}<span class="means">No radical left in the denominator.</span></p>` },
+  { id: "ratbin", g: ROOT, name: "Rationalize a binomial denominator (conjugates)", own: ["20-1"], gen: genRatBin, key: `<p>(a + ${rad("b")})(a − ${rad("b")}) = ${P("a", 2)} − b<span class="means">Multiply by the conjugate: the radicals cancel.</span></p>` },
+  { id: "varrad", g: ROOT, name: "Radicals with variable radicands", own: TWENTY, gen: genVarRad, key: `<p>${rad("18" + P(xi("x"), 3))} = 3${xi("x")}${rad("2" + xi("x"))}<span class="means">Variables come out in groups too (x ≥ 0).</span></p>` },
+];
+const ORDER = ["9", "10C", "20-1", "20-2"], NAMES = { "9": "Math 9", "10C": "Math 10C", "20-1": "Math 20-1", "20-2": "Math 20-2" };
+const IDX = { "9": [2], "10C": [2, 2, 3], "20-1": [2, 2, 3], "20-2": [2] };
+/* a course can use its own skills plus earlier courses' skills (review); 20-1 and 20-2 both follow 10C */
+const before = { "9": [], "10C": ["9"], "20-1": ["9", "10C"], "20-2": ["9", "10C"] };
+const status = (s, c) => s.own.includes(c) ? "own" : s.own.some(o => before[c].includes(o)) ? "review" : "locked";
+
+/* ---------- state ---------- */
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+let course = ORDER.includes(store.get("pr-course")) ? store.get("pr-course") : "10C";
+let mode = "learn", checked = new Set(), learnId = null, prob = null, step = 0, revealed = false, firstTry = true, done = false, right = 0, tries = 0;
+const ctx = () => ({ course, idx: IDX[course], neg: checked.has("neg") });
+
+function setCourse(c) {
+  course = c; store.set("pr-course", c);
+  checked = new Set(SKILLS.filter(s => status(s, c) === "own").map(s => s.id));
+  document.querySelectorAll("#course button").forEach(b => b.classList.toggle("on", b.dataset.c === c));
+  if (!learnId || status(SKILLS.find(s => s.id === learnId), c) === "locked" || mode === "learn") learnId = SKILLS.find(s => status(s, c) === "own").id;
+  renderSkills(); fresh();
+}
+function renderSkills() {
+  let h = "", g = "";
+  for (const s of SKILLS) {
+    if (s.g !== g) { g = s.g; h += `<p class="label">${g}</p>`; }
+    const st = status(s, course), tag = st === "own" ? "" : st === "review" ? `Review: ${NAMES[s.own[0]]}` : `${s.own.map(o => NAMES[o]).join(", ")}`;
+    h += `<div class="sk ${st === "locked" ? "locked" : ""} ${s.id === learnId && mode === "learn" ? "on" : ""}"><input type="checkbox" data-id="${s.id}" aria-label="Practice ${s.name}" ${checked.has(s.id) ? "checked" : ""} ${st === "locked" ? "disabled" : ""}><button type="button" class="skn" data-id="${s.id}" ${st === "locked" ? "disabled" : ""}>${s.name}</button>${tag ? `<span class="tag">${tag}</span>` : ""}</div>`;
+  }
+  h += `<p class="hint">Checked skills go into Practice. Tap a skill's name to learn it.</p>`;
+  $("#skills").innerHTML = `<p class="label" style="color: var(--ink)">Skills: ${NAMES[course]}</p>` + h;
+}
+$("#skills").addEventListener("change", e => { const id = e.target.dataset.id; if (!id) return; e.target.checked ? checked.add(id) : checked.delete(id); if (mode === "practice" && !prob) newProblem(); });
+$("#skills").addEventListener("click", e => { const b = e.target.closest(".skn"); if (!b || b.disabled) return; learnId = b.dataset.id; setMode("learn"); });
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("#mode button").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+  $("#learnPanel").hidden = m !== "learn"; $("#practicePanel").hidden = m !== "practice";
+  renderSkills(); fresh();
+}
+function fresh() { mode === "learn" ? newExample() : newProblem(); }
+function newExample() {
+  const s = SKILLS.find(s => s.id === learnId);
+  prob = s.gen(ctx()); step = 0; revealed = true;
+  $("#key").innerHTML = s.key;
+  draw();
+}
+function newProblem() {
+  const pool = SKILLS.filter(s => checked.has(s.id) && status(s, course) !== "locked");
+  revealed = false; done = false; firstTry = true; step = 0;
+  $("#ans").value = ""; $("#ans").className = ""; $("#fb").textContent = ""; $("#fb").className = "fb"; $("#preview").innerHTML = "";
+  if (!pool.length) { prob = null; $("#ask").textContent = "Check at least one skill to practise."; $("#eq").innerHTML = ""; $("#scene").innerHTML = ""; $("#say").textContent = ""; $("#nav").hidden = true; $("#fmt").textContent = ""; return; }
+  const s = pick(pool);
+  prob = s.gen(ctx()); prob.skill = s;
+  $("#fmt").innerHTML = fmtText(prob.kind);
+  draw();
+  $("#ans").focus({ preventScroll: true });
+}
+function fmtText(k) {
+  return { num: "A number. Fractions like 3/4 are fine.", est: "A decimal to one place, like 6.3.", pow: "One power, like 2^7. Use ^ for the exponent.", mono: "Use ^ for exponents and / for fractions: 3x^2/(4y^3).", "to-radical": "Use √, ∛ or ∜, and ^ for the power: ∛(x^2).", "to-power": "Use ^ and a fraction in brackets: x^(2/3).", rad: "Type √ before the radicand: 6√2, (3+√5)/2, 3x√(2x).", entire: "One radical: √(45)." }[k] || "";
+}
+function draw() {
+  const s = prob.steps[step];
+  const showWork = mode === "learn" || revealed;
+  $("#ask").textContent = (mode === "learn" ? `${prob.skill ? "" : ""}Example: ` : "") + prob.ask;
+  $("#eq").innerHTML = prob.q + (showWork && s.e ? ` ${s.rel || "="} ${s.e}` : "");
+  $("#scene").innerHTML = showWork ? sceneH(s.scene) : "";
+  $("#say").innerHTML = showWork ? s.say : "";
+  $("#nav").hidden = !showWork;
+  $("#back").disabled = step === 0; $("#next").disabled = step === prob.steps.length - 1;
+  $("#stepn").textContent = `Step ${step + 1} of ${prob.steps.length}`;
+  $("#steps").innerHTML = prob.steps.map((t, i) => `<li class="${i === step ? "now" : i > step ? "later" : ""}" data-i="${i}">${t.say}</li>`).join("");
+}
+const go = d => { if (!prob) return; const n = Math.max(0, Math.min(prob.steps.length - 1, step + d)); if (n !== step) { step = n; draw(); } };
+$("#back").onclick = () => go(-1); $("#next").onclick = () => go(1);
+$("#again").onclick = () => { step = 0; draw(); };
+$("#newEx").onclick = newExample;
+$("#steps").addEventListener("click", e => { const li = e.target.closest("li"); if (li) { step = +li.dataset.i; draw(); } });
+document.querySelectorAll("#mode button").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll("#course button").forEach(b => b.onclick = () => setCourse(b.dataset.c));
+document.addEventListener("keydown", e => { if (e.target.closest("input")) return; if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); });
+
+/* ---------- answer reader ---------- */
+function tokenize(s) {
+  const SUP = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9", "⁻": "-" };
+  s = s.replace(/[×·*]/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-").replace(/sqrt/gi, "√").replace(/cbrt/gi, "∛").replace(/\[/g, "(").replace(/\]/g, ")")
+    .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g, m => "^(" + [...m].map(c => SUP[c]).join("") + ")");
+  const out = []; let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (/\s/.test(c)) { if (out.length && out[out.length - 1].t !== "sp") out.push({ t: "sp" }); i++; continue; }
+    if (/[0-9.]/.test(c)) { let j = i; while (j < s.length && /[0-9.]/.test(s[j])) j++; const str = s.slice(i, j); if (str === "." || (str.match(/\./g) || []).length > 1) throw 0; out.push({ t: "n", v: parseFloat(str), s: str }); i = j; continue; }
+    if (/[a-zA-Z]/.test(c)) { out.push({ t: "v", v: c.toLowerCase() }); i++; continue; }
+    if (c === "√" || c === "∛" || c === "∜") { out.push({ t: "root", k: c === "√" ? 2 : c === "∛" ? 3 : 4 }); i++; continue; }
+    if ("+-*/^()".includes(c)) { out.push({ t: c }); i++; continue; }
+    throw 0;
+  }
+  return out;
+}
+function parse(str) {
+  const tk = tokenize(str); let p = 0;
+  const peek = () => tk[p], sp = () => { while (tk[p] && tk[p].t === "sp") p++; };
+  const want = t => { sp(); if (!tk[p] || tk[p].t !== t) throw 0; p++; };
+  function expr() {
+    sp(); const terms = [{ neg: false, e: term() }];
+    for (;;) { sp(); const t = peek(); if (t && (t.t === "+" || t.t === "-")) { p++; terms.push({ neg: t.t === "-", e: term() }); } else break; }
+    return terms.length === 1 ? terms[0].e : { t: "add", terms };
+  }
+  function term() {
+    sp(); let f = [unary()];
+    for (;;) {
+      sp(); const t = peek(); if (!t) break;
+      if (t.t === "*") { p++; f.push(unary()); }
+      else if (t.t === "/") { p++; const r = unary(); f = [{ t: "div", a: f.length === 1 ? f[0] : { t: "mul", f }, b: r }]; }
+      else if (t.t === "n" || t.t === "v" || t.t === "(" || t.t === "root") f.push(power());
+      else break;
+    }
+    return f.length === 1 ? f[0] : { t: "mul", f };
+  }
+  function unary() { sp(); const t = peek(); if (t && t.t === "-") { p++; return { t: "neg", a: unary() }; } if (t && t.t === "+") { p++; return unary(); } return power(); }
+  function power() { const b = primary(); if (peek() && peek().t === "^") { p++; return { t: "pow", b, e: expo() }; } return b; }
+  function expo() {
+    sp(); const t = peek(); if (!t) throw 0;
+    if (t.t === "-") { p++; return { t: "neg", a: expo() }; }
+    let a;
+    if (t.t === "n") { p++; a = { t: "n", v: t.v, s: t.s }; } else if (t.t === "v") { p++; a = { t: "v", n: t.v }; } else if (t.t === "(") { p++; a = { t: "par", a: expr() }; want(")"); } else throw 0;
+    if (peek() && peek().t === "^") { p++; return { t: "pow", b: a, e: expo() }; }
+    return a;
+  }
+  function primary() {
+    sp(); const t = peek(); if (!t) throw 0;
+    if (t.t === "n") { p++; return { t: "n", v: t.v, s: t.s }; }
+    if (t.t === "v") { p++; return { t: "v", n: t.v }; }
+    if (t.t === "(") { p++; const e = expr(); want(")"); return { t: "par", a: e }; }
+    if (t.t === "root") {
+      p++; sp();
+      if (peek() && peek().t === "(") { p++; const e = expr(); want(")"); return { t: "root", k: t.k, a: e }; }
+      const f = [];
+      while (peek() && (peek().t === "n" || peek().t === "v")) { const u = tk[p++]; let a = u.t === "n" ? { t: "n", v: u.v, s: u.s } : { t: "v", n: u.v }; if (peek() && peek().t === "^") { p++; a = { t: "pow", b: a, e: expo() }; } f.push(a); }
+      if (!f.length) throw 0;
+      return { t: "root", k: t.k, a: f.length === 1 ? f[0] : { t: "mul", f } };
+    }
+    throw 0;
+  }
+  const e = expr(); sp(); if (p < tk.length) throw 0; return e;
+}
+const un = n => { while (n.t === "par") n = n.a; return n; };
+function ev(n, V) {
+  switch (n.t) {
+    case "n": return n.v; case "v": return V[n.n];
+    case "par": return ev(n.a, V); case "neg": return -ev(n.a, V);
+    case "add": return n.terms.reduce((s, t) => s + (t.neg ? -1 : 1) * ev(t.e, V), 0);
+    case "mul": return n.f.reduce((s, f) => s * ev(f, V), 1);
+    case "div": return ev(n.a, V) / ev(n.b, V);
+    case "pow": { const b = ev(n.b, V), e = ev(n.e, V); if (b < 0 && !Number.isInteger(e)) return NaN; return Math.pow(b, e); }
+    case "root": { const a = ev(n.a, V); if (a < 0) return n.k % 2 ? -Math.pow(-a, 1 / n.k) : NaN; return Math.pow(a, 1 / n.k); }
+  }
+  return NaN;
+}
+function show(n) {
+  switch (n.t) {
+    case "n": return n.s;
+    case "v": return xi(n.n);
+    case "par": return `(${show(n.a)})`;
+    case "neg": return "−" + show(n.a);
+    case "add": return n.terms.map((t, i) => (t.neg ? (i ? " − " : "−") : (i ? " + " : "")) + show(t.e)).join("");
+    case "mul": return n.f.map((f, i) => (i && un(f).t === "n" && !(f.t === "par") ? " × " : "") + show(f)).join("");
+    case "div": return fr(show(un(n.a)), show(un(n.b)));
+    case "pow": { const b = n.b; const bh = ["n", "v", "par", "root"].includes(b.t) ? show(b) : `(${show(b)})`; return P(bh, show(un(n.e))); }
+    case "root": return rad(show(un(n.a)), n.k);
+  }
+  return "";
+}
+
+/* ---------- checking ---------- */
+const VS = [{}, {}];
+"abcdefghijklmnopqrstuvwxyz".split("").forEach((c, i) => { VS[0][c] = 0.6 + ((i * 37) % 23) / 17; VS[1][c] = 0.5 + ((i * 53) % 29) / 13; });
+Object.assign(VS[0], { x: 1.37, y: 0.83, a: 1.91, b: 2.27, m: 1.13, n: 0.67 }); Object.assign(VS[1], { x: 2.71, y: 1.29, a: 0.77, b: 1.61, m: 2.3, n: 1.9 });
+const close = (a, b) => isFinite(a) && isFinite(b) && Math.abs(a - b) <= 1e-7 * Math.max(1, Math.abs(b));
+function walk(n, f, inDen = false, inExp = false) {
+  f(n, inDen, inExp);
+  switch (n.t) {
+    case "par": case "neg": walk(n.a, f, inDen, inExp); break;
+    case "add": n.terms.forEach(t => walk(t.e, f, inDen, inExp)); break;
+    case "mul": n.f.forEach(x => walk(x, f, inDen, inExp)); break;
+    case "div": walk(n.a, f, inDen, inExp); walk(n.b, f, true, inExp); break;
+    case "pow": walk(n.b, f, inDen, inExp); walk(n.e, f, inDen, true); break;
+    case "root": walk(n.a, f, inDen, inExp); break;
+  }
+}
+const has = (n, pred) => { let r = false; walk(n, (x, d, e) => { if (pred(x, d, e)) r = true; }); return r; };
+const numericOnly = n => !has(n, x => x.t === "v");
+/* radicand as integer × variables, or null */
+function radParts(n) {
+  n = un(n);
+  if (n.t === "n") return Number.isInteger(n.v) ? { n: n.v, v: {} } : null;
+  if (n.t === "v") return { n: 1, v: { [n.n]: 1 } };
+  if (n.t === "pow") { const e = ev(n.e, VS[0]); if (!Number.isInteger(e) || e < 0) return null; const b = radParts(n.b); if (!b) return null; const o = { n: b.n ** e, v: {} }; for (const k in b.v) o.v[k] = b.v[k] * e; return o; }
+  if (n.t === "mul") { const o = { n: 1, v: {} }; for (const f of n.f) { const b = radParts(f); if (!b) return null; o.n *= b.n; for (const k in b.v) o.v[k] = (o.v[k] || 0) + b.v[k]; } return o; }
+  return null;
+}
+const isNumLeaf = x => un(x).t === "n";
+function radForm(ast) {
+  let msg = null;
+  const set = m => { if (!msg) msg = m; };
+  walk(ast, (n, inDen, inExp) => {
+    if (n.t === "root") {
+      if (inDen) set("Rationalize: there should be no radical in the denominator.");
+      const rp = radParts(n.a);
+      if (rp) {
+        if (splitRoot(Math.abs(rp.n), n.k)[0] > 1) set(`Not fully simplified: a perfect ${n.k === 2 ? "square" : n.k === 3 ? "cube" : "power"} factor can still come out of the radical.`);
+        if (Object.values(rp.v).some(e => e >= n.k)) set("Not fully simplified: a variable factor can still come out of the radical.");
+        if (rp.n === 1 && !Object.keys(rp.v).length) set("Simplify the radical.");
+      } else if (has(n.a, x => x.t === "root")) set("Simplify the radical inside the radical.");
+      else if (has(n.a, x => x.t === "div")) set("Rationalize: no fraction should stay inside the radical.");
+    }
+    if (n.t === "pow" && !inExp && has(n.b, x => x.t === "root")) set("Simplify the power of the radical.");
+    if (n.t === "pow" && !inExp && numericOnly(n.b) && !has(n.b, x => x.t === "root")) set("Evaluate the powers.");
+    if (n.t === "mul" && !inExp) {
+      if (n.f.filter(isNumLeaf).length > 1) set("Multiply the numbers together.");
+      const ks = n.f.filter(f => un(f).t === "root").map(f => un(f).k);
+      if (ks.length !== new Set(ks).size) set("Multiply the radicals into one radical and simplify.");
+      if (n.f.some(f => un(f).t === "add")) set("Expand: multiply out the brackets.");
+    }
+  });
+  if (msg) return msg;
+  let top = un(ast), den = 1;
+  if (top.t === "div") { const d = un(top.b); if (d.t === "n" && Number.isInteger(d.v)) { den = d.v; top = un(top.a); } else if (!has(d, x => x.t === "root")) {} }
+  const terms = top.t === "add" ? top.terms.map(t => t.e) : [top];
+  const core = t => { t = un(t); if (t.t === "neg") return core(t.a); if (t.t === "mul") { const r = t.f.filter(f => !isNumLeaf(f)); return r.length ? { t: "mul", f: r } : { t: "n", v: 1, s: "1" }; } if (t.t === "n") return { t: "n", v: 1, s: "1" }; return t; };
+  const coef = t => { t = un(t); if (t.t === "neg") return coef(t.a); if (t.t === "n") return t.v; if (t.t === "mul") return t.f.filter(isNumLeaf).reduce((s, f) => s * un(f).v, 1); return 1; };
+  const keys = terms.map(t => { const c = core(t); return ev(c, VS[0]).toFixed(8) + "|" + ev(c, VS[1]).toFixed(8); });
+  if (new Set(keys).size < keys.length) return "Combine like terms.";
+  if (den !== 1) { let g = den; for (const t of terms) g = gcd(g, coef(t)); if (Number.isInteger(g) && g > 1) return "Reduce the fraction: every term shares a factor with the denominator."; }
+  return null;
+}
+function monoForm(ast) {
+  if (has(ast, x => x.t === "root")) return "Use exponents, not a radical sign.";
+  const cnt = {}; let bad = null, nums = [0, 0];
+  walk(ast, (n, inDen, inExp) => {
+    if (inExp) return;
+    if (n.t === "v") cnt[n.n] = (cnt[n.n] || 0) + 1;
+    if (n.t === "pow") { const e = ev(n.e, VS[0]); if (e <= 0) bad = bad || "Use positive exponents only."; const b = un(n.b); if (b.t === "n") bad = bad || "Evaluate the number powers."; else if (b.t !== "v") bad = bad || "Apply the exponent to each factor inside the brackets."; }
+    if (n.t === "n") nums[inDen ? 1 : 0]++;
+  });
+  for (const k in cnt) if (cnt[k] > 1) return `Write ${k} only once: combine its factors.`;
+  if (bad) return bad;
+  if (nums[0] > 1 || nums[1] > 1) return "Multiply the numbers into one coefficient.";
+  const top = un(ast);
+  if (top.t === "div") { const nn = [], dd = []; walk(top.a, (n, d, e) => { if (!e && n.t === "n") nn.push(n.v); }); walk(top.b, (n, d, e) => { if (!e && n.t === "n") dd.push(n.v); }); if (nn.length && dd.length && gcd(nn[0], dd[0]) > 1) return "Reduce the number fraction."; }
+  return null;
+}
+function formMsg(kind, ast, pr) {
+  const top = un(ast), base = pr.base;
+  if (kind === "num") {
+    if (has(ast, x => x.t === "v")) return "Answer with a number.";
+    if (has(ast, x => x.t === "root")) return "Evaluate the root.";
+    if (has(ast, x => x.t === "pow")) return "Evaluate the power.";
+    if (top.t === "div" && un(top.a).t === "n" && un(top.b).t === "n" && gcd(un(top.a).v, un(top.b).v) > 1 && Number.isInteger(un(top.a).v)) return "Simplify the fraction.";
+    if (has(ast, x => x.t === "mul" || x.t === "add" || (x.t === "div" && (un(x.a).t !== "n" || un(x.b).t !== "n")))) return "Finish the arithmetic: one number.";
+    return null;
+  }
+  if (kind === "pow") {
+    if (top.t === "pow" && Number.isInteger(ev(top.e, VS[0])) && close(ev(top.b, VS[0]), base) && !has(top.e, x => x.t === "add" || x.t === "mul")) return null;
+    if (top.t === "neg" && base < 0) return `Put brackets around a negative base: (${M(base)})^n.`;
+    if (numericOnly(ast) && !has(ast, x => x.t === "pow")) return `That's the value. Write it as one power of ${M(base)}.`;
+    return `Write it as one power: ${M(base)} with one exponent.`;
+  }
+  if (kind === "mono") return monoForm(ast);
+  if (kind === "to-radical") {
+    if (!has(ast, x => x.t === "root")) return "Write it with a radical sign: √, ∛ or ∜.";
+    if (has(ast, (x, d, e) => x.t === "pow" && !e && !Number.isInteger(ev(x.e, VS[0])))) return "Use the radical instead of a fraction exponent.";
+    return null;
+  }
+  if (kind === "to-power") return has(ast, x => x.t === "root") ? "Write it as a power with a fraction exponent, no radical sign." : null;
+  if (kind === "entire") return top.t === "root" ? (has(top.a, x => x.t === "pow" && numericOnly(x.b)) || un(top.a).t === "mul" && un(top.a).f.filter(isNumLeaf).length > 1 ? "Multiply the numbers inside the radical." : null) : "Put everything under one radical sign.";
+  if (kind === "rad") return radForm(ast);
+  return null;
+}
+function judge(p, text) {
+  let ast; try { ast = parse(text); } catch (e) { return { ok: false, read: false }; }
+  if (p.kind === "est") {
+    if (!numericOnly(ast) || has(ast, x => x.t === "root")) return { ok: false, form: "Answer with a decimal number." };
+    const v = ev(ast, VS[0]); return Math.abs(v - p.target) <= 0.1001 ? { ok: true } : { ok: false };
+  }
+  if (!VS.every(V => close(ev(ast, V), p.val(V)))) return { ok: false };
+  const m = formMsg(p.kind, ast, p);
+  return m ? { ok: false, form: m } : { ok: true };
+}
+
+/* ---------- practice UI ---------- */
+const ans = $("#ans");
+ans.addEventListener("input", () => {
+  ans.className = "";
+  const t = ans.value.trim();
+  if (!t) { $("#preview").innerHTML = ""; return; }
+  try { $("#preview").innerHTML = show(parse(t)); } catch (e) { $("#preview").innerHTML = `<span class="err">Keep typing…</span>`; }
+});
+ans.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); done ? newProblem() : check(); } });
+$("#keys").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const k = b.dataset.k, s = ans.selectionStart ?? ans.value.length, en = ans.selectionEnd ?? s;
+  if (k === "⌫") { const a = s === en ? Math.max(0, s - 1) : s; ans.value = ans.value.slice(0, a) + ans.value.slice(en); ans.setSelectionRange(a, a); }
+  else { ans.value = ans.value.slice(0, s) + k + ans.value.slice(en); ans.setSelectionRange(s + k.length, s + k.length); }
+  ans.focus(); ans.dispatchEvent(new Event("input"));
+});
+function setScore() { $("#score").textContent = `${right} of ${tries}`; }
+function check() {
+  if (!prob || done) return;
+  const r = judge(prob, ans.value.trim()), fb = $("#fb");
+  if (!ans.value.trim()) return;
+  if (r.read === false) { fb.className = "fb form"; fb.textContent = "I can't read that yet. Check the brackets and symbols."; return; }
+  if (r.ok) {
+    if (firstTry) right++; tries++; setScore();
+    done = true; ans.className = "good"; fb.className = "fb ok"; fb.textContent = "Correct!" + (firstTry ? "" : " Press New question for another.");
+    revealed = true; step = prob.steps.length - 1; draw(); return;
+  }
+  ans.className = "bad";
+  if (r.form) { fb.className = "fb form"; fb.textContent = r.form; return; }
+  if (firstTry) { tries++; firstTry = false; setScore(); }
+  fb.className = "fb no"; fb.innerHTML = "Not yet. " + prob.hint;
+}
+$("#checkBtn").onclick = check;
+$("#nextQ").onclick = newProblem;
+$("#showBtn").onclick = () => {
+  if (!prob) return;
+  if (!done && firstTry) { tries++; firstTry = false; setScore(); }
+  revealed = true; step = 0; draw();
+  $("#fb").className = "fb"; $("#fb").innerHTML = `Answer: <span style="font-family: var(--font-num)">${prob.steps[prob.steps.length - 1].e || ""}</span>. Use Next step to see how.`;
+};
+
+window.PR = { SKILLS, judge, parse, show, ctxFor: c => ({ course: c, idx: IDX[c], neg: true }), status };
+setCourse(course);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Powers and Roots (powers.html). */
+window.I18N_PAGE = {
+ "Powers and Roots": "Puissances et racines",
+ "Learn": "Apprendre",
+ "Course": "Cours",
+ "Skills": "Habiletés",
+ "~Skills: (.+)": "Habiletés : $1",
+ "~Review: (.+)": "Révision : $1",
+ "Powers": "Puissances",
+ "~Practice (.+)": "Pratiquer $1",
+ "Powers as repeated multiplication": "Les puissances comme multiplication répétée",
+ "Product law": "Loi du produit",
+ "Quotient law": "Loi du quotient",
+ "Power of a power": "Puissance d’une puissance",
+ "Power of a product or quotient": "Puissance d’un produit ou d’un quotient",
+ "Zero exponent": "Exposant zéro",
+ "Negative exponents": "Exposants négatifs",
+ "Exponent laws together": "Lois des exposants ensemble",
+ "Exponent laws with variables": "Lois des exposants avec des variables",
+ "Rational exponents and radicals": "Exposants rationnels et radicaux",
+ "Evaluate rational exponents": "Évaluer des exposants rationnels",
+ "Exponent laws with rational exponents": "Lois des exposants avec des exposants rationnels",
+ "Roots and radicals": "Racines et radicaux",
+ "Square roots: perfect squares and estimates": "Racines carrées : carrés parfaits et estimations",
+ "Cube roots and nth roots": "Racines cubiques et racines n-ièmes",
+ "Entire to mixed radicals (simplify)": "Radicaux entiers en radicaux composés (simplifier)",
+ "Mixed to entire radicals": "Radicaux composés en radicaux entiers",
+ "Add and subtract radicals": "Additionner et soustraire des radicaux",
+ "Multiply radicals": "Multiplier des radicaux",
+ "Distribute and expand": "Distribuer et développer",
+ "Divide radicals": "Diviser des radicaux",
+ "Rationalize a monomial denominator": "Rationaliser un dénominateur monôme",
+ "Rationalize a binomial denominator (conjugates)": "Rationaliser un dénominateur binôme (conjugués)",
+ "Radicals with variable radicands": "Radicaux avec des radicandes variables",
+ "Checked skills go into Practice. Tap a skill's name to learn it.": "Les habiletés cochées vont dans Pratique. Touche le nom d’une habileté pour l’apprendre.",
+ "~Example: (.+)": "Exemple : $1",
+ "Numbers": "Nombres",
+ "◀ Back": "◀ Retour",
+ "Next step ▶": "Étape suivante ▶",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "Key idea": "Idée clé",
+ "Steps": "Étapes",
+ "Simplify. Use positive exponents only.": "Simplifie. Utilise seulement des exposants positifs.",
+ "Sort the factors by base.": "Classe les facteurs par base.",
+ "Sort by base: numbers, then each variable.": "Classe par base : les nombres, puis chaque variable.",
+ "Final answers use positive exponents.": "Les réponses finales utilisent des exposants positifs.",
+ "Sort by base. Multiply the numbers. Same base: add the exponents.": "Classe par base. Multiplie les nombres. Même base : additionne les exposants.",
+ "Negative exponents move to the denominator and become positive.": "Les exposants négatifs passent au dénominateur et deviennent positifs.",
+ "New example": "Nouvel exemple",
+ "Your answer": "Ta réponse",
+ "Type your answer": "Tape ta réponse",
+ "Show me": "Montre-moi",
+ "Correct: {0} {1}": "Bonnes réponses : {0} {1}",
+ "{n} of {n}": "{n} sur {n}",
+ "(first try counts)": "(le premier essai compte)",
+ "Every factor in the brackets gets the exponent. Power of a power: multiply.": "Chaque facteur entre parenthèses reçoit l’exposant. Puissance d’une puissance : multiplie.",
+ "Evaluate.": "Évalue.",
+ "Denominator 3: take the cube root first.": "Dénominateur 3 : prends d’abord la racine cubique.",
+ "Denominator 2: take the square root first.": "Dénominateur 2 : prends d’abord la racine carrée.",
+ "{0} = {1}: one of 3 equal factors.": "{0} = {1} : un de 3 facteurs égaux.",
+ "{0} = {1}: one of 2 equal factors.": "{0} = {1} : un de 2 facteurs égaux.",
+ "Numerator 1: raise it to the power 1.": "Numérateur 1 : élève-le à l’exposant 1.",
+ "Negative exponent: take the reciprocal.": "Exposant négatif : prends l’inverse.",
+ "A number. Fractions like 3/4 are fine.": "Un nombre. Les fractions comme 3/4 sont acceptées.",
+ "Write as a single power.": "Écris sous forme d’une seule puissance.",
+ "Write each power as its factors.": "Écris chaque puissance avec ses facteurs.",
+ "Multiplying puts all the factors together.": "Multiplier met tous les facteurs ensemble.",
+ "Count them: {n} + {n} = {n}. Add the exponents.": "Compte-les : {n} + {n} = {n}. Additionne les exposants.",
+ "One power, like 2^7. Use ^ for the exponent.": "Une puissance, comme 2^7. Utilise ^ pour l’exposant.",
+ "Use ^ for exponents and / for fractions: 3x^2/(4y^3).": "Utilise ^ pour les exposants et / pour les fractions : 3x^2/(4y^3).",
+ "Divide and simplify.": "Divise et simplifie.",
+ "Divide outside by outside, inside by inside.": "Divise l’extérieur par l’extérieur, l’intérieur par l’intérieur.",
+ "Nothing more comes out of the radical.": "Rien d’autre ne sort du radical.",
+ "Type √ before the radicand: 6√2, (3+√5)/2, 3x√(2x).": "Tape √ avant le radicande : 6√2, (3+√5)/2, 3x√(2x).",
+ "Simplify (write as a mixed radical). (variables are positive)": "Simplifie (écris sous forme de radical composé). (les variables sont positives)",
+ "Write the radicand as prime factors.": "Écris le radicande en facteurs premiers.",
+ "Index 2: circle each pair of equal factors.": "Indice 2 : encercle chaque paire de facteurs égaux.",
+ "Each circled group comes out of the radical as one factor.": "Chaque groupe encerclé sort du radical comme un seul facteur.",
+ "~Multiply: outside (.+), inside (.+)\\.": "Multiplie : extérieur $1, intérieur $2.",
+ "{n} factors": "{n} facteurs",
+ "The exponent 3 says how many times the base 3 is a factor.": "L’exposant 3 dit combien de fois la base 3 est un facteur.",
+ "n factors of the base a": "n facteurs de la base a",
+ "Brackets decide what the base is.": "Les parenthèses déterminent la base.",
+ "Write the base as a factor that many times.": "Écris la base comme facteur autant de fois.",
+ "Multiply.": "Multiplie.",
+ "Same base, multiplying: add the exponents.": "Même base, multiplication : additionne les exposants.",
+ "Write the top and the bottom as factors.": "Écris le haut et le bas en facteurs.",
+ "Same base, dividing: subtract the exponents.": "Même base, division : soustrais les exposants.",
+ "Each 10 ÷ 10 = 1, so 2 pairs cancel.": "Chaque 10 ÷ 10 = 1, donc 2 paires s’annulent.",
+ "{n} − {n} = {n} factors are left. Subtract the exponents.": "Il reste {n} − {n} = {n} facteurs. Soustrais les exposants.",
+ "The outside exponent 2 means 2 copies of 5{0}.": "L’exposant extérieur 2 veut dire 2 copies de 5{0}.",
+ "Multiply the exponents.": "Multiplie les exposants.",
+ "2 groups of 3 factors: 3 × 2 = 6. Multiply the exponents.": "2 groupes de 3 facteurs : 3 × 2 = 6. Multiplie les exposants.",
+ "3 copies of the bracket.": "3 copies de la parenthèse.",
+ "Every factor in the brackets gets the exponent.": "Chaque facteur entre parenthèses reçoit l’exposant.",
+ "Regroup: every factor in the bracket gets the exponent.": "Regroupe : chaque facteur de la parenthèse reçoit l’exposant.",
+ "Evaluate each power, then multiply.": "Évalue chaque puissance, puis multiplie.",
+ "Follow the pattern: each step down divides by 4.": "Suis la régularité : chaque étape vers le bas divise par 4.",
+ "for any base a ≠ 0": "pour toute base a ≠ 0",
+ "Dividing a power by itself gives 1 and an exponent of 0.": "Diviser une puissance par elle-même donne 1 et un exposant de 0.",
+ "The whole bracket is the base, so the answer is 1.": "Toute la parenthèse est la base, donc la réponse est 1.",
+ "Keep dividing by 3 past the exponent 0.": "Continue de diviser par 3 après l’exposant 0.",
+ "A negative exponent means the reciprocal.": "Un exposant négatif veut dire l’inverse.",
+ "Leftover factors on the bottom: a negative exponent means the reciprocal.": "Facteurs restants en bas : un exposant négatif veut dire l’inverse.",
+ "Evaluate the bottom.": "Évalue le bas.",
+ "Top": "Haut",
+ "Bottom": "Bas",
+ "Every power has the same base, so work with the exponents.": "Chaque puissance a la même base, alors travaille avec les exposants.",
+ "× add ÷ subtract ( ){0} multiply{1}": "× additionne ÷ soustrais ( ){0} multiplie{1}",
+ "Same base: work with the exponents.": "Même base : travaille avec les exposants.",
+ "Multiplying on top: add the exponents.": "Multiplication en haut : additionne les exposants.",
+ "Dividing: subtract the bottom exponent.": "Division : soustrais l’exposant du bas.",
+ "Sort by base. Divide the numbers. Same base: subtract the exponents.": "Classe par base. Divise les nombres. Même base : soustrais les exposants.",
+ "Numerator 1: the power": "Numérateur 1 : l’exposant",
+ "Denominator 2: the root (square root)": "Dénominateur 2 : la racine (racine carrée)",
+ "Read the exponent as power over root.": "Lis l’exposant comme puissance sur racine.",
+ "{0} over {1}": "{0} sur {1}",
+ "power": "puissance",
+ "root": "racine",
+ "Root 2 (a square root has no index written), power 1.": "Racine 2 (une racine carrée n’a pas d’indice écrit), puissance 1.",
+ "{0} = 2 equal factors": "{0} = 2 facteurs égaux",
+ "Root first, then the power.": "La racine d’abord, puis la puissance.",
+ "Negative: take the reciprocal.": "Négatif : prends l’inverse.",
+ "Multiply": "Multiplie",
+ "Power of a power: multiply the exponents.": "Puissance d’une puissance : multiplie les exposants.",
+ "The same laws work with fraction exponents.": "Les mêmes lois fonctionnent avec les exposants fractionnaires.",
+ "Simplify the exponent.": "Simplifie l’exposant.",
+ "estimating the square root of 99": "estimer la racine carrée de 99",
+ "99 is between the perfect squares 81 and 100.": "99 est entre les carrés parfaits 81 et 100.",
+ "the side of a square with area 49": "le côté d’un carré d’aire 49",
+ "between {0} = 6 and {1} = 7": "entre {0} = 6 et {1} = 7",
+ "So the side {0} is between 9 and 10.": "Donc le côté {0} est entre 9 et 10.",
+ "99 is closer to 100. Check: 9.9 × 9.9 = 98.01.": "99 est plus proche de 100. Vérifie : 9,9 × 9,9 = 98,01.",
+ "3 equal factors": "3 facteurs égaux",
+ "{0} asks: what number, used 3 times as a factor, makes −64?": "{0} demande : quel nombre, utilisé 3 fois comme facteur, donne −64?",
+ "2 × 2 × 2 = 8: one of 3 equal factors": "2 × 2 × 2 = 8 : un de 3 facteurs égaux",
+ "(−4) × (−4) × (−4) = −64. An odd number of negatives stays negative.": "(−4) × (−4) × (−4) = −64. Un nombre impair de négatifs reste négatif.",
+ "Each group of index-many equal factors comes out as one factor.": "Chaque groupe d’autant de facteurs égaux que l’indice sort comme un seul facteur.",
+ "Every factor outside goes inside as a group of 2 equal factors.": "Chaque facteur extérieur entre comme un groupe de 2 facteurs égaux.",
+ "A factor goes in as index-many equal factors.": "Un facteur entre comme autant de facteurs égaux que l’indice.",
+ "4 = {0}: it goes in as 4 × 4.": "4 = {0} : il entre comme 4 × 4.",
+ "Multiply everything inside.": "Multiplie tout ce qui est à l’intérieur.",
+ "These are not like radicals yet: different radicands. Simplify each one.": "Ce ne sont pas encore des radicaux semblables : radicandes différents. Simplifie chacun.",
+ "Like radicals: same index and radicand. Simplify first.": "Radicaux semblables : même indice et même radicande. Simplifie d’abord.",
+ "Simplify: {0} = 2{1}. Now the radicals match.": "Simplifie : {0} = 2{1}. Maintenant les radicaux correspondent.",
+ "Add the coefficients of like radicals. Unlike radicals stay separate.": "Additionne les coefficients des radicaux semblables. Les radicaux différents restent séparés.",
+ "Outside": "Extérieur",
+ "Inside": "Intérieur",
+ "Multiply outside by outside, inside by inside.": "Multiplie l’extérieur par l’extérieur, l’intérieur par l’intérieur.",
+ "Outside × outside, inside × inside, then simplify.": "Extérieur × extérieur, intérieur × intérieur, puis simplifie.",
+ "Multiply every term in the first bracket by every term in the second.": "Multiplie chaque terme de la première parenthèse par chaque terme de la deuxième.",
+ "Every term times every term, then combine like terms.": "Chaque terme fois chaque terme, puis regroupe les termes semblables.",
+ "Write all the products. Simplify each radical.": "Écris tous les produits. Simplifie chaque radical.",
+ "The middle terms are opposites: they cancel. Combine what is left.": "Les termes du milieu sont opposés : ils s’annulent. Regroupe ce qui reste.",
+ "Outside ÷ outside, inside ÷ inside.": "Extérieur ÷ extérieur, intérieur ÷ intérieur.",
+ "square with side root 7 and area 7": "carré de côté racine de 7 et d’aire 7",
+ "area": "aire",
+ "Multiply by {0}, which equals 1, so the value does not change.": "Multiplie par {0}, qui égale 1, donc la valeur ne change pas.",
+ "No radical left in the denominator.": "Plus de radical au dénominateur.",
+ "Bottom: {0} × {1} = 7, the area of this square. Top: multiply the radicals.": "Bas : {0} × {1} = 7, l’aire de ce carré. Haut : multiplie les radicaux.",
+ "Reduce: divide the top and bottom by 2.": "Réduis : divise le haut et le bas par 2.",
+ "Variables come out in groups too (x ≥ 0).": "Les variables sortent aussi en groupes (x ≥ 0)."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName) || node.id === "lang-switch") return;
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) return;
+    undoAttrs(node);
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
