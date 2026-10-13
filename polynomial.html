@@ -795,7 +795,7 @@ input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
     }
   });
   svg.addEventListener("pointercancel", () => (drag = null));
-  function hideFeedback() { $("fb").classList.remove("on"); }
+  function hideFeedback() { $("fb").classList.remove("on"); if (layers.answer && !revealed.answer) layers.answer.textContent = ""; }
 
   function sketchCheck() {
     const tips = [];
@@ -809,13 +809,18 @@ input.ans.shown { border-color: var(--pt); background: var(--shown-bg); }
     const sDeg = [...S.zeros.values()].reduce((a, b) => a + b, 0), sE = ends(sDeg, sK() > 0), E = ends(P.deg, P.a[0] > 0);
     const eOk = sE.from === E.from && sE.to === E.to;
     item(eOk, `End behaviour: right, quadrant ${ROMAN[E.from]} to quadrant ${ROMAN[E.to]}.`, "End behaviour: use the degree and the sign of the leading coefficient. Drag the graph through the x-axis to flip it.");
-    let sOk, need;
-    if (want.has(0)) { need = { x: P.given.x, y: P.given.y }; sOk = mOk && Math.abs(sF(need.x) - need.y) < 1e-6; }
-    else { need = { x: 0, y: P.y0 }; sOk = !S.zeros.has(0) && Math.abs(sF(0) - P.y0) < 1e-6; }
-    const how = need.x === 0 ? "put x = 0 into P(x) to find the y-intercept" : `the y-intercept is 0, so put x = ${fmt(need.x)} into P(x) to find another point`;
-    item(sOk, `Stretch: right, the graph passes through (${fmt(need.x)}, ${fmt(need.y)}).`, `Stretch: ${how}, then drag the graph through that point.`);
-    if (right === 4) revealed.answer = false;
-    feedback(right === 4 ? "All 4 right!" : `${right} of 4 right`, tips);
+    // When 0 is a zero the y-intercept is 0, so the stretch is not graded (Shawn: characteristics only).
+    // The correct graph is drawn in green dashes so students can compare.
+    let total = 3;
+    if (!want.has(0)) {
+      total = 4;
+      const sOk = !S.zeros.has(0) && Math.abs(sF(0) - P.y0) < 1e-6;
+      item(sOk, `y-intercept: right, (0, ${fmt(P.y0)}).`, "y-intercept: put x = 0 into P(x), then drag the graph through that point.");
+    } else if (zOk && mOk && eOk) {
+      drawCurve(P.f, layers.answer, "answer-curve", "aArrow");
+      tips.push({ ok: true, t: "The y-intercept is 0. The green dashes show the exact graph." });
+    }
+    feedback(right === total ? `All ${total} right!` : `${right} of ${total} right`, tips);
   }
   function sketchShow() {
     revealed.answer = true;
