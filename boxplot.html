@@ -404,6 +404,112 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
 </script>
 
 <script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Box Plot Generator (boxplot.html). */
+window.I18N_PAGE = {
+ "Box Plot Generator": "Générateur de diagrammes à surfaces",
+ "Column heading (names the number line)": "Titre de colonne (nomme la droite numérique)",
+ "Value": "Valeur",
+ "Clear table": "Effacer le tableau",
+ "Box plot of the table values on a number line": "Diagramme à surfaces des valeurs du tableau sur une droite numérique",
+ "Type values in the table": "Tape des valeurs dans le tableau",
+ "Minimum": "Minimum",
+ "Maximum": "Maximum",
+ "Lower quartile": "Premier quartile",
+ "Upper quartile": "Troisième quartile",
+ "Q1": "Q1",
+ "Q3": "Q3",
+ "min": "min",
+ "max": "max"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -421,7 +527,7 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -436,6 +542,12 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -475,8 +587,15 @@ table.tv { width: 100%; border-collapse: collapse; font-family: var(--font-num);
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

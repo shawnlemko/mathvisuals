@@ -806,6 +806,56 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Divisibility Rules (divisibility.html). */
+window.I18N_PAGE = {
+ "Divisibility Rules": "Règles de divisibilité",
+ "Learn": "Apprendre",
+ "Divisible by {n}?": "Divisible par {n}?",
+ "Divisible by {n}": "Divisible par {n}",
+ "Divisible by": "Divisible par",
+ "Look at the last two digits. If they make a number divisible by 4, so is the whole number.": "Regarde les deux derniers chiffres. S’ils forment un nombre divisible par 4, le nombre entier l’est aussi.",
+ "Check it": "Vérifie",
+ "Why it works": "Pourquoi ça marche",
+ "Last two": "Deux derniers",
+ "Divide": "Diviser",
+ "Or halve twice": "Ou divise par 2 deux fois",
+ "Yes! {n} is divisible by {n}.": "Oui! {n} est divisible par {n}.",
+ "No. {n} is not divisible by {n}.": "Non. {n} n’est pas divisible par {n}.",
+ "Check: {0}": "Vérification : {0}",
+ "{0} is made of hundreds. Every {1} = {2}, so hundreds always split evenly into 4s. Only the {3} can leave something over.": "{0} est fait de centaines. Chaque {1} = {2}, donc les centaines se partagent toujours en groupes de 4. Seuls les {3} peuvent laisser un reste.",
+ "last two digits": "deux derniers chiffres",
+ "Pick a rule": "Choisis une règle",
+ "last digit even": "dernier chiffre pair",
+ "add the digits": "additionne les chiffres",
+ "ends in 0 or 5": "se termine par 0 ou 5",
+ "passes 2 and 3": "réussit 2 et 3",
+ "last three digits": "trois derniers chiffres",
+ "ends in 0": "se termine par 0",
+ "Number": "Nombre",
+ "New number": "Nouveau nombre",
+ "Type any whole number up to 6 digits.": "Tape un nombre entier jusqu’à 6 chiffres.",
+ "{0} Show which rules this number passes": "{0} Afficher les règles que ce nombre réussit",
+ "Fair game: which rules?": "Règles en jeu :",
+ "None": "Aucun",
+ "Questions": "Questions",
+ "Yes or No": "Oui ou non",
+ "Check all that apply": "Coche tout ce qui s’applique",
+ "Number size": "Taille du nombre",
+ "{n} digits": "{n} chiffres",
+ "5–6 digits": "5 à 6 chiffres",
+ "How many questions?": "Combien de questions?",
+ "Start ▶": "Commencer ▶",
+ "Question {0} of {1}": "Question {0} sur {1}",
+ "Correct: {0}": "Bonnes réponses : {0}",
+ "Pick every number it is divisible by. If none work, pick none.": "Choisis chaque nombre par lequel il est divisible. Si aucun ne fonctionne, choisis Aucun.",
+ "Next ▶": "Suivant ▶",
+ "right": "bonnes",
+ "Practice again": "Pratiquer encore",
+ "Change practice": "Changer la pratique",
+ "Pick at least one rule.": "Choisis au moins une règle."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -823,7 +873,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -883,8 +933,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

@@ -877,6 +877,45 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Balancing Equations (balance.html). */
+window.I18N_PAGE = {
+ "Balancing Equations": "Équilibrer des équations",
+ "Pan balance with pieces to drag, a bar model and the solving steps": "Balance à plateaux avec des pièces à glisser, un modèle en barres et les étapes de résolution",
+ "Left side": "Côté gauche",
+ "Right side": "Côté droit",
+ "left side": "côté gauche",
+ "right side": "côté droit",
+ "Type, or drag pieces onto both sides": "Tape, ou glisse des pièces des deux côtés",
+ "Type it like 2x + 3 or x − 4": "Tape-la comme 2x + 3 ou x − 4",
+ "Drag onto the scale": "Glisse sur la balance",
+ "Left": "Gauche",
+ "Right": "Droite",
+ "Start solving": "Commencer à résoudre",
+ "Operation": "Opération",
+ "Subtract": "Soustraire",
+ "Add": "Additionner",
+ "Divide by": "Diviser par",
+ "Less": "Moins",
+ "More": "Plus",
+ "What": "Quoi",
+ "ones": "unités",
+ "Both sides": "Les deux côtés",
+ "Put at least one x box on the scale.": "Mets au moins une boîte x sur la balance.",
+ "Not balanced!": "Pas en équilibre!",
+ "Do the same thing to both sides.": "Fais la même chose des deux côtés.",
+ "Balanced! x = {n}": "En équilibre! x = {n}",
+ "~Balanced! x = (.+)": "En équilibre! x = $1",
+ "Pick a number bigger than 1 to divide by.": "Choisis un nombre plus grand que 1 pour diviser.",
+ "~The (left side|right side) is empty\\.": "Le $1 est vide.",
+ "~The (left side|right side) is too full\\.": "Le $1 est trop plein.",
+ "Put something on both sides.": "Mets quelque chose des deux côtés.",
+ "Both sides are the same. Change one side.": "Les deux côtés sont pareils. Change un côté.",
+ "This scale can never balance. Change one side.": "Cette balance ne peut jamais être en équilibre. Change un côté.",
+ "x has to be more than 0 to balance. Change a weight.": "x doit être plus grand que 0 pour l’équilibre. Change un poids.",
+ "That side is full.": "Ce côté est plein."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -894,7 +933,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -909,6 +948,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -948,8 +993,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

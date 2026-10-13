@@ -871,8 +871,11 @@ window.I18N_PAGE = {
     let fr = dict[key];
     if (fr == null) {
       const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
-      if (t == null) return false;
-      let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? "");
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
     }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);

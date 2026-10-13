@@ -594,6 +594,40 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Mean, Median, Mode and Outliers (mean.html). */
+window.I18N_PAGE = {
+ "Mean, Median, Mode and Outliers": "Moyenne, médiane, mode et valeurs aberrantes",
+ "Outliers": "Valeurs aberrantes",
+ "Seesaw number line from 0 to 20 with dots resting on it and a balance point underneath": "Droite numérique en balançoire de 0 à 20 avec des points dessus et un point d’équilibre dessous",
+ "Mean = {n}": "Moyenne = {n}",
+ "Mean ≈ {n}": "Moyenne ≈ {n}",
+ "Median = {n}": "Médiane = {n}",
+ "Mode = {n}": "Mode = {n}",
+ "All dots": "Tous les points",
+ "No outliers": "Aucune valeur aberrante",
+ "Outlier: {n}": "Valeur aberrante : {n}",
+ "Outliers: {n} and {n}": "Valeurs aberrantes : {n} et {n}",
+ "~Outliers: (.+)": "Valeurs aberrantes : $1",
+ "~The outliers? pulled the mean (up|down) from ([\\d.]+) to ([\\d.]+), a change of ([\\d.]+)\\.": "La ou les valeurs aberrantes ont fait $1 la moyenne de $2 à $3, un changement de $4.",
+ "up": "monter",
+ "down": "descendre",
+ "The median stayed at {n}.": "La médiane est restée à {n}.",
+ "~The median moved from (.+) to (.+)\\.": "La médiane est passée de $1 à $2.",
+ "The mode did not change.": "Le mode n’a pas changé.",
+ "Outlier: more than 1.5 × IQR below Q1 or above Q3.": "Valeur aberrante : plus de 1,5 × EI sous Q1 ou au-dessus de Q3.",
+ "{0} dots. Click the line to drop a dot. Drag a dot to move it, or off the line to take it away.": "{0} points. Clique sur la droite pour déposer un point. Glisse un point pour le déplacer, ou hors de la droite pour l’enlever.",
+ "{0}mode {1}outlier": "{0}mode {1}valeur aberrante",
+ "Add an outlier": "Ajouter une valeur aberrante",
+ "Remove outliers": "Enlever les valeurs aberrantes",
+ "Clear all": "Tout effacer",
+ "No spot on this line would be an outlier. Add more dots near the middle first.": "Aucun endroit sur cette droite ne serait une valeur aberrante. Ajoute d’abord des points près du milieu.",
+ "same": "pareil",
+ "Drag a dot far from the others, or press Add an outlier, and watch which measure moves.": "Glisse un point loin des autres, ou appuie sur Ajouter une valeur aberrante, et observe quelle mesure bouge.",
+ "No dots yet": "Aucun point encore",
+ "Click the line to drop some dots.": "Clique sur la droite pour déposer des points."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -611,7 +645,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -626,6 +660,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -665,8 +705,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

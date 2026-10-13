@@ -946,6 +946,52 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Domain and Range (domainrange.html). */
+window.I18N_PAGE = {
+ "Domain and Range": "Domaine et image",
+ "{0} and {1}": "{0} et {1}",
+ "Notation": "Notation",
+ "Words": "Mots",
+ "Set-builder": "En compréhension",
+ "Interval": "Intervalle",
+ "Graphs": "Graphiques",
+ "Mixed": "Mélangé",
+ "Discrete": "Discret",
+ "Continuous": "Continu",
+ "{n} separate points": "{n} points séparés",
+ "{0} the x-values": "{0} les valeurs de x",
+ "{0} the y-values": "{0} les valeurs de y",
+ "Example: {0} Points? {1}": "Exemple : {0} Points? {1}",
+ "Example: {0}": "Exemple : {0}",
+ "Example: {0} or {1} Points? {2}": "Exemple : {0} ou {1} Points? {2}",
+ "~Type (.)": "Tape $1",
+ "Delete": "Supprimer",
+ "New graph": "Nouveau graphique",
+ "The first Check on each graph counts": "La première vérification de chaque graphique compte",
+ "Correct: {0}": "Bonnes réponses : {0}",
+ "{n} of {n}": "{n} sur {n}",
+ "x is …": "x est …",
+ "y is …": "y est …",
+ "x is greater than −2 and less than or equal to 5": "x est plus grand que −2 et plus petit ou égal à 5",
+ "Type all real numbers": "Tape tous les nombres réels",
+ "all real numbers": "tous les nombres réels",
+ "Type greater than": "Tape plus grand que",
+ "greater than": "plus grand que",
+ "Type less than": "Tape plus petit que",
+ "less than": "plus petit que",
+ "Type or equal to": "Tape ou égal à",
+ "or equal to": "ou égal à",
+ "Type and": "Tape et",
+ "A continuous graph": "Un graphique continu",
+ "~I can't read “(.*)”\\.": "Je ne peux pas lire « $1 ».",
+ "Type the range too.": "Tape aussi l’image.",
+ "Answer: {0}{1}": "Réponse : {0}{1}",
+ "~Say: “The interval from (.+), (included|not included), to (.+), (included|not included)\\.”": "Dis : « L’intervalle de $1, $2, à $3, $4. »",
+ "included": "inclus",
+ "not included": "exclu"
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -963,7 +1009,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -978,6 +1024,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -1017,8 +1069,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];

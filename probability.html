@@ -979,6 +979,96 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
+/* French for Probability Lab (probability.html). */
+window.I18N_PAGE = {
+ "Probability Lab": "Labo de probabilité",
+ "Tool": "Outil",
+ "Coin": "Pièce",
+ "Die": "Dé",
+ "Spinner": "Roulette",
+ "Bag": "Sac",
+ "Mix": "Mélange",
+ "Understand": "Comprendre",
+ "Probability tool": "Outil de probabilité",
+ "{n} equal sections": "{n} sections égales",
+ "Set up": "Préparer",
+ "Sections": "Sections",
+ "Fewer sections": "Moins de sections",
+ "More sections": "Plus de sections",
+ "Tap a section to change its colour.": "Touche une section pour changer sa couleur.",
+ "Counts as a win": "Compte comme favorable",
+ "{0}red": "{0}rouge",
+ "{0}blue": "{0}bleu",
+ "{0}yellow": "{0}jaune",
+ "{0}green": "{0}vert",
+ "{0}purple": "{0}violet",
+ "out of": "sur",
+ "P(red)": "P(rouge)",
+ "P(blue)": "P(bleu)",
+ "P(yellow)": "P(jaune)",
+ "P(green)": "P(vert)",
+ "P(purple)": "P(violet)",
+ "P(heads)": "P(face)",
+ "P(tails)": "P(pile)",
+ "Impossible": "Impossible",
+ "Even chance": "Chances égales",
+ "Certain": "Certain",
+ "Unlikely": "Peu probable",
+ "Likely": "Probable",
+ "How many wins": "Combien de cas favorables",
+ "How many outcomes in all": "Combien de résultats en tout",
+ "Show me": "Montre-moi",
+ "Try it": "Essaie",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "{n} sides": "{n} côtés",
+ "Heads": "Face",
+ "Tails": "Pile",
+ "A fair coin: heads or tails.": "Une pièce équilibrée : pile ou face.",
+ "{n} faces": "{n} faces",
+ "Sides": "Côtés",
+ "Even": "Pair",
+ "Odd": "Impair",
+ "More than {n}": "Plus que {n}",
+ "{n} marbles": "{n} billes",
+ "red": "rouge",
+ "blue": "bleu",
+ "yellow": "jaune",
+ "green": "vert",
+ "purple": "violet",
+ "One less red": "Une rouge de moins",
+ "One more red": "Une rouge de plus",
+ "One less blue": "Une bleue de moins",
+ "One more blue": "Une bleue de plus",
+ "One less yellow": "Une jaune de moins",
+ "One more yellow": "Une jaune de plus",
+ "One less green": "Une verte de moins",
+ "One more green": "Une verte de plus",
+ "One less purple": "Une violette de moins",
+ "One more purple": "Une violette de plus",
+ "Results": "Résultats",
+ "theory": "théorie",
+ "Theory": "Théorie",
+ "Happened": "Arrivé",
+ "Pull {n}": "Tirer {n}",
+ "Spin {n}": "Tourner {n}",
+ "Flip {n}": "Lancer {n}",
+ "Roll {n}": "Lancer {n}",
+ "{0} out of {1}": "{0} sur {1}",
+ "~Spin the spinner\\. What is the probability of landing on (\\w+)\\?": "Fais tourner la roulette. Quelle est la probabilité de tomber sur $1?",
+ "What is the probability of flipping heads or tails?": "Quelle est la probabilité d’obtenir pile ou face?",
+ "P(heads or tails)": "P(pile ou face)",
+ "Type two whole numbers: wins out of all.": "Tape deux nombres entiers : cas favorables sur tous les cas.",
+ "{n} wins out of {n} sides.": "{n} cas favorables sur {n} côtés.",
+ "{n} win out of {n} sides.": "{n} cas favorable sur {n} côtés.",
+ "Red✓": "Rouge✓",
+ "Blu": "Ble",
+ "~Spin the spinner\\. What is the probability of NOT landing on (\\w+)\\?": "Fais tourner la roulette. Quelle est la probabilité de NE PAS tomber sur $1?",
+ "~P\\(not (\\w+)\\)": "P(pas $1)",
+ "~Pull one marble without looking\\. What is the probability of pulling (\\w+) marble\\?": "Tire une bille sans regarder. Quelle est la probabilité de tirer une bille $1?",
+ "{n} wins out of {n} marbles.": "{n} cas favorables sur {n} billes."
+};
+</script>
+<script>
 /* English / French switch shared by every page (build.py adds it to each built page).
    The pages are written in English. In French, every visible string that appears in the dictionaries
    (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
@@ -996,7 +1086,7 @@ window.I18N_COMMON = {
   const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
   const res = [];
   for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
-  const NUM = /[−-]?\d+(?:[.,]\d+)?/g;
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
   const norm = s => s.replace(/\s+/g, " ").trim();
 
   function tr(s) {
@@ -1011,6 +1101,12 @@ window.I18N_COMMON = {
     for (const [re, out] of res) {
       const m = k.match(re);
       if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
     }
     return null;
   }
@@ -1050,8 +1146,15 @@ window.I18N_COMMON = {
     el.__frNodes = null;
     const key = templateOf(el);
     if (!key) return false;
-    const fr = dict[key];
-    if (fr == null) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
     const orig = [...el.childNodes];
     const kids = orig.filter(c => c.nodeType === 1);
     const out = [];
