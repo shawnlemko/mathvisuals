@@ -166,6 +166,10 @@ h1 .a { color: var(--green); } h1 .b { color: var(--orange); }
 button.match { background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; padding: 12px 22px; min-height: 52px; }
 button.match:hover { background: var(--sheet); color: var(--pt); }
 button.match[aria-pressed="true"]::before { content: "✓ "; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; padding: 8px 16px; min-height: 52px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
 .err { margin: 10px 0 0; color: var(--warn); font-weight: 700; }
 .entry-card { margin-bottom: 20px; }
 .presets { margin-top: 12px; }
@@ -215,6 +219,7 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
 .row .name { font-size: 2.3rem; }
 .op-sign { font-size: 2.8rem; }
 .sq { width: clamp(96px, 14vw, 150px); }
+.sq.strip { width: clamp(150px, 24vw, 260px); }
 .sq .cap { font-size: 1.15rem; color: var(--ink); }
 .step { font-size: 1.9rem; gap: 12px; }
 .step .who { font-size: 1rem; }
@@ -242,7 +247,7 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Fraction Size Match</h1></div>
-    <p>Type two fractions. Each one is drawn as squares. Press <b>Size Match</b> to cut both into pieces of the same size.</p>
+    <p>Type two fractions. Each one is drawn as squares, strips or circles. Press <b>Size Match</b> to cut both into pieces of the same size.</p>
   </header>
 
   <section class="card entry-card">
@@ -270,6 +275,11 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
         </span>
       </div>
       <div class="actions">
+        <div class="seg" id="modelSeg" role="group" aria-label="Model">
+          <button type="button" data-m="squares">Squares</button>
+          <button type="button" data-m="strips">Strips</button>
+          <button type="button" data-m="circles">Circles</button>
+        </div>
         <button type="button" class="match" id="match" aria-pressed="false">Size Match</button>
         <button type="button" id="reset">Start over</button>
       </div>
@@ -308,7 +318,7 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
   // Shawn asked to remove adding and subtracting: the page shows two fractions and Size Match only.
   // Turn these back on to bring back the + / − picker or the combined problem with Show answer.
   const SHOW_OP = false, SHOW_ANSWER = false;
-  let op = "+", matched = false;
+  let op = "+", matched = false, model = "squares";
 
   // Reads the three boxes for one mixed number. Returns {w, n, d} or an error message.
   function read(p, label) {
@@ -351,6 +361,45 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
     return box;
   }
 
+  // Strips: one bar cut into d pieces, n shaded from the left; the blue cuts split each piece into k.
+  // Circles: d slices, n shaded clockwise from the top; the blue cuts split each slice into k.
+  function shape(d, n, k, cap, isNew, horiz) {
+    if (model === "squares") return square(d, n, k, cap, isNew, horiz);
+    const strip = model === "strips", W = strip ? 200 : 100, H = strip ? 60 : 100;
+    const box = document.createElement("div");
+    box.className = "sq" + (strip ? " strip" : "");
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", `-2 -2 ${W + 4} ${H + 4}`);
+    svg.setAttribute("aria-hidden", "true");
+    const add = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); svg.appendChild(e); return e; };
+    const N = d * k, R = 49, C = 50;
+    const at = f => [C + R * Math.sin(2 * Math.PI * f), C - R * Math.cos(2 * Math.PI * f)];
+    const newcut = (attrs, j) => {
+      const l = add("line", { ...attrs, class: "newcut", pathLength: 100 });
+      if (!isNew) l.style.animation = "none"; else l.style.animationDelay = j * 0.05 + "s";
+    };
+    if (strip) {
+      add("rect", { x: 0, y: 0, width: W, height: H, class: "cell off" });
+      if (n > 0) add("rect", { x: 0, y: 0, width: W * n / d, height: H, class: "cell on" });
+      for (let i = 1; i < d; i++) add("line", { x1: W * i / d, y1: 0, x2: W * i / d, y2: H, class: "cut" });
+      for (let i = 1, j = 0; i < N; i++) if (i % k) newcut({ x1: W * i / N, y1: 0, x2: W * i / N, y2: H }, j++);
+      add("rect", { x: 0, y: 0, width: W, height: H, class: "edge" });
+    } else {
+      add("circle", { cx: C, cy: C, r: R, class: "cell off" });
+      if (n === d) add("circle", { cx: C, cy: C, r: R, class: "cell on" });
+      else if (n > 0) add("path", { d: `M${C},${C} L${at(0)} A${R},${R} 0 ${n / d > 0.5 ? 1 : 0} 1 ${at(n / d)} Z`, class: "cell on" });
+      if (d > 1) for (let i = 0; i < d; i++) { const [x, y] = at(i / d); add("line", { x1: C, y1: C, x2: x, y2: y, class: "cut" }); }
+      for (let i = 1, j = 0; i < N; i++) if (i % k) { const [x, y] = at(i / N); newcut({ x1: C, y1: C, x2: x, y2: y }, j++); }
+      add("circle", { cx: C, cy: C, r: R, class: "edge" });
+    }
+    box.appendChild(svg);
+    const c = document.createElement("div");
+    c.className = "cap";
+    c.innerHTML = cap;
+    box.appendChild(c);
+    return box;
+  }
+
   const mixedHTML = (w, n, d, opts = {}) => {
     const parts = [];
     if (w || (!n && !opts.keepFrac)) parts.push(`<span class="w">${fmt(w)}</span>`);
@@ -365,6 +414,7 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
     $("err").hidden = !err;
     $("err").textContent = err;
     document.querySelectorAll(".ops button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.op === op)));
+    document.querySelectorAll("#modelSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === model)));
     $("match").setAttribute("aria-pressed", String(matched));
     if (err) return;
 
@@ -386,12 +436,12 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
       row.innerHTML = `<div class="name">${mixedHTML(F.w, F.n, F.d)}</div><div class="squares"></div>`;
       row.setAttribute("aria-label", `${i ? "Second" : "First"} number ${plain(F.w, F.n, F.d)}`);
       const sq = row.querySelector(".squares");
-      for (let i = 0; i < F.w; i++) sq.appendChild(square(1, 1, 1, "1 whole"));
+      for (let i = 0; i < F.w; i++) sq.appendChild(shape(1, 1, 1, "1 whole"));
       if (F.n > 0 || F.w === 0) {
         const cap = matched && k > 1
           ? `${F.n}/${F.d} = <b>${F.n * k}/${L}</b><br>each ${ONE[F.d]} cut into <b>${k}</b>`
           : `${F.n}/${F.d}<br>${F.d === 1 ? "" : pieces(F.d)}`;
-        sq.appendChild(square(F.d, F.n, matched ? k : 1, cap, animate, i === 1));
+        sq.appendChild(shape(F.d, F.n, matched ? k : 1, cap, animate, i === 1));
       }
       board.appendChild(row);
     });
@@ -475,6 +525,12 @@ button.match[aria-pressed="true"]::before { content: "✓ "; }
 
   ["aw", "an", "ad", "bw", "bn", "bd"].forEach(id => $(id).addEventListener("input", () => { matched = false; render(); }));
   document.querySelectorAll(".ops button").forEach(b => b.addEventListener("click", () => { op = b.dataset.op; render(); }));
+  $("modelSeg").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    model = b.dataset.m;
+    render(matched);   // keeps Size Match on, so the blue cuts draw in on the new model
+  });
   $("match").addEventListener("click", () => { matched = !matched; render(matched); });
   $("reset").addEventListener("click", () => setInputs([0, 1, 2, "+", 0, 1, 3]));
   $("ops").hidden = !SHOW_OP;
@@ -575,7 +631,11 @@ window.I18N_COMMON = {
 window.I18N_PAGE = {
  "Fraction Size Match": "Fractions de même taille",
  "Size Match": "Même taille",
- "Type two fractions. Each one is drawn as squares. Press {0} to cut both into pieces of the same size.": "Tape deux fractions. Chacune est dessinée en carrés. Appuie sur {0} pour couper les deux en morceaux de même taille.",
+ "Type two fractions. Each one is drawn as squares, strips or circles. Press {0} to cut both into pieces of the same size.": "Tape deux fractions. Chacune est dessinée en carrés, en bandes ou en cercles. Appuie sur {0} pour couper les deux en morceaux de même taille.",
+ "Model": "Modèle",
+ "Squares": "Carrés",
+ "Strips": "Bandes",
+ "Circles": "Cercles",
  "First mixed number": "Premier nombre fractionnaire",
  "First": "Premier",
  "First whole number": "Premier nombre entier",
