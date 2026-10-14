@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fraction Division Efficiency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Fraction Division Efficiency (grade 7-9, Shawn 2026-10-14, from his hand sketch).
+   A fraction over a fraction is done fast by moving denominators to the other level:
+   Case 1, fraction on the bottom: 6 over 1/2, the 2 moves UP and multiplies the top: (6 × 2)/1.
+   Case 2, fraction on the top: 6/3 over 2, the 3 moves DOWN and multiplies the bottom: 6/(2 × 3).
+   Case 3, fraction over fraction: 2/3 over 4/8, both move: (2 × 8)/(3 × 4).
+   The moving number is circled and flies along a curved arrow (like the sketch) to a dashed landing box.
+   Work is written down the board with = lined up and step names in a right column. Never the ÷ sign.
+   Learn: one case at a time, Next step. Practice: Case 1, 2, 3 or Mixed; type the answer, Check, Hint, Show me. */
+.main { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 12px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.cases { display: flex; flex-direction: column; width: 100%; }
+.cases button { text-align: left; font-size: 1.05rem; }
+.cases button + button { border-left: 0; border-top: 2px solid var(--grid-major); }
+.cases button .num { display: inline-block; width: 1.6em; font-family: var(--font-num); }
+.pcases { width: 100%; }
+.pcases button { flex: 1 1 auto; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; }
+.rule { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.3; }
+.rule .up, .rule .down { color: var(--orange); }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.say { font-size: 1.25rem; margin: 0; min-height: 3.2em; line-height: 1.5; }
+.say b.o { color: var(--orange); font-family: var(--font-num); }
+.say b.g { color: var(--green); font-family: var(--font-num); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.ask { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; font-family: var(--font-num); font-weight: 700; }
+.ask input { font: inherit; font-size: 1.7rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 54px; width: 3.4ch; text-align: center; padding: 0 2px; }
+.ask hr { width: 100%; border: 0; border-top: 4px solid var(--ink); margin: 0; }
+.ask input.bad { border-color: var(--warn); }
+.ask input.ok { border-color: var(--green); color: var(--green); }
+.fb { margin: 8px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.4em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.05rem; color: var(--muted); margin: 10px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+
+/* Board */
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.tx.o { fill: var(--orange); } .tx.g { fill: var(--green); } .tx.op { fill: var(--muted); }
+.tx.gone { opacity: 0.22; }
+.bar { stroke: var(--ink); stroke-linecap: round; }
+.bar.gone { opacity: 0.22; }
+.bar.g { stroke: var(--green); }
+.eqs { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.sname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.sname.now { fill: var(--ink); }
+.ring { fill: none; stroke: var(--orange); stroke-width: 4; }
+.land { fill: none; stroke: var(--orange); stroke-width: 3; stroke-dasharray: 8 6; }
+.arrow { fill: none; stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.arrow.hint { stroke-dasharray: 10 8; }
+.ahead { fill: var(--orange); }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+.fade { animation: fade 0.5s ease-out both; }
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.6s ease-out forwards; }
+@keyframes pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .pop, .fade { animation: none; } .draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Fraction Division Efficiency</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 960 700" role="img" aria-label="A fraction over a fraction, worked out step by step."></svg></div>
+
+    <div class="panel" id="learn">
+      <section class="card">
+        <div class="seg-btns cases" role="group" aria-label="Case" id="cases">
+          <button type="button" data-case="1" class="on"><span class="num">1</span>Fraction on the bottom</button>
+          <button type="button" data-case="2"><span class="num">2</span>Fraction on the top</button>
+          <button type="button" data-case="3"><span class="num">3</span>Fraction over fraction</button>
+        </div>
+      </section>
+      <section class="card">
+        <p class="rule" id="rule"></p>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+        <button type="button" id="rand">New example</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <div class="seg-btns pcases" role="group" aria-label="Question case" id="pcases">
+          <button type="button" data-pcase="1" class="on">Case 1</button><button type="button" data-pcase="2">Case 2</button><button type="button" data-pcase="3">Case 3</button><button type="button" data-pcase="mix">Mixed</button>
+        </div>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card">
+        <p class="label">Your answer</p>
+        <div class="row">
+          <div class="ask">
+            <input id="an" type="text" inputmode="numeric" autocomplete="off" aria-label="Top number">
+            <hr>
+            <input id="ad" type="text" inputmode="numeric" autocomplete="off" aria-label="Bottom number (leave empty for a whole number)">
+          </div>
+          <div class="btns"><button type="button" class="go" id="check">Check</button><button type="button" id="newq">New question</button></div>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- questions ----------
+  // top and bot are [numerator, denominator]; a denominator of 1 means a whole number.
+  // Case 1: whole over fraction. Case 2: fraction over whole. Case 3: fraction over fraction.
+  function makeQ(kase, top, bot) { return { kase, top, bot }; }
+  const EXAMPLES = { 1: [[6, 1], [1, 2]], 2: [[6, 3], [2, 1]], 3: [[2, 3], [4, 8]] };
+  function gen(kase, prev) {
+    for (let t = 0; t < 50; t++) {
+      let top, bot;
+      if (kase === 1) { const c = ri(2, 9); top = [ri(2, 9), 1]; bot = [ri(1, Math.min(5, c - 1)), c]; }
+      else if (kase === 2) { const b = ri(2, 9); top = [ri(1, 9), b]; bot = [ri(2, 9), 1]; }
+      else { const b = ri(2, 9), d = ri(2, 9); top = [ri(1, 9), b]; bot = [ri(1, 9), d]; if (top[0] === top[1] || bot[0] === bot[1] || top[0] * bot[1] === top[1] * bot[0]) continue; }
+      if (prev && prev.top + "" === top + "" && prev.bot + "" === bot + "") continue;
+      return makeQ(kase, top, bot);
+    }
+    return makeQ(kase, ...EXAMPLES[kase]);
+  }
+  // Moves: which denominator goes where. src is the circled number; dst the number it lands beside.
+  function moves(q) {
+    const m = [];
+    if (q.kase !== 1) m.push({ src: "td", dst: "bn", side: q.kase === 3 ? "left" : "right", dir: "down", v: q.top[1] });
+    if (q.kase !== 2) m.push({ src: "bd", dst: "tn", side: "right", dir: "up", v: q.bot[1] });
+    return m;
+  }
+  // After moving: top = top numerator × bottom denominator, bottom = top denominator × bottom numerator.
+  const answer = q => [q.top[0] * q.bot[1], q.top[1] * q.bot[0]];
+  function steps(q) {
+    const [P, Q] = answer(q), g = gcd(P, Q);
+    const s = [{ k: "start" }];
+    moves(q).forEach((m, i) => s.push({ k: "move", i }));
+    s.push({ k: "line", n: 2 }, { k: "line", n: 3 });
+    if (Q !== 1 && g > 1) s.push({ k: "line", n: 4 });
+    return s;
+  }
+
+  // ---------- layout: numbers, fractions and rows that know their size ----------
+  const CW = 0.62; // character width of the number font, in em
+  let boxes = {};
+  function T(s, fs, cls, key) {
+    s = String(s);
+    return { w: s.length * CW * fs, up: fs * 0.5, dn: fs * 0.5,
+      draw(g, x, y) {
+        const el = E("text", { x: x + this.w / 2, y: y + fs * 0.36, class: "tx " + (cls || ""), "text-anchor": "middle", "font-size": fs }, g, s);
+        if (key) boxes[key] = { x, y, w: this.w, fs, el };
+      } };
+  }
+  function R(items, sp) {
+    const w = items.reduce((t, i) => t + i.w, 0) + sp * (items.length - 1);
+    return { w, up: Math.max(...items.map(i => i.up)), dn: Math.max(...items.map(i => i.dn)),
+      draw(g, x, y) { for (const i of items) { i.draw(g, x, y); x += i.w + sp; } } };
+  }
+  function F(top, bot, fs, o = {}) {
+    const pad = fs * 0.22 + (o.extra || 0), gap = fs * 0.2, sw = o.sw || Math.max(3, fs * 0.07);
+    const w = Math.max(top.w, bot.w) + 2 * pad;
+    return { w, up: top.up + top.dn + gap, dn: bot.up + bot.dn + gap,
+      draw(g, x, y) {
+        const el = E("line", { x1: x, x2: x + w, y1: y, y2: y, class: "bar " + (o.cls || ""), "stroke-width": sw }, g);
+        if (o.key) boxes[o.key] = { el };
+        top.draw(g, x + (w - top.w) / 2, y - gap - top.dn);
+        bot.draw(g, x + (w - bot.w) / 2, y + gap + bot.up);
+      } };
+  }
+  const OUT = 64, IN = 52, LN = 58; // font sizes: whole numbers on line 1, the small fractions, later lines
+  const X0 = 230, EQX = 170, NX = 690;
+  const times = (fs) => T("×", fs, "op");
+  // Line 1: the question, with the small fractions' denominators keyed so they can be circled and moved.
+  function line1(q) {
+    const part = (fr, pre) => fr[1] === 1 ? T(fr[0], OUT, "", pre + "n")
+      : F(T(fr[0], IN, "", pre + "n"), T(fr[1], IN, "", pre + "d"), IN, { key: pre + "bar" });
+    const extra = 3 * CW * IN + 10; // room beside each level for the landing "× 2"
+    return F(part(q.top, "t"), part(q.bot, "b"), OUT, { extra, sw: 6 });
+  }
+  function product(nums, cls) { // [6, 2] → "6 × 2", the moved number orange
+    const items = [];
+    nums.forEach(([v, c], i) => { if (i) items.push(times(LN)); items.push(T(v, LN, c)); });
+    return R(items, 14);
+  }
+  function lines(q) {
+    const [P, Q] = answer(q), g = gcd(P, Q);
+    const topNums = [[q.top[0], ""]], botNums = [[q.bot[0], ""]];
+    if (q.kase !== 2) topNums.push([q.bot[1], "o"]);
+    if (q.kase === 3) botNums.unshift([q.top[1], "o"]); else if (q.kase === 2) botNums.push([q.top[1], "o"]);
+    const val = (n, d, cls) => d === 1 ? T(n, LN, cls) : F(T(n, LN, cls), T(d, LN, cls), LN, { cls });
+    const out = [
+      { node: line1(q), name: "Start" },
+      { node: F(product(topNums), product(botNums), LN), name: moveName(q) },
+      { node: val(P, Q, Q === 1 || g === 1 ? "g" : ""), name: "Multiply" },
+    ];
+    if (Q !== 1 && g > 1) out.push({ node: val(P / g, Q / g, "g"), name: "Simplify" });
+    return out;
+  }
+  function moveName(q) {
+    if (q.kase === 1) return `Move the ${q.bot[1]} up`;
+    if (q.kase === 2) return `Move the ${q.top[1]} down`;
+    return "Switch levels";
+  }
+
+  // ---------- drawing ----------
+  let timers = [], raf = 0;
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf); }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+
+  // Draws question q with steps 0..upto done. anim: play the newest step. hint: circle and arrows only.
+  function render(q, upto, anim, hint) {
+    clearTimers();
+    svg.innerHTML = ""; boxes = {};
+    E("defs", {}, svg).innerHTML = `<marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse"><path class="ahead" d="M0 0 L10 5 L0 10 z"/></marker>`;
+    const L = lines(q), S = steps(q), M = moves(q);
+    // Vertical places for every line, shown or not, so lines never jump.
+    let y = 26; const ys = [];
+    L.forEach((l, i) => { y += l.node.up; ys.push(y); y += l.node.dn + (i ? 30 : 46); });
+    const H = Math.max(640, y + 10);
+    svg.setAttribute("viewBox", `0 0 960 ${H}`);
+    const lineStep = n => S.findIndex(s => s.k === "line" && s.n === n);
+    L.forEach((l, i) => {
+      const first = i === 0 ? 0 : lineStep(i + 1);
+      if (upto < first) return;
+      const isNew = anim && upto === first && i > 0;
+      const g = E("g", { class: isNew ? "pop" : "" });
+      if (isNew) g.style.transformOrigin = "left center";
+      if (i) E("text", { x: EQX, y: ys[i] + LN * 0.36, class: "eqs", "text-anchor": "middle", "font-size": LN }, g, "=");
+      l.node.draw(g, X0, ys[i]);
+      const now = (i === 0 && upto <= M.length) || (i > 0 && upto === first);
+      E("text", { x: NX, y: ys[i] + 11, class: "sname" + (now ? " now" : ""), "font-size": 31 }, g, l.name);
+    });
+    // Moves on line 1: circle, arrow, landing number.
+    M.forEach((m, k) => {
+      const at = 1 + k;
+      if (hint) { drawMove(m, "hint"); return; }
+      if (upto < at) return;
+      drawMove(m, anim && upto === at && !reduced() ? "anim" : "done");
+    });
+  }
+  // Where the moved number lands: beside its target, on the target's level.
+  function landing(m) {
+    const t = boxes[m.dst], fs = t.fs, gap = 14, xw = CW * fs;
+    if (m.side === "right") return { op: t.x + t.w + gap + xw / 2, num: t.x + t.w + 2 * gap + xw + String(m.v).length * CW * fs / 2, y: t.y, fs };
+    return { op: t.x - gap - xw / 2, num: t.x - 2 * gap - xw - String(m.v).length * CW * fs / 2, y: t.y, fs };
+  }
+  // A bracket-shaped curve out to the side and back in, ending beside the landing box.
+  function arrowPath(m, s, l) {
+    const r = s.fs * 0.62, sx = s.x + s.w / 2, sy = s.y, k = m.side === "right" ? 1 : -1;
+    const xs = k > 0 ? Math.max(sx, l.num) + 110 : Math.min(sx, l.num) - 110;
+    return `M${sx + k * r} ${sy} C${xs} ${sy} ${xs} ${l.y} ${l.num + k * l.fs * 0.62} ${l.y}`;
+  }
+  function drawMove(m, mode) {
+    const s = boxes[m.src], l = landing(m), fs = l.fs;
+    const r = s.fs * 0.6;
+    const ring = E("circle", { cx: s.x + s.w / 2, cy: s.y, r, class: "ring" });
+    const lb = E("rect", { x: l.num - fs * 0.45, y: l.y - fs * 0.6, width: fs * 0.9, height: fs * 1.2, rx: 8, class: "land" });
+    const path = E("path", { d: arrowPath(m, s, l), class: "arrow" + (mode === "hint" ? " hint" : ""), "marker-end": "url(#ah)", pathLength: 1 });
+    if (mode === "hint") { path.removeAttribute("pathLength"); return; }
+    const done = () => {
+      lb.remove();
+      E("text", { x: l.op, y: l.y + fs * 0.36, class: "tx op pop", "text-anchor": "middle", "font-size": fs }, svg, "×");
+      E("text", { x: l.num, y: l.y + fs * 0.36, class: "tx o" + (mode === "anim" ? " pop" : ""), "text-anchor": "middle", "font-size": fs }, svg, m.v);
+      s.el.classList.add("gone");
+      const bar = m.src === "td" ? boxes.tbar : boxes.bbar;
+      if (bar) bar.el.classList.add("gone");
+      path.classList.add("done");
+    };
+    if (mode !== "anim") { path.removeAttribute("pathLength"); done(); return; }
+    // Circle pops, arrow draws, then a copy of the number rides the arrow and lands in the box.
+    ring.classList.add("pop"); lb.classList.add("fade"); lb.style.animationDelay = "300ms";
+    path.style.opacity = 0;
+    later(() => { path.style.opacity = 1; path.classList.add("draw"); }, 450);
+    later(() => {
+      path.classList.remove("draw"); path.removeAttribute("pathLength");
+      const len = path.getTotalLength();
+      const fly = E("text", { class: "tx o", "text-anchor": "middle", "font-size": s.fs }, svg, m.v);
+      s.el.classList.add("gone");
+      const t0 = performance.now(), D = 1300;
+      const tick = now => {
+        const u = Math.min(1, (now - t0) / D), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+        // Start at the circle's centre, follow the arrow, end in the landing box.
+        let x, y;
+        if (e < 0.08) { const p = path.getPointAtLength(0), k = e / 0.08; x = s.x + s.w / 2 + (p.x - s.x - s.w / 2) * k; y = s.y + (p.y - s.y) * k; }
+        else if (e < 0.92) { const p = path.getPointAtLength(len * (e - 0.08) / 0.84); x = p.x; y = p.y; }
+        else { const p = path.getPointAtLength(len), k = (e - 0.92) / 0.08; x = p.x + (l.num - p.x) * k; y = p.y + (l.y - p.y) * k; }
+        const f = s.fs + (fs - s.fs) * e;
+        fly.setAttribute("x", x); fly.setAttribute("y", y + f * 0.36); fly.setAttribute("font-size", f);
+        if (u < 1) raf = requestAnimationFrame(tick); else { fly.remove(); done(); }
+      };
+      raf = requestAnimationFrame(tick);
+    }, 1100);
+  }
+
+  // ---------- words ----------
+  const RULES = {
+    1: `The bottom fraction's denominator moves <span class="up">UP ↑</span> and multiplies the top.`,
+    2: `The top fraction's denominator moves <span class="down">DOWN ↓</span> and multiplies the bottom.`,
+    3: `Each denominator switches levels: <span class="down">top one DOWN ↓</span>, <span class="up">bottom one UP ↑</span>.`,
+  };
+  const o = v => `<b class="o">${v}</b>`, gr = v => `<b class="g">${v}</b>`;
+  function say(q, st) {
+    const [P, Q] = answer(q), g = gcd(P, Q);
+    if (st.k === "start") return ["The bottom is a fraction. Find its denominator.", "The top is a fraction. Find its denominator.", "Both are fractions. Find both denominators."][q.kase - 1];
+    if (st.k === "move") {
+      const m = moves(q)[st.i];
+      return m.dir === "up" ? `The ${o(m.v)} moves up. It multiplies the top.` : `The ${o(m.v)} moves down. It multiplies the bottom.`;
+    }
+    if (st.n === 2) return "Now it is one fraction. No more fraction on a fraction.";
+    if (st.n === 3) {
+      const ans = Q === 1 ? String(P) : `${P}/${Q}`;
+      return Q === 1 || g === 1 ? `Multiply. The answer is ${gr(ans)}.` : "Multiply the top. Multiply the bottom.";
+    }
+    const a = Q / g === 1 ? String(P / g) : `${P / g}/${Q / g}`;
+    return `Simplify. The answer is ${gr(a)}.`;
+  }
+
+  // ---------- Learn ----------
+  let mode = "learn", lq = makeQ(1, ...EXAMPLES[1]), step = 0;
+  function showLearn(anim) {
+    const S = steps(lq);
+    render(lq, step, anim);
+    $("#rule").innerHTML = RULES[lq.kase];
+    $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
+    $("#say").innerHTML = say(lq, S[step]);
+    $("#next").disabled = step >= S.length - 1;
+    $("#back").disabled = step === 0;
+  }
+  function setCase(k, fresh) {
+    document.querySelectorAll("[data-case]").forEach(b => b.classList.toggle("on", +b.dataset.case === k));
+    lq = fresh ? gen(k, lq) : makeQ(k, ...EXAMPLES[k]); step = 0; showLearn(false);
+  }
+  $("#cases").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setCase(+b.dataset.case); });
+  $("#next").onclick = () => { if (step < steps(lq).length - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = () => { step = 0; showLearn(false); };
+  $("#rand").onclick = () => setCase(lq.kase, true);
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  let pcase = "1", pq = null, tried = false, solved = false, right = 0, total = 0;
+  const an = $("#an"), ad = $("#ad"), fb = $("#fb");
+  function feedback(text, cls) { fb.className = "fb " + (cls || ""); fb.innerHTML = text; }
+  function newQuestion() {
+    const k = pcase === "mix" ? ri(1, 3) : +pcase;
+    pq = gen(k, pq); tried = false; solved = false;
+    an.value = ad.value = ""; an.className = ad.className = "";
+    feedback("");
+    render(pq, 0, false);
+    an.focus({ preventScroll: true });
+  }
+  function count(ok) { if (!tried) { tried = true; total++; if (ok) right++; $("#right").textContent = right; $("#total").textContent = total; } }
+  function check() {
+    if (solved) return;
+    const n = an.value.trim(), d = ad.value.trim();
+    if (!/^\d+$/.test(n) || (d && !/^\d+$/.test(d))) { feedback("Type a whole number on top, and on the bottom if you need one.", "mid"); return; }
+    const N = +n, D = d ? +d : 1;
+    if (D === 0) { feedback("The bottom can't be 0.", "mid"); return; }
+    const [P, Q] = answer(pq), g = gcd(P, Q);
+    if (N * Q === P * D) {
+      count(true); solved = true;
+      an.className = ad.className = "ok";
+      const simple = Q / g === 1 ? String(P / g) : `${P / g}/${Q / g}`;
+      feedback(gcd(N, D) > 1 ? `Correct! It simplifies to ${simple}.` : "Correct!", "ok");
+      render(pq, steps(pq).length - 1, false);
+      return;
+    }
+    count(false);
+    an.className = ad.className = "bad";
+    const mt = pq.top[0] * pq.bot[0], md = pq.top[1] * pq.bot[1];
+    if (N * md === mt * D) feedback("Not yet. It looks like you multiplied the fractions. Move the denominator to the other level first.", "no");
+    else if (N * P === Q * D) feedback("Not yet. Your answer is upside down. Check which way each number moves.", "no");
+    else feedback("Not yet. Try a Hint.", "no");
+  }
+  $("#check").onclick = check;
+  [an, ad].forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
+  $("#newq").onclick = newQuestion;
+  $("#hint").onclick = () => {
+    if (solved) return;
+    render(pq, 0, false, true);
+    feedback(moves(pq).map(m => m.dir === "up" ? `Move the ${o(m.v)} up. It multiplies the top.` : `Move the ${o(m.v)} down. It multiplies the bottom.`).join(" "), "mid");
+  };
+  $("#showme").onclick = () => {
+    count(false); solved = true;
+    const S = steps(pq), [P, Q] = answer(pq), g = gcd(P, Q);
+    let k = 0;
+    feedback("");
+    const play = () => {
+      render(pq, k, true);
+      const t = S[k].k === "move" && !reduced() ? 2700 : 1500;
+      if (k < S.length - 1) { k++; later(play, t); }
+      else { an.value = P / g; ad.value = Q / g === 1 ? "" : Q / g; an.className = ad.className = "ok"; }
+    };
+    play();
+  };
+  $("#pcases").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    pcase = b.dataset.pcase;
+    document.querySelectorAll("[data-pcase]").forEach(x => x.classList.toggle("on", x === b));
+    newQuestion();
+  });
+
+  function setMode(m) {
+    mode = m; clearTimers();
+    document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false); else newQuestion();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  showLearn(false);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Fraction Division Efficiency (fracdivfast.html). */
+window.I18N_PAGE = {
+ "Fraction Division Efficiency": "Division de fractions efficace",
+ "Learn": "Apprendre",
+ "Mode": "Mode",
+ "A fraction over a fraction, worked out step by step.": "Une fraction sur une fraction, résolue étape par étape.",
+ "Case": "Cas",
+ "{0}Fraction on the bottom": "{0}Fraction en bas",
+ "{0}Fraction on the top": "{0}Fraction en haut",
+ "{0}Fraction over fraction": "{0}Fraction sur fraction",
+ "Question case": "Cas de la question",
+ "Case {n}": "Cas {n}",
+ "Mixed": "Mélangé",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "Your answer": "Ta réponse",
+ "Top number": "Nombre du haut",
+ "Bottom number (leave empty for a whole number)": "Nombre du bas (laisse vide pour un nombre entier)",
+ "Show me": "Montre-moi",
+ "New example": "Nouvel exemple",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "Start": "Départ",
+ "Multiply": "Multiplier",
+ "Simplify": "Simplifier",
+ "Switch levels": "Changer de niveau",
+ "Move the {n} up": "Monte le {n}",
+ "Move the {n} down": "Descends le {n}",
+ "The bottom fraction's denominator moves {0} and multiplies the top.": "Le dénominateur de la fraction du bas monte {0} et multiplie le haut.",
+ "The top fraction's denominator moves {0} and multiplies the bottom.": "Le dénominateur de la fraction du haut descend {0} et multiplie le bas.",
+ "Each denominator switches levels: {0}, {1}.": "Chaque dénominateur change de niveau : {0}, {1}.",
+ "UP ↑": "↑",
+ "DOWN ↓": "↓",
+ "top one DOWN ↓": "celui du haut DESCEND ↓",
+ "bottom one UP ↑": "celui du bas MONTE ↑",
+ "The bottom is a fraction. Find its denominator.": "Le bas est une fraction. Trouve son dénominateur.",
+ "The top is a fraction. Find its denominator.": "Le haut est une fraction. Trouve son dénominateur.",
+ "Both are fractions. Find both denominators.": "Les deux sont des fractions. Trouve les deux dénominateurs.",
+ "The {0} moves up. It multiplies the top.": "Le {0} monte. Il multiplie le haut.",
+ "The {0} moves down. It multiplies the bottom.": "Le {0} descend. Il multiplie le bas.",
+ "Move the {0} up. It multiplies the top.": "Monte le {0}. Il multiplie le haut.",
+ "Move the {0} down. It multiplies the bottom.": "Descends le {0}. Il multiplie le bas.",
+ "Move the {0} down. It multiplies the bottom. Move the {1} up. It multiplies the top.": "Descends le {0}. Il multiplie le bas. Monte le {1}. Il multiplie le haut.",
+ "Now it is one fraction. No more fraction on a fraction.": "Maintenant, c’est une seule fraction. Plus de fraction sur une fraction.",
+ "Multiply. The answer is {0}.": "Multiplie. La réponse est {0}.",
+ "Multiply the top. Multiply the bottom.": "Multiplie le haut. Multiplie le bas.",
+ "Simplify. The answer is {0}.": "Simplifie. La réponse est {0}.",
+ "Type a whole number on top, and on the bottom if you need one.": "Écris un nombre entier en haut, et en bas si tu en as besoin.",
+ "The bottom can't be 0.": "Le bas ne peut pas être 0.",
+ "~Correct! It simplifies to (.+)\\.": "Bonne réponse! Ça se simplifie en $1.",
+ "Not yet. It looks like you multiplied the fractions. Move the denominator to the other level first.": "Pas encore. On dirait que tu as multiplié les fractions. Déplace d’abord le dénominateur à l’autre niveau.",
+ "Not yet. Your answer is upside down. Check which way each number moves.": "Pas encore. Ta réponse est à l’envers. Vérifie dans quel sens chaque nombre se déplace.",
+ "Not yet. Try a Hint.": "Pas encore. Essaie un indice."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
