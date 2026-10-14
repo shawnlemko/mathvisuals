@@ -160,17 +160,24 @@ header .seg-btns button { border: 0; border-radius: 0; background: var(--sheet);
 header .seg-btns button + button { border-left: 2px solid var(--grid-major); }
 header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
 
-/* Practice: answer boxes, Check, one line of feedback, Show me / New system. */
-#practice { padding-bottom: 10px; border-bottom: 1px solid var(--grid); margin-bottom: 8px; }
-.ask-q { margin: 0 0 8px; font-weight: 700; font-size: 1.15rem; }
-.ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; }
-.ask input { font: inherit; width: 4ch; height: 54px; text-align: center; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; }
-.ask input[aria-invalid="true"] { border-color: var(--warn); }
-.ask button, .pnav button { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; }
+/* Practice: the work so far in the same grid as Learning, then this step's question, a box to type the step, Check / Show me. */
+#practice:not([hidden]) { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ask-q { margin: 0 0 6px; font-weight: 700; font-size: 1.1rem; color: var(--muted); }
+#pwork { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.pstep { border-top: 2px solid var(--grid-major); padding-top: 8px; margin-top: 6px; }
+.pq { margin: 0 0 8px; font-weight: 700; font-size: 1.15rem; }
+.ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; }
+.ask input { font: inherit; height: 54px; padding: 0 12px; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; }
+#pin { flex: 1; min-width: 0; }
+.ask input.mul { width: 3.6ch; text-align: center; padding: 0 4px; }
+.ask .t1 { color: var(--l1); font-family: var(--font-display); } .ask .t2 { color: var(--l2); font-family: var(--font-display); }
+.pbtns, .pnav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.pbtns button, .pnav button { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 18px; }
 #check { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
-.fb { margin: 8px 0; min-height: 1.4em; font-weight: 700; font-size: 1.15rem; }
+#newq.go { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.fb { margin: 8px 0 0; min-height: 1.4em; font-weight: 700; font-size: 1.1rem; }
 .fb.ok { color: var(--green); } .fb.no { color: var(--warn); }
-.pnav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pnav { border-top: 1px solid var(--grid); padding-top: 10px; }
 .score { margin-left: auto; color: var(--muted); font-weight: 700; }
 .eqin input[readonly] { background: var(--paper); }
 
@@ -280,14 +287,21 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       <section class="card steps">
         <div id="practice" hidden>
           <p class="ask-q" id="askq"></p>
-          <div class="ask">
-            <label>x = <input id="ax" inputmode="numeric" autocomplete="off" aria-label="x"></label>
-            <label>y = <input id="ay" inputmode="numeric" autocomplete="off" aria-label="y"></label>
-            <button type="button" id="check">Check</button>
+          <div id="pwork" aria-live="polite"></div>
+          <div class="pstep" id="pstep">
+            <p class="pq" id="pq"></p>
+            <div class="ask" id="peq"><input id="pin" autocomplete="off" spellcheck="false" aria-label="Your step"></div>
+            <div class="ask" id="pmul" hidden>
+              <label><span class="t1">①</span> × <input id="m1" class="mul" value="1" inputmode="numeric" autocomplete="off" aria-label="Multiply equation 1 by"></label>
+              <label><span class="t2">②</span> × <input id="m2" class="mul" value="1" inputmode="numeric" autocomplete="off" aria-label="Multiply equation 2 by"></label>
+            </div>
+            <div class="pbtns">
+              <button type="button" id="check">Check</button>
+              <button type="button" id="showme">Show me</button>
+            </div>
+            <p class="fb" id="fb" aria-live="polite"></p>
           </div>
-          <p class="fb" id="fb" aria-live="polite"></p>
           <div class="pnav">
-            <button type="button" id="showme">Show me</button>
             <button type="button" id="newq">New system ▶</button>
             <span class="score" id="score"></span>
           </div>
@@ -552,7 +566,10 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
   const scene = ch => (sc = { ...sc, lab: sc.lab.slice(), help: sc.help.map(h => ({ ...h })), hi: -1, ...ch });
   // A step: its note (cap, plus an optional graph sentence `more`) and its body: rows of working, or one wide piece of HTML.
   // Rows: { eq: "left = right" } or { op: "− 3" } (done to both sides, written under each side).
-  const push = (cap, body, more = "") => steps.push({ cap, body, more, sc });
+  // `stage` names the part of the method a step belongs to, so Practice can check one part at a time and Show me can
+  // reveal just that part's working. `force` makes the walk-through follow the student's own choice in Practice.
+  let stage = "", force = null, info = {};
+  const push = (cap, body, more = "") => steps.push({ cap, body, more, sc, stage });
   const rowH = h => [{ eq: h }];
   const fracH = (top, bot) => `<span class="fr big"><span>${top}</span><span>${bot}</span></span>`;
   const paren = r => (r.n < 0 ? `(${numH(r)})` : numH(r));
@@ -613,6 +630,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
   }
 
   function answer() {
+    stage = "end";
     const s = solution();
     const off = Math.abs(val(s.x)) > 10 || Math.abs(val(s.y)) > 10;
     scene({ point: true });
@@ -685,16 +703,19 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       const cost = (m1 !== 1) + (m2 !== 1) + (m1 < 0 || m2 < 0 ? 0.5 : 0);
       return { v, m: [m1, m2], cost, L };
     }).sort((p, q) => p.cost - q.cost || p.L - q.L);
-    const { v, m } = plans[0], u = other(v);
+    const { v, m } = force && force.m ? force : plans[0], u = other(v);
     const S = A.map((q, i) => ({ a: q.a * m[i], b: q.b * m[i], c: q.c * m[i] }));
     const tagOf = i => (m[i] === 1 ? T(i) : `${T(i)}×${m[i] < 0 ? "(" + fmt(m[i]) + ")" : m[i]}`);
     [0, 1].forEach(i => {
       if (m[i] === 1) return;
+      stage = "mult" + i;
       scene({ hi: i }); sc.lab[i] = stdEq(S[i]).t;
       push(`Multiply equation ${T(i)} by ${fmt(m[i])} so the ${v}'s are opposites.`,
         table([{ q: S[i], tag: tagOf(i), cls: "r" + (i + 1) }]), "On the graph it's still the same line!");
     });
     const sum = { a: S[0].a + S[1].a, b: S[0].b + S[1].b, c: S[0].c + S[1].c };
+    info = { v, u, m, S, sum, plan: plans[0] };
+    stage = "add";
     const tbl = table([{ q: S[0], tag: tagOf(0), cls: "r1", gone: D ? v : "xy" },
                        { q: S[1], tag: tagOf(1), cls: "r2", op: "+", gone: D ? v : "xy" },
                        { q: sum, sum: true }]);
@@ -706,9 +727,11 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
     const K = R(co(sum, u)), C = R(sum.c);
     scene({}); setHelp(u, div(C, K), both([[K, u]], [[C, ""]]).t);
     push(`Add the equations. The ${v}'s cancel!`, tbl, `With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.`);
+    stage = "solve";
     const x = finishOne(u, K, R(0), C);
     // Put it back into the equation with the simplest other letter.
     const j = [0, 1].sort((p, q) => Math.abs(co(A[p], v)) - Math.abs(co(A[q], v)))[0];
+    stage = "back";
     plugIn(u, x, A[j], j);
     answer();
   }
@@ -727,12 +750,15 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
         + (kj ? 0 : 10) + (v === "x" ? 0.2 : 0) + i * 0.01;
       if (!best || score < best.score) best = { i, v, score };
     }));
-    const { i, v } = best, u = other(v), j = 1 - i, q = F[i], Q = F[j];
+    const { i, v } = force && force.v && force.i !== undefined ? force : best, u = other(v), j = 1 - i, q = F[i], Q = F[j];
     const k = R(co(q, v)), l = R(co(q, u)), c = R(q.c);
     const pp = div(neg(co(q, u)), k), qq = div(c, k);
     const Ex = H => ex([[pp, u], [qq, ""]], H);
     const iso = both([[R(1), v]], [[pp, u], [qq, ""]]);
-    if (q.iso !== v) {
+    info = { i, v, u, j, expr: Ex(false), iso: iso.t };
+    stage = "iso";
+    if (q.iso === v) { scene({ hi: i }); push(`Equation ${T(i)} already says ${iso.t}.`, rowH(iso.h)); }
+    else {
       let moved = false;
       if (!isZ(l) || !q.std) {
         const r = both([[k, v]], [[neg(co(q, u)), u], [c, ""]]);
@@ -760,6 +786,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       const r1 = both(v === "x" ? [put, mine] : [mine, put], [[cj, ""]]);
       // Start from equation j as it is, with its v marked in the colour of the equation the bracket comes from.
       const start = both(std(Q), [[cj, ""]]).h;
+      stage = "sub";
       scene({ hi: j });
       const from = `--from: var(--l${i + 1})`;
       push(`Start with equation ${T(j)}. Find the ${v} in it.`, [{ eq: start.replace(`<i>${v}</i>`, `<i class="mark">${v}</i>`), style: from }]);
@@ -770,6 +797,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       push(`Put (${Ex(false)}) in place of ${v} in equation ${T(j)}.`,
         [{ eq: `<span class="tg">${T(i)}</span> <i>${v}</i> = <span class="fly">${Ex(true)}</span>`, cls: "src", style: from }, { eq: into, style: from }],
         s ? `With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.` : "");
+      stage = "solve";
       const a1 = [mul(kj, pp), u], a2 = [mul(kj, qq), ""];
       const r2 = both(v === "x" ? [a1, a2, mine] : [mine, a1, a2], [[cj, ""]]);
       scene({}); if (s) setHelp(u, s[u], r2.t); else sc.hi = 2;
@@ -786,6 +814,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       w = finishOne(u, K, M, cj);
     }
     if (!s) return noAnswer(false);
+    stage = "back";
     // Back into v = ...
     if (isZ(pp)) {
       scene({}); setHelp(v, qq, iso.t);
@@ -801,7 +830,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
   }
 
   function build() {
-    steps = []; at = 0;
+    steps = []; at = 0; stage = ""; info = {};
     sc = { lab: [E[0].typed.t, E[1].typed.t], hi: -1, help: [], point: false };
     push("The answer is where the two lines cross. Press Next step.", "");
     if (method === "elim") elimination(); else substitution();
@@ -916,12 +945,10 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
 
   /* ---------- Panel ---------- */
   // Every step goes into one grid so the = signs line up down the page; each step's note sits in the column on the right.
-  function show() {
-    const work = $("work");
-    const narrow = work.clientWidth > 0 && work.clientWidth < 520;   // phones: each note goes on its own line above its working
+  function gridHTML(list, nowAt, narrow) {
     let r = 1, html = "";
-    steps.slice(0, at + 1).forEach((s, k) => {
-      const now = k === at ? " now" : "";
+    list.forEach((s, k) => {
+      const now = k === nowAt ? " now" : "";
       const rows = Array.isArray(s.body) ? s.body : s.body ? [{ wide: s.body }] : [];
       if (!rows.length) { html += `<div class="text${now}${k ? " top" : ""}" style="grid-row: ${r}">${s.cap}</div>`; r++; return; }
       const note = `${s.cap}${s.more ? `<span class="more">${s.more}</span>` : ""}`;
@@ -936,7 +963,14 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       if (!narrow) html += `<div class="note${now}${k ? " top" : ""}" style="grid-row: ${r} / span ${rows.length}">${note}</div>`;
       r += rows.length;
     });
-    work.innerHTML = `<div class="grid${narrow ? " narrow" : ""}">${html}</div>`;
+    return `<div class="grid${narrow ? " narrow" : ""}">${html}</div>`;
+  }
+  const isNarrow = box => box.clientWidth > 0 && box.clientWidth < 520;   // phones: each note goes on its own line above its working
+
+  function show() {
+    if (mode === "practice") return P && pshow();
+    const work = $("work");
+    work.innerHTML = gridHTML(steps.slice(0, at + 1), at, isNarrow(work));
     work.scrollTop = work.scrollHeight;
     $("back").disabled = at === 0;
     $("next").disabled = !steps.length;
@@ -981,10 +1015,15 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
     });
   }
 
-  /* ---------- Practice: the same two skills, on a new system each time ---------- */
-  // Answers are whole numbers from −6 to 6. Substitution systems always have a lone x or y (sometimes already written
-  // y = ...); elimination systems need at least one equation multiplied first. The graph stays hidden until answered.
-  let mode = "learn", saved = ["", ""], revealed = false, walking = false, tried = false, right = 0, total = 0;
+  /* ---------- Practice: the same steps as Learning, typed by the student ---------- */
+  // A new system each time (whole-number answers −6 to 6; substitution systems always have a lone x or y, sometimes
+  // already y = ...; elimination systems always need a multiply first). The student types each step's result:
+  //   Substitution: get a letter alone → put it into the other equation → solve → find the other letter.
+  //   Elimination: pick the multipliers → multiply each equation → add → solve → find the other letter.
+  // Their choice of letter / multipliers is followed from then on (force). Check gives a one-line hint, never the answer;
+  // Show me fills in that step with Learning's full working. The graph stays empty until the system is finished.
+  let mode = "learn", saved = ["", ""], revealed = false, right = 0, total = 0;
+  let P = null;   // { done: steps shown so far, stage, helped, finished }
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   const nz = (a, b) => { let n; do n = rnd(-b, b); while (Math.abs(n) < a); return n; };
   const termStr = terms => {
@@ -1011,7 +1050,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
         if (Math.random() < 0.5) p.reverse();
         if (Math.abs(p[0]) === Math.abs(q[0]) || Math.abs(p[1]) === Math.abs(q[1])) continue;
       }
-      if (p[0] < 0 || (p[0] === 0 && p[1] < 0)) p = p.map(n => -n);   // start each equation with a positive term
+      if (p[0] < 0) p = p.map(n => -n);   // start each equation with a positive term
       if (q[0] < 0) q = q.map(n => -n);
       if (p[0] * q[1] === q[0] * p[1] || gcd(Math.abs(p[0]), Math.abs(p[1])) > 1 || gcd(Math.abs(q[0]), Math.abs(q[1])) > 1) continue;
       const pc = p[0] * x + p[1] * y, qc = q[0] * x + q[1] * y;
@@ -1024,40 +1063,202 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       return Math.random() < 0.5 ? [ps, qs] : [qs, ps];
     }
   }
+
+  /* Reading a typed step: any linear expression with brackets, like 2(y + 1) + 3y = 12 or 3x − 2(−x + 3) = 7.
+     Each side becomes { x, y, k } (fractions kept exact). Returns null if it can't be read or isn't linear. */
+  function linSide(str) {
+    let pos = 0;
+    const peek = () => str[pos];
+    const lin = (x, y, k) => ({ x, y, k });
+    const scale = (f, r) => lin(mul(f.x, r), mul(f.y, r), mul(f.k, r));
+    const plus = (f, g) => lin(add(f.x, g.x), add(f.y, g.y), add(f.k, g.k));
+    const isConst = f => isZ(f.x) && isZ(f.y);
+    function expr() {
+      let f = term();
+      while (f && (peek() === "+" || peek() === "-")) { const op = str[pos++], g = term(); if (!g) return null; f = plus(f, op === "-" ? scale(g, R(-1)) : g); }
+      return f;
+    }
+    function term() {
+      let f = factor();
+      while (f && pos < str.length && /[*/×(\dxy.]/.test(peek())) {
+        const op = peek() === "*" || peek() === "×" ? (pos++, "*") : peek() === "/" ? (pos++, "/") : "*";
+        const g = factor(); if (!g) return null;
+        if (op === "/") { if (!isConst(g) || isZ(g.k)) return null; f = scale(f, div(R(1), g.k)); }
+        else if (isConst(g)) f = scale(f, g.k);
+        else if (isConst(f)) f = scale(g, f.k);
+        else return null;                                   // x times y: not linear
+      }
+      return f;
+    }
+    function factor() {
+      const ch = peek();
+      if (ch === "-" || ch === "+") { pos++; const f = factor(); return f && (ch === "-" ? scale(f, R(-1)) : f); }
+      if (ch === "x" || ch === "y") { pos++; return lin(R(ch === "x" ? 1 : 0), R(ch === "y" ? 1 : 0), R(0)); }
+      if (ch === "(") { pos++; const f = expr(); if (!f || peek() !== ")") return null; pos++; return f; }
+      const m = /^\d+(\.\d+)?/.exec(str.slice(pos));
+      if (!m) return null;
+      pos += m[0].length;
+      return lin(R(0), R(0), dec(m[0]));
+    }
+    const f = expr();
+    return f && pos === str.length ? f : null;
+  }
+  function readStep(text) {
+    const t = text.replace(/\s+/g, "").replace(/[−–—]/g, "-").replace(/[XY]/g, c => c.toLowerCase()).replace(/÷/g, "/");
+    const parts = t.split("=");
+    if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+    const L = linSide(parts[0]), Rt = linSide(parts[1]);
+    if (!L || !Rt) return null;
+    const show = t.replace(/\+-|-\+/g, "-").replace(/\*/g, "×").replace(/=/g, " = ").replace(/(?<=[\dxy)])([+-])/g, " $1 ").replace(/-/g, "−");
+    return { L, Rt, a: sub(L.x, Rt.x), b: sub(L.y, Rt.y), c: sub(Rt.k, L.k), show };
+  }
+  const cf = (e, v) => (v === "x" ? e.a : e.b);
+  const eqR = (p, q) => p.n * q.d === q.n * p.d;
+  // Same line as an equation of the system (any multiple of it).
+  const sameLine = (e, q) => { const a = R(q.a), b = R(q.b), c = R(q.c); return eqR(mul(e.a, b), mul(a, e.b)) && eqR(mul(e.a, c), mul(a, e.c)) && eqR(mul(e.b, c), mul(b, e.c)); };
+  // Exactly this equation, letters on one side and the number on the other (either way round), not just the same line.
+  const exactly = (e, q) => [[e.L, e.Rt], [e.Rt, e.L]].some(([A, B]) => isZ(B.x) && isZ(B.y) &&
+    eqR(A.x, R(q.a)) && eqR(A.y, R(q.b)) && eqR(sub(B.k, A.k), R(q.c)));
+  // One letter alone on one side: y = 2x − 1 or 2x − 1 = y.
+  const alone = (e, v) => [[e.L, e.Rt], [e.Rt, e.L]].some(([A, B]) => isOne(A[v]) && isZ(A[other(v)]) && isZ(A.k) && isZ(B[v]));
+  const solvedFor = (e, v) => alone(e, v) && isZ(cf(e, other(v)));
+  const valueOf = (e, v) => div(e.c, cf(e, v));
+
+  const S1 = () => solution();
+  function prompt() {
+    const st = P.stage, s = S1();
+    if (method === "sub") {
+      if (st === "iso") return "Get x or y by itself in one of the equations.";
+      if (st === "sub") return `Put (${info.expr}) in place of ${info.v} in equation ${T(info.j)}.`;
+      if (st === "solve") return `Solve for ${info.u}.`;
+      return `Put ${info.u} = ${numT(s[info.u])} into ${info.iso} to find ${info.v}.`;
+    }
+    if (st === "mult") return "Multiply so the x's or the y's are opposites.";
+    if (st === "mult0" || st === "mult1") { const i = +st[4]; return `Multiply equation ${T(i)} by ${fmt(info.m[i])}.`; }
+    if (st === "add") return "Add the equations.";
+    if (st === "solve") return `Solve for ${info.u}.`;
+    return `Put ${info.u} = ${numT(s[info.u])} into equation ① or ② to find ${info.v}.`;
+  }
+  // What comes after a stage.
+  function nextStage(st) {
+    if (method === "sub") return { iso: "sub", sub: "solve", solve: "back", back: "end" }[st];
+    if (st === "mult") return info.m[0] !== 1 ? "mult0" : info.m[1] !== 1 ? "mult1" : "add";
+    if (st === "mult0") return info.m[1] !== 1 ? "mult1" : "add";
+    return { mult1: "add", add: "solve", solve: "back", back: "end" }[st];
+  }
+  const rebuild = () => { build(); };
+
+  // Check the student's step. Returns a hint, or "" when it is right (and records the step).
+  function checkStep() {
+    const st = P.stage, s = S1();
+    if (st === "mult") {
+      const m = ["m1", "m2"].map(id => { const t = $(id).value.trim().replace(/[−–—]/g, "-"); return /^-?\d+$/.test(t) ? +t : null; });
+      if (m.some(n => n === null || n === 0)) return "Type a whole number in each box. 1 means leave that equation as it is.";
+      const xs = [E[0].a * m[0], E[1].a * m[1]], ys = [E[0].b * m[0], E[1].b * m[1]];
+      const v = xs[0] + xs[1] === 0 ? "x" : ys[0] + ys[1] === 0 ? "y" : null;
+      if (!v) {
+        const same = xs[0] === xs[1] || ys[0] === ys[1];
+        return `That gives ${termStr([[xs[0], "x"]])} and ${termStr([[xs[1], "x"]])}, and ${termStr([[ys[0], "y"]])} and ${termStr([[ys[1], "y"]])}. ` +
+          (same ? "Those are the same, not opposites. Make one of them negative." : "Make the x's or the y's opposites, like 6y and −6y.");
+      }
+      force = { v, m }; rebuild();
+      P.done.push({ cap: `Multiply equation ① by ${fmt(m[0])} and equation ② by ${fmt(m[1])} so the ${v}'s are opposites.`, body: "" });
+      return "";
+    }
+    const e = readStep($("pin").value);
+    if (!e) return "Type an equation, like 2x + 3y = 12.";
+    let ok = "";
+    if (method === "sub" && st === "iso") {
+      const v = ["x", "y"].find(w => alone(e, w));
+      if (!v) return "Get x or y alone on one side, like y = 2x − 1.";
+      const i = [0, 1].find(k => sameLine(e, E[k]));
+      if (i === undefined) return "Not yet. That is not the same line as equation ① or ②. Check your signs.";
+      force = { i, v }; rebuild();
+    } else if (method === "sub" && st === "sub") {
+      if (isZ(e.a) && isZ(e.b)) return `Everything cancelled. Put it into the other equation, ${T(info.j)}.`;
+      if (!isZ(cf(e, info.v))) return `Put the bracket in place of ${info.v}, so only ${info.u} is left.`;
+      if (solvedFor(e, info.u)) return "Show the equation with the bracket first, before you solve it.";
+      if (!eqR(valueOf(e, info.u), s[info.u])) return `Not yet. Check that you put (${info.expr}) in place of ${info.v} in equation ${T(info.j)}.`;
+    } else if (st === "mult0" || st === "mult1") {
+      const i = +st[4];
+      if (!exactly(e, info.S[i])) return `Not yet. Multiply every term of equation ${T(i)} by ${fmt(info.m[i])}, on both sides.`;
+    } else if (st === "add") {
+      if (!isZ(cf(e, info.v))) return `Add the ${info.v}'s too. They should cancel to 0.`;
+      if (!exactly(e, info.sum)) return "Not yet. Add the x's, then the y's, then the numbers.";
+    } else {
+      const w = st === "solve" ? info.u : info.v;
+      if (!solvedFor(e, w)) return `Write your answer as ${w} = a number.`;
+      if (!eqR(valueOf(e, w), s[w])) return st === "solve" ? "Not yet. Work through your equation one step at a time." :
+        `Not yet. Put ${info.u} = ${numT(s[info.u])} in and work it out.`;
+    }
+    P.done.push({ cap: prompt(), body: [{ eq: e.show }] });
+    return ok;
+  }
+  // Show me: Learning's working for this stage, following the tool's own choice if nothing is chosen yet.
+  function showStep() {
+    const st = P.stage;
+    if (st === "mult" || (method === "sub" && st === "iso")) { force = null; rebuild(); }
+    const want = st === "mult" ? ["mult0", "mult1"] : [st];
+    const got = steps.filter(x => want.includes(x.stage));
+    if (st === "mult" && !got.length) got.push({ cap: `The ${info.v}'s are already opposites.`, body: "" });
+    P.done.push(...got);
+    P.helped = true;
+    if (st === "mult") { P.stage = "add"; return; }
+    P.stage = nextStage(st);
+  }
+  function advance() {
+    if (P.stage === "end") {
+      P.done.push(...steps.filter(x => x.stage === "end"));
+      P.finished = true; total++; if (!P.helped) right++;
+      revealed = true; at = steps.length - 1; draw();
+    }
+  }
+
   function newSystem() {
     const [a, c] = makeSystem(method);
     $("in1").value = a; $("in2").value = c;
-    revealed = walking = tried = false;
-    $("ax").value = $("ay").value = "";
-    ["ax", "ay"].forEach(id => $(id).setAttribute("aria-invalid", "false"));
-    $("fb").textContent = ""; $("fb").className = "fb";
+    force = null; revealed = false; P = null;
+    $("fb").textContent = ""; $("pin").value = ""; $("m1").value = $("m2").value = "1";
     read();
+    P = { done: [], stage: method === "sub" ? "iso" : "mult", helped: false, finished: false };
+    pshow();
+  }
+  function pshow(play) {
+    const box = $("pwork");
+    box.innerHTML = P.done.length ? gridHTML(P.done, P.done.length - 1, isNarrow(box)) : "";
+    box.scrollTop = box.scrollHeight;
+    $("askq").textContent = method === "sub" ? "Solve by substitution." : "Solve by elimination.";
+    $("pstep").hidden = P.finished;
+    $("pq").textContent = P.finished ? "" : prompt();
+    $("peq").hidden = P.stage === "mult";
+    $("pmul").hidden = P.stage !== "mult";
+    $("score").textContent = total ? `Correct: ${right} of ${total}` : "";
+    $("newq").classList.toggle("go", P.finished);
+    draw();
+    if (play) slide(box.firstElementChild);
+    const f = $(P.stage === "mult" ? "m1" : "pin");
+    if (!P.finished && document.activeElement !== f && mode === "practice") f.focus({ preventScroll: true });
   }
   function panelMode() {
     const pr = mode === "practice";
     $("practice").hidden = !pr;
-    $("work").hidden = $("back").parentElement.hidden = pr && !walking;
+    $("work").hidden = $("back").parentElement.hidden = pr;
     ["in1", "in2"].forEach(id => { $(id).readOnly = pr; });
-    $("askq").textContent = method === "sub" ? "Solve by substitution." : "Solve by elimination.";
-    $("score").textContent = total ? `Correct: ${right} of ${total}` : "";
   }
-  const readNum = s => { const t = s.trim().replace(/[−–—]/g, "-"); return /^-?\d+(\.\d+)?$/.test(t) ? +t : /^-?\d+\/[1-9]\d*$/.test(t) ? t.split("/").reduce((a, b) => a / b) : null; };
-  function check() {
-    const x = readNum($("ax").value), y = readNum($("ay").value);
-    $("ax").setAttribute("aria-invalid", String(x === null)); $("ay").setAttribute("aria-invalid", String(y === null));
-    const fb = $("fb");
-    if (x === null || y === null) { fb.className = "fb no"; fb.textContent = "Type a number for x and for y."; return; }
-    const works = E.map(q => Math.abs(q.a * x + q.b * y - q.c) < 1e-9);
-    if (!tried) { tried = true; total++; if (works[0] && works[1]) right++; }
-    if (works[0] && works[1]) {
-      fb.className = "fb ok"; fb.textContent = "Correct! That point is where the lines cross.";
-      revealed = true; if (!walking) at = steps.length - 1;
-    } else {
-      fb.className = "fb no";
-      fb.textContent = works[0] || works[1] ? `Not yet. Those work in equation ${T(works[0] ? 0 : 1)} but not in equation ${T(works[0] ? 1 : 0)}.`
-        : "Not yet. Those numbers do not work in either equation.";
-    }
-    panelMode(); draw();
+  function onCheck() {
+    if (!P || P.finished) return;
+    const hint = checkStep(), fb = $("fb");
+    if (hint) { fb.className = "fb no"; fb.textContent = hint; return; }
+    fb.className = "fb ok"; fb.textContent = "Correct!";
+    $("pin").value = ""; $("m1").value = $("m2").value = "1";
+    P.stage = P.stage === "mult" ? nextStage("mult") : nextStage(P.stage);
+    advance(); pshow();
+  }
+  function onShow() {
+    if (!P || P.finished) return;
+    const fb = $("fb"); fb.className = "fb"; fb.textContent = "";
+    const anim = method === "sub" && P.stage === "sub";
+    showStep(); advance(); pshow(anim);
   }
 
   function read() {
@@ -1088,16 +1289,13 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
     mode = btn.dataset.mode;
     $("mode").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === btn));
     if (mode === "practice") { saved = [$("in1").value, $("in2").value]; newSystem(); }
-    else { $("in1").value = saved[0]; $("in2").value = saved[1]; walking = false; read(); }
+    else { $("in1").value = saved[0]; $("in2").value = saved[1]; force = null; read(); }
   });
-  $("check").addEventListener("click", check);
-  ["ax", "ay"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
-  $("showme").addEventListener("click", () => {
-    if (!tried) { tried = true; total++; }
-    walking = revealed = true; at = 0; panelMode(); show();
-  });
+  $("check").addEventListener("click", onCheck);
+  $("showme").addEventListener("click", onShow);
+  ["pin", "m1", "m2"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") onCheck(); }));
   $("newq").addEventListener("click", newSystem);
-  addEventListener("resize", () => { if (steps.length) show(); });
+  addEventListener("resize", () => { if (mode === "practice" ? P : steps.length) show(); });
   $("next").addEventListener("click", () => { at = at === steps.length - 1 ? 0 : at + 1; play = at > 0; show(); });
   $("back").addEventListener("click", () => { if (at > 0) { at--; show(); } });
 
@@ -1195,6 +1393,32 @@ window.I18N_COMMON = {
 <script>
 /* French for Solving Linear Systems (systems.html). */
 window.I18N_PAGE = {
+ "Get x or y by itself in one of the equations.": "Isole x ou y dans une des équations.",
+ "Multiply so the x's or the y's are opposites.": "Multiplie pour que les x ou les y soient opposés.",
+ "Add the equations.": "Additionne les équations.",
+ "~Solve for (.+)\\.": "Résous pour $1.",
+ "~Put (.+) = (.+) into equation ① or ② to find (.+)\\.": "Remplace $1 = $2 dans l’équation ① ou ② pour trouver $3.",
+ "~Put (.+) = (.+) into (.+) to find (.+)\\.": "Remplace $1 = $2 dans $3 pour trouver $4.",
+ "~Multiply equation (\\S+) by ([^ .]+)\\.": "Multiplie l’équation $1 par $2.",
+ "~Multiply equation ① by (.+) and equation ② by (.+) so the (.+)'s are opposites\\.": "Multiplie l’équation ① par $1 et l’équation ② par $2 pour que les $3 soient opposés.",
+ "~The (.+)'s are already opposites\\.": "Les $1 sont déjà opposés.",
+ "Your step": "Ton étape",
+ "Type a whole number in each box. 1 means leave that equation as it is.": "Tape un nombre entier dans chaque case. 1 veut dire laisser l’équation telle quelle.",
+ "~That gives (.+)\\. Those are the same, not opposites\\. Make one of them negative\\.": "Ça donne $1. Ils sont pareils, pas opposés. Rends-en un négatif.",
+ "~That gives (.+)\\. Make the x's or the y's opposites, like 6y and −6y\\.": "Ça donne $1. Rends les x ou les y opposés, comme 6y et −6y.",
+ "Type an equation, like 2x + 3y = 12.": "Tape une équation, comme 2x + 3y = 12.",
+ "Get x or y alone on one side, like y = 2x − 1.": "Isole x ou y d’un côté, comme y = 2x − 1.",
+ "Not yet. That is not the same line as equation ① or ②. Check your signs.": "Pas encore. Ce n’est pas la même droite que l’équation ① ou ②. Vérifie tes signes.",
+ "~Everything cancelled\\. Put it into the other equation, (.+)\\.": "Tout s’annule. Remplace dans l’autre équation, $1.",
+ "~Put the bracket in place of (.+), so only (.+) is left\\.": "Mets la parenthèse à la place de $1 pour qu’il ne reste que $2.",
+ "Show the equation with the bracket first, before you solve it.": "Montre d’abord l’équation avec la parenthèse, avant de la résoudre.",
+ "~Not yet\\. Check that you put \\((.+)\\) in place of (.+) in equation (.+)\\.": "Pas encore. Vérifie que tu as mis ($1) à la place de $2 dans l’équation $3.",
+ "~Not yet\\. Multiply every term of equation (.+) by (.+), on both sides\\.": "Pas encore. Multiplie chaque terme de l’équation $1 par $2, des deux côtés.",
+ "~Add the (.+)'s too\\. They should cancel to 0\\.": "Additionne aussi les $1. Ils devraient s’annuler.",
+ "Not yet. Add the x's, then the y's, then the numbers.": "Pas encore. Additionne les x, puis les y, puis les nombres.",
+ "~Write your answer as (.+) = a number\\.": "Écris ta réponse sous la forme $1 = un nombre.",
+ "Not yet. Work through your equation one step at a time.": "Pas encore. Résous ton équation une étape à la fois.",
+ "~Not yet\\. Put (.+) = (.+) in and work it out\\.": "Pas encore. Remplace $1 = $2 et calcule.",
  "Learning": "Apprentissage",
  "Mode": "Mode",
  "Solve by substitution.": "Résous par substitution.",
@@ -1202,9 +1426,6 @@ window.I18N_PAGE = {
  "Show me": "Montre-moi",
  "New system ▶": "Nouveau système ▶",
  "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
- "Type a number for x and for y.": "Tape un nombre pour x et pour y.",
- "Correct! That point is where the lines cross.": "Bonne réponse! Ce point est là où les droites se croisent.",
- "Not yet. Those numbers do not work in either equation.": "Pas encore. Ces nombres ne fonctionnent dans aucune des équations.",
  "~Not yet\\. Those work in equation (.+) but not in equation (.+)\\.": "Pas encore. Ils fonctionnent dans l’équation $1, mais pas dans l’équation $2.",
  "~Add the equations\\. The (.+)'s cancel!": "Additionne les équations. Les $1 s’annulent!",
  "Solving Linear Systems": "Résoudre des systèmes linéaires",
