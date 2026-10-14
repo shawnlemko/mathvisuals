@@ -152,7 +152,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wrap { max-width: 1560px; }
 .main { grid-template-columns: minmax(320px, max-content) minmax(0, 1fr); }
 /* Shawn: the panel with the expression sits on the left so it is not missed. */
-.panel { order: -1; }
+.panel { order: -1; gap: 12px; }
 .board svg { max-height: calc(100vh - 150px); min-height: 320px; }
 .ws-bg { fill: var(--sheet); }
 .tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 2; }
@@ -200,33 +200,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 #split:hover { background: var(--sheet); color: var(--orange); }
 #steps { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--ink); border: 2px solid var(--ink); }
 #steps:hover { background: var(--sheet); color: var(--ink); }
-.stepcard ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; counter-reset: st; }
-.stepcard li { counter-increment: st; display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 2px 8px; color: var(--muted); }
-.stepcard li::before { content: counter(st); grid-row: span 2; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--chip); }
-.stepcard li .say { font-size: 1.05rem; line-height: 1.3; }
-.stepcard li .math { white-space: nowrap; font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.05em; line-height: 1.3; }
+/* Steps (Shawn 2026-10-14): one line per step, the = signs lined up in their own column. */
+.stepcard ol { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 10px 8px; }
+.stepcard li { display: contents; color: var(--muted); }
+.stepcard li .no { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; width: 1.6em; height: 1.6em; border-radius: 50%; display: grid; place-items: center; background: var(--chip); }
+.stepcard li .eq, .stepcard li .math { white-space: nowrap; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.05em; line-height: 1.3; }
 .stepcard li .math sup { font-size: 0.6em; }
-.stepcard li.now { color: var(--ink); animation: stepIn 0.5s ease-out; }
-.stepcard li.now::before { background: var(--pt); color: var(--sheet); }
-.stepcard li.now .math { color: var(--pt); font-size: 1.6rem; }
+.stepcard li.now { color: var(--pt); }
+.stepcard li.now > * { animation: stepIn 0.5s ease-out; }
+.stepcard li.now .no { background: var(--pt); color: var(--sheet); }
 @keyframes stepIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .stepcard li.now { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .stepcard li.now > * { animation: none; } }
 #dims { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--green); border: 2px solid var(--green); }
 #dims:hover { background: var(--sheet); color: var(--green); }
-.done { border: 3px solid var(--green); display: flex; flex-direction: column; gap: 8px; font-family: var(--font-num); font-weight: 700; line-height: 1.25; }
-.done .big { font-size: 2.6rem; color: var(--green); }
-.done .note { font-size: 1.5rem; }
-.done .note.miss { color: var(--warn); }
-.done .eqn { font-size: 1.6rem; color: var(--ink); display: flex; flex-direction: column; }
-.done .eqn span { white-space: nowrap; }
-.done .big, .done .eqn { letter-spacing: -0.06em; }
-.done sup, .blocks sup { font-size: 0.6em; }
 .dim-brace { stroke: var(--ink); stroke-width: 3; fill: none; pointer-events: none; }
 .dim-text { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 34px; dominant-baseline: central; pointer-events: none; }
-.blocks { display: flex; flex-direction: column; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; line-height: 1.2; }
-.blocks:empty { display: none; }
-.blocks span { display: flex; align-items: center; gap: 14px; }
-.blocks i { font-style: normal; font-size: 1.6rem; color: #1b2733; display: inline-flex; align-items: center; justify-content: center; min-width: 64px; height: 46px; padding: 0 8px; border: 3px solid #1b2733; border-radius: 4px; }
 @media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
 </style>
 
@@ -245,11 +233,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <button id="make" type="submit">Make tiles</button>
       </form>
       <button id="steps" type="button">Show steps</button>
-      <div class="card stepcard" id="stepsCard" hidden><ol id="stepList"></ol></div>
       <button id="split" type="button" hidden>Ready to split?</button>
       <button id="dims" type="button" hidden>Show dimensions</button>
-      <div class="card done" id="done" hidden></div>
-      <div class="card" id="countCard"><div class="blocks" id="blocks"></div></div>
+      <div class="card stepcard" id="stepsCard" hidden><ol id="stepList"></ol></div>
     </div>
   </div>
 </div>
@@ -531,14 +517,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     refresh();
   }
   splitBtn.addEventListener("click", splitTiles);
-  // Panel: how many of each tile are on the workspace, with the tile's colour.
-  const blocks = document.getElementById("blocks"), countCard = document.getElementById("countCard");
+  // Shawn 2026-10-14: no tile counter in the panel, so the steps have the room.
   function refresh() {
-    const n = {};
-    tiles.forEach(t => { n[t.k.id] = (n[t.k.id] || 0) + 1; });
-    blocks.innerHTML = KINDS.filter(k => n[k.id]).map(k =>
-      `<span><i style="background:${k.color}">${k.label.replace("²", sup2)}</i>× ${n[k.id]}</span>`).join("");
-    countCard.hidden = !tiles.length;
     const any = tiles.some(t => t.sel);
     [leftBtn, rightBtn, dupBtn, delBtn].forEach(b => b.classList.toggle("off", !any));
     showSquare();
@@ -549,8 +529,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // rectangle as a grid: the top row sets the columns, the left column sets the rows, every tile
   // fills exactly one cell, and each tile's sign is the row sign times the column sign. It is a
   // completed square when both sides are the same x + h. The Show dimensions button appears only
-  // while there is such a rectangle (Shawn) and toggles the braces and the result card.
-  const done = document.getElementById("done");
+  // while there is such a rectangle (Shawn) and toggles the braces (the result card was removed, Shawn 2026-10-14).
   const touch = (a, b) => {
     const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
     return (Math.abs(ox) < EPS && oy > EPS) || (Math.abs(oy) < EPS && ox > EPS);
@@ -606,25 +585,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     dimsBtn.hidden = !ms.length;
     if (!ms.length) dimsOn = false;
     dimsBtn.textContent = dimsOn ? "Hide dimensions" : "Show dimensions";
-    done.hidden = !dimsOn;
     if (!dimsOn) return;
     ms.forEach(m => drawBraces(m, side(...m.len), side(...m.wid), mats.length > 1));
-    // Completed: as many matching squares as area models asked for (a after the split, else 1).
-    const n = target && split ? target.a : 1, sq = ms.filter(m => m.square).slice(0, n);
-    if (sq.length === n && sq.every(m => m.len[1] === sq[0].len[1])) {
-      const h = sq[0].len[1], A = n > 1 ? n : "";
-      let html = `<div class="big">${A}${binom(h)}${sup2}</div>`;
-      if (target && target.a === n && target.b === 2 * n * h) {
-        const d = target.c - n * h * h;
-        if (d < 0) html += `<div class="note miss">${-d} ${-d === 1 ? "one" : "ones"} missing</div>`;
-        else if (d > 0) html += `<div class="note">${d} extra ${d === 1 ? "one" : "ones"}</div>`;
-        html += `<div class="eqn"><span>${poly(target.a, target.b, target.c)}</span><span>= ${A}${binom(h)}${sup2}${d ? " " + (d < 0 ? MINUS : "+") + " " + Math.abs(d) : ""}</span></div>`;
-      }
-      done.innerHTML = html;
-      return;
-    }
-    const wrap = t => t.includes(" ") ? "(" + t + ")" : t;
-    done.innerHTML = `<div class="big">${ms.map(m => m.square ? binom(m.len[1]) + sup2 : wrap(side(...m.len)) + wrap(side(...m.wid))).join(" + ")}</div>`;
   }
   // Braces with the length above (or below) and the width left (or right) of the rectangle.
   // Beside several area models the width label stands upright on the left so it fits between them.
@@ -1010,7 +972,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     stepList.querySelectorAll("li").forEach(li => li.classList.remove("now"));
     const li = document.createElement("li");
     li.className = "now";
-    li.innerHTML = `<span class="math">${stepText(stepNo)}</span>`;
+    const line = stepText(stepNo), eq = line.startsWith("= ");
+    li.innerHTML = `<span class="no">${stepNo + 1}</span><span class="eq">${eq ? "=" : ""}</span><span class="math">${eq ? line.slice(2) : line}</span>`;
     stepList.appendChild(li);
     stepNo++;
     stepsBtn.textContent = stepNo > last ? "Show steps again" : "Next step";
