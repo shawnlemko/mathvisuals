@@ -207,13 +207,44 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
 .stepbar .go { font-size: 1.15rem; padding: 10px 22px; }
 .ymark { fill: var(--orange); stroke: var(--sheet); stroke-width: 3; }
 .pmark { fill: var(--pt); stroke: var(--sheet); stroke-width: 3; }
+header .seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+header .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.2rem; min-height: 48px; padding: 6px 20px; }
+header .seg-btns button + button { border-left: 2px solid var(--grid-major); }
+header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
+/* Practice: the student's lines in one grid, = signs lined up, a note column on the right. */
+.pbar { margin-top: 10px; flex-wrap: wrap; }
+.task { margin: 0 0 8px; font-size: 1.1rem; font-weight: 700; }
+.task .tmpl { font-family: var(--font-num); font-weight: 500; color: var(--muted); margin-left: 6px; white-space: nowrap; }
+.work { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 4px; margin-bottom: 10px; font-family: var(--font-num); font-size: 1.4rem; }
+.work .l { justify-self: end; display: flex; align-items: center; }
+.work .r { display: flex; align-items: center; flex-wrap: wrap; }
+.work .x { font-style: italic; }
+.work .o { margin: 0 0.28em; }
+.work .note { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.work .note.ok { color: var(--green); font-weight: 700; }
+.work .note.done { color: var(--green); font-weight: 700; }
+.work .rm { font-size: 0.85rem; padding: 2px 8px; min-height: 0; }
+.work .row-new { animation: flash 1.4s ease-out; border-radius: 6px; }
+.preview { min-height: 1.9em; font-family: var(--font-num); font-size: 1.25rem; color: var(--muted); display: flex; align-items: center; flex-wrap: wrap; }
+.preview .x { font-style: italic; }
+.preview .o { margin: 0 0.28em; }
+#lineIn.bad { border-color: var(--warn); }
+.fb { margin: 6px 0 10px; min-height: 1.4em; font-weight: 700; font-size: 1.1rem; }
+.fb.ok { color: var(--green); }
+.fb.bad { color: var(--warn); }
+.fb.hint { color: var(--op); }
+.score { margin-left: auto; color: var(--muted); font-weight: 700; }
+.mb-line.wrong { stroke: var(--warn); stroke-dasharray: 12 9; stroke-width: 3; }
 </style>
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Forms of a Line</h1></div>
-    <p>Drag A or B, or type an equation. Pick two forms, then press Next step.</p>
+    <p id="lead">Drag A or B, or type an equation. Pick two forms, then press Next step.</p>
+    <div class="seg-btns" id="mode" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learning</button><button type="button" data-mode="practice">Practice</button>
+    </div>
   </header>
 
   <div class="main">
@@ -221,7 +252,7 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
       <svg id="plane" role="img" aria-label="Coordinate plane with a line through points A and B"></svg>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="learnPanel">
       <section class="card" aria-live="polite">
         <form class="typein" id="typeForm" autocomplete="off">
           <input id="typed" aria-label="Type an equation in any form" placeholder="Type any form, like y = 2/3x + 1" spellcheck="false">
@@ -254,6 +285,43 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
           <button type="button" class="go" id="next">Next step</button>
           <button type="button" id="replay" hidden>Replay step</button>
           <button type="button" id="again">Start over</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Practice: the student types each line of their work; every line is checked against the line before. -->
+    <div class="panel" id="practicePanel" hidden>
+      <section class="card">
+        <div class="pick">
+          <label for="pFrom">Start with</label>
+          <select id="pFrom"><option value="sp">Slope-point</option><option value="si">Slope-intercept</option><option value="g">General</option></select>
+          <label for="pTo">Change to</label>
+          <select id="pTo"><option value="sp">Slope-point</option><option value="si">Slope-intercept</option><option value="g">General</option></select>
+        </div>
+        <div class="stepbar pbar">
+          <button type="button" class="go" id="pNew">New question</button>
+          <button type="button" id="ownBtn">Type my own question</button>
+        </div>
+        <form class="typein" id="ownForm" autocomplete="off" hidden>
+          <input id="ownIn" aria-label="Type your own question" placeholder="Type the question, like 2x − 3y + 6 = 0" spellcheck="false">
+          <button type="submit" class="go">Use it</button>
+        </form>
+        <p class="err" id="ownErr" hidden></p>
+      </section>
+
+      <section class="card">
+        <p class="task" id="task"></p>
+        <div class="work" id="work" aria-live="polite"></div>
+        <form class="typein" id="lineForm" autocomplete="off">
+          <input id="lineIn" aria-label="Type your next line" placeholder="Type your next line" spellcheck="false">
+          <button type="submit" class="go">Check</button>
+        </form>
+        <div class="preview" id="preview" aria-hidden="true"></div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <div class="stepbar">
+          <button type="button" id="hint">Hint</button>
+          <button type="button" id="showMe">Show me the steps</button>
+          <span class="score" id="score"></span>
         </div>
       </section>
     </div>
@@ -466,13 +534,19 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
   const gF = (A, B, C) => eqn(side([T(A, "x"), T(B, "y"), T(C)]), "0");
 
   /* ---------- Reading a typed equation ---------- */
+  const normS = s => s.toLowerCase().replace(/[−–—]/g, "-").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/\s+/g, "");
   function parse(s) {
-    s = s.toLowerCase().replace(/[−–—]/g, "-").replace(/[×·]/g, "*").replace(/÷/g, "/").replace(/\s+/g, "");
+    s = normS(s);
     const sides = s.split("=");
     if (sides.length !== 2 || !sides[0] || !sides[1]) throw "Use one = sign.";
-    const lin = side => {
+    const L = linSide(sides[0]), Rt = linSide(sides[1]);
+    return general(sub(L.x, Rt.x), sub(L.y, Rt.y), sub(L.c, Rt.c));
+  }
+  // One side of an equation as x, y and number parts (fractions), brackets multiplied out.
+  function linSide(side) {
+    {
       const toks = side.match(/\d+\.?\d*|\.\d+|[xy()+\-*/]/g) || [];
-      if (toks.join("") !== side) throw "Use only numbers, x, y, + − × ÷ and brackets.";
+      if (toks.join("") !== side) throw "Use only numbers, x, y, + − × / and brackets.";
       let i = 0;
       const peek = () => toks[i];
       const K = r => ({ x: R(0), y: R(0), c: r });
@@ -513,9 +587,7 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
       const v = expr();
       if (i !== toks.length) throw "Check the equation.";
       return v;
-    };
-    const L = lin(sides[0]), Rt = lin(sides[1]);
-    return general(sub(L.x, Rt.x), sub(L.y, Rt.y), sub(L.c, Rt.c));
+    }
   }
 
   // Integer A, B, C with no common factor, A positive (or A = 0 and B positive).
@@ -539,6 +611,7 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
   const yDot = document.createElementNS(NS, "g");
   yDot.innerHTML = `<circle r="13" class="ymark"></circle><text class="mb-name" text-anchor="middle" dy="6" font-style="italic">b</text>`;
   b.layers.labels.appendChild(yDot);
+  const lnWrong = b.line("wrong"); // Practice: the student's line when a step is not the same line
   const pDot = document.createElementNS(NS, "circle");
   pDot.setAttribute("r", 9); pDot.setAttribute("class", "pmark");
   b.layers.labels.appendChild(pDot);
@@ -567,6 +640,7 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
   }
 
   function render() {
+    b.show(lnWrong, false);
     const handles = !typedLine;
     b.show(A.el, handles); b.show(B.el, handles);
     line = handles ? describe(lineFromPoints(), { x: R(A.x), y: R(A.y) }) : describe(typedLine.g, typedLine.P);
@@ -812,7 +886,7 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
           if (!same(siT(m, yi), S.cur)) S.add("Simplify the fractions.", [F(mark(S.cur, ["x", "c"], "hl"), 900), F(mark(siT(m, yi), ["x", "c"], "new"), 700)]);
         }
       } else {
-        S.one("In general form, the slope is m = −A ÷ B.", [tk(V("m"), "mv"), EQ(), tk(raw(-A, B), "f"), EQ(), tk(signed(m, "c-green"), "m")].map((t, i) => i === 3 ? { ...t, k: "=2" } : t));
+        S.one(`In general form, the slope is <span class="nowrap">m = ${fracH("−A", "B")}</span>.`, [tk(V("m"), "mv"), EQ(), tk(raw(-A, B), "f"), EQ(), tk(signed(m, "c-green"), "m")].map((t, i) => i === 3 ? { ...t, k: "=2" } : t));
         pointStep(S, P, { say: `We need a point. Put x = ${txt(P.x)} into the equation and solve for y.`,
           eq: `${(A ? fmt(A) + `(${fmt(P.x.n)})` : "") + (A ? op(B < 0 ? "−" : "+") : B < 0 ? "−" : "") + (Math.abs(B) === 1 ? "" : Math.abs(B)) + V("y")
             + (C ? op(C < 0 ? "−" : "+") + Math.abs(C) : "")}${op("=")}0<span>,</span>&nbsp;so ${V("y")}${op("=")}${signed(P.y, "c-pt")}` });
@@ -956,24 +1030,366 @@ svg.arcs marker path { fill: var(--op); stroke: none; stroke-dasharray: none; st
     try { g = parse(s); }
     catch (msg) { $("err").textContent = typeof msg === "string" ? msg : "Check the equation."; $("err").hidden = false; $("typed").classList.add("bad"); return; }
     $("err").hidden = true; $("typed").classList.remove("bad");
+    loadLine(g);
+    render();
+  });
+  // Puts a line on the board: through two whole-number points when it has them (prefer: a point to use as A).
+  function loadLine(g, prefer) {
     // Whole-number points on the line inside the grid, nearest the middle first.
     const pts = [];
     for (let x = -10; x <= 10; x++) for (let y = -10; y <= 10; y++) if (g.A * x + g.B * y + g.C === 0) pts.push({ x, y });
     pts.sort((p, q) => Math.abs(p.x) + Math.abs(p.y) - Math.abs(q.x) - Math.abs(q.y) || q.x - p.x);
     if (pts.length >= 2) {
-      const a = pts.find(p => p.x > 0 && p.y > 0) || pts.find(p => p.x !== 0) || pts[0]; // off the y-axis, so slope-point form isn't x − 0
+      const a = (prefer && pts.find(p => p.x === val(prefer.x) && p.y === val(prefer.y)))
+        || pts.find(p => p.x > 0 && p.y > 0) || pts.find(p => p.x !== 0) || pts[0]; // off the y-axis, so slope-point form isn't x − 0
       // B: the next whole-number point along the line, to the right when possible
       const others = pts.filter(p => p !== a).sort((p, q) => Math.hypot(p.x - a.x, p.y - a.y) - Math.hypot(q.x - a.x, q.y - a.y) || q.x - p.x);
       const bb = others.find(p => p.x > a.x || (p.x === a.x && p.y > a.y)) || others[0];
       typedLine = null;
       A.x = a.x; A.y = a.y; B.x = bb.x; B.y = bb.y;
-      render();
     } else {
       typedLine = { g, P: g.B !== 0 && pts.length ? { x: R(pts[0].x), y: R(pts[0].y) } : null };
-      render();
     }
-  });
+  }
   $("typed").addEventListener("input", () => { $("typed").classList.remove("bad"); $("err").hidden = true; });
+
+  /* ---------- Practice: start with any form, type each line, check it, get hints ---------- */
+  const TMPL = { sp: "y − y₁ = m(x − x₁)", si: "y = mx + b", g: "Ax + By + C = 0" };
+  const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const randNZ = (lo, hi) => { for (;;) { const v = rand(lo, hi); if (v) return v; } };
+  const sameG = (g, h) => g.A === h.A && g.B === h.B && g.C === h.C;
+  const lcmAll = list => list.reduce((k, r) => lcm(k, r.d), 1);
+
+  // Plain text of each form, the way a student would type it.
+  const tNum = r => (r.n < 0 ? "-" : "") + Math.abs(r.n) + (r.d === 1 ? "" : "/" + r.d);
+  const tSign = r => (r.n < 0 ? " + " : " - ") + tNum(R(Math.abs(r.n), r.d)); // "− y₁" with y₁'s value
+  const tCoef = m => m.n === 1 && m.d === 1 ? "" : m.n === -1 && m.d === 1 ? "-" : tNum(m);
+  const tTerms = list => list.filter(([c]) => !zero(c)).map(([c, v], i) => {
+    const mag = R(Math.abs(c.n), c.d), body = (v && mag.n === 1 && mag.d === 1 ? "" : tNum(mag)) + v;
+    return i ? (c.n < 0 ? " - " : " + ") + body : (c.n < 0 ? "-" : "") + body;
+  }).join("") || "0";
+  const spText = (m, P) => `y${zero(P.y) ? "" : tSign(P.y)} = ${tCoef(m)}(x${tSign(P.x)})`;
+  const siText = (m, c) => `y = ${tTerms([[m, "x"], [c, ""]])}`;
+  const gText = g => `${tTerms([[R(g.A), "x"], [R(g.B), "y"], [R(g.C), ""]])} = 0`;
+
+  // Writes a typed side nicely: − signs, italic x and y, a/b as a stacked fraction.
+  function prettySide(side) {
+    const toks = side.match(/\d+\.?\d*|\.\d+|[a-z]|[()+\-*/,]/g) || [];
+    const items = [];
+    toks.forEach(t => {
+      const last = items[items.length - 1];
+      if (/[\d.]/.test(t[0])) items.push({ h: t, a: 1 });
+      else if (/[a-z]/.test(t)) items.push({ h: V(t), a: 1 });
+      else if (t === "+") items.push({ h: op("+") });
+      else if (t === "-") items.push({ h: last && (last.a || last.h === ")") ? op("−") : "−" });
+      else if (t === "*") items.push({ h: "", star: 1 });
+      else items.push({ h: t, br: 1 });
+    });
+    // a / b: the numbers and letters just before the / go on top, the next number or letter goes underneath.
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].h !== "/" ) continue;
+      let j = i; while (j > 0 && items[j - 1].a) j--;
+      const den = items[i + 1];
+      if (j === i || !den || !den.a) { items[i].h = "/"; continue; }
+      const top = items.slice(j, i).map(t => t.h).join("");
+      items.splice(j, i - j + 2, { h: `<span class="frac sm"><span>${top}</span><span>${den.h}</span></span>`, a: 1 });
+      i = j;
+    }
+    // A * between two numbers shows as ×; next to a bracket or letter it is left out.
+    items.forEach((t, i) => { if (t.star) { const n = items[i + 1]; t.h = n && (n.h === "(" || /class="x"/.test(n.h)) ? "" : op("×"); } });
+    return items.map(t => t.h).join("");
+  }
+  const pretty = raw => { const [l, r = ""] = normS(raw).split("="); return [prettySide(l), prettySide(r)]; };
+
+  // A side written as plain terms (2x, −3y, 2/3x, x/3, 5): [{ v, c, ok }]; ok is false for a fraction that can be simplified.
+  function terms(side) {
+    const re = /([+-]?)(\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?|\(-?\d+(?:\.\d+)?\/\d+(?:\.\d+)?\))?\*?([xy])?(?:\/(\d+))?/y;
+    const out = [];
+    let i = 0;
+    while (i < side.length) {
+      re.lastIndex = i;
+      const m = re.exec(side);
+      if (!m || !m[0].length || (!m[2] && !m[3]) || (out.length && !m[1])) return null;
+      const num = (m[2] || "").replace(/[()]/g, ""), under = m[4];
+      if (under && num.includes("/")) return null;
+      let ok = true;
+      const frac = num.includes("/") ? num.replace("-", "").split("/") : under ? [num || "1", under] : null;
+      if (frac) ok = !frac.some(p => p.includes(".")) && +frac[1] > 1 && gcd(+frac[0], +frac[1]) === 1;
+      const lv = linSide(m[0]);
+      out.push({ v: m[3] || "", c: m[3] ? lv[m[3]] : lv.c, ok });
+      i += m[0].length;
+    }
+    return out.length ? out : null;
+  }
+  const dupes = list => ["x", "y", ""].some(v => list.filter(t => t.v === v).length > 1);
+  const hasBrackets = n => n.replace(/\(-?\d+(?:\.\d+)?\/\d+(?:\.\d+)?\)/g, "").includes("(");
+
+  // Which form a typed line is written in, and what is left to tidy ("near").
+  const NUMF = "\\d+(?:\\.\\d+)?(?:\\/\\d+)?";
+  const SP_RE = new RegExp(`^y(?:[+-]${NUMF})?=(?:-?(?:${NUMF}|\\(-?${NUMF}\\))\\*?|-)?\\(x[+-]${NUMF}\\)$`);
+  function formOf(n) {
+    if (SP_RE.test(n)) return { f: "sp", near: "" };
+    const [l, r] = n.split("=");
+    const L = terms(l), Rt = terms(r);
+    if (!L || !Rt) return { f: null, near: "" };
+    if (l === "y" && !Rt.some(t => t.v === "y")) {
+      if (dupes(Rt)) return { f: "si", near: "Combine like terms." };
+      if (Rt.some(t => !t.ok)) return { f: "si", near: "Simplify the fractions." };
+      if (Rt.length === 2 && !Rt[0].v) return { f: "si", near: "Write the x term first: y = mx + b." };
+      return { f: "si", near: "" };
+    }
+    if (r === "0" && !(L.length === 1 && !L[0].v)) {
+      if (dupes(L)) return { f: "g", near: "Combine like terms." };
+      const k = lcmAll(L.map(t => t.c));
+      if (k > 1) return { f: "g", near: `General form uses whole numbers only. Multiply every term by ${k}, so there are no fractions.` };
+      const order = L.map(t => ["x", "y", ""].indexOf(t.v));
+      if (order.some((o, i) => i && o < order[i - 1])) return { f: "g", near: "Write it in order: x term, y term, number, then = 0." };
+      if (L[0].c.n < 0) return { f: "g", near: `Multiply every term by −1, so the ${L[0].v || "first"} term is positive.` };
+      const g = L.reduce((g, t) => gcd(g, Math.abs(t.c.n)), 0);
+      if (g > 1) return { f: "g", near: `Every number divides by ${g}. Divide every term by ${g}.` };
+      return { f: "g", near: "" };
+    }
+    return { f: null, near: "" };
+  }
+
+  // Hints: what to do next to the last right line.
+  function bracketHint(n) {
+    const [l, r] = n.split("="), k = lcmAll([...Object.values(linSide(l)), ...Object.values(linSide(r))]);
+    return k > 1 ? `Multiply both sides by ${k}, so there are no fractions.` : "Multiply into the brackets.";
+  }
+  function hintSI(n) {
+    if (hasBrackets(n)) return bracketHint(n);
+    const [l, r] = n.split("="), L = linSide(l), Rt = linSide(r);
+    const f = formOf(n);
+    if (f.f === "si") return f.near;
+    if (!zero(L.y) && !zero(Rt.y)) return "Get the y terms together on one side.";
+    if ((terms(l) && dupes(terms(l))) || (terms(r) && dupes(terms(r)))) return "Combine like terms on each side.";
+    const left = !zero(L.y), Y = left ? L : Rt, other = left ? "right" : "left";
+    const hasX = !zero(Y.x), hasC = !zero(Y.c);
+    if (hasX || hasC) {
+      if (Y.y.n < 0) return "Tip: keep the y term positive. Move the y term to the other side, where it becomes positive.";
+      if (hasX && hasC) return `Move the x term and the number to the ${other} side. They change sign when they cross the = sign.`;
+      return `Move the ${hasX ? "x term" : "number"} to the ${other} side. It changes sign when it crosses the = sign.`;
+    }
+    if (!left) return "Switch the sides, so y is on the left.";
+    if (L.y.d > 1) return `Multiply both sides by ${L.y.d}, so the y term has no fraction.`;
+    return `Divide every term by ${fmt(L.y.n)}, so y is by itself.`;
+  }
+  function hintG(n) {
+    if (hasBrackets(n)) return bracketHint(n);
+    const [l, r] = n.split("="), L = linSide(l), Rt = linSide(r);
+    const k = lcmAll([...Object.values(L), ...Object.values(Rt)]);
+    if (k > 1) return `Multiply every term on both sides by ${k}, so there are no fractions.`;
+    if ((terms(l) && dupes(terms(l))) || (terms(r) && dupes(terms(r)))) return "Combine like terms on each side.";
+    if (l === "0" && r !== "0") return "Switch the sides, so the equation ends with = 0.";
+    if (r !== "0") {
+      const X = val(sub(L.x, Rt.x)), Y = val(sub(L.y, Rt.y));
+      return X > 0 || (X === 0 && Y > 0)
+        ? "Move every term on the right to the left side, so the right side is 0. Each term changes its sign when it crosses the = sign."
+        : "Move every term on the left to the right side, so the left side is 0. Each term changes its sign when it crosses the = sign.";
+    }
+    return formOf(n).near;
+  }
+  // A whole-number point that is easy to find: the smallest x (not 0) that gives a whole-number y.
+  function easyX() {
+    const { m, b: c } = q;
+    for (const x of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) if (add(mul(m, R(x)), c).d === 1) return x;
+    return 0;
+  }
+  function hint() {
+    const eqs = rows.filter(r => r.kind !== "m" && r.kind !== "pt"), n = eqs[eqs.length - 1].n;
+    const to = $("pTo").value;
+    if (to === "g") return hintG(n);
+    if (to === "si") return hintSI(n);
+    const hasM = rows.some(r => r.kind === "m"), hasP = rows.some(r => r.kind === "pt");
+    if (hasM && hasP) return "Put m and your point into y − y₁ = m(x − x₁).";
+    if (hasM) return `Now find a point on the line. Put x = ${easyX()} into the equation and work out y. Type the point in brackets, like (x, y).`;
+    if (formOf(n).f === "si") return "The slope m is the number in front of x. Type it like this: m = 2";
+    return "First get y by itself. " + hintSI(n);
+  }
+
+  // Which part of a wrong line is off, compared with the right line.
+  function diagnose(s) {
+    const S = [s.A, s.B, s.C], T = [q.g.A, q.g.B, q.g.C], NAME = ["x term", "y term", "number"];
+    for (let i = 0; i < 3; i++) {
+      const js = [0, 1, 2].filter(j => j !== i), base = js.find(j => T[j] !== 0);
+      if (base === undefined) continue;
+      const k = S[base] / T[base];
+      if (!k || js.some(j => Math.abs(S[j] - k * T[j]) > 1e-9)) continue;
+      if (T[i] !== 0 && Math.abs(S[i] + k * T[i]) < 1e-9) return [`Check the sign of the ${NAME[i]}.`, "A term changes its sign when it crosses the = sign."];
+      return [`Check the ${NAME[i]}.`, "Whatever you do, do it to every term on both sides."];
+    }
+    return ["Go back to the line before and try one step at a time."];
+  }
+
+  let mode = "learn", q = null, rows = [], solved = 0, wrongG = null, finished = false;
+  const say = (cls, parts, lead) => {
+    $("fb").className = "fb " + cls;
+    $("fb").innerHTML = (lead ? `<b>${lead}</b> ` : "") + parts.filter(Boolean).map(p => `<span>${p}</span>`).join(" ");
+  };
+
+  function newQuestion() {
+    const from = $("pFrom").value;
+    let m, P, c;
+    for (;;) {
+      const qd = [1, 1, 1, 2, 2, 3, 4][rand(0, 6)], p = randNZ(-5, 5);
+      m = R(p, qd);
+      if (m.d !== qd) continue;
+      const x1 = from === "si" ? qd * randNZ(-2, 2) : randNZ(-6, 6), y1 = rand(-6, 6);
+      P = { x: R(x1), y: R(y1) };
+      c = sub(P.y, mul(m, P.x));
+      if (Math.abs(val(c)) <= 9 && !(from === "si" && c.d > 1)) break;
+    }
+    const g = general(m, R(-1), c);
+    const text = { sp: spText(m, P), si: siText(m, c), g: gText(g) }[from];
+    setQuestion({ g, m, b: c, P, from, text });
+  }
+  function setQuestion(nq) {
+    q = nq; finished = false; wrongG = null;
+    rows = [{ kind: "start", n: normS(q.text), raw: q.text }];
+    $("lineIn").value = ""; $("lineIn").classList.remove("bad"); $("preview").innerHTML = "";
+    $("fb").className = "fb"; $("fb").textContent = "";
+    drawTask(); drawWork(); boardPractice();
+  }
+  function drawTask() {
+    $("task").innerHTML = `Goal: <b>${LONG[$("pTo").value]}</b><span class="tmpl">${TMPL[$("pTo").value]}</span>`;
+  }
+  function drawWork() {
+    const last = rows.length - 1;
+    $("work").innerHTML = rows.map((r, i) => {
+      let l, rt;
+      if (r.kind === "m") { l = V("m"); rt = prettySide(r.n.slice(2)); }
+      else if (r.kind === "pt") { l = "Point"; rt = prettySide(r.n); }
+      else [l, rt] = pretty(r.raw);
+      const note = r.kind === "start" ? `<span class="note">Start</span>`
+        : `<span class="note ${r.done ? "done" : "ok"}">${r.done ? "✓ Done" : r.kind === "m" ? "✓ Slope" : r.kind === "pt" ? "✓ On the line" : "✓"}${i === last ? `<button type="button" class="rm" title="Remove this line" aria-label="Remove this line">✕</button>` : ""}</span>`;
+      const cls = i === last && i > 0 && r.fresh ? " row-new" : "";
+      return `<span class="l${cls}">${l}</span><span class="o${cls}">=</span><span class="r${cls}">${rt}</span>${note}`;
+    }).join("");
+    rows.forEach(r => { r.fresh = false; });
+    const rm = $("work").querySelector(".rm");
+    if (rm) rm.addEventListener("click", () => { rows.pop(); finished = false; say("", []); drawWork(); boardPractice(); $("lineIn").focus(); });
+    $("lineForm").hidden = finished;
+    $("hint").hidden = finished;
+    $("score").textContent = solved ? `Solved: ${solved}` : "";
+  }
+  function boardPractice() {
+    [A.el, B.el, segRun, segRise, tri, yDot, pDot].forEach(e => b.show(e, false));
+    lblRun.hide(); lblRise.hide();
+    const put = (el, g) => {
+      if (g.B === 0) { const k = -g.C / g.A; b.lineThrough(el, { x: k, y: 0 }, { x: k, y: 1 }); }
+      else { const m = -g.A / g.B, c = -g.C / g.B; b.lineThrough(el, { x: 0, y: c }, { x: 1, y: c + m }); }
+    };
+    put(ln, q.g);
+    if (wrongG) put(lnWrong, wrongG); else b.show(lnWrong, false);
+  }
+
+  function checkLine() {
+    const raw = $("lineIn").value.trim();
+    if (!raw || finished) return;
+    const n = normS(raw), bad = parts => { $("lineIn").classList.add("bad"); say("bad", parts); };
+    wrongG = null;
+    const addRow = (row, parts, cls = "ok") => {
+      rows.push({ ...row, fresh: true });
+      $("lineIn").value = ""; $("preview").innerHTML = ""; $("lineIn").classList.remove("bad");
+      drawWork(); boardPractice(); say(cls, parts);
+    };
+    // The slope, typed as m = ...
+    if (/^m=/.test(n)) {
+      let v;
+      try { const s = linSide(n.slice(2)); if (!zero(s.x) || !zero(s.y)) throw 0; v = s.c; } catch (e) { return bad(["Type the slope as a number, like m = 2/3."]); }
+      if (v.n === q.m.n && v.d === q.m.d) return addRow({ kind: "m", n }, ["✓ That is the slope."]);
+      boardPractice(); return bad(["Not yet. That is not the slope.", "Get y by itself first. The slope is the number in front of x."]);
+    }
+    // A point, typed as (x, y)
+    const pm = n.match(/^\(([^,()]+),([^,()]+)\)$/);
+    if (pm) {
+      let x, y;
+      try { const sx = linSide(pm[1]), sy = linSide(pm[2]); if ([sx, sy].some(s => !zero(s.x) || !zero(s.y))) throw 0; x = sx.c; y = sy.c; } catch (e) { return bad(["Type the point like (3, 1)."]); }
+      if (zero(add(add(mul(R(q.g.A), x), mul(R(q.g.B), y)), R(q.g.C)))) return addRow({ kind: "pt", n }, ["✓ That point is on the line."]);
+      boardPractice(); return bad(["Not yet. That point is not on the line.", "Put your x into the equation again and work out y."]);
+    }
+    let g;
+    try { g = parse(raw); } catch (msg) { boardPractice(); return bad([typeof msg === "string" ? msg : "Check the equation."]); }
+    if (!sameG(g, q.g)) {
+      wrongG = g; boardPractice();
+      return bad(["Not yet. That is a different line.", ...diagnose(g), "The red dashed line is your line."]);
+    }
+    const eqs = rows.filter(r => r.kind !== "m" && r.kind !== "pt");
+    if (n === eqs[eqs.length - 1].n) { boardPractice(); return say("hint", ["That is the same as the line before. Try the next step."]); }
+    const f = formOf(n), to = $("pTo").value;
+    if (f.f === to && !f.near) {
+      finished = true; solved++;
+      addRow({ kind: "eq", n, raw, done: true }, [`✓ Done! That is ${LONG[to]}.`]);
+      $("pNew").focus();
+      return;
+    }
+    addRow({ kind: "eq", n, raw }, f.f === to ? ["✓ Same line.", "Nearly there.", f.near] : ["✓ Same line. You are on the right track."]);
+  }
+
+  $("lineForm").addEventListener("submit", e => { e.preventDefault(); checkLine(); });
+  $("lineIn").addEventListener("input", () => {
+    $("lineIn").classList.remove("bad");
+    const raw = $("lineIn").value.trim(), n = normS(raw);
+    if (!raw) { $("preview").innerHTML = ""; return; }
+    const pm = n.match(/^\(([^,()]+),([^,()]+)\)$/);
+    if (pm) { $("preview").innerHTML = `(${prettySide(pm[1])},&nbsp;${prettySide(pm[2])})`; return; }
+    const [l, r] = pretty(raw);
+    $("preview").innerHTML = n.includes("=") ? `${l}${op("=")}${r}` : l;
+  });
+  $("hint").addEventListener("click", () => { const h = hint(); say("hint", [h || "Check each term against the goal form."], "Hint:"); });
+  $("pNew").addEventListener("click", () => { $("ownForm").hidden = true; $("ownErr").hidden = true; newQuestion(); $("lineIn").focus(); });
+  $("pFrom").addEventListener("change", () => {
+    if ($("pTo").value === $("pFrom").value) $("pTo").value = $("pFrom").value === "g" ? "si" : "g";
+    newQuestion();
+  });
+  $("pTo").addEventListener("change", () => {
+    if ($("pTo").value === $("pFrom").value) { $("pFrom").value = $("pTo").value === "sp" ? "si" : "sp"; newQuestion(); }
+    else setQuestion(q); // same start, new goal
+  });
+  $("ownBtn").addEventListener("click", () => { $("ownForm").hidden = !$("ownForm").hidden; if (!$("ownForm").hidden) $("ownIn").focus(); });
+  $("ownIn").addEventListener("input", () => { $("ownIn").classList.remove("bad"); $("ownErr").hidden = true; });
+  $("ownForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const raw = $("ownIn").value.trim();
+    if (!raw) return;
+    const err = msg => { $("ownErr").textContent = msg; $("ownErr").hidden = false; $("ownIn").classList.add("bad"); };
+    let g;
+    try { g = parse(raw); } catch (msg) { return err(typeof msg === "string" ? msg : "Check the equation."); }
+    if (g.B === 0) return err("That line is straight up and down, so it only has general form. Try another line.");
+    const f = formOf(normS(raw)).f;
+    if (f) $("pFrom").value = f;
+    if ($("pTo").value === f) $("pTo").value = f === "g" ? "si" : "g";
+    const m = R(-g.A, g.B), c = R(-g.C, g.B);
+    setQuestion({ g, m, b: c, P: null, from: f || "other", text: raw });
+    $("ownForm").hidden = true;
+    $("lineIn").focus();
+  });
+  // Show me: the same question in Learning, ready for Next step.
+  $("showMe").addEventListener("click", () => {
+    loadLine(q.g, q.P);
+    const to = $("pTo").value;
+    let from = q.from === "other" ? (to === "g" ? "si" : "g") : q.from;
+    $("from").value = from; $("to").value = to;
+    setMode("learn");
+    $("typed").value = q.text;
+  });
+
+  function setMode(m) {
+    mode = m;
+    $("mode").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.mode === m));
+    $("learnPanel").hidden = m !== "learn";
+    $("practicePanel").hidden = m !== "practice";
+    $("lead").textContent = m === "learn" ? "Drag A or B, or type an equation. Pick two forms, then press Next step."
+      : "Type each line of your work and press Check. Press Hint if you get stuck.";
+    if (m === "practice") { if (!q) newQuestion(); else boardPractice(); $("lineIn").focus(); }
+    else render();
+  }
+  $("mode").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (btn && btn.dataset.mode !== mode) setMode(btn.dataset.mode);
+  });
+  $("pFrom").value = "sp"; $("pTo").value = "si";
 
   $("from").value = "sp"; $("to").value = "si";
   render();
@@ -1093,7 +1509,110 @@ window.I18N_PAGE = {
  "Start with general form.": "Commence avec la forme générale.",
  "Replay step": "Rejouer l’étape",
  "Skip ahead": "Passer à la fin",
- "Multiply both sides by {0}, so there are no fractions.": "Multiplie les deux côtés par {0} pour qu’il n’y ait plus de fractions."
+ "Multiply both sides by {0}, so there are no fractions.": "Multiplie les deux côtés par {0} pour qu’il n’y ait plus de fractions.",
+ "Learning": "Apprentissage",
+ "Mode": "Mode",
+ "In general form, the slope is {0}.": "Dans la forme générale, la pente est {0}.",
+ "Type each line of your work and press Check. Press Hint if you get stuck.": "Tape chaque ligne de ta démarche et appuie sur Vérifier. Appuie sur Indice si tu bloques.",
+ "Start with": "Commence avec",
+ "Change to": "Change en",
+ "Type my own question": "Taper ma propre question",
+ "Type your own question": "Tape ta propre question",
+ "Type the question, like 2x − 3y + 6 = 0": "Tape la question, comme 2x − 3y + 6 = 0",
+ "Use it": "Utiliser",
+ "Type your next line": "Tape ta prochaine ligne",
+ "Show me the steps": "Montre-moi les étapes",
+ "Hint:": "Indice :",
+ "Goal: {0}{1}": "But : {0}{1}",
+ "slope-point form": "forme pente-point",
+ "slope-intercept form": "forme pente-ordonnée à l’origine",
+ "general form": "forme générale",
+ "Start": "Départ",
+ "✓ Done": "✓ Terminé",
+ "✓ Slope": "✓ Pente",
+ "✓ On the line": "✓ Sur la droite",
+ "Point": "Point",
+ "Remove this line": "Enlever cette ligne",
+ "Solved: {n}": "Résolues : {n}",
+ "✓ Done!": "✓ Terminé!",
+ "That is slope-point form.": "C’est la forme pente-point.",
+ "That is slope-intercept form.": "C’est la forme pente-ordonnée à l’origine.",
+ "That is general form.": "C’est la forme générale.",
+ "✓ Same line.": "✓ Même droite.",
+ "You are on the right track.": "Tu es sur la bonne voie.",
+ "Nearly there.": "Presque fini.",
+ "Not yet.": "Pas encore.",
+ "That is a different line.": "C’est une autre droite.",
+ "The red dashed line is your line.": "La droite rouge pointillée est ta droite.",
+ "That is the same as the line before.": "C’est la même chose que la ligne d’avant.",
+ "Try the next step.": "Essaie l’étape suivante.",
+ "Check each term against the goal form.": "Compare chaque terme à la forme visée.",
+ "Type the slope as a number, like m = 2/3.": "Tape la pente comme un nombre, comme m = 2/3.",
+ "✓ That is the slope.": "✓ C’est la pente.",
+ "That is not the slope.": "Ce n’est pas la pente.",
+ "Get y by itself first.": "Isole d’abord y.",
+ "The slope is the number in front of x.": "La pente est le nombre devant x.",
+ "Type the point like (3, 1).": "Tape le point comme (3, 1).",
+ "✓ That point is on the line.": "✓ Ce point est sur la droite.",
+ "That point is not on the line.": "Ce point n’est pas sur la droite.",
+ "Put your x into the equation again and work out y.": "Remplace encore x dans l’équation et calcule y.",
+ "That line is straight up and down, so it only has general form.": "Cette droite est verticale, alors elle a seulement une forme générale.",
+ "Try another line.": "Essaie une autre droite.",
+ "Check the sign of the x term.": "Vérifie le signe du terme en x.",
+ "Check the sign of the y term.": "Vérifie le signe du terme en y.",
+ "Check the sign of the number.": "Vérifie le signe du nombre.",
+ "A term changes its sign when it crosses the = sign.": "Un terme change de signe quand il traverse le signe =.",
+ "Check the x term.": "Vérifie le terme en x.",
+ "Check the y term.": "Vérifie le terme en y.",
+ "Check the number.": "Vérifie le nombre.",
+ "Whatever you do, do it to every term on both sides.": "Ce que tu fais, fais-le à chaque terme des deux côtés.",
+ "Go back to the line before and try one step at a time.": "Retourne à la ligne d’avant et fais une étape à la fois.",
+ "Combine like terms.": "Regroupe les termes semblables.",
+ "Combine like terms on each side.": "Regroupe les termes semblables de chaque côté.",
+ "Simplify the fractions.": "Simplifie les fractions.",
+ "Write the x term first: y = mx + b.": "Écris d’abord le terme en x : y = mx + b.",
+ "General form uses whole numbers only.": "La forme générale utilise seulement des nombres entiers.",
+ "Multiply every term by {n}, so there are no fractions.": "Multiplie chaque terme par {n} pour qu’il n’y ait plus de fractions.",
+ "Write it in order: x term, y term, number, then = 0.": "Écris-la dans l’ordre : terme en x, terme en y, nombre, puis = 0.",
+ "Multiply every term by {n}, so the x term is positive.": "Multiplie chaque terme par {n} pour que le terme en x soit positif.",
+ "Multiply every term by {n}, so the y term is positive.": "Multiplie chaque terme par {n} pour que le terme en y soit positif.",
+ "Every number divides by {n}.": "Chaque nombre se divise par {n}.",
+ "Divide every term by {n}.": "Divise chaque terme par {n}.",
+ "Multiply both sides by {n}, so there are no fractions.": "Multiplie les deux côtés par {n} pour qu’il n’y ait plus de fractions.",
+ "Multiply into the brackets.": "Multiplie dans les parenthèses.",
+ "Get the y terms together on one side.": "Regroupe les termes en y d’un seul côté.",
+ "Tip: keep the y term positive.": "Astuce : garde le terme en y positif.",
+ "Move the y term to the other side, where it becomes positive.": "Déplace le terme en y de l’autre côté, où il devient positif.",
+ "Move the x term and the number to the right side.": "Déplace le terme en x et le nombre du côté droit.",
+ "Move the x term and the number to the left side.": "Déplace le terme en x et le nombre du côté gauche.",
+ "They change sign when they cross the = sign.": "Ils changent de signe quand ils traversent le signe =.",
+ "Move the x term to the right side.": "Déplace le terme en x du côté droit.",
+ "Move the x term to the left side.": "Déplace le terme en x du côté gauche.",
+ "Move the number to the right side.": "Déplace le nombre du côté droit.",
+ "Move the number to the left side.": "Déplace le nombre du côté gauche.",
+ "It changes sign when it crosses the = sign.": "Il change de signe quand il traverse le signe =.",
+ "Switch the sides, so y is on the left.": "Inverse les côtés pour que y soit à gauche.",
+ "Multiply both sides by {n}, so the y term has no fraction.": "Multiplie les deux côtés par {n} pour que le terme en y n’ait plus de fraction.",
+ "Divide every term by {n}, so y is by itself.": "Divise chaque terme par {n} pour isoler y.",
+ "Multiply every term on both sides by {n}, so there are no fractions.": "Multiplie chaque terme des deux côtés par {n} pour qu’il n’y ait plus de fractions.",
+ "Switch the sides, so the equation ends with = 0.": "Inverse les côtés pour que l’équation finisse par = 0.",
+ "Move every term on the right to the left side, so the right side is 0.": "Déplace chaque terme de droite du côté gauche pour que le côté droit soit 0.",
+ "Move every term on the left to the right side, so the left side is 0.": "Déplace chaque terme de gauche du côté droit pour que le côté gauche soit 0.",
+ "Each term changes its sign when it crosses the = sign.": "Chaque terme change de signe quand il traverse le signe =.",
+ "Put m and your point into y − y₁ = m(x − x₁).": "Remplace m et ton point dans y − y₁ = m(x − x₁).",
+ "Now find a point on the line.": "Trouve maintenant un point sur la droite.",
+ "Put x = {n} into the equation and work out y.": "Remplace x = {n} dans l’équation et calcule y.",
+ "Type the point in brackets, like (x, y).": "Tape le point entre parenthèses, comme (x, y).",
+ "The slope m is the number in front of x.": "La pente m est le nombre devant x.",
+ "Type it like this: m = 2": "Tape-la comme ceci : m = 2",
+ "First get y by itself.": "Isole d’abord y.",
+ "Use one = sign.": "Utilise un seul signe =.",
+ "Use only numbers, x, y, + − × / and brackets.": "Utilise seulement des nombres, x, y, + − × / et des parenthèses.",
+ "That isn't a straight line.": "Ce n’est pas une droite.",
+ "Check your brackets.": "Vérifie tes parenthèses.",
+ "Check the equation.": "Vérifie l’équation.",
+ "You can only divide by a number that isn't 0.": "Tu peux seulement diviser par un nombre qui n’est pas 0.",
+ "That equation needs an x or a y.": "Cette équation a besoin d’un x ou d’un y."
 };
 </script>
 <script>
