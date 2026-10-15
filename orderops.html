@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Order of Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Order of Operations (Shawn 2026-10-15). Every expression is a dot picture:
+   a number is loose dots (orange), a × b is a groups of b (blue dots in green frames), a power c² is a c-by-c square.
+   Learn: Next step builds the picture in the right order on the left, then the wrong order on the right,
+   so students see why the answers differ. Work is written down each side with = lined up and step names in a right column.
+   Practice: "Draw the picture" (set loose dots, groups and dots in each group) or "Read the picture" (pick the matching expression).
+   Never the ÷ sign. */
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 12px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.cases { display: flex; flex-direction: column; width: 100%; }
+.cases button { text-align: left; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-height: 46px; }
+.cases button + button { border-left: 0; border-top: 2px solid var(--grid-major); }
+.kinds button { font-family: var(--font-body); font-size: 1.1rem; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.say { font-size: 1.25rem; margin: 0; min-height: 4.5em; line-height: 1.5; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.task { font-size: 1.2rem; margin: 0 0 8px; font-weight: 700; }
+.steppers { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; }
+.steppers .nm { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.steppers .sw { width: 18px; height: 18px; border-radius: 50%; flex: none; }
+.sw.o { background: var(--orange); } .sw.b { background: var(--pt); box-shadow: 0 0 0 3px var(--sheet), 0 0 0 5px var(--green); }
+.stp { display: inline-flex; align-items: center; gap: 6px; }
+.stp button { width: 48px; min-height: 48px; font-size: 1.5rem; font-weight: 700; padding: 0; }
+.stp output { font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; min-width: 2.2ch; text-align: center; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opts button { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; min-height: 60px; padding: 6px 8px; }
+.opts button.ok { border-color: var(--green); color: var(--green); border-width: 3px; }
+.opts button.no { border-color: var(--warn); color: var(--warn); opacity: 0.7; }
+.fb { margin: 8px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.4em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.05rem; color: var(--muted); margin: 10px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+
+/* Board */
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.tx.g { fill: var(--green); } .tx.w { fill: var(--warn); } .tx.m { fill: var(--muted); }
+.ask { font-family: var(--font-body); font-weight: 700; fill: var(--ink); }
+.qbox { fill: none; stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 7 5; }
+.eqs { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.sname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.sname.now { fill: var(--ink); } .sname.bad { fill: var(--warn); }
+.hd { font-family: var(--font-body); font-weight: 700; }
+.hd.g { fill: var(--green); } .hd.w { fill: var(--warn); }
+.split { stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 6 6; }
+.d.o { fill: var(--orange); } .d.b { fill: var(--pt); } .d.m { fill: var(--grid-major); }
+.fr { fill: none; stroke-width: 3; }
+.fr.g { stroke: var(--green); } .fr.o { stroke: var(--orange); }
+.fr.e { stroke-dasharray: 8 6; }
+.plus { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.neq circle { fill: var(--sheet); stroke: var(--warn); stroke-width: 4; }
+.neq text { font-family: var(--font-num); font-weight: 700; fill: var(--warn); }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Order of Operations</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 660" role="img" aria-label="Dot pictures of an expression done in the right order and in the wrong order, with the work written step by step."></svg></div>
+
+    <div class="panel" id="learn">
+      <section class="card">
+        <p class="label">Pick an example</p>
+        <div class="seg-btns cases" role="group" aria-label="Example" id="cases"></div>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+        <button type="button" id="rand">New example</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <div class="seg-btns cases kinds" role="group" aria-label="Kind of question" id="kinds">
+          <button type="button" data-kind="draw" class="on">Draw the picture</button>
+          <button type="button" data-kind="read">Read the picture</button>
+        </div>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card" id="drawCard">
+        <p class="task">Make a dot picture for the expression.</p>
+        <div class="steppers">
+          <span class="nm"><span class="sw o"></span>Loose dots</span>
+          <span class="stp"><button type="button" data-st="L" data-d="-1" aria-label="Fewer loose dots">−</button><output id="vL">0</output><button type="button" data-st="L" data-d="1" aria-label="More loose dots">+</button></span>
+          <span class="nm"><span class="sw b"></span>Groups</span>
+          <span class="stp"><button type="button" data-st="G" data-d="-1" aria-label="Fewer groups">−</button><output id="vG">0</output><button type="button" data-st="G" data-d="1" aria-label="More groups">+</button></span>
+          <span class="nm">Dots in each group</span>
+          <span class="stp"><button type="button" data-st="P" data-d="-1" aria-label="Fewer dots in each group">−</button><output id="vP">0</output><button type="button" data-st="P" data-d="1" aria-label="More dots in each group">+</button></span>
+        </div>
+        <div class="btns" style="margin-top:10px"><button type="button" class="go" id="check">Check</button><button type="button" id="newq">New question</button></div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <section class="card" id="readCard" hidden>
+        <p class="task">Which expression matches the picture?</p>
+        <div class="opts" id="opts"></div>
+        <div class="btns" style="margin-top:10px"><button type="button" id="newq2">New question</button></div>
+        <p class="fb" id="fb2" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = ri(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pl = (v, one, many) => v === 1 ? one : many;
+  const W = 1000, H = 660;
+
+  // ---------- expressions ----------
+  // Each form is written with three numbers x, y, z. b = its dot picture as [loose dots, groups, dots in each group]
+  // (null when it is not one picture of that shape). Forms after E are only used as wrong choices in Practice.
+  const FORMS = {
+    A:  { t: (x, y, z) => `${x} + ${y} × ${z}`,      v: (x, y, z) => x + y * z,       b: (x, y, z) => [x, y, z] },
+    B:  { t: (x, y, z) => `(${x} + ${y}) × ${z}`,    v: (x, y, z) => (x + y) * z,     b: (x, y, z) => [0, x + y, z] },
+    C:  { t: (x, y, z) => `${x} × ${y} + ${z}`,      v: (x, y, z) => x * y + z,       b: (x, y, z) => [z, x, y] },
+    D:  { t: (x, y, z) => `${x} + ${y} × ${z}²`,     v: (x, y, z) => x + y * z * z,   b: (x, y, z) => [x, y, z * z] },
+    E:  { t: (x, y) => `(${x} + ${y})²`,             v: (x, y) => (x + y) ** 2,       b: (x, y) => [0, x + y, x + y] },
+    Bx: { t: (x, y, z) => `${x} × (${y} + ${z})`,    b: (x, y, z) => [0, x, y + z] },
+    Dx: { t: (x, y, z) => `(${x} + ${y}) × ${z}²`,   b: (x, y, z) => [0, x + y, z * z] },
+    Dy: { t: (x, y, z) => `${x} + (${y} × ${z})²`,   b: (x, y, z) => [x, y * z, y * z] },
+    Ey: { t: (x, y) => `${x} + ${y}²`,               b: (x, y) => [x, y, y] },
+    Ez: { t: (x, y) => `(${x} + ${y}) × ${y}`,       b: (x, y) => [0, x + y, y] },
+    Ew: { t: (x, y) => `${x}² + ${y}`,               b: (x, y) => [y, x, x] },
+    Eu: { t: (x, y) => `${x} + ${y} × (${x} + ${y})`, b: (x, y) => [x, y, x + y] },
+    Dw: { t: (x, y, z) => `${x}² + ${y} × ${z}`,     b: (x, y, z) => [x * x, y, z] },
+    Dv: { t: (x, y, z) => `${x} × ${y} + ${z}²`,     b: (x, y, z) => [z * z, x, y] },
+  };
+  const MAIN = ["A", "B", "C", "D", "E"];
+  const EXAMPLES = { A: [2, 3, 4], B: [2, 3, 4], C: [4, 2, 3], D: [2, 3, 4], E: [2, 3] };
+  function gen(f, prev) {
+    for (let t = 0; t < 40; t++) {
+      const n = f === "D" ? [ri(2, 5), ri(2, 3), ri(2, 4)] : f === "E" ? [ri(2, 4), ri(2, 4)] : [ri(2, 5), ri(2, 4), ri(2, 5)];
+      if (prev && prev.f === f && prev.n.join() === n.join()) continue;
+      if (new Set(n).size < Math.min(n.length, 2 + (f !== "D"))) continue; // different numbers make pictures easier to tell apart
+      return { f, n };
+    }
+    return { f, n: EXAMPLES[f] };
+  }
+  const textOf = q => FORMS[q.f].t(...q.n);
+  const valueOf = q => FORMS[q.f].v(...q.n);
+  const buildOf = q => FORMS[q.f].b(...q.n);
+  // Two pictures match when the loose dots match and the groups match either way round (3 groups of 4 or 4 groups of 3).
+  const same = (a, b) => a[0] === b[0] && ((a[1] === b[1] && a[2] === b[2]) || (a[1] === b[2] && a[2] === b[1]));
+
+  // ---------- picture parts ----------
+  // loose: dots with no frame. groups: g frames, each holding per dots. plus: a + sign.
+  // Dot colours: o orange (loose), b blue (in groups), m grey. Frame colours: g green, o orange.
+  const loose = (id, n, o) => Object.assign({ id, t: "c", n, c: "o" }, o);
+  const groups = (id, g, per, o) => Object.assign({ id, t: "g", g, per, c: "b", fc: () => "g" }, o);
+  const plus = id => ({ id, t: "+" });
+  // How a cluster of n dots is arranged: a square when n is a square number, else rows of 5.
+  function arrange(n, o) {
+    if (o.row) return [n, 1];
+    const s = Math.round(Math.sqrt(n));
+    if (o.sq || (s * s === n && n >= 4)) return [s, s];
+    if (n <= 5) return [Math.max(n, 1), 1];
+    return [5, Math.ceil(n / 5)];
+  }
+  // The colour of dot i (row r, column c) in a cluster.
+  function dotColor(part, i, r, c, n) {
+    if (part.colorAt) return part.colorAt(r, c);
+    if (part.split && i >= n - part.split) return "o";
+    return part.c;
+  }
+
+  // Lays the parts out in rows inside the box and draws them as large as they fit. fresh: ids that just appeared.
+  function drawPicture(parts, box, fresh) {
+    if (!parts || !parts.length) return;
+    let best = null;
+    for (let p = 44; p >= 3; p--) {
+      const items = [];
+      parts.forEach(part => {
+        if (part.t === "+") items.push({ part, w: Math.max(1.3, 40 / p), h: 1 });
+        else if (part.t === "c") { const [c, r] = arrange(part.n, part); items.push({ part, w: c, h: r, cols: c, rows: r }); }
+        else for (let i = 0; i < part.g; i++) { const [c, r] = arrange(part.per, part); items.push({ part, i, w: c + 0.9, h: r + 0.9, cols: c, rows: r }); }
+      });
+      const maxW = box.w / p, gap = 0.7, rows = [];
+      let cur = null;
+      if (items.some(it => it.w > maxW)) continue;
+      items.forEach(it => {
+        if (!cur || cur.w + gap + it.w > maxW) { cur = { items: [], w: -gap, h: 0 }; rows.push(cur); }
+        cur.items.push(it); cur.w += gap + it.w; cur.h = Math.max(cur.h, it.h);
+      });
+      const hTot = rows.reduce((t, r) => t + r.h, 0) + gap * (rows.length - 1);
+      // Fewer rows read more easily, so a layout with more rows has to be clearly bigger to win.
+      const score = p * (1 - 0.3 * (rows.length - 1));
+      if (hTot * p <= box.h && (!best || score > best.score)) best = { p, rows, hTot, gap, score };
+    }
+    if (!best) return;
+    const { p, rows, hTot, gap } = best;
+    let y = box.y + (box.h - hTot * p) / 2, k = 0;
+    const count = {};
+    rows.forEach(row => {
+      let x = box.x + (box.w - row.w * p) / 2;
+      row.items.forEach(it => {
+        const part = it.part, isNew = fresh && fresh.has(part.id);
+        const g = E("g", { class: isNew ? "pop" : "" });
+        if (isNew) { count[part.id] = (count[part.id] || 0) + 1; g.style.animationDelay = Math.min(count[part.id] - 1, 12) * 110 + "ms"; }
+        const iy = y + (row.h - it.h) * p / 2;
+        if (part.t === "+") {
+          E("text", { x: x + it.w * p / 2, y: y + row.h * p / 2 + Math.max(p, 40) * 0.36, class: "plus", "text-anchor": "middle", "font-size": Math.max(p * 1.1, 40) }, g, "+");
+        } else {
+          const pad = part.t === "g" ? 0.45 : 0, n = part.t === "g" ? part.per : part.n;
+          if (part.t === "g") E("rect", { x: x + 0.1 * p, y: iy + 0.1 * p, width: (it.w - 0.2) * p, height: (it.h - 0.2) * p, rx: Math.max(6, 0.35 * p), class: "fr " + part.fc(it.i) + (part.empty ? " e" : ""), "stroke-width": Math.max(2, Math.min(4, 0.12 * p)) }, g);
+          if (!part.empty) for (let i = 0; i < n; i++) {
+            const r = Math.floor(i / it.cols), c = i % it.cols;
+            E("circle", { cx: x + (pad + c + 0.5) * p, cy: iy + (pad + r + 0.5) * p, r: 0.36 * p, class: "d " + dotColor(part, i, r, c, n) }, g);
+          }
+        }
+        x += (it.w + gap) * p; k++;
+      });
+      y += (row.h + gap) * p;
+    });
+  }
+
+  // ---------- the lessons ----------
+  // A step shows the right-order side R and maybe the wrong-order side Wr: { pic: parts, w: work lines shown }.
+  // work: [text after "=", step name]. done: the answer shows in the title. cmp: show the ≠ and colour both answers.
+  function lesson(q) {
+    const [x, y, z] = q.n, e = textOf(q), T = valueOf(q), S = [];
+    let R = { pic: [], w: 0 }, Wr = null, done = false, cmp = false, workR, workW;
+    const add = (say, ch = {}) => {
+      if ("R" in ch) R = ch.R; if ("Wr" in ch) Wr = ch.Wr; if ("done" in ch) done = ch.done; if ("cmp" in ch) cmp = ch.cmp;
+      S.push({ R, Wr, done, cmp, say });
+    };
+    if (q.f === "A") {
+      const s = x + y, V = s * z;
+      workR = [[`${x} + ${y * z}`, "Multiply"], [`${T}`, "Add"]];
+      workW = [[`${s} × ${z}`, "Added first ✗"], [`${V}`, "Multiply"]];
+      add(`What does ${e} mean? Multiply before you add.`);
+      add(`Multiply first. ${y} × ${z} means ${y} groups of ${z}. That is ${y * z} dots.`, { R: { pic: [groups("g", y, z)], w: 1 } });
+      add(`Then add ${x} dots: ${x} + ${y * z} = ${T}.`, { R: { pic: [loose("l", x), plus("p"), groups("g", y, z)], w: 2 }, done: true });
+      add(`What if you add first? ${x} + ${y} = ${s}, so you get ${s} groups of ${z}. That is ${V} dots.`, { Wr: { pic: [groups("wg", s, z, { fc: i => i < x ? "o" : "g" })], w: 2 } });
+      add(`The ${x} dots turned into ${x} groups of ${z}! ${T} is not ${V}. A different order makes a different picture.`, { cmp: true });
+    } else if (q.f === "B") {
+      const s = x + y, V = x + y * z, fc = i => i < x ? "o" : "g";
+      workR = [[`${s} × ${z}`, "Brackets"], [`${T}`, "Multiply"]];
+      workW = [[`${x} + ${y * z}`, "Skipped ( ) ✗"], [`${V}`, "Add"]];
+      add(`What does ${e} mean? Brackets come first.`);
+      add(`Brackets first. ${x} + ${y} = ${s}, so there are ${s} groups.`, { R: { pic: [groups("g", s, z, { fc, empty: true })], w: 1 } });
+      add(`Then × ${z} puts ${z} dots in each group. ${s} groups of ${z} is ${T} dots.`, { R: { pic: [groups("g2", s, z, { fc })], w: 2 }, done: true });
+      add(`What if you skip the brackets? Then you multiply first: ${x} + ${y} × ${z} = ${V}.`, { Wr: { pic: [loose("wl", x), plus("wp"), groups("wg", y, z)], w: 2 } });
+      add(`${T} is not ${V}. The brackets make ${s} groups, not ${x} dots and ${y} groups.`, { cmp: true });
+    } else if (q.f === "C") {
+      const s = y + z, V = x * s;
+      workR = [[`${x * y} + ${z}`, "Multiply"], [`${T}`, "Add"]];
+      workW = [[`${x} × ${s}`, "Added first ✗"], [`${V}`, "Multiply"]];
+      add(`What does ${e} mean? Multiply first, then add.`);
+      add(`${x} × ${y} means ${x} groups of ${y}. That is ${x * y} dots.`, { R: { pic: [groups("g", x, y)], w: 1 } });
+      add(`Then add ${z} dots: ${x * y} + ${z} = ${T}.`, { R: { pic: [groups("g", x, y), plus("p"), loose("l", z)], w: 2 }, done: true });
+      add(`What if you add first? ${y} + ${z} = ${s}, so you get ${x} groups of ${s}. The ${z} dots went into every group! That is ${V} dots.`, { Wr: { pic: [groups("wg", x, s, { split: z })], w: 2 } });
+      add(`${T} is not ${V}. Multiply first, then add.`, { cmp: true });
+    } else if (q.f === "D") {
+      const zz = z * z, m = y * z, V = x + m * m;
+      workR = [[`${x} + ${y} × ${zz}`, "Power"], [`${x} + ${y * zz}`, "Multiply"], [`${T}`, "Add"]];
+      workW = [[`${x} + ${m}²`, "Multiplied first ✗"], [`${x} + ${m * m}`, "Power"], [`${V}`, "Add"]];
+      add(`What does ${e} mean? Powers come before × and +.`);
+      add(`Powers first. ${z}² means ${z} × ${z}: a square with ${z} rows of ${z}. That is ${zz} dots.`, { R: { pic: [groups("g1", 1, zz, { sq: true })], w: 1 } });
+      add(`Then multiply. ${y} × ${zz} means ${y} groups of ${zz}. That is ${y * zz} dots.`, { R: { pic: [groups("g", y, zz, { sq: true })], w: 2 } });
+      add(`Then add ${x} dots: ${x} + ${y * zz} = ${T}.`, { R: { pic: [loose("l", x), plus("p"), groups("g", y, zz, { sq: true })], w: 3 }, done: true });
+      add(`What if you multiply first? ${y} × ${z} = ${m}, and ${m}² is a square with ${m * m} dots. With the ${x} dots, that is ${V}.`, { Wr: { pic: [loose("wl", x), plus("wp"), groups("wg", 1, m * m, { sq: true })], w: 3 } });
+      add(`${T} is not ${V}. The power belongs to the ${z} only, so do it first.`, { cmp: true });
+    } else {
+      const s = x + y, V = x * x + y * y;
+      // The big square: the x-by-x corner is orange, the y-by-y corner is blue, the rest is grey.
+      const colorAt = (r, c) => r < x && c < x ? "o" : r >= x && c >= x ? "b" : "m";
+      workR = [[`${s}²`, "Brackets"], [`${s} × ${s}`, "Power"], [`${T}`, "Multiply"]];
+      workW = [[`${x}² + ${y}²`, "Skipped ( ) ✗"], [`${x * x} + ${y * y}`, "Power"], [`${V}`, "Add"]];
+      add(`What does ${e} mean? Brackets first, then the power.`);
+      add(`Brackets first: ${x} + ${y} = ${s}.`, { R: { pic: [loose("l", s, { row: true, split: y, c: "o", colorAt: (r, c) => c < x ? "o" : "b" })], w: 1 } });
+      add(`Then the power. ${s}² means ${s} × ${s}: a square with ${s} rows of ${s}. That is ${T} dots.`, { R: { pic: [groups("g", 1, s * s, { sq: true, colorAt })], w: 3 }, done: true });
+      add(`What if you square each number? ${x}² + ${y}² = ${x * x} + ${y * y} = ${V} dots.`, { Wr: { pic: [groups("wa", 1, x * x, { sq: true, c: "o" }), plus("wp"), groups("wb", 1, y * y, { sq: true })], w: 3 } });
+      add(`${T} is not ${V}. Squaring each number leaves out the grey dots.`, { cmp: true });
+    }
+    return { S, workR, workW, e, T };
+  }
+
+  // ---------- board text ----------
+  const CW = 0.64; // character width of the number font, in em
+  const TFS = 50, FS = 34;
+  const tw = (s, fs) => [...String(s)].length * CW * fs;
+  // Title: the expression = ? (or = answer).
+  function title(text, ans, anim, y) {
+    const s = `${text} = `, w = tw(s, TFS), aw = ans == null ? TFS * 1.3 : tw(ans, TFS), x = (W - w - aw) / 2;
+    E("text", { x, y: y + TFS * 0.36, class: "tx", "font-size": TFS }, svg, s);
+    if (ans == null) {
+      E("rect", { x: x + w, y: y - TFS * 0.62, width: aw, height: TFS * 1.24, rx: 8, class: "qbox" });
+      E("text", { x: x + w + aw / 2, y: y + TFS * 0.36, class: "tx m", "font-size": TFS, "text-anchor": "middle" }, svg, "?");
+    } else E("text", { x: x + w, y: y + TFS * 0.36, class: "tx g" + (anim ? " pop" : ""), "font-size": TFS }, svg, ans);
+  }
+  // Work down one side: the expression, then one line per step with = lined up and the step name on the right.
+  function work(col, expr, lines, w, opt) {
+    const fs = opt.fs || FS, y0 = opt.y, gapY = fs * 1.5;
+    const RHS = col.x + 60, maxW = Math.max(tw(expr, fs), ...lines.map(l => tw(l[0], fs)));
+    const NX = RHS + maxW + 34;
+    E("text", { x: RHS, y: y0 + fs * 0.36, class: "tx", "font-size": fs }, svg, expr);
+    for (let k = 0; k < w; k++) {
+      const yy = y0 + (k + 1) * gapY, last = k === lines.length - 1;
+      const g = E("g", { class: opt.anim && k === w - 1 && w > opt.was ? "pop" : "" });
+      E("text", { x: RHS - 26, y: yy + fs * 0.36, class: "eqs", "text-anchor": "middle", "font-size": fs }, g, "=");
+      E("text", { x: RHS, y: yy + fs * 0.36, class: "tx" + (last && opt.color ? " " + opt.color : ""), "font-size": fs }, g, lines[k][0]);
+      const bad = /✗/.test(lines[k][1]);
+      E("text", { x: NX, y: yy + 8, class: "sname" + (bad ? " bad" : k === w - 1 ? " now" : ""), "font-size": 22 }, g, lines[k][1]);
+    }
+  }
+
+  let timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+  const ids = side => new Set(side && side.pic ? side.pic.map(p => p.id) : []);
+
+  // ---------- Learn ----------
+  const LEFT = { x: 10, w: 480 }, RIGHT = { x: 510, w: 480 };
+  function renderLearn(q, i, anim) {
+    svg.innerHTML = "";
+    const L = lesson(q), st = L.S[i], prev = i > 0 ? L.S[i - 1] : null;
+    title(L.e, st.done ? L.T : null, anim && st.done && !(prev && prev.done), 48);
+    const fresh = side => {
+      if (!anim || !st[side]) return null;
+      const before = prev ? ids(prev[side]) : new Set();
+      return new Set([...ids(st[side])].filter(id => !before.has(id)));
+    };
+    if (st.R.w) {
+      const hd = E("text", { x: LEFT.x + LEFT.w / 2, y: 110, class: "hd g", "text-anchor": "middle", "font-size": 28 }, svg, "Right order ✓");
+      drawPicture(st.R.pic, { x: LEFT.x + 10, y: 128, w: LEFT.w - 20, h: 282 }, fresh("R"));
+      work(LEFT, L.e, L.workR, st.R.w, { y: 452, anim, was: prev && prev.R ? prev.R.w : 0, color: st.cmp ? "g" : "" });
+    }
+    if (st.Wr) {
+      E("line", { x1: 500, x2: 500, y1: 86, y2: H - 10, class: "split" });
+      E("text", { x: RIGHT.x + RIGHT.w / 2, y: 110, class: "hd w" + (prev && !prev.Wr && anim ? " pop" : ""), "text-anchor": "middle", "font-size": 28 }, svg, "Wrong order ✗");
+      drawPicture(st.Wr.pic, { x: RIGHT.x + 10, y: 128, w: RIGHT.w - 20, h: 282 }, fresh("Wr"));
+      work(RIGHT, L.e, L.workW, st.Wr.w, { y: 452, anim, was: prev && prev.Wr ? prev.Wr.w : 0, color: st.cmp ? "w" : "" });
+    }
+    if (st.cmp) {
+      const g = E("g", { class: "neq" + (anim && prev && !prev.cmp ? " pop" : "") });
+      E("circle", { cx: 500, cy: 101, r: 30 }, g);
+      E("text", { x: 500, y: 101 + 18, "text-anchor": "middle", "font-size": 50 }, g, "≠");
+    }
+  }
+
+  let mode = "learn", lq = { f: "A", n: EXAMPLES.A }, step = 0;
+  $("#cases").innerHTML = MAIN.map(f => `<button type="button" data-case="${f}">${FORMS[f].t(...EXAMPLES[f])}</button>`).join("");
+  function showLearn(anim) {
+    const S = lesson(lq).S;
+    renderLearn(lq, step, anim);
+    $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
+    $("#say").textContent = S[step].say;
+    $("#next").disabled = step >= S.length - 1;
+    $("#back").disabled = step === 0;
+  }
+  function setCase(f, fresh) {
+    lq = fresh ? gen(f, lq) : { f, n: EXAMPLES[f] }; step = 0;
+    document.querySelectorAll("[data-case]").forEach(b => {
+      b.classList.toggle("on", b.dataset.case === f);
+      b.textContent = FORMS[b.dataset.case].t(...(b.dataset.case === f ? lq.n : EXAMPLES[b.dataset.case]));
+    });
+    showLearn(false);
+  }
+  $("#cases").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setCase(b.dataset.case); });
+  $("#next").onclick = () => { if (step < lesson(lq).S.length - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = () => { step = 0; showLearn(false); };
+  $("#rand").onclick = () => setCase(lq.f, true);
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn") return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  // The picture of a build [loose, groups, per]. C-type expressions put the groups first, like the expression does.
+  function picOf(b, groupsFirst) {
+    const [L, G, P] = b, out = [];
+    const gp = G > 0 ? groups("g", G, P, { empty: P === 0 }) : null, lp = L > 0 ? loose("l", L) : null;
+    const parts = groupsFirst ? [gp, lp] : [lp, gp];
+    parts.filter(Boolean).forEach((p, i) => { if (i) out.push(plus("p")); out.push(p); });
+    return out;
+  }
+  const describe = b => {
+    const g = `${b[1]} ${pl(b[1], "group", "groups")} of ${b[2]}`;
+    return b[0] ? `${b[0]} loose dots and ${g}` : g;
+  };
+  // Hints say how each kind of expression becomes a picture.
+  function hintOf(q) {
+    const [x, y, z] = q.n;
+    if (q.f === "A") return `${y} × ${z} means ${y} groups of ${z}. + ${x} means ${x} loose dots.`;
+    if (q.f === "B") return `Brackets first: ${x} + ${y} = ${x + y} groups. × ${z} puts ${z} dots in each group.`;
+    if (q.f === "C") return `${x} × ${y} means ${x} groups of ${y}. + ${z} means ${z} loose dots.`;
+    if (q.f === "D") return `Powers first: ${z}² = ${z * z} dots in each group. Then ${y} groups, and ${x} loose dots.`;
+    return `Brackets first: ${x} + ${y} = ${x + y}. Then ${x + y}² means ${x + y} groups of ${x + y}.`;
+  }
+  // The picture students often make by working in the wrong order, and what to say about it.
+  function wrongOf(q) {
+    const [x, y, z] = q.n;
+    if (q.f === "A") return [[0, x + y, z], `That picture adds first. Multiply first: ${y} × ${z} is ${y} groups of ${z}.`];
+    if (q.f === "B") return [[x, y, z], `That picture skips the brackets. (${x} + ${y}) makes ${x + y} groups.`];
+    if (q.f === "C") return [[0, x, y + z], `That picture adds first. ${x} × ${y} is ${x} groups of ${y}. Then add ${z} loose dots.`];
+    if (q.f === "D") return [[x, y * z, y * z], `That picture multiplies before the power. ${z}² is the dots in each group.`];
+    return [[0, x + y, x], `Not yet. The power squares all of (${x} + ${y}).`];
+  }
+  function distractors(q) {
+    const [x, y, z] = q.n, target = buildOf(q), out = [], seen = new Set([textOf(q)]);
+    const tryAdd = (f, n) => {
+      const c = { f, n }, t = textOf(c), b = buildOf(c);
+      if (out.length >= 3 || seen.has(t) || same(b, target) || out.some(o => same(buildOf(o), b))) return;
+      seen.add(t); out.push(c);
+    };
+    if (q.f === "E") { tryAdd("Ey", [x, y]); tryAdd("Ez", [x, y]); tryAdd("Ew", [x, y]); tryAdd("Ez", [y, x]); tryAdd("Eu", [x, y]); }
+    else if (q.f === "D") { tryAdd("Dy", [x, y, z]); tryAdd("Dx", [x, y, z]); tryAdd("D", [x, z, y]); tryAdd("A", [x, y, z]); tryAdd("D", [y, x, z]); tryAdd("Dw", [x, y, z]); tryAdd("Dv", [y, z, x]); }
+    else {
+      tryAdd(q.f === "A" ? "B" : q.f === "B" ? "A" : "Bx", [x, y, z]);
+      const perms = shuffle([[x, y, z], [x, z, y], [y, x, z], [y, z, x], [z, x, y], [z, y, x]]);
+      for (const f of shuffle(["A", "B", "C", "Bx"])) for (const n of perms) tryAdd(f, n);
+    }
+    return out;
+  }
+
+  let kind = "draw", pq = null, tried = false, solved = false, busy = false, right = 0, total = 0, build = [0, 0, 0], options = [];
+  const fb = () => kind === "draw" ? $("#fb") : $("#fb2");
+  function feedback(text, cls) { const el = fb(); el.className = "fb " + (cls || ""); el.textContent = text; }
+  function renderPractice(anim) {
+    svg.innerHTML = "";
+    const groupsFirst = pq.f === "C";
+    if (kind === "draw") title(textOf(pq), solved ? valueOf(pq) : null, anim, 48);
+    else if (solved) title(textOf(pq), valueOf(pq), anim, 48);
+    else E("text", { x: W / 2, y: 60, class: "ask", "text-anchor": "middle", "font-size": 40 }, svg, "Which expression matches the picture?");
+    const pic = kind === "draw" && !solved ? picOf(build, false) : picOf(buildOf(pq), groupsFirst);
+    if (pic.length) drawPicture(pic, { x: 30, y: 100, w: W - 60, h: 330 }, null);
+    else E("text", { x: W / 2, y: 265, class: "sname", "text-anchor": "middle", "font-size": 30 }, svg, "Use the + buttons to make your picture.");
+    if (solved) {
+      const L = lesson(pq), widest = Math.max(...L.workR.map(l => tw(l[0], FS)), tw(L.e, FS)) + 60 + 26 + 140;
+      work({ x: (W - widest) / 2 }, L.e, L.workR, L.workR.length, { y: 470, anim, was: 0, color: "g" });
+    }
+  }
+  function setBuild(b) {
+    build = b;
+    $("#vL").textContent = b[0]; $("#vG").textContent = b[1]; $("#vP").textContent = b[2];
+  }
+  const MAX = { L: 20, G: 12, P: 25 };
+  document.querySelectorAll("[data-st]").forEach(btn => btn.onclick = () => {
+    if (solved || busy) return;
+    const k = "LGP".indexOf(btn.dataset.st), b = build.slice();
+    b[k] = Math.max(0, Math.min(MAX[btn.dataset.st], b[k] + +btn.dataset.d));
+    setBuild(b); feedback(""); renderPractice(false);
+  });
+  function newQuestion() {
+    clearTimers(); busy = false;
+    pq = gen(MAIN[ri(0, MAIN.length - 1)], pq); tried = false; solved = false;
+    feedback("");
+    if (kind === "draw") setBuild([0, 0, 0]);
+    else {
+      options = shuffle([pq, ...distractors(pq)]);
+      $("#opts").innerHTML = "";
+      options.forEach((o, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.textContent = textOf(o); b.onclick = () => choose(i, b);
+        $("#opts").append(b);
+      });
+    }
+    renderPractice(false);
+  }
+  function count(ok) { if (!tried) { tried = true; total++; if (ok) right++; $("#right").textContent = right; $("#total").textContent = total; } }
+  function win(text) { solved = true; feedback(text, "ok"); renderPractice(true); }
+  function check() {
+    if (solved || busy) return;
+    const t = buildOf(pq), b = build;
+    if (b[0] === 0 && b[1] === 0) { feedback("Use the + buttons to make your picture.", "mid"); return; }
+    if (same(b, t)) {
+      count(true);
+      win(b[1] === t[1] ? "Correct!" : `Correct! ${b[1]} groups of ${b[2]} is the same as ${t[1]} groups of ${t[2]}.`);
+      return;
+    }
+    count(false);
+    const [wb, wsay] = wrongOf(pq);
+    if (same(b, wb)) feedback(wsay, "no");
+    else if (b[0] + b[1] * b[2] === valueOf(pq)) feedback("Same number of dots, but the picture should show each part of the expression.", "mid");
+    else if (b[0] !== t[0] && same([t[0], b[1], b[2]], t)) feedback("The groups look right. Check the loose dots.", "no");
+    else if (b[0] === t[0]) feedback(t[0] ? "The loose dots look right. Check the groups." : "Not yet. Check the groups and the dots in each group.", "no");
+    else feedback("Not yet. Try a Hint.", "no");
+  }
+  function choose(i, btn) {
+    if (solved) return;
+    const o = options[i];
+    if (o === pq) { count(true); btn.classList.add("ok"); win("Correct!"); return; }
+    count(false); btn.classList.add("no");
+    feedback(`Not that one. ${textOf(o)} means ${describe(buildOf(o))}.`, "no");
+  }
+  $("#check").onclick = check;
+  $("#newq").onclick = $("#newq2").onclick = newQuestion;
+  $("#hint").onclick = () => {
+    if (solved || busy) return;
+    if (kind === "draw") feedback(hintOf(pq), "mid");
+    else { const b = buildOf(pq); feedback(`Count the loose dots, the groups, and the dots in each group. This picture is ${describe(b)}.`, "mid"); }
+  };
+  $("#showme").onclick = () => {
+    if (solved || busy) return;
+    count(false); clearTimers();
+    if (kind === "read") {
+      [...$("#opts").children].forEach((b, i) => { if (options[i] === pq) b.classList.add("ok"); });
+      win(`${textOf(pq)} means ${describe(buildOf(pq))}.`);
+      return;
+    }
+    // Build the picture one part at a time, saying each part.
+    const t = buildOf(pq);
+    const parts = [[0, t[1], 0, `${t[1]} groups`], [0, t[1], t[2], `${t[2]} dots in each group`]];
+    if (t[0]) parts.push([t[0], t[1], t[2], `${t[0]} loose dots`]);
+    let k = 0;
+    const play = () => {
+      const [L, G, P, say] = parts[k];
+      setBuild([L, G, P]); renderPractice(false); feedback(say, "mid");
+      if (k < parts.length - 1) { k++; later(play, 1300); } else later(() => { busy = false; win(hintOf(pq)); }, 1300);
+    };
+    busy = true; play();
+  };
+  document.querySelectorAll("[data-kind]").forEach(b => b.onclick = () => {
+    kind = b.dataset.kind;
+    document.querySelectorAll("[data-kind]").forEach(x => x.classList.toggle("on", x === b));
+    $("#drawCard").hidden = kind !== "draw"; $("#readCard").hidden = kind !== "read";
+    newQuestion();
+  });
+
+  function setMode(m) {
+    mode = m; clearTimers(); busy = false;
+    document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false); else newQuestion();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  setCase("A");
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Order of Operations (orderops.html). Dots = points, loose dots = points seuls, brackets = parenthèses. */
+window.I18N_PAGE = {
+ "Order of Operations": "Priorité des opérations",
+ "Learn": "Apprendre",
+ "Dot pictures of an expression done in the right order and in the wrong order, with the work written step by step.": "Des images de points d'une expression faite dans le bon ordre et dans le mauvais ordre, avec la démarche étape par étape.",
+ "Pick an example": "Choisis un exemple",
+ "Example": "Exemple",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "New example": "Nouvel exemple",
+ "Kind of question": "Type de question",
+ "Draw the picture": "Dessine l'image",
+ "Read the picture": "Lis l'image",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "Make a dot picture for the expression.": "Fais une image de points pour l'expression.",
+ "Loose dots": "Points seuls",
+ "Groups": "Groupes",
+ "Dots in each group": "Points dans chaque groupe",
+ "Fewer loose dots": "Moins de points seuls",
+ "More loose dots": "Plus de points seuls",
+ "Fewer groups": "Moins de groupes",
+ "More groups": "Plus de groupes",
+ "Fewer dots in each group": "Moins de points dans chaque groupe",
+ "More dots in each group": "Plus de points dans chaque groupe",
+ "Which expression matches the picture?": "Quelle expression correspond à l'image?",
+ "Show me": "Montre-moi",
+
+ "Right order ✓": "Bon ordre ✓",
+ "Wrong order ✗": "Mauvais ordre ✗",
+ "Multiply": "Multiplier",
+ "Add": "Additionner",
+ "Power": "Puissance",
+ "Brackets": "Parenthèses",
+ "Added first ✗": "Addition d'abord ✗",
+ "Skipped ( ) ✗": "( ) oubliées ✗",
+ "Multiplied first ✗": "Multiplication d'abord ✗",
+
+ "~What does (.+) mean\\?": "Que veut dire $1?",
+ "Multiply before you add.": "Multiplie avant d'additionner.",
+ "Multiply first.": "Multiplie d'abord.",
+ "{n} × {n} means {n} groups of {n}.": "{n} × {n} veut dire {n} groupes de {n}.",
+ "That is {n} dots.": "Ça fait {n} points.",
+ "Then add {n} dots: {n} + {n} = {n}.": "Ensuite, additionne {n} points : {n} + {n} = {n}.",
+ "{n} + {n} = {n}.": "{n} + {n} = {n}.",
+ "What if you add first?": "Et si tu additionnes d'abord?",
+ "{n} + {n} = {n}, so you get {n} groups of {n}.": "{n} + {n} = {n}, donc tu obtiens {n} groupes de {n}.",
+ "The {n} dots turned into {n} groups of {n}!": "Les {n} points sont devenus {n} groupes de {n}!",
+ "{n} is not {n}.": "{n}, ce n'est pas {n}.",
+ "A different order makes a different picture.": "Un autre ordre donne une autre image.",
+ "Brackets come first.": "Les parenthèses passent en premier.",
+ "Brackets first.": "Les parenthèses d'abord.",
+ "{n} + {n} = {n}, so there are {n} groups.": "{n} + {n} = {n}, donc il y a {n} groupes.",
+ "Then × {n} puts {n} dots in each group.": "Ensuite, × {n} met {n} points dans chaque groupe.",
+ "{n} groups of {n} is {n} dots.": "{n} groupes de {n}, ça fait {n} points.",
+ "What if you skip the brackets?": "Et si tu oublies les parenthèses?",
+ "Then you multiply first: {n} + {n} × {n} = {n}.": "Alors tu multiplies d'abord : {n} + {n} × {n} = {n}.",
+ "The brackets make {n} groups, not {n} dots and {n} groups.": "Les parenthèses font {n} groupes, pas {n} points et {n} groupes.",
+ "Multiply first, then add.": "Multiplie d'abord, puis additionne.",
+ "The {n} dots went into every group!": "Les {n} points sont allés dans chaque groupe!",
+ "Powers come before × and +.": "Les puissances passent avant × et +.",
+ "Powers first.": "Les puissances d'abord.",
+ "{n}² means {n} × {n}: a square with {n} rows of {n}.": "{n}² veut dire {n} × {n} : un carré de {n} rangées de {n}.",
+ "Then multiply.": "Ensuite, multiplie.",
+ "{n} × {n} = {n}, and {n}² is a square with {n} dots.": "{n} × {n} = {n}, et {n}² est un carré de {n} points.",
+ "What if you multiply first?": "Et si tu multiplies d'abord?",
+ "With the {n} dots, that is {n}.": "Avec les {n} points, ça fait {n}.",
+ "The power belongs to the {n} only, so do it first.": "La puissance s'applique seulement au {n}, alors fais-la d'abord.",
+ "Brackets first, then the power.": "Les parenthèses d'abord, puis la puissance.",
+ "Then the power.": "Ensuite, la puissance.",
+ "What if you square each number?": "Et si tu mets chaque nombre au carré?",
+ "{n}² + {n}² = {n} + {n} = {n} dots.": "{n}² + {n}² = {n} + {n} = {n} points.",
+ "Squaring each number leaves out the grey dots.": "Mettre chaque nombre au carré oublie les points gris.",
+
+ "Use the + buttons to make your picture.": "Utilise les boutons + pour faire ton image.",
+ "{n} groups of {n} is the same as {n} groups of {n}.": "{n} groupes de {n}, c'est la même chose que {n} groupes de {n}.",
+ "That picture adds first.": "Cette image additionne d'abord.",
+ "Multiply first: {n} × {n} is {n} groups of {n}.": "Multiplie d'abord : {n} × {n}, c'est {n} groupes de {n}.",
+ "That picture skips the brackets.": "Cette image oublie les parenthèses.",
+ "({n} + {n}) makes {n} groups.": "({n} + {n}) fait {n} groupes.",
+ "{n} × {n} is {n} groups of {n}.": "{n} × {n}, c'est {n} groupes de {n}.",
+ "Then add {n} loose dots.": "Ensuite, additionne {n} points seuls.",
+ "That picture multiplies before the power.": "Cette image multiplie avant la puissance.",
+ "{n}² is the dots in each group.": "{n}², ce sont les points dans chaque groupe.",
+ "Not yet.": "Pas encore.",
+ "The power squares all of ({n} + {n}).": "La puissance met tout ({n} + {n}) au carré.",
+ "Same number of dots, but the picture should show each part of the expression.": "Même nombre de points, mais l'image doit montrer chaque partie de l'expression.",
+ "The groups look right.": "Les groupes sont bons.",
+ "Check the loose dots.": "Vérifie les points seuls.",
+ "The loose dots look right.": "Les points seuls sont bons.",
+ "Check the groups.": "Vérifie les groupes.",
+ "Check the groups and the dots in each group.": "Vérifie les groupes et les points dans chaque groupe.",
+ "Try a Hint.": "Essaie un indice.",
+ "Not that one.": "Pas celle-là.",
+ "~([^A-Za-z.]+) means ([^.]+)\\.": "$1 veut dire $2.",
+ "{n} loose dots and {n} groups of {n}": "{n} points seuls et {n} groupes de {n}",
+ "{n} loose dots and {n} group of {n}": "{n} points seuls et {n} groupe de {n}",
+ "{n} groups of {n}": "{n} groupes de {n}",
+ "{n} group of {n}": "{n} groupe de {n}",
+ "+ {n} means {n} loose dots.": "+ {n} veut dire {n} points seuls.",
+ "Brackets first: {n} + {n} = {n} groups.": "Les parenthèses d'abord : {n} + {n} = {n} groupes.",
+ "× {n} puts {n} dots in each group.": "× {n} met {n} points dans chaque groupe.",
+ "Powers first: {n}² = {n} dots in each group.": "Les puissances d'abord : {n}² = {n} points dans chaque groupe.",
+ "Then {n} groups, and {n} loose dots.": "Ensuite, {n} groupes et {n} points seuls.",
+ "Brackets first: {n} + {n} = {n}.": "Les parenthèses d'abord : {n} + {n} = {n}.",
+ "Then {n}² means {n} groups of {n}.": "Ensuite, {n}² veut dire {n} groupes de {n}.",
+ "Count the loose dots, the groups, and the dots in each group.": "Compte les points seuls, les groupes et les points dans chaque groupe.",
+ "~This picture is (.+)\\.": "Cette image montre $1.",
+ "{n} groups": "{n} groupes",
+ "{n} dots in each group": "{n} points dans chaque groupe",
+ "{n} loose dots": "{n} points seuls",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
