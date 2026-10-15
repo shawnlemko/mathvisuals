@@ -1152,8 +1152,8 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
   function checkStep() {
     const st = P.stage, s = S1();
     if (st === "mult") {
-      const m = ["m1", "m2"].map(id => { const t = $(id).value.trim().replace(/[−–—]/g, "-"); return /^-?\d+$/.test(t) ? +t : null; });
-      if (m.some(n => n === null || n === 0)) return "Type a whole number in each box. 1 means leave that equation as it is.";
+      const m = ["m1", "m2"].map(id => { const t = $(id).value.trim().replace(/[−–—]/g, "-"); return t === "" ? 1 : /^-?\d+$/.test(t) ? +t : null; });   // blank = leave it (× 1)
+      if (m.some(n => n === null || n === 0)) return "Type a whole number in each box. 1 (or blank) means leave that equation as it is.";
       const xs = [E[0].a * m[0], E[1].a * m[1]], ys = [E[0].b * m[0], E[1].b * m[1]];
       const v = xs[0] + xs[1] === 0 ? "x" : ys[0] + ys[1] === 0 ? "y" : null;
       if (!v) {
@@ -1293,7 +1293,9 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
   });
   $("check").addEventListener("click", onCheck);
   $("showme").addEventListener("click", onShow);
-  ["pin", "m1", "m2"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") onCheck(); }));
+  // Enter in the ① box moves on to the ② box (× 1 is fine for ①); Enter in ② or the step box checks.
+  $("m1").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("m2").focus(); $("m2").select(); } });
+  ["pin", "m2"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") onCheck(); }));
   $("newq").addEventListener("click", newSystem);
   addEventListener("resize", () => { if (mode === "practice" ? P : steps.length) show(); });
   $("next").addEventListener("click", () => { at = at === steps.length - 1 ? 0 : at + 1; play = at > 0; show(); });
@@ -1403,7 +1405,7 @@ window.I18N_PAGE = {
  "~Multiply equation ① by (.+) and equation ② by (.+) so the (.+)'s are opposites\\.": "Multiplie l’équation ① par $1 et l’équation ② par $2 pour que les $3 soient opposés.",
  "~The (.+)'s are already opposites\\.": "Les $1 sont déjà opposés.",
  "Your step": "Ton étape",
- "Type a whole number in each box. 1 means leave that equation as it is.": "Tape un nombre entier dans chaque case. 1 veut dire laisser l’équation telle quelle.",
+ "Type a whole number in each box. 1 (or blank) means leave that equation as it is.": "Tape un nombre entier dans chaque case. 1 (ou vide) veut dire laisser l’équation telle quelle.",
  "~That gives (.+)\\. Those are the same, not opposites\\. Make one of them negative\\.": "Ça donne $1. Ils sont pareils, pas opposés. Rends-en un négatif.",
  "~That gives (.+)\\. Make the x's or the y's opposites, like 6y and −6y\\.": "Ça donne $1. Rends les x ou les y opposés, comme 6y et −6y.",
  "Type an equation, like 2x + 3y = 12.": "Tape une équation, comme 2x + 3y = 12.",
