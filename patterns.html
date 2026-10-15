@@ -422,7 +422,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     for (const k of [1, 2, 3, 4]) $("c" + k).hidden = locked || k !== s;
     renderAll();
   }
-  function renderAll() { renderPanel(); renderTable(); drawPattern(); drawGraph(); stepTicks(); }
+  function renderAll() {
+    // The shortcut step shows the groups in the picture: n groups of the jump.
+    if (step === 3 && P.tiles && !S.groupsOn) { S.groupsOn = true; $("showGroups").checked = true; } renderPanel(); renderTable(); drawPattern(); drawGraph(); stepTicks(); }
   function stepTicks() {
     for (const b of $("step").children) {
       const k = +b.dataset.v; let t = b.querySelector(".tick");
@@ -447,14 +449,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Step 3 has two parts: multiply by the jump, then find what to add.
     $("say3").innerHTML = !S.timesDone
       ? `Times each <b class="p">term number</b> by the jump, <b class="g">${m}</b>.`
-      : !S.done[3] ? `It goes up <b class="g">${m}</b> each time. So <b class="g">times ${m}</b>! What do you add to get the value? Fill the <b class="o">orange</b> boxes.`
+      : !S.done[3] ? `Each term adds a group of <b class="g">${m}</b>. Term 3 has 3 groups of ${m}. Groups of ${m} means <b class="g">times ${m}</b>! What do you add to get the value? Fill the <b class="o">orange</b> boxes.`
       : `Every row: times <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}. Look at row <b class="p">n</b>!`;
     $("chk3").hidden = $("row3").hidden = S.done[3];
     $("hWhy").textContent = `Why × ${m}?`;
     $("hWhy").setAttribute("aria-pressed", String(S.hint === "why"));
     $("hZero").setAttribute("aria-pressed", String(S.hint === "zero"));
     $("hintT").innerHTML = S.hint === "why"
-      ? (P.tiles ? `Term 1 has 1 group of <b class="g">${m}</b>. Term 2 has 2 groups. Term 3 has 3 groups.`
+      ? (P.tiles ? `Term 1 has 1 group of <b class="g">${m}</b>. Term 2 has 2 groups of ${m}. Term n has n groups of ${m}. Groups of ${m} is n × ${m}.`
                  : `It goes up ${m} each time. So times by ${m}.`)
       : S.hint === "zero" ? `Go back one: ${P.vals[0]} − ${m} = <b class="o">${fmt(P.vals[0] - m)}</b>. That is term 0.`
       : "";
@@ -492,7 +494,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const place = (e, r, c) => { e.style.gridRow = r; e.style.gridColumn = c; tbl.appendChild(e); return e; };
     cols.forEach((c, ci) => {
       const th = hd("div", "th" + (c === "jump" || c === "lbl" || c === "okc" ? " empty" : ""));
-      th.innerHTML = c === "times" ? `Times <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
+      th.innerHTML = c === "times" ? `Groups of <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
       place(th, 1, ci + 1);
     });
     const input = (key, cls) => {
@@ -770,7 +772,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         if (mode === "groups") {
           const t = el("text", { x: mid, y: base + 45, class: "fsum" }, svg);
           if (n > 0) el("tspan", { style: "fill: var(--green)" }, t).textContent = `${n} × ${m}`;
-          if (b) el("tspan", { style: "fill: var(--orange)" }, t).textContent = n > 0 ? signed(b) : fmt(b);
+          if (b && (S.done[3] || step !== 3)) el("tspan", { style: "fill: var(--orange)" }, t).textContent = n > 0 ? signed(b) : fmt(b);  // keep the answer hidden while step 3 asks for it
         }
         x += w + GAP * s;
         if (mode === "new" && fi < terms.length - 1) jumpText(x - GAP * s / 2, base - rows * s / 2 + 7);
