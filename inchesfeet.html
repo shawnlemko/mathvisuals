@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Inches, Feet and Yards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Inches, Feet and Yards (grade 9-10, Shawn 2026-10-15).
+   Every inch is a small block. 12 blocks in a row make a 1 ft bar (blue); 3 foot bars make a yard (green outline).
+   Leftover inches are orange, with the empty spots of their row dashed, so "not a full foot yet" shows.
+   Decimal feet: the part of a foot is shaded, then split into 12 inches and into equal parts (halves or quarters),
+   so 0.75 ft = 3/4 of 12 in = 9 in. Five kinds of question, in both directions.
+   Work is written down the board with = lined up and step names in a right column. Never the ÷ sign.
+   Learn: Next step reveals one step at a time. Practice: typed answers, Check, Hint, Show me. */
+.main { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 12px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.cases { display: flex; flex-direction: column; width: 100%; }
+.cases button { text-align: left; font-size: 1.02rem; min-height: 42px; }
+.cases button + button { border-left: 0; border-top: 2px solid var(--grid-major); }
+.cases button .num { display: inline-block; width: 1.6em; font-family: var(--font-num); }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.say { font-size: 1.25rem; margin: 0; min-height: 3.2em; line-height: 1.5; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+#own, #ans { display: inline-flex; flex-wrap: wrap; gap: 8px 14px; }
+.fld { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
+.fld input { font: inherit; font-size: 1.6rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 54px; width: 3.2ch; text-align: center; padding: 0 2px; }
+.fld input.wide { width: 4.6ch; }
+.fld input.bad { border-color: var(--warn); }
+.fld input.ok { border-color: var(--green); color: var(--green); }
+.fld .u-yd { color: var(--green); } .fld .u-ft { color: var(--pt); } .fld .u-in { color: var(--orange); }
+.fb { margin: 8px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.4em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.05rem; color: var(--muted); margin: 10px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+
+/* Board */
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.tx.b { fill: var(--pt); } .tx.o { fill: var(--orange); } .tx.g { fill: var(--green); } .tx.op, .tx.q { fill: var(--muted); }
+.tx.m { fill: var(--muted); font-weight: 500; }
+.bar { stroke: var(--ink); stroke-linecap: round; }
+.bar.b { stroke: var(--pt); } .bar.o { stroke: var(--orange); }
+.qbox { fill: none; stroke: var(--grid-major); stroke-width: 3; stroke-dasharray: 7 5; }
+.eqs { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.sname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.sname.now { fill: var(--ink); }
+.blk { stroke: var(--sheet); stroke-width: 2; }
+.blk.g0 { fill: var(--chip); stroke: var(--grid-major); }
+.blk.ft { fill: var(--pt); }
+.blk.in { fill: var(--orange); }
+.empty { fill: none; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 5 4; }
+.shade { fill: var(--orange); }
+.yard { fill: none; stroke: var(--green); stroke-width: 4; }
+.div { stroke: var(--ink); stroke-width: 5; stroke-linecap: round; }
+.lit { animation: lit 0.5s ease-out both; }
+.blk.ft.lit { animation-name: litft; } .blk.in.lit { animation-name: litin; }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+.fade { animation: fade 0.5s ease-out both; }
+@keyframes litft { from { fill: var(--chip); } }
+@keyframes litin { from { fill: var(--chip); } }
+@keyframes lit { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .lit, .pop, .fade { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Inches, Feet and Yards</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Inch blocks grouped into feet and yards, with the work written step by step."></svg></div>
+
+    <div class="panel" id="learn">
+      <section class="card">
+        <div class="seg-btns cases" role="group" aria-label="Kind of question" id="cases"></div>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+        <button type="button" id="rand">New example</button>
+      </div>
+      <section class="card">
+        <p class="label">Try your own</p>
+        <div class="row"><span id="own"></span><div class="btns"><button type="button" id="ownGo">Show</button></div></div>
+        <p class="fb" id="ownFb" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <div class="seg-btns cases" role="group" aria-label="Kind of question" id="pcases"></div>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card">
+        <p class="label">Your answer</p>
+        <div class="row">
+          <span id="ans"></span>
+          <div class="btns"><button type="button" class="go" id="check">Check</button><button type="button" id="newq">New question</button></div>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const dec = x => String(+x.toFixed(2)); // 1.75, 2.5
+  const pl = (v, one, many) => v === 1 ? one : many;
+
+  // ---------- questions ----------
+  // A question is a kind (1 to 5) and the whole length in inches. Everything else comes from that.
+  const KINDS = [
+    { k: 1, name: "Inches to feet and inches" },
+    { k: 2, name: "Inches to yards, feet and inches" },
+    { k: 3, name: "Decimal feet to feet and inches" },
+    { k: 4, name: "Feet and inches to inches" },
+    { k: 5, name: "Feet and inches to decimal feet" },
+  ];
+  const EXAMPLES = { 1: 70, 2: 70, 3: 21, 4: 70, 5: 21 };
+  function facts(q) {
+    const n = q.n, F = Math.floor(n / 12), R = n % 12, Y = Math.floor(F / 3), Fy = F % 3;
+    const parts = R === 6 ? 2 : 4, a = R / (12 / parts); // 9 in = 3 of 4 parts
+    return { n, F, R, Y, Fy, parts, a, p: dec(R / 12), D: dec(n / 12) };
+  }
+  function gen(k, prev) {
+    for (let t = 0; t < 60; t++) {
+      let n;
+      if (k === 1) n = ri(14, 100);
+      else if (k === 2) n = ri(40, 130);
+      else if (k === 3 || k === 5) n = ri(1, 6) * 12 + 3 * ri(1, 3);
+      else n = ri(1, 8) * 12 + ri(1, 11);
+      if (n % 12 === 0 || (prev && prev.n === n)) continue;
+      if (k === 2 && Math.floor(n / 12) % 3 === 0 && Math.random() < 0.7) continue; // usually some feet left over
+      return { k, n };
+    }
+    return { k, n: EXAMPLES[k] };
+  }
+
+  // ---------- words and work ----------
+  // The answer each kind asks for: [value, unit, color]. b = feet (blue), o = leftover inches (orange), g = yards (green).
+  function answerOf(q) {
+    const f = facts(q);
+    if (q.k === 1) return [[f.F, "ft", "b"], [f.R, "in", "o"]];
+    if (q.k === 2) return [[f.Y, "yd", "g"], [f.Fy, "ft", "b"], [f.R, "in", "o"]];
+    if (q.k === 3) return [[f.F, "ft", "b"], [f.R, "in", "o"]];
+    if (q.k === 4) return [[f.n, "in", ""]];
+    return [[f.D, "ft", ""]];
+  }
+  function startOf(q) {
+    const f = facts(q);
+    if (q.k <= 2) return [[f.n, "in", ""]];
+    if (q.k === 3) return [[f.D, "ft", ""]];
+    return [[f.F, "ft", "b"], [f.R, "in", "o"]];
+  }
+  // Lines of work after the first "=". Items: [value, unit, color], "+" or "×", or {fr: [top, bottom], u, c}.
+  function workOf(q) {
+    const f = facts(q);
+    if (q.k === 1) return [
+      { items: [[f.F * 12, "in", "b"], "+", [f.R, "in", "o"]], name: `${f.F} × 12 = ${f.F * 12}` },
+      { items: answerOf(q), name: "Answer" },
+    ];
+    if (q.k === 2) return [
+      { items: [[f.F, "ft", "b"], [f.R, "in", "o"]], name: "Groups of 12" },
+      { items: [[f.Y * 3, "ft", "g"], "+", [f.Fy, "ft", "b"], "+", [f.R, "in", "o"]], name: "Groups of 3" },
+      { items: answerOf(q), name: "Answer" },
+    ];
+    if (q.k === 3) return [
+      { items: [[f.F, "ft", "b"], "+", [f.p, "ft", "o"]], name: "Whole + part" },
+      { items: [[f.F, "ft", "b"], "+", [f.p, "", "o"], "×", [12, "in", "o"]], name: "1 ft = 12 in" },
+      { items: [[f.F, "ft", "b"], "+", [f.R, "in", "o"]], name: `${f.p} × 12 = ${f.R}` },
+      { items: answerOf(q), name: "Answer" },
+    ];
+    if (q.k === 4) return [
+      { items: [[f.F, "", "b"], "×", [12, "in", "b"], "+", [f.R, "in", "o"]], name: "1 ft = 12 in" },
+      { items: [[f.F * 12, "in", "b"], "+", [f.R, "in", "o"]], name: `${f.F} × 12 = ${f.F * 12}` },
+      { items: answerOf(q), name: "Add" },
+    ];
+    return [
+      { items: [[f.F, "ft", "b"], "+", { fr: [f.R, 12], u: "ft", c: "o" }], name: "12 in = 1 ft" },
+      { items: [[f.F, "ft", "b"], "+", { fr: [f.a, f.parts], u: "ft", c: "o" }], name: "Simplify" },
+      { items: [[f.F, "ft", "b"], "+", [f.p, "ft", "o"]], name: "Decimal" },
+      { items: answerOf(q), name: "Answer" },
+    ];
+  }
+  const money = { "0.25": "Like 1 quarter is 25 cents.", "0.5": "Like half a dollar is 50 cents.", "0.75": "Like 3 quarters is 75 cents." };
+  // Steps: v = what the blocks show, w = how many work lines, say = the words.
+  // v: feet (rows turn blue), left (leftover turns orange), counts (12, 24, ... beside the rows),
+  //    yards (groups of 3 rows), cells (the part of a foot split into 12 inches), parts (halves or quarters),
+  //    plabel (label beside the part of a foot), total (the total beside the last row), done (answer in the title).
+  function steps(q) {
+    const f = facts(q), S = [];
+    let v = {}, w = 0;
+    const add = (ch, dw, say) => { v = Object.assign({}, v, ch); w += dw; S.push({ v, w, say }); };
+    const inches = v => `${v} ${pl(v, "inch", "inches")}`, feet = v => `${v} ${pl(v, "foot", "feet")}`;
+    const leftSay = f.R ? `${inches(f.R)} ${pl(f.R, "is", "are")} left over. That is not enough for another foot.` : "No inches are left over.";
+    if (q.k === 1 || q.k === 2) {
+      add({}, 0, `Here are ${f.n} inches. Each block is 1 inch.`);
+      add({ feet: 1, counts: 1 }, 0, `12 inches make 1 foot. Each full row of 12 is 1 foot. There ${pl(f.F, "is", "are")} ${f.F} full ${pl(f.F, "row", "rows")}.`);
+      add({ left: 1 }, 0, leftSay);
+      if (q.k === 1) {
+        add({}, 1, `${f.F} groups of 12 is ${f.F * 12}. So ${f.n} = ${f.F * 12} + ${f.R}.`);
+        add({ done: 1 }, 1, `${f.n} in = ${f.F} ft ${f.R} in.`);
+      } else {
+        add({}, 1, `So ${f.n} in = ${f.F} ft ${f.R} in.`);
+        add({ yards: 1 }, 0, `3 feet make 1 yard. There ${pl(f.Y, "is", "are")} ${f.Y} ${pl(f.Y, "group", "groups")} of 3 feet. ` + (f.Fy ? `${feet(f.Fy)} ${pl(f.Fy, "is", "are")} left over.` : "No feet are left over."));
+        add({}, 1, `Split ${f.F} ft into ${f.Y * 3} ft + ${f.Fy} ft.`);
+        add({ done: 1 }, 1, `${f.Y * 3} ft is ${f.Y} yd. So ${f.n} in = ${f.Y} yd ${f.Fy} ft ${f.R} in.`);
+      }
+    } else if (q.k === 3) {
+      add({ plabel: `${f.p} ft` }, 0, `${f.D} ft is ${f.F} whole ${pl(f.F, "foot", "feet")} and ${f.p} of a foot.`);
+      add({}, 1, `Split ${f.D} into ${f.F} + ${f.p}.`);
+      add({ cells: 1 }, 1, `Every foot is 12 inches. Find ${f.p} of 12 inches.`);
+      add({ parts: 1, plabel: `${f.R} in` }, 1, f.parts === 2
+        ? `0.5 is 1/2. Split the 12 inches into 2 equal parts of 6. Take 1 part: 6 inches.`
+        : `${f.p} is ${f.a}/4. Split the 12 inches into 4 equal parts of 3. Take ${f.a} ${pl(f.a, "part", "parts")}: ${f.R} inches.`);
+      add({ done: 1 }, 1, `${f.D} ft = ${f.F} ft ${f.R} in.`);
+    } else if (q.k === 4) {
+      add({}, 0, `This is ${feet(f.F)} and ${inches(f.R)}. How many inches in all?`);
+      const by12 = Array.from({ length: f.F }, (_, i) => 12 * (i + 1)).join(", ");
+      add({ counts: 1 }, 1, `Each foot is 12 inches. Count by 12: ${by12}.`);
+      add({}, 1, `${feet(f.F)} is ${f.F * 12} inches.`);
+      add({ total: 1, done: 1 }, 1, `Add the leftover inches: ${f.F * 12} + ${f.R} = ${f.n}. So ${f.F} ft ${f.R} in = ${f.n} in.`);
+    } else {
+      add({ plabel: `${f.R} in` }, 0, `This is ${feet(f.F)} and ${inches(f.R)}. Write it in feet only, as a decimal.`);
+      add({}, 1, `A foot has 12 inches. ${inches(f.R)} is ${f.R}/12 of a foot.`);
+      add({ parts: 1, plabel: `${f.a}/${f.parts} ft` }, 1, f.parts === 2
+        ? `Split the foot into 2 equal parts of 6 inches. 6 inches fills 1 of the 2 parts: 1/2.`
+        : `Split the foot into 4 equal parts of 3 inches. ${f.R} inches ${pl(f.a, "fills", "fill")} ${f.a} of the 4 parts: ${f.a}/4.`);
+      add({ plabel: `${f.p} ft` }, 1, `${f.a}/${f.parts} = ${f.p}. ${money[f.p]}`);
+      add({ done: 1 }, 1, `So ${f.F} ft ${f.R} in = ${f.D} ft.`);
+    }
+    return S;
+  }
+
+  // ---------- layout: text, fractions and rows that know their size ----------
+  const CW = 0.62; // character width of the number font, in em
+  const FS = 36, TFS = 46; // work lines, title
+  function T(s, fs, cls) {
+    s = String(s);
+    return { w: s.length * CW * fs, up: fs * 0.5, dn: fs * 0.5,
+      draw(g, x, y) { E("text", { x: x + this.w / 2, y: y + fs * 0.36, class: "tx " + (cls || ""), "text-anchor": "middle", "font-size": fs }, g, s); } };
+  }
+  function R(items, sp) {
+    const w = items.reduce((t, i) => t + i.w, 0) + sp * (items.length - 1);
+    return { w, up: Math.max(...items.map(i => i.up)), dn: Math.max(...items.map(i => i.dn)),
+      draw(g, x, y) { for (const i of items) { i.draw(g, x, y); x += i.w + sp; } } };
+  }
+  function Fr(a, b, fs, cls) {
+    const t = T(a, fs * 0.8, cls), d = T(b, fs * 0.8, cls), pad = fs * 0.15, gap = fs * 0.14;
+    const w = Math.max(t.w, d.w) + 2 * pad;
+    return { w, up: t.up + t.dn + gap, dn: d.up + d.dn + gap,
+      draw(g, x, y) {
+        E("line", { x1: x, x2: x + w, y1: y, y2: y, class: "bar " + (cls || ""), "stroke-width": 4 }, g);
+        t.draw(g, x + (w - t.w) / 2, y - gap - t.dn);
+        d.draw(g, x + (w - d.w) / 2, y + gap + d.up);
+      } };
+  }
+  function QBox(fs) { // a dashed box with ? for an unknown in the title
+    const w = fs * 1.2;
+    return { w, up: fs * 0.6, dn: fs * 0.6,
+      draw(g, x, y) { E("rect", { x, y: y - fs * 0.6, width: w, height: fs * 1.2, rx: 8, class: "qbox" }, g); T("?", fs, "q").draw(g, x + (w - CW * fs) / 2, y); } };
+  }
+  function node(it, fs, unknown) {
+    if (typeof it === "string") return T(it, fs, "op");
+    if (it.fr) return R([Fr(it.fr[0], it.fr[1], fs, it.c), T(it.u, fs, it.c)], fs * 0.25);
+    const [v, u, c] = it;
+    const num = unknown ? QBox(fs) : T(v, fs, c);
+    return u ? R([num, T(u, fs, c)], fs * 0.25) : num;
+  }
+  // Quantities written side by side (5 ft 10 in) sit closer than quantities joined by + or ×.
+  const line = (items, fs, unknown) => R(items.map(it => node(it, fs, unknown)), fs * 0.45);
+
+  // ---------- drawing ----------
+  const C = 36, P = 48, RX = 200, YGAP = 16; // block size, row pitch, left of the rows, extra gap between yards
+  const LBX = RX + 12 * C + 22, CTX = LBX + 118; // row label, running count
+  function rowsOf(q) {
+    const f = facts(q), rows = [];
+    for (let i = 0; i < f.F; i++) rows.push({ kind: "full" });
+    if (f.R) rows.push({ kind: q.k === 3 || q.k === 5 ? "part" : "left", r: f.R });
+    return rows;
+  }
+
+  let timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+
+  // Draws question q at step i. anim: animate what this step adds. hint: extra things to show (Practice).
+  function render(q, i, anim, hint) {
+    svg.innerHTML = "";
+    const S = steps(q), f = facts(q);
+    const v = hint ? Object.assign({}, S[0].v, hint) : S[i].v;
+    const w = hint ? 0 : S[i].w;
+    const was = anim && i > 0 ? S[i - 1].v : v;
+    const isNew = k => anim && v[k] && !was[k];
+    const W = 1000;
+
+    // Title: the question, with ? boxes until the answer is found.
+    const title = R([line(startOf(q), TFS), T("=", TFS, "op"), line(answerOf(q), TFS, !v.done)], TFS * 0.45);
+    const tg = E("g", { class: isNew("done") ? "pop" : "" });
+    title.draw(tg, (W - title.w) / 2, 50);
+
+    // The blocks.
+    const rows = rowsOf(q), Y0 = 112;
+    const yOf = r => Y0 + r * P + (q.k === 2 ? Math.floor(r / 3) * YGAP : 0);
+    let feetLit = 0;
+    rows.forEach((row, r) => {
+      const y = yOf(r), g = E("g", {});
+      const cell = (j, cls, delay) => {
+        const b = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "blk " + cls }, g);
+        if (delay != null) { b.classList.add("lit"); b.style.animationDelay = delay + "ms"; }
+      };
+      const label = (s, cls, x, delay, anchor) => {
+        const t = E("text", { x: x || LBX, y: y + C / 2 + 10, class: "tx " + cls, "font-size": 28, "text-anchor": anchor || "start" }, g, s);
+        if (delay != null) { t.classList.add("lit"); t.style.animationDelay = delay + "ms"; }
+      };
+      if (row.kind === "full") {
+        const blue = q.k >= 3 || v.feet, d = isNew("feet") ? feetLit++ * 260 : null;
+        for (let j = 0; j < 12; j++) cell(j, blue ? "ft" : "g0", d);
+        if (blue) label("1 ft", "b", null, d);
+        if (v.counts) label(`${12 * (r + 1)} in`, "m", CTX, isNew("counts") ? (q.k <= 2 ? d : r * 260) : null);
+      } else if (row.kind === "left") {
+        const orange = q.k === 4 || v.left, d = isNew("left") ? 0 : null;
+        for (let j = 0; j < 12; j++) {
+          if (j < row.r) cell(j, orange ? "in" : "g0", d);
+          else if (orange) { const e = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "empty" }, g); if (d != null) e.classList.add("fade"); }
+        }
+        if (orange) label(`${row.r} in`, "o", null, d);
+        if (v.total) label(`${f.n} in`, "", CTX, isNew("total") ? 0 : null);
+      } else {
+        // Part of a foot: a dashed foot outline. Kind 3 starts as a plain shaded length; kind 5 starts in inches.
+        const cells = q.k === 5 || v.cells, dc = isNew("cells") ? 0 : null;
+        if (!cells) {
+          E("rect", { x: RX + 2, y: y + 2, width: 12 * C - 4, height: C - 4, rx: 5, class: "empty" }, g);
+          E("rect", { x: RX + 2, y: y + 2, width: row.r * C - 4, height: C - 4, rx: 5, class: "shade" }, g);
+        } else {
+          for (let j = 0; j < 12; j++) {
+            if (j < row.r) cell(j, "in", dc);
+            else { const e = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "empty" }, g); if (dc != null) e.classList.add("fade"); }
+          }
+        }
+        if (v.parts) {
+          const step = 12 / f.parts;
+          for (let m = 1; m < f.parts; m++) {
+            const x = RX + m * step * C;
+            const l = E("line", { x1: x, x2: x, y1: y - 9, y2: y + C + 9, class: "div" }, g);
+            if (isNew("parts")) { l.classList.add("lit"); l.style.animationDelay = m * 250 + "ms"; }
+          }
+        }
+        if (v.plabel) {
+          const t = E("text", { x: LBX, y: y + C / 2 + 10, class: "tx o", "font-size": 28 }, g, v.plabel);
+          if (anim && v.plabel !== was.plabel) t.classList.add("pop");
+        }
+      }
+    });
+    // Yards: each group of 3 full rows gets a green outline and "1 yd".
+    if (v.yards) {
+      for (let y = 0; y < f.Y; y++) {
+        const top = yOf(3 * y) - 7, bot = yOf(3 * y + 2) + C + 7;
+        const g = E("g", { class: isNew("yards") ? "lit" : "" });
+        if (isNew("yards")) g.style.animationDelay = y * 400 + "ms";
+        E("rect", { x: RX - 8, y: top, width: 12 * C + 16, height: bot - top, rx: 10, class: "yard" }, g);
+        E("text", { x: RX - 22, y: (top + bot) / 2 + 11, class: "tx g", "font-size": 32, "text-anchor": "end" }, g, "1 yd");
+      }
+    }
+    const rowsBottom = rows.length ? yOf(rows.length - 1) + C : Y0;
+
+    // The work: = lined up, step names in a right column. Places are fixed so lines never jump.
+    const L = workOf(q), start = line(startOf(q), FS);
+    const EQX = 40 + start.w + 30, RHS = EQX + 32;
+    const nodes = L.map(l => line(l.items, FS));
+    const NX = Math.max(...nodes.map(n => RHS + n.w)) + 44;
+    let y = rowsBottom + 44; const ys = [];
+    nodes.forEach((n, k) => { y += n.up + (k ? 16 : 0); ys.push(y); y += n.dn; });
+    const H = Math.max(480, y + 24), VW = Math.max(W, NX + 250);
+    svg.setAttribute("viewBox", `0 0 ${VW} ${H}`);
+    for (let k = 0; k < w; k++) {
+      const g = E("g", { class: anim && k === w - 1 && w > (i > 0 ? S[i - 1].w : 0) ? "pop" : "" });
+      if (k === 0) start.draw(g, EQX - 30 - start.w, ys[0]);
+      E("text", { x: EQX, y: ys[k] + FS * 0.36, class: "eqs", "text-anchor": "middle", "font-size": FS }, g, "=");
+      nodes[k].draw(g, RHS, ys[k]);
+      E("text", { x: NX, y: ys[k] + 10, class: "sname" + (k === w - 1 ? " now" : ""), "font-size": 28 }, g, L[k].name);
+    }
+  }
+
+  // ---------- typing boxes ----------
+  // fields: [unit, wide?]. Returns the inputs.
+  function fields(box, units, wide, label) {
+    box.innerHTML = "";
+    return units.map(u => {
+      const l = document.createElement("label"); l.className = "fld";
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.autocomplete = "off"; inp.inputMode = wide ? "decimal" : "numeric";
+      if (wide) inp.className = "wide";
+      inp.setAttribute("aria-label", `${label} (${u})`);
+      const s = document.createElement("span"); s.className = "u-" + u; s.textContent = u;
+      l.append(inp, s); box.append(l);
+      return inp;
+    });
+  }
+  const whole = s => /^\d+$/.test(s.trim()) ? +s.trim() : null;
+
+  // ---------- Learn ----------
+  function caseButtons(box, attr, mixed) {
+    box.innerHTML = KINDS.map(c => `<button type="button" data-${attr}="${c.k}"><span class="num">${c.k}</span>${c.name}</button>`).join("")
+      + (mixed ? `<button type="button" data-${attr}="mix"><span class="num">★</span>Mixed</button>` : "");
+  }
+  caseButtons($("#cases"), "case"); caseButtons($("#pcases"), "pcase", true);
+
+  let mode = "learn", lq = { k: 1, n: EXAMPLES[1] }, step = 0, ownIn = [];
+  // Your own number: what to type for each kind, and how it becomes inches.
+  const OWN = {
+    1: { units: ["in"], read: ([i]) => { const n = whole(i); return n >= 12 && n <= 130 ? n : null; }, msg: "Type whole inches from 12 to 130." },
+    2: { units: ["in"], read: ([i]) => { const n = whole(i); return n >= 36 && n <= 130 ? n : null; }, msg: "Type whole inches from 36 to 130." },
+    3: { units: ["ft"], wide: true, read: ([d]) => { const x = +d.trim(); if (!/^\d+(\.\d+)?$/.test(d.trim()) || x < 1 || x > 10) return null; const n = x * 12; return Math.abs(n - Math.round(n)) < 1e-9 && Math.round(n) % 3 === 0 && Math.round(n) % 12 ? Math.round(n) : null; }, msg: "Type feet like 1.5 or 2.75, from 1 to 10." },
+    4: { units: ["ft", "in"], read: ([a, b]) => { const F = whole(a), I = whole(b); return F >= 1 && F <= 10 && I >= 1 && I <= 11 ? F * 12 + I : null; }, msg: "Type feet from 1 to 10 and inches from 1 to 11." },
+    5: { units: ["ft", "in"], read: ([a, b]) => { const F = whole(a), I = whole(b); return F >= 1 && F <= 9 && [3, 6, 9].includes(I) ? F * 12 + I : null; }, msg: "Type feet from 1 to 9 and inches 3, 6 or 9." },
+  };
+  function fillOwn() {
+    const o = OWN[lq.k], f = facts(lq);
+    ownIn = fields($("#own"), o.units, o.wide, "Your own number");
+    const vals = lq.k <= 2 ? [f.n] : lq.k === 3 ? [f.D] : [f.F, f.R];
+    ownIn.forEach((inp, j) => { inp.value = vals[j]; inp.addEventListener("keydown", e => { if (e.key === "Enter") useOwn(); }); });
+    $("#ownFb").textContent = "";
+  }
+  function useOwn() {
+    const n = OWN[lq.k].read(ownIn.map(i => i.value));
+    ownIn.forEach(i => i.classList.toggle("bad", n == null));
+    if (n == null) { $("#ownFb").className = "fb mid"; $("#ownFb").textContent = OWN[lq.k].msg; return; }
+    $("#ownFb").textContent = "";
+    lq = { k: lq.k, n }; step = 0; showLearn(false);
+  }
+  $("#ownGo").onclick = useOwn;
+
+  function showLearn(anim) {
+    const S = steps(lq);
+    render(lq, step, anim);
+    $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
+    $("#say").textContent = S[step].say;
+    $("#next").disabled = step >= S.length - 1;
+    $("#back").disabled = step === 0;
+  }
+  function setCase(k, fresh) {
+    document.querySelectorAll("[data-case]").forEach(b => b.classList.toggle("on", +b.dataset.case === k));
+    lq = fresh ? gen(k, lq) : { k, n: EXAMPLES[k] }; step = 0;
+    fillOwn(); showLearn(false);
+  }
+  $("#cases").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setCase(+b.dataset.case); });
+  $("#next").onclick = () => { if (step < steps(lq).length - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = () => { step = 0; showLearn(false); };
+  $("#rand").onclick = () => setCase(lq.k, true);
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  let pcase = "1", pq = null, tried = false, solved = false, right = 0, total = 0, ans = [];
+  const fb = $("#fb");
+  function feedback(text, cls) { fb.className = "fb " + (cls || ""); fb.textContent = text; }
+  function newQuestion() {
+    clearTimers();
+    const k = pcase === "mix" ? ri(1, 5) : +pcase;
+    pq = gen(k, pq && pq.k === k ? pq : null); tried = false; solved = false;
+    ans = fields($("#ans"), answerOf(pq).map(a => a[1]), k === 5, "Your answer");
+    ans.forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
+    feedback("");
+    render(pq, 0, false);
+    ans[0].focus({ preventScroll: true });
+  }
+  function count(ok) { if (!tried) { tried = true; total++; if (ok) right++; $("#right").textContent = right; $("#total").textContent = total; } }
+  function mark(cls) { ans.forEach(i => i.className = (pq.k === 5 ? "wide " : "") + cls); }
+  // A mistake students often make, for each kind, so the feedback can name it.
+  function mistake(q, got) {
+    const f = facts(q);
+    if (q.k === 1 || q.k === 3) {
+      const [F, I] = got;
+      if (q.k === 1 && F * 12 + I === f.n && I >= 12) return "Same length, but 12 or more inches make another foot.";
+      if (q.k === 1 && F === Math.floor(f.n / 10) && I === f.n % 10) return "Not yet. A foot is 12 inches, not 10.";
+      if (q.k === 3 && F === f.F && (I === Math.round(f.R / 12 * 100) || I === Math.round(f.R / 12 * 10) || I === Math.floor(f.R / 12 * 10))) return `Not yet. ${f.p} ft is not ${I} inches. Find ${f.p} of 12 inches.`;
+    }
+    if (q.k === 2) {
+      const [Y, F, I] = got;
+      if (Y * 36 + F * 12 + I === f.n) return F >= 3 ? "Same length, but 3 feet make another yard." : "Same length, but 12 or more inches make another foot.";
+      if (Y === 0 && F === f.F && I === f.R) return "Those are feet and inches. Now group the feet by 3 to make yards.";
+    }
+    if (q.k === 4) {
+      const [N] = got;
+      if (N === f.F * 10 + f.R || N === f.F * 100 + f.R) return "Not yet. Each foot is 12 inches, not 10.";
+      if (N === f.F * 12) return "Not yet. Add the leftover inches too.";
+    }
+    if (q.k === 5) {
+      const [D] = got;
+      if (Math.abs(D - (f.F + f.R / 10)) < 1e-9 || Math.abs(D - (f.F + f.R / 100)) < 1e-9) return `Not yet. ${f.R} inches is not 0.${f.R} of a foot. A foot has 12 inches.`;
+    }
+    return "Not yet. Try a Hint.";
+  }
+  function check() {
+    if (solved) return;
+    const raw = ans.map(i => i.value.trim());
+    if (raw.every(s => s === "")) { feedback("Type your answer in the boxes.", "mid"); return; }
+    let got;
+    if (pq.k === 5) {
+      if (!/^\d*\.?\d+$/.test(raw[0])) { feedback("Type a decimal, like 2.5.", "mid"); return; }
+      got = [+raw[0]];
+    } else {
+      if (raw.some(s => s !== "" && !/^\d+$/.test(s))) { feedback("Type whole numbers.", "mid"); return; }
+      got = raw.map(s => s === "" ? 0 : +s); // an empty box counts as 0
+    }
+    const want = answerOf(pq).map(a => +a[0]);
+    if (got.every((g, j) => Math.abs(g - want[j]) < 1e-9)) {
+      count(true); solved = true; mark("ok");
+      feedback("Correct!", "ok");
+      render(pq, steps(pq).length - 1, false);
+      return;
+    }
+    count(false); mark("bad");
+    feedback(mistake(pq, got), "no");
+  }
+  $("#check").onclick = check;
+  $("#newq").onclick = newQuestion;
+  const HINTS = {
+    1: [{ feet: 1, left: 1, counts: 1 }, () => "Make groups of 12. Each full row is 1 foot. The orange blocks are left over."],
+    2: [{ feet: 1, left: 1, counts: 1, yards: 1 }, () => "Make groups of 12 for feet. Then group the feet by 3 for yards."],
+    3: [{ cells: 1, parts: 1 }, f => `${f.p} of a foot. Count the orange inches.`],
+    4: [{ counts: 1 }, () => "Each foot is 12 inches. Count by 12, then add the leftover inches."],
+    5: [{ parts: 1 }, f => `${f.R} inches out of 12 is ${f.R}/12 of a foot. Simplify, then write it as a decimal.`],
+  };
+  $("#hint").onclick = () => {
+    if (solved) return;
+    const [show, words] = HINTS[pq.k];
+    render(pq, 0, false, show);
+    feedback(words(facts(pq)), "mid");
+  };
+  $("#showme").onclick = () => {
+    if (solved) return;
+    count(false); solved = true; clearTimers();
+    const S = steps(pq);
+    let k = 0;
+    feedback("");
+    const play = () => {
+      render(pq, k, true);
+      feedback(S[k].say, "mid");
+      if (k < S.length - 1) { k++; later(play, 2200); }
+      else { answerOf(pq).forEach((a, j) => ans[j].value = a[0]); mark("ok"); }
+    };
+    play();
+  };
+  $("#pcases").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    pcase = b.dataset.pcase;
+    document.querySelectorAll("[data-pcase]").forEach(x => x.classList.toggle("on", x === b));
+    newQuestion();
+  });
+  document.querySelector('[data-pcase="1"]').classList.add("on");
+
+  function setMode(m) {
+    mode = m; clearTimers();
+    document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false); else newQuestion();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  setCase(1);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Inches, Feet and Yards (inchesfeet.html). Canadian units: pouce (po), pied (pi), verge (vg). */
+window.I18N_PAGE = {
+ "Inches, Feet and Yards": "Pouces, pieds et verges",
+ "Learn": "Apprendre",
+ "Mode": "Mode",
+ "Inch blocks grouped into feet and yards, with the work written step by step.": "Des blocs de pouces groupés en pieds et en verges, avec la démarche étape par étape.",
+ "Kind of question": "Type de question",
+ "{0}Inches to feet and inches": "{0}Pouces en pieds et pouces",
+ "{0}Inches to yards, feet and inches": "{0}Pouces en verges, pieds et pouces",
+ "{0}Decimal feet to feet and inches": "{0}Pieds décimaux en pieds et pouces",
+ "{0}Feet and inches to inches": "{0}Pieds et pouces en pouces",
+ "{0}Feet and inches to decimal feet": "{0}Pieds et pouces en pieds décimaux",
+ "{0}Mixed": "{0}Mélangé",
+ "Mixed": "Mélangé",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "New example": "Nouvel exemple",
+ "Try your own": "Essaie ton propre nombre",
+ "Your answer": "Ta réponse",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "Show me": "Montre-moi",
+ "~Your own number \\((\\w+)\\)": "Ton propre nombre ($1)",
+ "~Your answer \\((\\w+)\\)": "Ta réponse ($1)",
+
+ "in": "po",
+ "ft": "pi",
+ "yd": "vg",
+ "{n} in": "{n} po",
+ "{n} ft": "{n} pi",
+ "{n} yd": "{n} vg",
+ "{n}/{n} ft": "{n}/{n} pi",
+ "Groups of {n}": "Groupes de {n}",
+ "Whole + part": "Entier + partie",
+ "{n} ft = {n} in": "{n} pi = {n} po",
+ "{n} in = {n} ft": "{n} po = {n} pi",
+ "Simplify": "Simplifier",
+ "Decimal": "Décimal",
+ "Add": "Additionner",
+
+ "Here are {n} inches.": "Voici {n} pouces.",
+ "Each block is {n} inch.": "Chaque bloc vaut {n} pouce.",
+ "{n} inches make {n} foot.": "{n} pouces font {n} pied.",
+ "Each full row of {n} is {n} foot.": "Chaque rangée complète de {n} vaut {n} pied.",
+ "There are {n} full rows.": "Il y a {n} rangées complètes.",
+ "There is {n} full row.": "Il y a {n} rangée complète.",
+ "{n} inches are left over.": "Il reste {n} pouces.",
+ "{n} inch is left over.": "Il reste {n} pouce.",
+ "That is not enough for another foot.": "Ce n'est pas assez pour un autre pied.",
+ "No inches are left over.": "Il ne reste aucun pouce.",
+ "{n} groups of {n} is {n}.": "{n} groupes de {n} font {n}.",
+ "{n} group of {n} is {n}.": "{n} groupe de {n} fait {n}.",
+ "So {n} = {n} + {n}.": "Donc {n} = {n} + {n}.",
+ "{n} in = {n} ft {n} in.": "{n} po = {n} pi {n} po.",
+ "So {n} in = {n} ft {n} in.": "Donc {n} po = {n} pi {n} po.",
+ "{n} feet make {n} yard.": "{n} pieds font {n} verge.",
+ "There is {n} group of {n} feet.": "Il y a {n} groupe de {n} pieds.",
+ "There are {n} groups of {n} feet.": "Il y a {n} groupes de {n} pieds.",
+ "{n} feet are left over.": "Il reste {n} pieds.",
+ "{n} foot is left over.": "Il reste {n} pied.",
+ "No feet are left over.": "Il ne reste aucun pied.",
+ "Split {n} ft into {n} ft + {n} ft.": "Sépare {n} pi en {n} pi + {n} pi.",
+ "{n} ft is {n} yd.": "{n} pi font {n} vg.",
+ "So {n} in = {n} yd {n} ft {n} in.": "Donc {n} po = {n} vg {n} pi {n} po.",
+ "{n} ft is {n} whole foot and {n} of a foot.": "{n} pi, c'est {n} pied entier et {n} d'un pied.",
+ "{n} ft is {n} whole feet and {n} of a foot.": "{n} pi, c'est {n} pieds entiers et {n} d'un pied.",
+ "Split {n} into {n} + {n}.": "Sépare {n} en {n} + {n}.",
+ "Every foot is {n} inches.": "Chaque pied vaut {n} pouces.",
+ "Find {n} of {n} inches.": "Trouve {n} de {n} pouces.",
+ "{n} is {n}/{n}.": "{n}, c'est {n}/{n}.",
+ "Split the {n} inches into {n} equal parts of {n}.": "Sépare les {n} pouces en {n} parties égales de {n}.",
+ "Take {n} part: {n} inches.": "Prends {n} partie : {n} pouces.",
+ "Take {n} parts: {n} inches.": "Prends {n} parties : {n} pouces.",
+ "{n} ft = {n} ft {n} in.": "{n} pi = {n} pi {n} po.",
+ "This is {n} feet and {n} inches.": "Voici {n} pieds et {n} pouces.",
+ "This is {n} foot and {n} inches.": "Voici {n} pied et {n} pouces.",
+ "This is {n} feet and {n} inch.": "Voici {n} pieds et {n} pouce.",
+ "This is {n} foot and {n} inch.": "Voici {n} pied et {n} pouce.",
+ "How many inches in all?": "Combien de pouces en tout?",
+ "Each foot is {n} inches.": "Chaque pied vaut {n} pouces.",
+ "~Count by 12: ([\\d, ]+)\\.": "Compte par 12 : $1.",
+ "{n} feet is {n} inches.": "{n} pieds font {n} pouces.",
+ "{n} foot is {n} inches.": "{n} pied fait {n} pouces.",
+ "Add the leftover inches: {n} + {n} = {n}.": "Additionne les pouces qui restent : {n} + {n} = {n}.",
+ "So {n} ft {n} in = {n} in.": "Donc {n} pi {n} po = {n} po.",
+ "Write it in feet only, as a decimal.": "Écris-le seulement en pieds, en nombre décimal.",
+ "A foot has {n} inches.": "Un pied a {n} pouces.",
+ "{n} inches is {n}/{n} of a foot.": "{n} pouces, c'est {n}/{n} d'un pied.",
+ "Split the foot into {n} equal parts of {n} inches.": "Sépare le pied en {n} parties égales de {n} pouces.",
+ "{n} inches fills {n} of the {n} parts: {n}/{n}.": "{n} pouces remplissent {n} des {n} parties : {n}/{n}.",
+ "{n} inches fill {n} of the {n} parts: {n}/{n}.": "{n} pouces remplissent {n} des {n} parties : {n}/{n}.",
+ "Like {n} quarter is {n} cents.": "Comme {n} pièce de 25 ¢ vaut {n} cents.",
+ "Like {n} quarters is {n} cents.": "Comme {n} pièces de 25 ¢ valent {n} cents.",
+ "~(\\d+/\\d+ = [\\d.]+)\\. (.+)": "$1. $2",
+ "Like half a dollar is {n} cents.": "Comme un demi-dollar vaut {n} cents.",
+ "So {n} ft {n} in = {n} ft.": "Donc {n} pi {n} po = {n} pi.",
+
+ "Type your answer in the boxes.": "Écris ta réponse dans les cases.",
+ "Type a decimal, like {n}.": "Écris un nombre décimal, comme {n}.",
+ "Type whole numbers.": "Écris des nombres entiers.",
+ "Same length, but {n} or more inches make another foot.": "Même longueur, mais {n} pouces ou plus font un autre pied.",
+ "Same length, but {n} feet make another yard.": "Même longueur, mais {n} pieds font une autre verge.",
+ "Not yet.": "Pas encore.",
+ "A foot is {n} inches, not {n}.": "Un pied vaut {n} pouces, pas {n}.",
+ "{n} ft is not {n} inches.": "{n} pi, ce n'est pas {n} pouces.",
+ "Those are feet and inches.": "Ce sont des pieds et des pouces.",
+ "Now group the feet by {n} to make yards.": "Maintenant, groupe les pieds par {n} pour faire des verges.",
+ "Each foot is {n} inches, not {n}.": "Chaque pied vaut {n} pouces, pas {n}.",
+ "Add the leftover inches too.": "Additionne aussi les pouces qui restent.",
+ "{n} inches is not {n} of a foot.": "{n} pouces, ce n'est pas {n} d'un pied.",
+ "Try a Hint.": "Essaie un indice.",
+ "Make groups of {n}.": "Fais des groupes de {n}.",
+ "Each full row is {n} foot.": "Chaque rangée complète vaut {n} pied.",
+ "The orange blocks are left over.": "Les blocs orange sont ce qui reste.",
+ "Make groups of {n} for feet.": "Fais des groupes de {n} pour les pieds.",
+ "Then group the feet by {n} for yards.": "Ensuite, groupe les pieds par {n} pour les verges.",
+ "{n} of a foot.": "{n} d'un pied.",
+ "Count the orange inches.": "Compte les pouces orange.",
+ "Count by {n}, then add the leftover inches.": "Compte par {n}, puis additionne les pouces qui restent.",
+ "{n} inches out of {n} is {n}/{n} of a foot.": "{n} pouces sur {n}, c'est {n}/{n} d'un pied.",
+ "Simplify, then write it as a decimal.": "Simplifie, puis écris-le en nombre décimal.",
+ "Type whole inches from {n} to {n}.": "Écris des pouces entiers de {n} à {n}.",
+ "Type feet like {n} or {n}, from {n} to {n}.": "Écris des pieds comme {n} ou {n}, de {n} à {n}.",
+ "Type feet from {n} to {n} and inches from {n} to {n}.": "Écris des pieds de {n} à {n} et des pouces de {n} à {n}.",
+ "Type feet from {n} to {n} and inches {n}, {n} or {n}.": "Écris des pieds de {n} à {n} et des pouces {n}, {n} ou {n}.",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
