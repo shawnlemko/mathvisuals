@@ -422,7 +422,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     for (const k of [1, 2, 3, 4]) $("c" + k).hidden = locked || k !== s;
     renderAll();
   }
-  function renderAll() { renderPanel(); renderTable(); drawPattern(); drawGraph(); stepTicks(); }
+  function renderAll() {
+    // The shortcut step shows the groups in the picture: n groups of the jump.
+    if (step === 3 && P.tiles && !S.groupsOn) { S.groupsOn = true; $("showGroups").checked = true; } renderPanel(); renderTable(); drawPattern(); drawGraph(); stepTicks(); }
   function stepTicks() {
     for (const b of $("step").children) {
       const k = +b.dataset.v; let t = b.querySelector(".tick");
@@ -447,14 +449,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // Step 3 has two parts: multiply by the jump, then find what to add.
     $("say3").innerHTML = !S.timesDone
       ? `Times each <b class="p">term number</b> by the jump, <b class="g">${m}</b>.`
-      : !S.done[3] ? `It goes up <b class="g">${m}</b> each time. So <b class="g">times ${m}</b>! What do you add to get the value? Fill the <b class="o">orange</b> boxes.`
+      : !S.done[3] ? `Each term adds a group of <b class="g">${m}</b>. Term 3 has 3 groups of ${m}. Groups of ${m} means <b class="g">times ${m}</b>! What do you add to get the value? Fill the <b class="o">orange</b> boxes.`
       : `Every row: times <b class="g">${m}</b>${b ? `, then ${b > 0 ? "add" : "take away"} <b class="o">${Math.abs(b)}</b>` : ""}. Look at row <b class="p">n</b>!`;
     $("chk3").hidden = $("row3").hidden = S.done[3];
     $("hWhy").textContent = `Why × ${m}?`;
     $("hWhy").setAttribute("aria-pressed", String(S.hint === "why"));
     $("hZero").setAttribute("aria-pressed", String(S.hint === "zero"));
     $("hintT").innerHTML = S.hint === "why"
-      ? (P.tiles ? `Term 1 has 1 group of <b class="g">${m}</b>. Term 2 has 2 groups. Term 3 has 3 groups.`
+      ? (P.tiles ? `Term 1 has 1 group of <b class="g">${m}</b>. Term 2 has 2 groups of ${m}. Term n has n groups of ${m}. Groups of ${m} is n × ${m}.`
                  : `It goes up ${m} each time. So times by ${m}.`)
       : S.hint === "zero" ? `Go back one: ${P.vals[0]} − ${m} = <b class="o">${fmt(P.vals[0] - m)}</b>. That is term 0.`
       : "";
@@ -492,7 +494,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const place = (e, r, c) => { e.style.gridRow = r; e.style.gridColumn = c; tbl.appendChild(e); return e; };
     cols.forEach((c, ci) => {
       const th = hd("div", "th" + (c === "jump" || c === "lbl" || c === "okc" ? " empty" : ""));
-      th.innerHTML = c === "times" ? `Times <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
+      th.innerHTML = c === "times" ? `Groups of <span class="g">${P.m}</span>` : c === "add" ? `<span class="o-t">Add</span>` : c === "jump" ? `<span class="g">Jump</span>` : head[c];
       place(th, 1, ci + 1);
     });
     const input = (key, cls) => {
@@ -770,7 +772,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         if (mode === "groups") {
           const t = el("text", { x: mid, y: base + 45, class: "fsum" }, svg);
           if (n > 0) el("tspan", { style: "fill: var(--green)" }, t).textContent = `${n} × ${m}`;
-          if (b) el("tspan", { style: "fill: var(--orange)" }, t).textContent = n > 0 ? signed(b) : fmt(b);
+          if (b && (S.done[3] || step !== 3)) el("tspan", { style: "fill: var(--orange)" }, t).textContent = n > 0 ? signed(b) : fmt(b);  // keep the answer hidden while step 3 asks for it
         }
         x += w + GAP * s;
         if (mode === "new" && fi < terms.length - 1) jumpText(x - GAP * s / 2, base - rows * s / 2 + 7);
@@ -999,7 +1001,53 @@ window.I18N_PAGE = {
  "Adding works. But you always need the one before it.": "Additionner fonctionne. Mais il te faut toujours le terme d’avant.",
  "The shortcut": "Le raccourci",
  "It goes up {0} each time. So {1}! What do you add to get the value? Fill the {2} boxes.": "Ça augmente de {0} chaque fois. Donc {1}! Qu’ajoutes-tu pour obtenir la valeur? Remplis les cases {2}.",
- "Type your rule. {0} means the term.": "Tape ta règle. {0} représente le rang du terme."
+ "Type your rule. {0} means the term.": "Tape ta règle. {0} représente le rang du terme.",
+ "Term": "Terme",
+ "Value": "Valeur",
+ "Add": "Ajoute",
+ "{n} of {n} right.{0}": "{n} sur {n} bonnes.{0}",
+ "Fill every box.": "Remplis chaque case.",
+ "Fix the red boxes.": "Corrige les cases rouges.",
+ "Check the sign: do you add or take away?": "Vérifie le signe : ajoutes-tu ou enlèves-tu?",
+ "Yes! It goes up {n} every time.": "Oui! Ça augmente de {n} chaque fois.",
+ "Each term adds a group of {0}. Term {n} has {n} groups of {n}. Groups of {n} means {1}! What do you add to get the value? Fill the {2} boxes.": "Chaque terme ajoute un groupe de {0}. Le terme {n} a {n} groupes de {n}. Des groupes de {n}, c’est {1}! Qu’ajoutes-tu pour obtenir la valeur? Remplis les cases {2}.",
+ "times {n}": "fois {n}",
+ "orange": "orange",
+ "Groups of {0}": "Groupes de {0}",
+ "Term {n} has {n} group of {0}. Term {n} has {n} groups of {n}. Term n has n groups of {n}. Groups of {n} is n × {n}.": "Le terme {n} a {n} groupe de {0}. Le terme {n} a {n} groupes de {n}. Le terme n a n groupes de {n}. Des groupes de {n}, c’est n × {n}.",
+ "Go back one: {n} − {n} = {0}. That is term {n}.": "Recule d’un : {n} − {n} = {0}. C’est le terme {n}.",
+ "Every row: times {0}, then add {1}. Look at row {2}!": "Chaque rangée : fois {0}, puis ajoute {1}. Regarde la rangée {2}!",
+ "Every row: times {0}, then take away {1}. Look at row {2}!": "Chaque rangée : fois {0}, puis enlève {1}. Regarde la rangée {2}!",
+ "Every row: times {0}. Look at row {1}!": "Chaque rangée : fois {0}. Regarde la rangée {1}!",
+ "Yes!": "Oui!",
+ "Yes! You add {n} every time.": "Oui! Tu ajoutes {n} chaque fois.",
+ "Yes! You take away {n} every time.": "Oui! Tu enlèves {n} chaque fois.",
+ "Yes! Nothing to add.": "Oui! Rien à ajouter.",
+ "Term number × {0}{1}": "Rang du terme × {0}{1}",
+ "Adding ↓": "Additionner ↓",
+ "Shortcut →": "Raccourci →",
+ "Add {0} again and again. Slow!": "Ajoute {0} encore et encore. Lent!",
+ "{0}{1}. Fast! Works for any term.": "{0}{1}. Rapide! Marche pour n’importe quel terme.",
+ "Type a rule first.": "Tape d’abord une règle.",
+ "It works for {n} of {n} rows.{0}": "Ça marche pour {n} rangées sur {n}.{0}",
+ "Not yet!{0}": "Pas encore!{0}",
+ "Your rule works! ✓{0}": "Ta règle marche! ✓{0}",
+ "Adding {n} is the slow way. Start with n. What do you times n by?": "Ajouter {n}, c’est la façon lente. Commence par n. Par combien multiplies-tu n?",
+ "Your rule jumps by {n}. The pattern jumps by {n}. Fix the × number.": "Ta règle fait des bonds de {n}. La régularité fait des bonds de {n}. Corrige le nombre après ×.",
+ "Your rule is {n} too big every time. Fix the + or − number.": "Ta règle donne {n} de trop chaque fois. Corrige le nombre après + ou −.",
+ "Your rule is {n} too small every time. Fix the + or − number.": "Ta règle donne {n} de moins chaque fois. Corrige le nombre après + ou −.",
+ "Look at the ✗ rows. Try again!": "Regarde les rangées ✗. Essaie encore!",
+ "~I don't know the word \"(.+)\". Use n for the term number.": "Je ne connais pas le mot « $1 ». Utilise n pour le rang du terme.",
+ "Your rule needs n in it.": "Ta règle doit contenir n.",
+ "Use only one = sign.": "Utilise un seul signe =.",
+ "Use just one letter, n, for the term number.": "Utilise une seule lettre, n, pour le rang du terme.",
+ "I can't read that. Try like this: n × 2 + 1": "Je ne peux pas lire ça. Essaie comme ceci : n × 2 + 1",
+ "The jumps must all be the same. Try again!": "Les bonds doivent tous être pareils. Essaie encore!",
+ "The numbers must go up. Try again!": "Les nombres doivent augmenter. Essaie encore!",
+ "Type up to {n} numbers.": "Tape jusqu’à {n} nombres.",
+ "Use whole numbers.": "Utilise des nombres entiers.",
+ "jump row {n}": "rangée bond {n}",
+ "add row {n}": "rangée ajout {n}"
 };
 </script>
 <script>

@@ -156,6 +156,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .equals .frac { color: var(--green); }
 .equals .frac > span:first-child { border-bottom-width: 4px; }
 .equals .decv { color: var(--pt); }
+.rep { text-decoration: overline; text-decoration-thickness: 0.07em; }
 .equals .mixed { font-size: 0.6em; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
 .equals .mixed .frac { color: var(--muted); }
 .side { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; }
@@ -187,6 +188,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .dot { fill: var(--pt); stroke: var(--sheet); stroke-width: 4; }
 .tchip rect { fill: var(--pt); }
 .tchip text { fill: var(--sheet); font-family: var(--font-num); font-weight: 700; font-size: 36px; text-anchor: middle; }
+/* Slider under the line (Shawn 2026-10-15): drag the green handle, or tap the bar, to shade pieces; the top box follows. */
+.sl-track { stroke: var(--grid-major); stroke-width: 10; stroke-linecap: round; }
+.sl-fill { stroke: var(--green); stroke-width: 10; stroke-linecap: round; }
+.sl-stop { fill: var(--grid-major); }
+.sl-knob { fill: var(--green); stroke: var(--sheet); stroke-width: 4; }
+.sl-grip { fill: none; stroke: var(--sheet); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+#slider { cursor: grab; outline: none; }
+#slider:focus-visible .sl-knob { stroke: var(--pt); stroke-width: 6; }
+svg.dragging, svg.dragging #slider { cursor: grabbing; }
 .plbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
 @media (max-width: 600px) { .equals { font-size: 2.4rem; } .fin input { width: 76px; height: 56px; font-size: 2.1rem; } .side { margin-left: 0; } }
 </style>
@@ -218,7 +228,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <p class="err" id="err" hidden></p>
   </section>
 
-  <div class="board"><svg id="svg" viewBox="0 0 1200 330" role="img" aria-label="Fraction bar above a number line"></svg></div>
+  <div class="board"><svg id="svg" viewBox="0 0 1200 400" role="img" aria-label="Fraction bar above a number line"><g id="art"></g><g id="slider" tabindex="0" role="slider" aria-label="Shaded pieces"></g></svg></div>
 </div>
 
 <script>
@@ -226,10 +236,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const $ = id => document.getElementById(id);
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg");
-  const X0 = 60, X1 = 1140, BAR_TOP = 24, BAR_BOT = 150, LINE_Y = 214, LBL_Y = 262;
+  const X0 = 60, X1 = 1140, BAR_TOP = 24, BAR_BOT = 150, LINE_Y = 214, LBL_Y = 262, SL_Y = 360;
+  const art = $("art"), slider = $("slider");
+  let cur = null; // the fraction on screen, for the slider
   let len = 1;
 
-  const el = (tag, attrs, parent = svg) => {
+  const el = (tag, attrs, parent = art) => {
     const e = document.createElementNS(NS, tag);
     for (const k in attrs) e.setAttribute(k, attrs[k]);
     parent.appendChild(e);
@@ -247,6 +259,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     return (n / d).toFixed(3) + "…";
   }
 
+  // Repeating decimals in bar notation (Shawn 2026-10-15): 1/3 = 0.3 with a bar over the 3, 1/6 = 0.16 with a bar over the 6.
+  function barDecimal(n, d) {
+    const g = gcd(n, d); n /= g; d /= g;
+    if (terminates(d)) return decimal(n, d, false);
+    const whole = Math.floor(n / d), digits = [], seen = {};
+    let r = n % d;
+    while (!(r in seen)) { seen[r] = digits.length; r *= 10; digits.push(Math.floor(r / d)); r %= d; }
+    const k = seen[r];
+    return `${whole}.${digits.slice(0, k).join("")}<span class="rep">${digits.slice(k).join("")}</span>`;
+  }
+
   function read() {
     const n = $("n").value === "" ? NaN : +$("n").value;
     const d = $("d").value === "" ? NaN : +$("d").value;
@@ -260,7 +283,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function render() {
     const f = read();
     $("err").hidden = !f.err;
-    if (f.err) { $("err").textContent = f.err; $("eq").innerHTML = ""; svg.replaceChildren(); return; }
+    if (f.err) { $("err").textContent = f.err; $("eq").innerHTML = ""; art.replaceChildren(); slider.replaceChildren(); cur = null; return; }
     const { n, d } = f;
     const need = Math.max(1, Math.ceil(n / d));
     if (len < need) len = need;
@@ -270,16 +293,63 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     });
     readout(n, d);
     draw(n, d);
+    drawSlider(n, d);
   }
 
+  // The slider: a track as long as the line, a stop under every piece's tick, and a green handle at the numerator.
+  function drawSlider(n, d) {
+    cur = { n, d, total: len * d };
+    slider.replaceChildren();
+    const w = (X1 - X0) / cur.total, x = k => X0 + k * w;
+    el("line", { class: "sl-track", x1: X0, y1: SL_Y, x2: X1, y2: SL_Y }, slider);
+    if (n > 0) el("line", { class: "sl-fill", x1: X0, y1: SL_Y, x2: x(n), y2: SL_Y }, slider);
+    if (w >= 14) for (let k = 0; k <= cur.total; k++) el("circle", { class: "sl-stop", cx: x(k), cy: SL_Y, r: 4 }, slider);
+    el("circle", { class: "sl-knob", cx: x(n), cy: SL_Y, r: 26 }, slider);
+    el("path", { class: "sl-grip", d: `M${x(n) - 6} ${SL_Y - 9} l-8 9 l8 9 M${x(n) + 6} ${SL_Y - 9} l8 9 l-8 9` }, slider);
+    slider.setAttribute("aria-valuemin", 0);
+    slider.setAttribute("aria-valuemax", cur.total);
+    slider.setAttribute("aria-valuenow", n);
+    slider.setAttribute("aria-valuetext", `${n}/${d}`);
+  }
+  function setN(k) {
+    if (!cur) return;
+    k = Math.max(0, Math.min(cur.total, k));
+    if (k === cur.n) return;
+    $("n").value = k;
+    render();
+  }
+  // Drag the handle, or press anywhere on the board, and the handle jumps to the nearest piece.
+  function pieceAt(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse());
+    return Math.round((q.x - X0) / ((X1 - X0) / cur.total));
+  }
+  svg.addEventListener("pointerdown", e => {
+    if (!cur) return;
+    e.preventDefault();
+    svg.setPointerCapture(e.pointerId);
+    svg.classList.add("dragging");
+    slider.focus({ preventScroll: true });
+    setN(pieceAt(e));
+  });
+  svg.addEventListener("pointermove", e => { if (svg.classList.contains("dragging")) setN(pieceAt(e)); });
+  ["pointerup", "pointercancel"].forEach(t => svg.addEventListener(t, () => svg.classList.remove("dragging")));
+  slider.addEventListener("keydown", e => {
+    if (!cur) return;
+    const k = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (k) { e.preventDefault(); setN(cur.n + k); }
+    if (e.key === "Home") { e.preventDefault(); setN(0); }
+    if (e.key === "End") { e.preventDefault(); setN(cur.total); }
+  });
+
   function readout(n, d) {
-    let html = `<span class="frac"><span>${n}</span><span>${d}</span></span><span>=</span><span class="decv">${decimal(n, d, false)}</span>`;
+    let html = `<span class="frac"><span>${n}</span><span>${d}</span></span><span>=</span><span class="decv">${barDecimal(n, d)}</span>`;
     if (n > d && n % d) html += `<span class="mixed">(${Math.floor(n / d)}<span class="frac"><span>${n % d}</span><span>${d}</span></span>)</span>`;
     $("eq").innerHTML = html;
   }
 
   function draw(n, d) {
-    svg.replaceChildren();
+    art.replaceChildren();
     const total = len * d, w = (X1 - X0) / total, x = k => X0 + k * w;
 
     // Faint guides from every cut down to the line, so each piece lines up with its tick.
@@ -437,6 +507,7 @@ window.I18N_PAGE = {
  "Line": "Droite",
  "Number line length": "Longueur de la droite numérique",
  "{n} to {n}": "{n} à {n}",
+ "Shaded pieces": "Parties ombrées",
  "{n}/{n} of a bar from {n} to {n} is shaded; it ends at {n} on the number line.": "{n}/{n} d’une barre de {n} à {n} est ombré; il se termine à {n} sur la droite numérique."
 };
 </script>
