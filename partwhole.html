@@ -370,7 +370,8 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   // info() works out the parts: b equal parts of size s; the answer is a parts (part) or all b parts (whole).
   function info(p) {
     let a = p.a, b = p.b;
-    if (p.form === "pct") { const g = gcd(p.p, 100); a = p.p / g; b = 100 / g; }
+    // Percents use parts that read as percents: 10 parts of 10% (60% = 6 of 10), or 4 parts of 25% for 25% and 75%.
+    if (p.form === "pct") { b = p.p % 10 ? 4 : 10; a = p.p * b / 100; }
     const s = p.skill === "part" ? p.n / b : p.n / a;
     return { a, b, s, ans: p.skill === "part" ? a * s : b * s };
   }
@@ -705,7 +706,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
   function makeProblem(skill, form) {
     let a, b, P = 50;
-    if (form === "pct") { P = pick(PCTS); const g = gcd(P, 100); a = P / g; b = 100 / g; }
+    if (form === "pct") { P = pick(PCTS); b = P % 10 ? 4 : 10; a = P * b / 100; }
     else { do { b = rnd(2, 10); a = rnd(1, b - 1); } while (gcd(a, b) > 1 && Math.random() < 0.8); }
     // s is one part: small enough for mental math, and the numbers stay friendly
     let s, n;
@@ -744,7 +745,7 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
   }
   function procHTML(p) {
     const I = info(p), F = fq(p), L = (h, nt) => `<div class="pl">${h}${nt ? `<span class="nt">${nt}</span>` : ""}</div>`;
-    const conv = p.form === "pct" ? L(`<span class="f">${p.p}%</span> = ${hf(p.p, 100)} = ${hf(bx("q1"), bx("q2"))}`, "simplify") : "";
+    const conv = p.form === "pct" ? L(`<span class="f">${p.p}%</span> = ${hf(p.p, 100)} = ${hf(bx("q1"), bx("q2"))}`, "as a fraction") : "";
     if (p.skill === "part") return `<div class="plines">
       ${L(`${F} of <span class="n">${p.n}</span>`)}${conv}
       ${L(`= ${hf(I.a, I.b)} × ${hf(p.n, 1)}`, "“of” means ×")}
@@ -808,7 +809,6 @@ header .seg-btns button { font-size: 1.2rem; min-height: 48px; padding: 6px 18px
     if (pq.form === "pct") {
       const a = val("q1"), b = val("q2");
       if (!(a >= 1 && b >= 1 && a * 100 === b * pq.p)) { mark(["q1", "q2"], false); return no(`Write ${pq.p}/100 as an equal fraction.`); }
-      if (a !== I.a) { mark(["q1", "q2"], false); return no(`Simplify ${pq.p}/100 all the way.`); }
       mark(["q1", "q2"], true);
     }
     if (pq.skill === "whole") {
