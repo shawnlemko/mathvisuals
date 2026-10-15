@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Ferris Wheel Sine and Cosine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; --fade: #c3cfdb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --fade: #3a4e62; } }
+:root[data-theme="dark"] { --purple: #b98cff; --fade: #3a4e62; }
+h1 .s { color: var(--pt); } h1 .c { color: var(--orange); }
+/* Board on top, one row of controls under it (the board needs the full width: wheel beside graph). */
+.wrap > .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 10px; }
+.board svg { cursor: grab; }
+.board svg:focus-visible { outline: 3px solid var(--pt); outline-offset: -3px; }
+.board { position: relative; }
+/* Play and the x-axis switch sit in the board's top corners, above the plane and the graph. */
+.ov { position: absolute; top: 8px; display: flex; gap: 8px; z-index: 1; }
+.ov-l { left: 10px; } .ov-r { right: 10px; }
+#play { font-size: 1.15rem; padding: 7px 16px; background: var(--ink); color: var(--sheet); border-color: var(--ink); min-width: 7.5em; }
+@media (max-width: 860px), (max-height: 519px) { .ov { position: static; margin-bottom: 8px; } .ov-r { width: max-content; } }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.controls > .card { padding: 8px 14px; }
+.modes { display: flex; flex-direction: column; gap: 8px; justify-content: center; flex: 0 0 auto; }
+.modes button { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; padding: 6px 16px; border-width: 2px; min-width: 9.5em; }
+.modes b { font-family: var(--font-display); font-size: 1.3rem; }
+.modes small { font-size: 0.95rem; }
+.modes button[data-mode="sin"][aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.modes button[data-mode="cos"][aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: var(--sheet); }
+.eqcard { flex: 1 1 400px; display: flex; flex-direction: column; justify-content: center; }
+.label { margin-bottom: 2px; }
+.eq-big { font-family: var(--font-num); font-weight: 700; font-size: 1.95rem; line-height: 1.25; white-space: nowrap; display: flex; align-items: center; gap: 0.3em; }
+.eq-big .frac { font-size: 1.1rem; }
+.feat { display: flex; flex-wrap: wrap; gap: 0 16px; font-weight: 700; font-size: 1rem; line-height: 1.35; }
+.c-purple { color: var(--purple); }
+.sliders { flex: 2 1 560px; display: grid; grid-template-columns: repeat(4, minmax(118px, 1fr)); gap: 6px 18px; align-content: center; }
+@media (max-width: 700px) { .sliders { grid-template-columns: repeat(2, minmax(118px, 1fr)); } }
+.sl { display: flex; flex-direction: column; min-width: 0; }
+.sl .top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-weight: 700; line-height: 1.2; }
+.sl .top output { white-space: nowrap; }
+.sl .to { color: var(--muted); font-weight: 700; font-size: 0.95rem; line-height: 1.2; }
+.sl output { font-family: var(--font-num); font-size: 1.45rem; line-height: 1.1; }
+.sl input[type=range] { height: 26px; margin: 6px 0 0; }
+input[type=range].purple { accent-color: var(--purple); }
+input[type=range].ink { accent-color: var(--ink); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.seg button { border-radius: 0; padding: 7px 10px; font-size: 0.95rem; }
+.seg button:first-child { border-radius: 8px 0 0 8px; }
+.seg button:last-child { border-radius: 0 8px 8px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+#starts { grid-auto-flow: row; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+#starts button, #starts button + button { border: 1px solid var(--grid-major); border-radius: 8px; padding: 3px 6px; }
+#starts button[aria-pressed="true"] { border-color: var(--ink); }
+.turn { fill: none; stroke: var(--muted); stroke-width: 4; }
+.turn-head { fill: var(--muted); }
+/* Board drawing */
+.g-minor { stroke: var(--grid); stroke-width: 1.5; }
+.g-axis { stroke: var(--muted); stroke-width: 3.5; }
+.tick { font-family: var(--font-num); font-weight: 700; font-size: 29px; fill: var(--ink); }
+.cap { font-family: var(--font-body); font-weight: 700; font-size: 29px; fill: var(--muted); }
+.title { font-family: var(--font-display); font-weight: 800; font-size: 46px; letter-spacing: 0.02em; }
+.t-sin { fill: var(--pt); } .t-cos { fill: var(--orange); }
+.lbl { font-family: var(--font-num); font-weight: 700; font-size: 30px; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
+.l-green { fill: var(--green); } .l-purple { fill: var(--purple); } .l-ink { fill: var(--ink); } .l-muted { fill: var(--muted); }
+.stand { stroke: var(--muted); stroke-width: 8; stroke-linecap: round; opacity: 0.7; }
+.rim { fill: none; stroke: var(--ink); stroke-width: 6; }
+.rim2 { fill: none; stroke: var(--ink); stroke-width: 2; opacity: 0.5; }
+.spoke { stroke: var(--muted); stroke-width: 2.5; opacity: 0.8; }
+.hub { fill: var(--ink); }
+.hanger { stroke: var(--muted); stroke-width: 3; }
+.cab { fill: var(--chip); stroke: var(--muted); stroke-width: 2.5; cursor: pointer; }
+.cab.me-sin { fill: var(--pt); stroke: var(--pt); } .cab.me-cos { fill: var(--orange); stroke: var(--orange); }
+.start-ring { fill: none; stroke: var(--ink); stroke-width: 3; stroke-dasharray: 6 5; }
+.arm { stroke: var(--ink); stroke-width: 3.5; }
+.leg { stroke-width: 9; stroke-linecap: round; }
+.leg.on-sin { stroke: var(--pt); } .leg.on-cos { stroke: var(--orange); } .leg.off { stroke: var(--fade); stroke-width: 5; }
+.bar-mid { stroke: var(--purple); stroke-width: 9; stroke-linecap: butt; opacity: 0.3; }
+.midline { stroke: var(--purple); stroke-width: 3.5; stroke-dasharray: 14 9; }
+.ghost { fill: none; stroke-width: 4; opacity: 0.22; }
+.trace { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.s-sin { stroke: var(--pt); } .s-cos { stroke: var(--orange); }
+.f-sin { fill: var(--pt); } .f-cos { fill: var(--orange); }
+.conn { stroke-width: 3; stroke-dasharray: 8 7; }
+.nowline { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 6; }
+.dot { stroke: var(--sheet); stroke-width: 4; }
+.br-green { stroke: var(--green); stroke-width: 4; fill: none; }
+.br-ink { stroke: var(--ink); stroke-width: 3; fill: none; }
+.chip-bg { fill: var(--sheet); stroke-width: 3; }
+.chip { font-family: var(--font-num); font-weight: 700; font-size: 32px; fill: var(--muted); }
+.chip .hi { font-size: 38px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Ferris Wheel <span class="s">Sine</span> and <span class="c">Cosine</span></h1></div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <div class="ov ov-l">
+        <button type="button" id="play">▶ Play</button>
+        <button type="button" id="reset">↺ Back to start</button>
+      </div>
+      <div class="ov ov-r seg" id="units" role="group" aria-label="x-axis in">
+        <button type="button" data-unit="deg" aria-pressed="true">Degrees</button>
+        <button type="button" data-unit="sec" aria-pressed="false">Seconds</button>
+      </div>
+      <svg id="svg" tabindex="0" role="img" aria-label="A Ferris wheel beside a graph. Drag the wheel to turn it, or drag across the graph."></svg>
+    </div>
+    <div class="controls">
+      <div class="modes" role="group" aria-label="Graph">
+        <button type="button" data-mode="sin" aria-pressed="true"><b>Sine</b><small>height (y)</small></button>
+        <button type="button" data-mode="cos" aria-pressed="false"><b>Cosine</b><small>left / right (x)</small></button>
+      </div>
+      <div class="card eqcard">
+        <p class="label">Equation</p>
+        <div class="eq-big" id="eq"></div>
+        <div class="feat" id="feat"></div>
+      </div>
+      <div class="card sliders">
+        <div class="sl"><div class="top"><label for="r">Radius</label><output id="rOut"></output></div>
+          <span class="to">= amplitude</span>
+          <input id="r" class="green" type="range" min="1" max="4" step="1" value="4"></div>
+        <div class="sl"><div class="top"><label for="p">One turn</label><output id="pOut"></output></div>
+          <span class="to">= period</span>
+          <input id="p" class="ink" type="range" min="0" max="2" step="1" value="1"></div>
+        <div class="sl"><div class="top"><label for="d" id="dLbl">Axle height</label><output id="dOut"></output></div>
+          <span class="to">= midline</span>
+          <input id="d" class="purple" type="range" min="0" max="8" step="1" value="6"></div>
+        <div class="sl"><div class="top"><span>Gets on at</span></div>
+          <div class="seg" id="starts" role="group" aria-label="Gets on at">
+            <button type="button" data-start="-90" aria-pressed="false">Bottom</button>
+            <button type="button" data-start="0" aria-pressed="true">Right</button>
+            <button type="button" data-start="90" aria-pressed="false">Top</button>
+            <button type="button" data-start="180" aria-pressed="false">Left</button>
+          </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const svg = $("svg");
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const rad = d => d * Math.PI / 180;
+  const fmt = n => { const s = String(Math.round(n * 100) / 100); return s.replace("-", "−"); };
+
+  // One scale for the wheel and the graph, so the rider's height lines up with the graph exactly.
+  const U = 44, MIN = -4, MAX = 12, PX0 = 80, TOP = 112;
+  const PW = (MAX - MIN) * U;
+  const GX0 = PX0 + PW + 120, GW = 1180;
+  const VBW = GX0 + GW + 40, VBH = TOP + PW + 82;
+  svg.setAttribute("viewBox", `0 0 ${VBW} ${VBH}`);
+  const px = x => PX0 + (x - MIN) * U, py = y => TOP + (MAX - y) * U;
+
+  const PD = [180, 360, 720], PS = [10, 20, 30, 40, 60];
+  const st = { mode: "sin", unit: "deg", r: 4, k: 6, h: 0, start: 0, pD: 1, pS: 3, x: 0, playing: false };
+  const sin = () => st.mode === "sin";
+  const period = () => st.unit === "deg" ? PD[st.pD] : PS[st.pS];
+  const xmax = () => st.unit === "deg" ? 720 : 120;
+  const xstep = () => st.unit === "deg" ? 90 : 10;
+  const b = () => 360 / period();                  // degrees the wheel turns per x unit
+  const theta = x => st.start + b() * x;
+  const mid = () => sin() ? st.k : st.h;
+  const val = x => mid() + st.r * (sin() ? Math.sin(rad(theta(x))) : Math.cos(rad(theta(x))));
+  const gx = x => GX0 + x / xmax() * GW;
+  const unitSym = () => st.unit === "deg" ? "°" : " s";
+
+  const gStatic = el("g", {}, svg), gDyn = el("g", {}, svg);
+
+  function curvePath(x1) {
+    const n = Math.max(2, Math.round(600 * x1 / xmax()));
+    let d = "";
+    for (let i = 0; i <= n; i++) { const x = x1 * i / n; d += (i ? "L" : "M") + gx(x).toFixed(1) + " " + py(val(x)).toFixed(1); }
+    return d;
+  }
+  function vArrow(g, x, y1, y2, cls) {          // double-headed vertical bracket
+    el("line", { x1: x, y1, x2: x, y2, class: cls }, g);
+    for (const [y, s] of [[y1, Math.sign(y2 - y1)], [y2, Math.sign(y1 - y2)]])
+      el("path", { d: `M${x - 9} ${y + s * 13} L${x} ${y} L${x + 9} ${y + s * 13}`, class: cls }, g);
+  }
+  function hBracket(g, x1, x2, y, up, cls) {
+    const t = up ? 12 : -12;
+    el("path", { d: `M${x1} ${y + t} L${x1} ${y} L${x2} ${y} L${x2} ${y + t}`, class: cls }, g);
+  }
+
+  function drawStatic() {
+    gStatic.replaceChildren();
+    const g = gStatic, mc = sin() ? "sin" : "cos";
+    // Wheel's coordinate plane: every line labeled.
+    for (let v = MIN; v <= MAX; v++) {
+      el("line", { x1: px(v), y1: py(MIN), x2: px(v), y2: py(MAX), class: v ? "g-minor" : "g-axis" }, g);
+      el("line", { x1: px(MIN), y1: py(v), x2: px(MAX), y2: py(v), class: v ? "g-minor" : "g-axis" }, g);
+      el("text", { x: px(v), y: py(MIN) + 36, class: "tick", "text-anchor": "middle" }, g, fmt(v));
+      el("text", { x: px(MIN) - 10, y: py(v) + 8, class: "tick", "text-anchor": "end" }, g, fmt(v));
+    }
+    if (sin()) el("text", { x: px(MAX) - 8, y: py(0) - 10, class: "lbl l-muted", "text-anchor": "end" }, g, "ground");
+
+    // Graph.
+    const xm = xmax(), xs = xstep();
+    for (let v = MIN; v <= MAX; v++) {
+      el("line", { x1: GX0, y1: py(v), x2: GX0 + GW, y2: py(v), class: v ? "g-minor" : "g-axis" }, g);
+      el("text", { x: GX0 - 10, y: py(v) + 8, class: "tick", "text-anchor": "end" }, g, fmt(v));
+    }
+    for (let x = 0; x <= xm; x += xs) {
+      el("line", { x1: gx(x), y1: py(MIN), x2: gx(x), y2: py(MAX), class: x ? "g-minor" : "g-axis" }, g);
+      el("text", { x: gx(x), y: py(MIN) + 36, class: "tick", "text-anchor": "middle" }, g, x + (st.unit === "deg" ? "°" : ""));
+    }
+    el("text", { x: GX0 + GW, y: py(MIN) + 72, class: "cap", "text-anchor": "end" }, g, st.unit === "deg" ? "x (degrees)" : "x = time (seconds)");
+    el("text", { x: GX0, y: TOP - 14, class: "cap" }, g, sin() ? "height (m)" : "left / right (m)");
+    el("text", { x: GX0 + GW / 2, y: 52, class: "title t-" + mc, "text-anchor": "middle" }, g, sin() ? "SINE = HEIGHT (y)" : "COSINE = LEFT / RIGHT (x)");
+
+    // Midline: across the wheel and the graph (sine), or up the wheel (cosine).
+    const d = mid(), a = st.r;
+    if (sin()) el("line", { x1: px(MIN), y1: py(d), x2: GX0 + GW, y2: py(d), class: "midline" }, g);
+    else {
+      el("line", { x1: px(d), y1: py(MIN), x2: px(d), y2: py(MAX), class: "midline" }, g);
+      el("line", { x1: GX0, y1: py(d), x2: GX0 + GW, y2: py(d), class: "midline" }, g);
+    }
+    el("text", { x: GX0 + GW - 6, y: py(d) - 10, class: "lbl l-purple", "text-anchor": "end" }, g, `midline y = ${fmt(d)}`);
+
+    // Ghost of the whole graph.
+    el("path", { d: curvePath(xm), class: "ghost s-" + mc }, g);
+
+    // Amplitude at the first peak, period over (or under) the first turn.
+    const peakAng = sin() ? 90 : 0;
+    let xPeak = (((peakAng - st.start) % 360) + 360) % 360 / b();
+    while (xPeak + period() <= xm * 0.8) xPeak += period();      // a peak late in the graph, clear of the trace at first
+    vArrow(g, gx(xPeak), py(d), py(d + a), "br-green");
+    el("text", { x: gx(xPeak) + 16, y: (py(d) + py(d + a)) / 2 + 8, class: "lbl l-green" }, g, `amplitude ${fmt(a)}`);
+    const P = period(), above = d + a <= 11;
+    const yb = above ? py(d + a) - 26 : py(d - a) + 26;
+    hBracket(g, gx(0), gx(P), yb, above, "br-ink");
+    el("text", { x: (gx(0) + gx(P)) / 2, y: above ? yb - 10 : yb + 30, class: "lbl l-ink", "text-anchor": "middle" }, g, `period ${fmt(P)}${unitSym()}`);
+
+    // Wheel frame that does not turn: stand, rim, where the rider gets on.
+    const h = st.h, k = st.k, r = st.r;
+    if (k > 0) for (const s of [-1, 1]) el("line", { x1: px(h), y1: py(k), x2: px(h + s * r * 0.6), y2: py(0), class: "stand" }, g);
+    el("circle", { cx: px(h), cy: py(k), r: r * U, class: "rim" }, g);
+    el("circle", { cx: px(h), cy: py(k), r: r * U - 10, class: "rim2" }, g);
+    // Arrow outside the rim: the wheel turns counterclockwise.
+    const ra = r * U + 22, a1 = rad(25), a2 = rad(70);
+    const ax = a => px(h) + ra * Math.cos(a), ay = a => py(k) - ra * Math.sin(a);
+    el("path", { d: `M${ax(a1)} ${ay(a1)} A${ra} ${ra} 0 0 0 ${ax(a2)} ${ay(a2)}`, class: "turn" }, g);
+    const tx = -Math.sin(a2), ty = -Math.cos(a2);   // screen direction of travel at a2
+    const hx = ax(a2), hy = ay(a2), nx = -ty, ny = tx;
+    el("path", { d: `M${hx + tx * 16} ${hy + ty * 16} L${hx + nx * 10} ${hy + ny * 10} L${hx - nx * 10} ${hy - ny * 10}Z`, class: "turn-head" }, g);
+    const sx = h + r * Math.cos(rad(st.start)), sy = k + r * Math.sin(rad(st.start));
+    el("circle", { cx: px(sx), cy: py(sy), r: 22, class: "start-ring" }, g);
+    const lx = h + (r + 1) * Math.cos(rad(st.start)), ly = k + (r + 1) * Math.sin(rad(st.start));
+    el("text", { x: px(lx), y: py(ly) + 8, class: "lbl l-ink", "text-anchor": "middle" }, g, "start");
+    el("circle", { cx: gx(0), cy: py(val(0)), r: 18, class: "start-ring" }, g);
+  }
+
+  function drawDyn() {
+    gDyn.replaceChildren();
+    const g = gDyn, mc = sin() ? "sin" : "cos";
+    const h = st.h, k = st.k, r = st.r, th = theta(st.x);
+    const rx = h + r * Math.cos(rad(th)), ry = k + r * Math.sin(rad(th));
+
+    // Spokes and cabins turn with the wheel; cabin 0 is the rider.
+    for (let i = 0; i < 8; i++) {
+      const a = rad(th + 45 * i), cx = h + r * Math.cos(a), cy = k + r * Math.sin(a);
+      el("line", { x1: px(h), y1: py(k), x2: px(cx), y2: py(cy), class: "spoke" }, g);
+    }
+    for (let i = 0; i < 8; i++) {
+      const a = rad(th + 45 * i), cx = px(h + r * Math.cos(a)), cy = py(k + r * Math.sin(a));
+      el("line", { x1: cx, y1: cy, x2: cx, y2: cy + 16, class: "hanger" }, g);
+      const c = el("rect", { x: cx - 15, y: cy + 14, width: 30, height: 24, rx: 7, class: "cab" + (i ? "" : " me-" + mc) }, g);
+      c.dataset.cab = i;
+    }
+    el("circle", { cx: px(h), cy: py(k), r: 11, class: "hub" }, g);
+
+    // Bars: purple from 0 to the midline, then the leg from the midline to the rider. Same on the graph.
+    if (sin()) el("line", { x1: px(rx), y1: py(0), x2: px(rx), y2: py(k), class: "bar-mid" }, g);
+    else el("line", { x1: px(0), y1: py(k), x2: px(h), y2: py(k), class: "bar-mid" }, g);
+    el("line", { x1: px(h), y1: py(k), x2: px(rx), y2: py(ry), class: "arm" }, g);
+    el("line", { x1: px(h), y1: py(k), x2: px(rx), y2: py(k), class: "leg " + (sin() ? "off" : "on-cos") }, g);
+    el("line", { x1: px(rx), y1: py(k), x2: px(rx), y2: py(ry), class: "leg " + (sin() ? "on-sin" : "off") }, g);
+
+    const v = val(st.x), X = gx(st.x), Y = py(v);
+    if (sin()) el("line", { x1: px(rx), y1: py(ry), x2: X, y2: Y, class: "conn s-sin" }, g);
+    else {
+      el("line", { x1: px(rx), y1: py(ry), x2: px(rx), y2: py(0), class: "conn s-cos" }, g);
+      el("circle", { cx: px(rx), cy: py(0), r: 8, class: "f-cos" }, g);
+    }
+    el("circle", { cx: px(rx), cy: py(ry), r: 13, class: "dot f-" + mc }, g);
+
+    // The rider's point (x, y): the coordinate the graph shows is big and coloured.
+    const ox = Math.cos(rad(th)), oy = Math.sin(rad(th));
+    const cxp = px(rx + ox * 1.9), cyp = py(ry + oy * 1.3);
+    const chip = el("g", {}, g);
+    const bg = el("rect", { class: "chip-bg s-" + mc, rx: 10 }, chip);
+    const t = el("text", { x: cxp, y: cyp + 10, class: "chip", "text-anchor": "middle" }, chip);
+    el("tspan", {}, t, "(");
+    el("tspan", sin() ? {} : { class: "hi f-cos" }, t, fmt(Math.round(rx * 10) / 10));
+    el("tspan", {}, t, ", ");
+    el("tspan", sin() ? { class: "hi f-sin" } : {}, t, fmt(Math.round(ry * 10) / 10));
+    el("tspan", {}, t, ")");
+    const bb = t.getBBox();
+    for (const [k2, v2] of Object.entries({ x: bb.x - 10, y: bb.y - 4, width: bb.width + 20, height: bb.height + 8 })) bg.setAttribute(k2, v2);
+
+    // Graph: where we are now, the part drawn so far, and the same two bars.
+    el("line", { x1: X, y1: py(MIN), x2: X, y2: py(MAX), class: "nowline" }, g);
+    el("line", { x1: X, y1: py(0), x2: X, y2: py(mid()), class: "bar-mid" }, g);
+    el("line", { x1: X, y1: py(mid()), x2: X, y2: Y, class: "leg on-" + mc }, g);
+    if (st.x > 0) el("path", { d: curvePath(st.x), class: "trace s-" + mc }, g);
+    el("circle", { cx: X, cy: Y, r: 13, class: "dot f-" + mc }, g);
+    const xr = st.unit === "deg" ? Math.round(st.x) : Math.round(st.x * 10) / 10;
+    el("text", { x: X + 8, y: py(MIN) - 12, class: "lbl l-muted" }, g, `x = ${fmt(xr)}${unitSym()}`);
+    el("text", { x: X + (st.x > xmax() * 0.8 ? -20 : 20), y: Y + (v >= mid() ? -16 : 38), class: "lbl " + (sin() ? "t-sin" : "t-cos"), "text-anchor": st.x > xmax() * 0.8 ? "end" : "start" }, g, fmt(Math.round(v * 10) / 10));
+  }
+
+  // Equation y = a sin b(x − c) + d, with c from where the rider gets on.
+  function updateEq() {
+    const a = st.r, d = mid(), B = b(), fn = sin() ? "sin" : "cos";
+    const c = -st.start / B;
+    const bTxt = B === 1 ? "" : B === 0.5 ? '<span class="frac"><span>1</span><span>2</span></span>' : fmt(B);
+    const cTxt = c === 0 ? "" : (c > 0 ? " − " : " + ") + fmt(Math.abs(c)) + (st.unit === "deg" ? "°" : "");
+    const inner = c === 0 ? `${bTxt}x` : `${bTxt}(x${cTxt})`;
+    const dTxt = d === 0 ? "" : ` + <span class="c-purple">${fmt(d)}</span>`;
+    const aTxt = a === 1 ? "" : `<span class="c-green">${fmt(a)}</span>`;
+    $("eq").innerHTML = `<span>y = ${aTxt}${aTxt ? " " : ""}${fn}</span><span>${inner}${dTxt}</span>`;
+    const shift = c === 0 ? "no phase shift" : `phase shift ${fmt(Math.abs(c))}${unitSym()} ${c > 0 ? "right" : "left"}`;
+    $("feat").innerHTML = `<span class="c-green">amplitude ${fmt(a)}</span><span>period ${fmt(period())}${unitSym()}</span>` +
+      `<span class="c-purple">midline y = ${fmt(d)}</span><span>${shift}</span>`;
+    $("rOut").textContent = `${a} m`;
+    $("pOut").textContent = `${period()}${unitSym()}`;
+    $("dOut").textContent = `${d} m`;
+    $("dLbl").textContent = sin() ? "Axle height" : "Axle left / right";
+  }
+
+  function redraw() { updateEq(); drawStatic(); drawDyn(); }
+
+  // Controls
+  const press = (group, attr, v) => group.querySelectorAll("button").forEach(bt => bt.setAttribute("aria-pressed", String(bt.dataset[attr] === String(v))));
+  document.querySelector(".modes").addEventListener("click", e => {
+    const bt = e.target.closest("button"); if (!bt) return;
+    st.mode = bt.dataset.mode; press(e.currentTarget, "mode", st.mode);
+    $("d").value = mid(); redraw();
+  });
+  $("r").addEventListener("input", e => { st.r = +e.target.value; redraw(); });
+  $("p").addEventListener("input", e => { if (st.unit === "deg") st.pD = +e.target.value; else st.pS = +e.target.value; redraw(); });
+  $("d").addEventListener("input", e => { if (sin()) st.k = +e.target.value; else st.h = +e.target.value; redraw(); });
+  function setStart(deg) {
+    deg = ((Math.round(deg / 45) * 45) % 360 + 360) % 360; if (deg > 180) deg -= 360;
+    st.start = deg; st.x = 0; stop(); press($("starts"), "start", deg); redraw();
+  }
+  $("starts").addEventListener("click", e => { const bt = e.target.closest("button"); if (bt) setStart(+bt.dataset.start); });
+  $("units").addEventListener("click", e => {
+    const bt = e.target.closest("button"); if (!bt || bt.dataset.unit === st.unit) return;
+    st.unit = bt.dataset.unit; press(e.currentTarget, "unit", st.unit);
+    const p = $("p"); p.max = st.unit === "deg" ? PD.length - 1 : PS.length - 1; p.value = st.unit === "deg" ? st.pD : st.pS;
+    st.x = 0; stop(); redraw();
+  });
+
+  // Play
+  let last = 0, raf = 0;
+  const speed = () => st.unit === "deg" ? 90 : 10;   // x units per real second
+  function tick(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    st.x = Math.min(xmax(), st.x + speed() * dt);
+    drawDyn();
+    if (st.x >= xmax()) { stop(); return; }
+    raf = requestAnimationFrame(tick);
+  }
+  function stop() { st.playing = false; cancelAnimationFrame(raf); $("play").textContent = "▶ Play"; }
+  function play() {
+    if (st.x >= xmax()) st.x = 0;
+    st.playing = true; $("play").textContent = "❚❚ Pause";
+    last = performance.now(); raf = requestAnimationFrame(tick);
+  }
+  $("play").addEventListener("click", () => st.playing ? stop() : play());
+  $("reset").addEventListener("click", () => { stop(); st.x = 0; drawDyn(); });
+
+  // Drag the wheel to turn it, or drag across the graph. Tap a cabin to have the rider get on there.
+  const toSvg = e => { const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse()); return p; };
+  const angleAt = p => Math.atan2(-(p.y - py(st.k)), p.x - px(st.h)) * 180 / Math.PI;
+  const setX = x => { st.x = Math.max(0, Math.min(xmax(), x)); drawDyn(); };
+  let drag = null, lastAng = 0;
+  svg.addEventListener("pointerdown", e => {
+    const p = toSvg(e);
+    if (p.x >= GX0 - 20) { drag = "graph"; stop(); setX((p.x - GX0) / GW * xmax()); }
+    else {
+      const cab = e.target.closest && e.target.closest("[data-cab]");
+      if (cab && cab.dataset.cab !== "0") { setStart(theta(st.x) + 45 * +cab.dataset.cab); return; }
+      drag = "wheel"; stop(); lastAng = angleAt(p);
+    }
+    svg.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = toSvg(e);
+    if (drag === "graph") setX((p.x - GX0) / GW * xmax());
+    else {
+      const a = angleAt(p); let dA = a - lastAng; dA = ((dA + 540) % 360) - 180; lastAng = a;
+      setX(st.x + dA / b());
+    }
+  });
+  const end = () => { drag = null; };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  svg.addEventListener("keydown", e => {
+    const s = st.unit === "deg" ? 15 : 1;
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { stop(); setX(st.x + s); e.preventDefault(); }
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { stop(); setX(st.x - s); e.preventDefault(); }
+    else if (e.key === " ") { st.playing ? stop() : play(); e.preventDefault(); }
+  });
+
+  redraw();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Ferris Wheel Sine and Cosine (ferriswheel.html). */
+window.I18N_PAGE = {
+ "Ferris Wheel Sine and Cosine": "Sinus et cosinus de la grande roue",
+ "Ferris Wheel {0} and {1}": "{0} et {1} de la grande roue",
+ "Sine": "Sinus",
+ "Cosine": "Cosinus",
+ "Sine is the rider's height: the y-coordinate.": "Le sinus est la hauteur du passager : la coordonnée y.",
+ "Cosine is the rider's left / right position: the x-coordinate.": "Le cosinus est la position gauche / droite du passager : la coordonnée x.",
+ "A Ferris wheel beside a graph. Drag the wheel to turn it, or drag across the graph.": "Une grande roue à côté d’un graphique. Fais glisser la roue pour la tourner, ou glisse sur le graphique.",
+ "Graph": "Graphique",
+ "height (y)": "hauteur (y)",
+ "left / right (x)": "gauche / droite (x)",
+ "Equation": "Équation",
+ "Radius": "Rayon",
+ "= amplitude": "= amplitude",
+ "One turn": "Un tour",
+ "= period": "= période",
+ "Axle height": "Hauteur de l’essieu",
+ "= midline": "= axe médian",
+ "Axle left / right": "Essieu gauche / droite",
+ "Gets on at": "Monte en",
+ "Bottom": "Bas",
+ "Right": "Droite",
+ "Top": "Haut",
+ "Left": "Gauche",
+ "▶ Play": "▶ Lecture",
+ "❚❚ Pause": "❚❚ Pause",
+ "↺ Back to start": "↺ Retour au départ",
+ "x-axis in": "Axe des x en",
+ "Degrees": "Degrés",
+ "Seconds": "Secondes",
+ "ground": "sol",
+ "x (degrees)": "x (degrés)",
+ "x = time (seconds)": "x = temps (secondes)",
+ "height (m)": "hauteur (m)",
+ "left / right (m)": "gauche / droite (m)",
+ "SINE = HEIGHT (y)": "SINUS = HAUTEUR (y)",
+ "COSINE = LEFT / RIGHT (x)": "COSINUS = GAUCHE / DROITE (x)",
+ "midline y = {n}": "axe médian y = {n}",
+ "amplitude {n}": "amplitude {n}",
+ "~period (.+)": "période $1",
+ "start": "départ",
+ "no phase shift": "aucun déphasage",
+ "~phase shift (.+) right": "déphasage de $1 vers la droite",
+ "~phase shift (.+) left": "déphasage de $1 vers la gauche"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

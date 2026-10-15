@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Decimal Blocks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Decimal Blocks (K-6, Number; Shawn 2026-10-15). A copy of Base Ten Blocks where the whole is redefined:
+   Tenths and Hundredths levels: the flat is 1 whole, a rod 0.1, a small cube 0.01.
+   Thousandths level: the big cube is 1 whole, a flat 0.1, a rod 0.01, a small cube 0.001.
+   Inside the page every count is a whole number of the block units below (cube = 1, rod = 10, flat = 100,
+   big cube = 1000); WHOLE says how many make 1, and dec() turns a count into its decimal.
+   A place value chart (Ones . Tenths . Hundredths . Thousandths) with a supply tray along its bottom.
+   Tap or drag a tray block to add it; it always lands in its own column. Ten of a kind snap into the next block
+   and slide to the next column. Double-tap a block (or tap it, then Break apart) to break it into ten of the next
+   smaller block. Drag a block to the trash or back to the tray to remove it.
+   Modes: Free Build, Build the Number (target + Check), Add & Subtract (an equation built with the blocks).
+   Block colours match Area Model Multiplication and stay the same in dark mode. */
+.opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 48px; padding: 6px 14px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.36fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } .board { height: 64vh; min-height: 380px; } }
+.board { position: relative; display: flex; flex-direction: column; }
+.board svg { flex: 1 1 auto; min-height: 0; height: 100%; }
+
+/* Chart drawing */
+.col-bg { stroke: none; }
+.col-sep { stroke: var(--grid-major); stroke-width: 2; }
+.col-name { font-family: var(--font-display); font-weight: 800; fill: var(--ink); text-anchor: middle; }
+.col-count { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; }
+.col-count.many { fill: var(--warn); }
+.tray-bg { fill: var(--chip); }
+.tray-line { stroke: var(--grid-major); stroke-width: 2; }
+.tray-item { cursor: grab; outline: none; }
+.tray-item .hit { fill: transparent; }
+.tray-val { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+.dot { fill: var(--ink); }
+.tray-item:hover .hit, .tray-item:focus-visible .hit { fill: var(--sheet); stroke: var(--pt); stroke-width: 2; }
+.plus circle { fill: var(--pt); stroke: var(--sheet); stroke-width: 2; }
+.plus path { stroke: var(--sheet); stroke-width: 3; stroke-linecap: round; }
+
+/* Blocks are drawn in block units and scaled with a CSS transform, so moves and size changes animate. */
+.blk { cursor: grab; transform-origin: 0 0; transition: transform 0.45s cubic-bezier(.3, .75, .3, 1), opacity 0.25s; }
+.blk.nt, .board.resizing .blk { transition: none; }
+.blk.gone { opacity: 0; pointer-events: none; }
+.blk.fly { pointer-events: none; }
+.blk.lift { opacity: 0.25; }
+.edge { stroke: #1b2733; stroke-width: 1.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.gl { stroke: #1b2733; stroke-opacity: 0.35; stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+.blk.sel .edge { stroke: #2f5fd0; stroke-width: 4; }
+.ghost { position: fixed; left: 0; top: 0; z-index: 900; pointer-events: none; overflow: visible; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
+
+.toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); background: var(--ink); color: var(--sheet); font-family: var(--font-display); font-weight: 800;
+  font-size: 1.35rem; padding: 10px 20px; border-radius: 12px; pointer-events: none; opacity: 0; transition: opacity 0.25s; text-align: center; max-width: 90%; }
+.toast.show { opacity: 0.94; }
+
+/* Panel */
+.panel .card { display: flex; flex-direction: column; gap: 6px; }
+.panel .label { margin: 6px 0 0; }
+.panel .label:first-child { margin-top: 0; }
+.std { font-family: var(--font-num); font-weight: 700; font-size: 3rem; line-height: 1.1; display: flex; align-items: flex-end; flex-wrap: wrap; }
+.std .d { border-bottom: 8px solid var(--c); padding: 0 1px; }
+.std .pt { margin: 0 -0.06em; }
+.exp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.55rem; }
+.exp .t { background: var(--c); color: #1b2733; border-radius: 8px; padding: 1px 9px; }
+.words { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; line-height: 1.25; margin: 0; }
+
+.ask { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; margin: 0; color: var(--muted); }
+.target { font-family: var(--font-num); font-weight: 700; font-size: 3.6rem; line-height: 1.1; margin: 0; color: var(--pt); }
+.eqn { font-family: var(--font-num); font-weight: 700; font-size: clamp(1.6rem, 6.5vw, 2.5rem); line-height: 1.15; margin: 0; white-space: nowrap; }
+.eqn .q { color: var(--pt); }
+.eqn .a { color: var(--green); }
+.guide { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.2; margin: 0; }
+.guide b { font-family: var(--font-num); color: var(--pt); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.row button { flex: 1 1 auto; min-height: 54px; font-size: 1.15rem; }
+#check { flex: 2 1 auto; font-size: 1.4rem; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#check:hover { background: var(--sheet); color: var(--pt); }
+.fb { min-height: 2rem; margin: 4px 0 0; font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; line-height: 1.2; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.1rem; color: var(--ink); margin-top: 4px; }
+.stars { display: flex; align-items: baseline; gap: 10px; margin: 0; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; color: #c89400; }
+.stars span { font-family: var(--font-body); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; }
+.key .it { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.key svg { display: block; overflow: visible; }
+.key .eq { color: var(--muted); }
+.key.four { font-size: 1.12rem; gap: 4px; }
+.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tools button { min-height: 50px; font-size: 1.1rem; }
+.tools button:disabled { opacity: 0.45; cursor: default; }
+.tools button:disabled:hover { border-color: var(--grid-major); }
+#trash { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 66px; border: 3px dashed var(--grid-major); border-radius: 12px;
+  color: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+#trash svg { width: 44px; height: 44px; }
+#trash.hot { background: color-mix(in srgb, var(--warn) 14%, var(--sheet)); border-color: var(--warn); color: var(--warn); }
+.panel { justify-content: space-between; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Decimal Blocks</h1></div>
+    <div class="opts">
+      <span class="seg" id="mode"><button type="button" data-v="build" aria-pressed="true">Free Build</button><button type="button" data-v="target" aria-pressed="false">Build the Number</button><button type="button" data-v="math" aria-pressed="false">Add &amp; Subtract</button></span>
+      <span class="seg" id="level"><button type="button" data-v="1" aria-pressed="false"></button><button type="button" data-v="2" aria-pressed="true"></button><button type="button" data-v="3" aria-pressed="false"></button></span>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <svg id="svg" aria-label="Place value chart"></svg>
+      <div class="toast" id="toast" role="status"></div>
+    </div>
+    <div class="panel">
+      <div class="card" id="keyCard">
+        <p class="label">1 whole</p>
+        <div class="key" id="key"></div>
+      </div>
+      <div class="card" id="taskCard" hidden>
+        <p class="ask" id="ask"></p>
+        <p class="target" id="target"></p>
+        <p class="eqn" id="eqn"></p>
+        <p class="guide" id="guide"></p>
+        <div class="row">
+          <button type="button" id="check">Check answer</button>
+          <button type="button" id="newTask"></button>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+        <p class="stars"><span>Stars</span><b id="stars">0</b></p>
+      </div>
+      <div class="card" id="totalCard">
+        <p class="label">Standard form</p>
+        <div class="std" id="std"></div>
+        <p class="label">Expanded form</p>
+        <div class="exp" id="exp"></div>
+        <p class="label">Written form</p>
+        <p class="words" id="words"></p>
+      </div>
+      <div class="tools">
+        <button type="button" id="breakBtn" disabled>Break apart</button>
+        <button type="button" id="clearBtn">Clear all</button>
+        <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M5 6l1 15h12l1-15M10 10v8M14 10v8"/></svg><span>Trash</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg"), board = $("board");
+
+  /* ---------- Language helpers (dynamic text is built here; static text is in i18n/basetenblocks.js) ---------- */
+  const lang = () => { if (window.I18N) return I18N.lang; try { return localStorage.getItem("mv-lang") === "fr" ? "fr" : "en"; } catch (e) { return "en"; } };
+  const tx = (en, fr) => (lang() === "fr" ? fr : en);
+  // Column names go by decimal places (0 = ones, 1 = tenths, ...); block names go by shape.
+  const NAME = [["Ones", "Unités"], ["Tenths", "Dixièmes"], ["Hundredths", "Centièmes"], ["Thousandths", "Millièmes"]];
+  const ONE = [["whole", "entier"], ["tenth", "dixième"], ["hundredth", "centième"], ["thousandth", "millième"]];
+  const BLOCK = { 1: ["cube", "cube"], 10: ["rod", "réglette"], 100: ["flat", "plaque"], 1000: ["big cube", "gros cube"] };
+  const nm = t => tx(...NAME[dpOf(t)]);
+  const low = t => nm(t).toLowerCase();
+  const one = t => tx(...ONE[dpOf(t)]);
+
+  const ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+  const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+  function en(n) {
+    if (n < 20) return ONES[n];
+    if (n < 100) return TENS[n / 10 | 0] + (n % 10 ? "-" + ONES[n % 10] : "");
+    if (n < 1000) return ONES[n / 100 | 0] + " hundred" + (n % 100 ? " " + en(n % 100) : "");
+    return en(n / 1000 | 0) + " thousand" + (n % 1000 ? " " + en(n % 1000) : "");
+  }
+  const U = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize"];
+  const FT = { 2: "vingt", 3: "trente", 4: "quarante", 5: "cinquante", 6: "soixante", 8: "quatre-vingt" };
+  function fr99(n) {
+    if (n < 17) return U[n];
+    if (n < 20) return "dix-" + U[n - 10];
+    const t = n / 10 | 0, o = n % 10;
+    if (t === 7) return n === 71 ? "soixante et onze" : "soixante-" + fr99(n - 60);
+    if (t === 9) return "quatre-vingt-" + fr99(n - 80);
+    if (o === 0) return t === 8 ? "quatre-vingts" : FT[t];
+    if (o === 1 && t !== 8) return FT[t] + " et un";
+    return FT[t] + "-" + U[o];
+  }
+  function fr(n) {
+    if (n < 100) return fr99(n);
+    if (n < 1000) { const h = n / 100 | 0, r = n % 100, hs = h === 1 ? "cent" : U[h] + " cent" + (r ? "" : "s"); return r ? hs + " " + fr99(r) : hs; }
+    const th = n / 1000 | 0, r = n % 1000, ts = th === 1 ? "mille" : fr(th) + " mille";
+    return r ? ts + " " + fr(r) : ts;
+  }
+  // 1.25 is read "one and twenty-five hundredths", reading every column shown (0.30 is "thirty hundredths").
+  function words(n) {
+    const W = whole(), w = n / W | 0, f = (n % W) / small(), d = dp();
+    const isFr = lang() === "fr", num = isFr ? fr : en;
+    let s = w ? num(w) : "";
+    if (f) s += (w ? (isFr ? " et " : " and ") : "") + num(f) + " " + tx(...ONE[d]) + (f > 1 ? "s" : "");
+    if (!s) s = num(0);
+    return s[0].toUpperCase() + s.slice(1);
+  }
+
+  /* ---------- Blocks ---------- */
+  const COLOR = { 1: "#f6c945", 10: "#5cbf7a", 100: "#7aa7ec", 1000: "#b08ae0" };
+  const mix = (hex, to, k) => { const a = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), b = [1, 3, 5].map(i => parseInt(to.slice(i, i + 2), 16));
+    return "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * k)).join(",") + ")"; };
+  // Front face fw x fh, drawn with a slanted depth of off (half a unit per unit of depth).
+  const SHAPE = { 1: { fw: 1, fh: 1, off: 0.5 }, 10: { fw: 1, fh: 10, off: 0.5 }, 100: { fw: 10, fh: 10, off: 0.5 }, 1000: { fw: 10, fh: 10, off: 5 } };
+  const boxOf = t => ({ w: SHAPE[t].fw + SHAPE[t].off, h: SHAPE[t].fh + SHAPE[t].off });
+
+  function el(tag, at, parent) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; }
+  function drawBlock(g, t) {
+    const { fw, fh, off } = SHAPE[t], c = COLOR[t];
+    el("polygon", { class: "edge", points: `0,${off} ${fw},${off} ${fw + off},0 ${off},0`, fill: mix(c, "#ffffff", 0.35) }, g);
+    el("polygon", { class: "edge", points: `${fw},${off} ${fw + off},0 ${fw + off},${fh} ${fw},${fh + off}`, fill: mix(c, "#000000", 0.2) }, g);
+    el("rect", { class: "edge", x: 0, y: off, width: fw, height: fh, fill: c }, g);
+    let d = "";
+    for (let k = 1; k < fh; k++) d += `M0 ${off + k}H${fw}M${fw} ${off + k}L${fw + off} ${k}`; // across the front and the right side
+    for (let k = 1; k < fw; k++) d += `M${k} ${off}V${off + fh}M${k} ${off}L${k + off} 0`;      // down the front and across the top
+    if (t === 1000) for (let j = 1; j < 10; j++) { const s = j * off / 10; d += `M${s} ${off - s}H${fw + s}M${fw + s} ${off - s}V${off - s + fh}`; }
+    if (d) el("path", { class: "gl", d }, g);
+  }
+
+  /* ---------- State ---------- */
+  const LEVEL = { 1: [100, 10], 2: [100, 10, 1], 3: [1000, 100, 10, 1] };
+  const WIDTH = { 1: [0.6, 0.4], 2: [0.42, 0.34, 0.24], 3: [0.3, 0.29, 0.22, 0.19] };
+  const RANGE = { 1: [1, 29], 2: [1, 299], 3: [1, 1999] }; // targets, counted in the smallest block
+  const st = { mode: "build", level: 2, cols: {}, busy: 0, sel: null, stars: 0, task: null, solved: false, step: 0, G: null, u: 20, uid: 0 };
+  const places = () => LEVEL[st.level];
+  const top = () => places()[0];
+  const whole = () => top();                       // the biggest block is always 1 whole
+  const small = () => places()[places().length - 1];
+  const dpOf = t => Math.round(Math.log10(whole() / t));
+  const dp = () => dpOf(small());
+  const dec = n => (n / whole()).toFixed(dp());   // decimals keep a point in French too
+  const cap = t => (t === top() ? (t === 1000 ? 2 : 3) : 19);
+  const total = () => places().reduce((s, t) => s + t * st.cols[t].length, 0);
+
+  /* ---------- Layout ---------- */
+  // Where each of n blocks sits (block units, top-left of its box), k = how many per row.
+  const CAND = { 1: [2, 1], 10: [20, 10, 5], 100: [10, 5], 1000: [2, 1] };
+  function arrange(t, n, k) {
+    const pos = [];
+    if (!n) return { pos, w: 0, h: 0 };
+    if (t === 1) { // towers of ten, filled from the bottom, a little gap after five
+      const H1 = 11.88, towers = Math.ceil(n / 10), rows = Math.ceil(towers / k);
+      for (let j = 0; j < n; j++) {
+        const ti = j / 10 | 0, r = j % 10, row = ti / k | 0, c = ti % k;
+        pos.push({ x: c * 2.1, y: row * (H1 + 1) + H1 - r * 1.12 - (r >= 5 ? 0.3 : 0) - 1.5 });
+      }
+      return { pos, w: (Math.min(k, towers) - 1) * 2.1 + 1.5, h: rows * H1 + (rows - 1) };
+    }
+    const P = { 10: [1.8, 0.9, 11.7], 100: [3.2, 2.6, 11.7], 1000: [16, 0, 16] }[t]; // step, extra gap every five, row step
+    const xAt = c => c * P[0] + (c / 5 | 0) * P[1];
+    // Flats fan out like cards, each a little lower than the last, so every flat shows its own corner.
+    const dy = t === 100 ? 1.2 : 0, drop = dy * (Math.min(k, n, 5) - 1), rowStep = P[2] + drop;
+    for (let i = 0; i < n; i++) pos.push({ x: xAt(i % k), y: (i / k | 0) * rowStep + (i % k % 5) * dy });
+    const rows = Math.ceil(n / k), b = boxOf(t);
+    return { pos, w: xAt(Math.min(k, n) - 1) + b.w, h: (rows - 1) * rowStep + b.h + drop };
+  }
+  function plan(t, n, u, cw, ch) {
+    let best = null;
+    for (const k of CAND[t]) {
+      const a = arrange(t, n, k);
+      a.fit = Math.min(cw / a.w, ch / a.h);
+      if (u && a.w * u <= cw + 0.5 && a.h * u <= ch + 0.5) return a;
+      if (!best || a.fit > best.fit) best = a;
+    }
+    return best;
+  }
+
+  function geometry() {
+    const r = svg.getBoundingClientRect(), W = Math.max(300, r.width), H = Math.max(260, r.height);
+    const hh = Math.max(66, Math.min(104, H * 0.15)), tb = Math.max(78, Math.min(128, H * 0.17)), pad = 14;
+    let x = 0;
+    const cols = places().map((t, i) => { const w = W * WIDTH[st.level][i]; const c = { t, x, w }; x += w; return c; });
+    return { W, H, hh, tb, pad, chartTop: hh, chartBot: H - tb, cols };
+  }
+
+  let layers = {}, countEls = {}, trayEls = {};
+  function drawStatic() {
+    const G = st.G = geometry();
+    svg.setAttribute("viewBox", `0 0 ${G.W} ${G.H}`);
+    const keep = places().map(t => layers[t]).filter(Boolean);
+    svg.replaceChildren();
+    const stat = el("g", {}, svg);
+    for (const c of G.cols) {
+      el("rect", { class: "col-bg", x: c.x, y: 0, width: c.w, height: G.chartBot, fill: COLOR[c.t], "fill-opacity": 0.08 }, stat);
+      el("rect", { class: "col-bg", x: c.x, y: 0, width: c.w, height: G.hh, fill: COLOR[c.t], "fill-opacity": 0.42 }, stat);
+      if (c.x > 0) el("line", { class: "col-sep", x1: c.x, x2: c.x, y1: 0, y2: G.chartBot }, stat);
+      const name = el("text", { class: "col-name", x: c.x + c.w / 2, y: G.hh * 0.34, "font-size": Math.min(G.hh * 0.27, c.w * 0.86 / (nm(c.t).length * 0.56)) }, stat);
+      name.textContent = nm(c.t);
+      countEls[c.t] = el("text", { class: "col-count", x: c.x + c.w / 2, y: G.hh * 0.86, "font-size": G.hh * 0.5 }, stat);
+    }
+    el("line", { class: "col-sep", x1: 0, x2: G.W, y1: G.hh, y2: G.hh }, stat);
+    // The decimal point sits on the line between Ones and Tenths, level with the counts.
+    el("circle", { class: "dot", cx: G.cols[1].x, cy: G.hh * 0.7, r: Math.max(6, G.hh * 0.085) }, stat);
+    // Supply tray: one block under each column, tap or drag it.
+    el("rect", { class: "tray-bg", x: 0, y: G.chartBot, width: G.W, height: G.tb }, stat);
+    el("line", { class: "tray-line", x1: 0, x2: G.W, y1: G.chartBot, y2: G.chartBot }, stat);
+    for (const c of G.cols) {
+      const b = boxOf(c.t), want = c.t === 1 ? G.tb * 0.26 : G.tb * 0.52;
+      const s = Math.min(want / b.h, (c.w * 0.5) / b.w), cx = c.x + c.w / 2, cy = G.chartBot + G.tb * 0.38;
+      const g = el("g", { class: "tray-item", tabindex: 0, role: "button", "data-t": c.t, "aria-label": tx("Add a ", "Ajoute un ") + tx(...BLOCK[c.t]) + " (" + val(c.t) + ")" }, svg);
+      const hw = Math.max(b.w * s, 40, c.w * 0.3) / 2 + 14;
+      el("rect", { class: "hit", x: cx - hw, y: G.chartBot + 6, width: hw * 2, height: G.tb - 12, rx: 12 }, g);
+      const ic = el("g", { transform: `translate(${cx - b.w * s / 2} ${cy - b.h * s / 2}) scale(${s})` }, g);
+      drawBlock(ic, c.t);
+      const p = el("g", { class: "plus", transform: `translate(${cx + b.w * s / 2 + 2} ${cy - b.h * s / 2 - 2})` }, g);
+      el("circle", { r: 13 }, p); el("path", { d: "M-6 0H6M0 -6V6" }, p);
+      el("text", { class: "tray-val", x: cx, y: G.chartBot + G.tb * 0.9, "font-size": Math.min(G.tb * 0.24, c.w / 5) }, g).textContent = val(c.t);
+      trayEls[c.t] = { cx, cy, g };
+    }
+    for (const t of places()) { layers[t] = keep.includes(layers[t]) ? layers[t] : el("g", {}); svg.appendChild(layers[t]); }
+  }
+
+  const val = t => (t === whole() ? tx("1 whole", "1 entier") : (t / whole()).toFixed(dpOf(t)));
+
+  // Key card: 1 whole = 10 rods = 100 cubes (each with its block), so a tiny cube is clearly 0.01.
+  function drawKey() {
+    const k = $("key"); k.replaceChildren();
+    k.classList.toggle("four", places().length > 3);
+    places().forEach((t, i) => {
+      if (i) { const eq = document.createElement("span"); eq.className = "eq"; eq.textContent = "="; k.appendChild(eq); }
+      const item = document.createElement("span"); item.className = "it";
+      const b = boxOf(t), s = (t === 1 ? 10 : places().length > 3 ? 24 : 28) / b.h;
+      const ic = el("svg", { width: b.w * s, height: b.h * s, viewBox: `0 0 ${b.w} ${b.h}`, "aria-hidden": "true" });
+      drawBlock(el("g", {}, ic), t);
+      const n = document.createElement("b"); n.textContent = fmtInt(whole() / t);
+      item.append(n, ic);
+      k.appendChild(item);
+    });
+  }
+  const fmtInt = n => (lang() === "fr" ? n.toLocaleString("fr-CA") : n.toLocaleString("en-US"));
+
+  function chartBox(t) {
+    const G = st.G, c = G.cols.find(c => c.t === t);
+    return { x: c.x + G.pad, y: G.chartTop + G.pad, w: c.w - 2 * G.pad, h: G.chartBot - G.chartTop - 2 * G.pad };
+  }
+  function setPos(b, x, y, u, instant) {
+    b.x = x; b.y = y; b.u = u;
+    if (instant) b.el.classList.add("nt");
+    b.el.style.transform = `translate(${x}px, ${y}px) scale(${u})`;
+    if (instant) { b.el.getBoundingClientRect(); b.el.classList.remove("nt"); }
+  }
+  function layout(instant) {
+    const G = st.G, ch = G.chartBot - G.chartTop - 2 * G.pad;
+    let u = Math.min(38, ch / 12.5);
+    for (const t of places()) { const n = st.cols[t].length; if (n) { const bx = chartBox(t); u = Math.min(u, plan(t, n, 0, bx.w, bx.h).fit); } }
+    st.u = u;
+    for (const t of places()) {
+      const list = st.cols[t]; if (!list.length) continue;
+      const bx = chartBox(t), a = plan(t, list.length, u, bx.w, bx.h);
+      const x0 = bx.x + (bx.w - a.w * u) / 2, y0 = bx.y + bx.h - a.h * u;
+      list.forEach((b, i) => setPos(b, x0 + a.pos[i].x * u, y0 + a.pos[i].y * u, u, instant));
+    }
+    refresh();
+  }
+
+  function makeBlock(t, x, y, u) {
+    const g = el("g", { class: "blk" }, layers[t]);
+    const b = { id: ++st.uid, t, el: g, x, y, u };
+    g.__b = b;
+    drawBlock(g, t);
+    setPos(b, x, y, u, true);
+    return b;
+  }
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  /* ---------- Adding, snapping, breaking, removing ---------- */
+  function after(t, n) { // counts after adding n of t and snapping tens up the chart
+    const c = {}; for (const p of places()) c[p] = st.cols[p].length;
+    c[t] += n;
+    for (let p = t; p < top(); p *= 10) while (c[p] >= 10) { c[p] -= 10; c[p * 10]++; }
+    return c;
+  }
+  const fits = c => places().every(t => c[t] <= cap(t));
+
+  async function add(t, x, y) {
+    if (!fits(after(t, 1))) { toast(tx("The board is full!", "Le tableau est plein!")); return; }
+    const b = makeBlock(t, x - boxOf(t).w * st.u / 2, y - boxOf(t).h * st.u / 2, st.u);
+    b.el.classList.add("fly"); // taps go through to the tray while it slides away
+    setTimeout(() => b.el.classList.remove("fly"), 450);
+    st.cols[t].push(b);
+    layout();
+    changed();
+    if (t !== top() && st.cols[t].length >= 10) { st.busy++; await wait(460); await snap(t); st.busy--; }
+  }
+
+  // Ten blocks slide together into the next block, which then moves to the next column.
+  async function snap(t) {
+    const list = st.cols[t], ten = list.slice(0, 10), u = st.u, f = ten[0];
+    let ox = f.x, oy = f.y;
+    if (t === 1) { const bottom = f.y + 1.5 * u; ten.forEach((b, r) => setPos(b, f.x, bottom - (r + 1.5) * u, u)); oy = bottom - 10.5 * u; }
+    else if (t === 10) ten.forEach((b, i) => setPos(b, f.x + i * u, f.y, u));
+    else { oy = Math.max(st.G.chartTop + 4, f.y - 4.5 * u); ten.forEach((b, i) => { const j = 9 - i; setPos(b, ox + 0.5 * j * u, oy + (4.5 - 0.5 * j) * u, u); }); }
+    await wait(480);
+    for (const b of ten) b.el.remove();
+    st.cols[t] = list.slice(10);
+    if (ten.includes(st.sel)) select(null);
+    const up = t * 10;
+    toast(tx(`10 ${low(t)} = 1 ${one(up)}`, `10 ${low(t)} = 1 ${one(up)}`));
+    st.cols[up].push(makeBlock(up, ox, oy, u));
+    await wait(160);
+    layout();
+    changed();
+    await wait(480);
+    if (up !== top() && st.cols[up].length >= 10) await snap(up);
+  }
+
+  // One block comes apart into ten of the next smaller block, which move to the next column.
+  async function breakApart(b) {
+    if (!b || b.t === 1 || st.busy) return;
+    const t = b.t / 10;
+    if (st.cols[t].length + 10 > cap(t)) { toast(tx(`Too many ${low(t)}! Move some to the trash first.`, `Trop de ${low(t)}! Mets-en quelques-uns à la poubelle d'abord.`)); return; }
+    st.busy++;
+    select(null);
+    toast(tx(`1 ${one(b.t)} = 10 ${low(t)}`, `1 ${one(b.t)} = 10 ${low(t)}`));
+    const u = b.u, x = b.x, y = b.y;
+    st.cols[b.t].splice(st.cols[b.t].indexOf(b), 1);
+    b.el.remove();
+    const spot = (i, s) => b.t === 10 ? [x, y + 10.5 * u - (i + 1.5) * u * s - (s - 1) * 0.5 * u]
+      : b.t === 100 ? [x + i * u * s - (s - 1) * 4.5 * u, y]
+      : [x + 0.5 * (9 - i) * u * s, y + (4.5 - 0.5 * (9 - i) * s) * u];
+    const kids = [];
+    for (let i = 0; i < 10; i++) { const [px, py] = spot(i, 1); kids.push(makeBlock(t, px, py, u)); }
+    st.cols[t].push(...kids);
+    await wait(30);
+    kids.forEach((k, i) => { const [px, py] = spot(i, 1.25); setPos(k, px, py, u); });
+    await wait(420);
+    layout();
+    changed();
+    await wait(480);
+    st.busy--;
+  }
+
+  function remove(b) {
+    st.cols[b.t].splice(st.cols[b.t].indexOf(b), 1);
+    if (st.sel === b) select(null);
+    b.el.remove();
+    layout();
+    changed();
+  }
+  function clearAll(animate = true) {
+    select(null);
+    for (const t in st.cols) for (const b of st.cols[t]) { if (animate) { b.el.classList.add("gone"); setTimeout(() => b.el.remove(), 260); } else b.el.remove(); }
+    for (const t in st.cols) st.cols[t] = [];
+  }
+
+  function select(b) {
+    if (st.sel) st.sel.el.classList.remove("sel");
+    st.sel = b;
+    if (b) b.el.classList.add("sel");
+    $("breakBtn").disabled = !(b && b.t > 1);
+  }
+
+  /* ---------- Readouts ---------- */
+  function refresh() {
+    for (const t of places()) { const n = st.cols[t].length, e = countEls[t]; if (!e) continue; e.textContent = n; e.classList.toggle("many", n >= 10); }
+  }
+  function totals() {
+    const n = total(), s = dec(n);
+    const std = $("std"); std.replaceChildren();
+    let i = 0; // which column the next digit belongs to
+    for (const ch of s) {
+      const sp = document.createElement("span");
+      if (ch === ".") { sp.className = "pt"; sp.textContent = "."; }
+      else { sp.className = "d"; sp.textContent = ch; sp.style.setProperty("--c", COLOR[places()[i++]]); }
+      std.appendChild(sp);
+    }
+    // Expanded form: one chip for each column that is not zero (1 + 0.2 + 0.05).
+    const exp = $("exp"); exp.replaceChildren();
+    const parts = places().map(t => [(t === top() ? n / t | 0 : (n / t | 0) % 10) * t, t]).filter(p => p[0]);
+    if (!parts.length) parts.push([0, top()]);
+    parts.forEach(([v, t], i) => {
+      if (i) exp.append(" + ");
+      const sp = document.createElement("span"); sp.className = "t"; sp.textContent = (v / whole()).toFixed(dpOf(t)); sp.style.setProperty("--c", COLOR[t]); exp.appendChild(sp);
+    });
+    $("words").textContent = words(n);
+  }
+  /* ---------- Modes and tasks ---------- */
+  const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  function needsTrade(a, b, op) {
+    a /= small(); b /= small();
+    for (let p = 1; p <= 100; p *= 10) { const x = (a / p | 0) % 10, y = (b / p | 0) % 10; if (op === "+" ? x + y >= 10 : x < y) return true; }
+    return false;
+  }
+  function makeTask() {
+    const L = st.level;
+    if (st.mode === "target") { const [lo, hi] = RANGE[L]; let n; do n = rand(lo, hi) * small(); while (st.task && n === st.task.n); return { n }; }
+    const op = Math.random() < 0.5 ? "+" : "−", trade = Math.random() < 0.75;
+    for (let tries = 0; tries < 500; tries++) {
+      let a, b;
+      // Counted in the smallest block: tenths (L1), hundredths (L2), thousandths (L3).
+      if (op === "+") {
+        if (L === 1) { a = rand(2, 19); b = rand(2, 15); if (a + b > 29) continue; }
+        else if (L === 2) { a = rand(11, 185); b = rand(11, 125); if (a + b > 299) continue; }
+        else { a = rand(105, 1450); b = rand(15, 480); if (a + b > 1999) continue; }
+      } else {
+        if (L === 1) { a = rand(8, 29); b = rand(2, a - 3); }
+        else if (L === 2) { a = rand(30, 299); b = rand(11, a - 8); }
+        else { a = rand(200, 1999); b = rand(25, Math.min(a - 20, 600)); }
+      }
+      a *= small(); b *= small();
+      if (trade !== needsTrade(a, b, op === "+" ? "+" : "-")) continue;
+      return { a, b, op, n: op === "+" ? a + b : a - b };
+    }
+    return { a: 45 * small(), b: 27 * small(), op: "+", n: 72 * small() };
+  }
+
+  function renderTask() {
+    const m = st.mode, k = st.task;
+    $("taskCard").hidden = m === "build";
+    $("keyCard").hidden = m !== "build"; // the tray still labels each block's value
+    $("totalCard").hidden = m !== "build" && !st.solved;
+    $("target").hidden = m !== "target";
+    $("eqn").hidden = $("guide").hidden = m !== "math";
+    $("newTask").textContent = m === "target" ? tx("New number", "Nouveau nombre") : tx("New problem", "Nouveau problème");
+    if (m === "target") {
+      $("ask").textContent = tx("Build this number", "Construis ce nombre");
+      $("target").textContent = dec(k.n);
+    } else if (m === "math") {
+      $("ask").textContent = tx("Use the blocks", "Utilise les blocs");
+      $("eqn").innerHTML = `${dec(k.a)} ${k.op} ${dec(k.b)} = ${st.solved ? `<span class="a">${dec(k.n)}</span>` : `<span class="q">?</span>`}`;
+      const g = $("guide");
+      if (st.solved) g.textContent = "";
+      else if (st.step === 0) g.innerHTML = tx(`Build <b>${dec(k.a)}</b>.`, `Construis <b>${dec(k.a)}</b>.`);
+      else g.innerHTML = k.op === "+" ? tx(`Now add <b>${dec(k.b)}</b> more.`, `Ajoute maintenant <b>${dec(k.b)}</b>.`)
+        : tx(`Now take away <b>${dec(k.b)}</b>.`, `Enlève maintenant <b>${dec(k.b)}</b>.`);
+    }
+    $("stars").textContent = st.stars;
+  }
+
+  function newTask() {
+    clearAll();
+    st.solved = false; st.step = 0;
+    st.task = st.mode === "build" ? null : makeTask();
+    setFb("", "");
+    renderTask();
+    layout();
+    totals();
+  }
+
+  function setFb(cls, html) { const f = $("fb"); f.className = "fb" + (cls ? " " + cls : ""); f.innerHTML = html; }
+
+  function check() {
+    if (!st.task || st.busy) return;
+    const n = total(), k = st.task;
+    if (n === k.n) {
+      if (!st.solved) st.stars++;
+      st.solved = true;
+      setFb("ok", tx("You did it! ★", "Tu as réussi! ★") + (k.op ? `<small>${dec(k.a)} ${k.op} ${dec(k.b)} = ${dec(k.n)}</small>` : ""));
+      renderTask(); totals();
+      return;
+    }
+    if (st.mode === "math" && st.step === 0) { setFb("no", tx(`First build ${dec(k.a)}.`, `Construis d'abord ${dec(k.a)}.`)); return; }
+    // Point at the biggest place that is different.
+    let hint = "";
+    for (const t of places()) { if ((n / t | 0) % (t === top() ? 1e9 : 10) !== (k.n / t | 0) % (t === top() ? 1e9 : 10)) { hint = tx(`Look at your ${low(t)}.`, `Regarde tes ${low(t)}.`); break; } }
+    setFb("no", tx("Not yet!", "Pas encore!") + `<small>${tx(`Your blocks make ${dec(n)}.`, `Tes blocs font ${dec(n)}.`)} ${st.mode === "target" ? hint : ""}</small>`);
+  }
+
+  // Runs after every change on the board.
+  function changed() {
+    totals();
+    if (st.mode === "math" && !st.solved && st.step === 0 && total() === st.task.a) { st.step = 1; renderTask(); }
+    if ($("fb").classList.contains("no")) setFb("", "");
+  }
+
+  let toastTimer;
+  function toast(s) { const t = $("toast"); t.textContent = s; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800); }
+
+  function setLevel(L) {
+    clearAll(false);
+    for (const t of Object.keys(layers)) layers[t].remove();
+    layers = {}; countEls = {}; trayEls = {};
+    st.level = L; st.cols = {};
+    for (const t of places()) st.cols[t] = [];
+    drawStatic();
+    drawKey();
+    newTask();
+  }
+
+  /* ---------- Pointer: tap or drag from the tray, drag blocks to the trash, double-tap to break ---------- */
+  let drag = null, lastTap = { id: 0, time: 0 };
+  const toSvg = (cx, cy) => { const m = svg.getScreenCTM().inverse(); return { x: m.a * cx + m.c * cy + m.e, y: m.b * cx + m.d * cy + m.f }; };
+  const scr = () => svg.getScreenCTM().a;
+
+  svg.addEventListener("pointerdown", e => {
+    if (st.busy || e.button > 0) return;
+    const tray = e.target.closest(".tray-item"), blk = e.target.closest(".blk");
+    if (!tray && !blk) { select(null); return; }
+    e.preventDefault();
+    const b = blk && blk.__b, t = b ? b.t : +tray.dataset.t;
+    const bw = boxOf(t).w * st.u * scr(), bh = boxOf(t).h * st.u * scr();
+    let offX = bw / 2, offY = bh / 2;
+    if (b) { const r = b.el.getBoundingClientRect(); offX = e.clientX - r.left; offY = e.clientY - r.top; }
+    drag = { t, b, x0: e.clientX, y0: e.clientY, offX, offY, bw, bh, moving: false, ghost: null };
+  });
+  window.addEventListener("pointermove", e => {
+    if (!drag) return;
+    if (!drag.moving && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 7) return;
+    if (!drag.moving) {
+      drag.moving = true;
+      const b = boxOf(drag.t), gh = el("svg", { class: "ghost", width: drag.bw, height: drag.bh, viewBox: `0 0 ${b.w} ${b.h}` });
+      drawBlock(el("g", {}, gh), drag.t);
+      document.body.appendChild(gh);
+      drag.ghost = gh;
+      if (drag.b) { drag.b.el.classList.add("lift"); select(null); }
+    }
+    drag.ghost.style.transform = `translate(${e.clientX - drag.offX}px, ${e.clientY - drag.offY}px)`;
+    $("trash").classList.toggle("hot", !!drag.b && overTrash(e));
+  });
+  const overTrash = e => { const r = $("trash").getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
+  function zone(e) {
+    if (overTrash(e)) return "trash";
+    const r = svg.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return "out";
+    return toSvg(e.clientX, e.clientY).y > st.G.chartBot ? "tray" : "chart";
+  }
+  window.addEventListener("pointerup", e => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    $("trash").classList.remove("hot");
+    if (d.ghost) d.ghost.remove();
+    if (!d.moving) { // a tap
+      if (!d.b) { const p = trayEls[d.t]; add(d.t, p.cx, p.cy); return; }
+      const now = performance.now();
+      if (lastTap.id === d.b.id && now - lastTap.time < 450) { lastTap = { id: 0, time: 0 }; breakApart(d.b); return; }
+      lastTap = { id: d.b.id, time: now };
+      select(st.sel === d.b ? null : d.b);
+      return;
+    }
+    const z = zone(e);
+    if (d.b) {
+      d.b.el.classList.remove("lift");
+      if (z === "trash" || z === "tray") remove(d.b);
+    } else if (z === "chart") {
+      const p = toSvg(e.clientX - d.offX + d.bw / 2, e.clientY - d.offY + d.bh / 2);
+      add(d.t, p.x, p.y);
+    }
+  });
+  window.addEventListener("pointercancel", () => { if (drag) { if (drag.ghost) drag.ghost.remove(); if (drag.b) drag.b.el.classList.remove("lift"); drag = null; $("trash").classList.remove("hot"); } });
+  svg.addEventListener("keydown", e => {
+    const tray = e.target.closest && e.target.closest(".tray-item");
+    if (tray && (e.key === "Enter" || e.key === " ") && !st.busy) { e.preventDefault(); const t = +tray.dataset.t, p = trayEls[t]; add(t, p.cx, p.cy); }
+  });
+  window.addEventListener("keydown", e => {
+    if ((e.key === "Delete" || e.key === "Backspace") && st.sel && !st.busy && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); remove(st.sel); }
+  });
+
+  /* ---------- Controls ---------- */
+  $("breakBtn").addEventListener("click", () => breakApart(st.sel));
+  $("clearBtn").addEventListener("click", () => { if (st.busy) return; clearAll(); layout(); changed(); });
+  $("check").addEventListener("click", check);
+  $("newTask").addEventListener("click", () => { if (!st.busy) newTask(); });
+  function seg(id, fn) {
+    $(id).addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b || st.busy) return;
+      $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      fn(b.dataset.v);
+    });
+  }
+  seg("mode", v => { st.mode = v; newTask(); });
+  seg("level", v => {
+    const was = whole();
+    setLevel(+v);
+    if (whole() !== was) toast(whole() === 1000 ? tx("Now the big cube is 1 whole!", "Maintenant, le gros cube vaut 1 entier!") : tx("Now the flat is 1 whole!", "Maintenant, la plaque vaut 1 entier!"));
+  });
+  const LEVELNAME = { 1: ["Tenths", "Dixièmes"], 2: ["Hundredths", "Centièmes"], 3: ["Thousandths", "Millièmes"] };
+  function levelLabels() { $("level").querySelectorAll("button").forEach(b => { b.textContent = tx(...LEVELNAME[b.dataset.v]); }); }
+
+  let rt;
+  new ResizeObserver(() => {
+    board.classList.add("resizing");
+    drawStatic(); layout(true);
+    clearTimeout(rt); rt = setTimeout(() => board.classList.remove("resizing"), 100);
+  }).observe(board);
+  window.addEventListener("langchange", () => { levelLabels(); drawStatic(); layout(true); drawKey(); renderTask(); totals(); if (st.solved) check(); });
+
+  levelLabels();
+  setLevel(2);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Decimal Blocks (decimalblocks.html). Column names, block values, feedback, the target and the written form are built in French by the page itself. Decimals keep a point in French. */
+window.I18N_PAGE = {
+  "Decimal Blocks": "Blocs décimaux",
+  "Free Build": "Construction libre",
+  "Build the Number": "Construis le nombre",
+  "Add & Subtract": "Additionner et soustraire",
+  "1 whole": "1 entier",
+  "Standard form": "Forme usuelle",
+  "Expanded form": "Forme développée",
+  "Written form": "En lettres",
+  "Break apart": "Défaire",
+  "Clear all": "Tout effacer",
+  "Trash": "Poubelle",
+  "Stars": "Étoiles",
+  "Place value chart": "Tableau de valeur de position"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
