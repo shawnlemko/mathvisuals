@@ -186,6 +186,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .q .col .body { display: inline-flex; align-items: center; gap: 0.25em; white-space: nowrap; }
 .q.cards .op { font-size: 0.8em; }
 .rep { text-decoration: overline; text-decoration-thickness: 0.07em; }
+/* Repeating decimals use bar notation (Shawn 2026-10-15). The answer has a second, smaller box with a bar
+   over it: the digits that repeat go there, so 1/6 is typed 0.1 and 6 and reads 0.16 with a bar over the 6. */
+.barbox { display: inline-flex; flex-direction: column; align-items: center; gap: 0.06em; color: var(--pt); }
+.barbox::before { content: ""; width: 100%; height: 0.1em; background: currentColor; border-radius: 0.05em; }
+.q .barbox input { width: 2.6ch; }
+.barbox .tag { color: var(--muted); }
+.typing .rep { font-family: var(--font-num); }
 .typing { margin: 0; font-size: 0.95rem; color: var(--muted); text-align: center; }
 .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px; }
 .btns { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -320,7 +327,7 @@ function decOf(n, d) {
   if (e.repStart < 0) return { ...e, text: '0.' + e.digits.join(''), html: '0.' + e.digits.join(''), rep: false };
   const a = e.digits.slice(0, e.repStart).join(''), b = e.digits.slice(e.repStart).join('');
   let long = a + b; while (long.length < 3) long += b;
-  return { ...e, a, b, rep: true, text: `0.${long}…`, html: `0.${a}<span class="rep">${b}</span>` };
+  return { ...e, a, b, rep: true, long: `0.${long}`, text: `0.${a}${b}`, html: `0.${a}<span class="rep">${b}</span>` };
 }
 const fracH = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
 const fracT = (n, d) => `${n}/${d}`;
@@ -367,8 +374,10 @@ function render() {
   fb.textContent = ''; fb.className = 'fb';
   if (mode === 'f2d') {
     ask.textContent = 'Write the fraction as a decimal.';
-    qEl.innerHTML = `${fracH(q.n, q.d)}<span class="op">=</span>${inp('a1', 'dec', 'decimal')}`;
-    typing.innerHTML = types.has('repeating') ? 'If it repeats, type dots: <b>0.333...</b> or brackets: <b>0.(3)</b>' : '';
+    const bar = types.has('repeating');
+    qEl.innerHTML = `${fracH(q.n, q.d)}<span class="op">=</span>${inp('a1', 'dec', 'decimal')}` +
+      (bar ? `<span class="barbox">${inp('a1r', '', 'repeating digits')}<span class="tag">repeats</span></span>` : '');
+    typing.innerHTML = bar ? 'If digits repeat forever, type them once in the bar box. <b>0.1</b> and <b>6</b> makes <b>0.1<span class="rep">6</span></b>' : '';
   } else if (mode === 'd2f') {
     ask.textContent = 'Write the decimal as a fraction in simplest form.';
     qEl.innerHTML = `<span>${q.dec.html}</span><span class="op">=</span><span class="fr">${inp('a1', '', 'numerator')}${inp('a2', '', 'denominator')}</span>`;
@@ -417,22 +426,36 @@ const same = (a, b, c, d) => a * d === b * c;
 function digitsTo(e, L) { const out = e.digits.slice(); while (out.length < L) out.push(...e.digits.slice(e.repStart)); return out.join(''); }
 
 // Is this typed decimal equal to n/d? Returns 'good', 'close' or 'bad' with a message.
-function judgeDec(raw, n, d) {
-  const e = decOf(n, d), r = readDec(raw);
+function judgeDec(raw, n, d, rpt) {
+  const e = decOf(n, d);
+  const bar = clean(rpt || '');
+  if (bar) {
+    // Bar box filled: the decimal box holds the digits before the repeat (0.1, 0. or empty).
+    if (!/^\d+$/.test(bar)) return { s: 'bad', msg: 'Type only digits in the bar box.' };
+    const m = clean(raw).match(/^0?\.?(\d*)$/);
+    if (!m) return { s: 'bad', msg: 'Type the digits before the repeat in the first box, like 0.1' };
+    if (!e.rep) return { s: 'close', msg: 'This decimal stops, so leave the bar box empty.' };
+    const a = m[1], L = bar.length;
+    if (same(Number(a + bar) - Number(a || 0), 10 ** a.length * (10 ** L - 1), n, d))
+      return a === e.a && bar === e.b ? { s: 'good' } : { s: 'close', msg: 'Equal! Write it shorter: only the digits that repeat go under the bar, once.' };
+    if (digitsTo(e, a.length + L).startsWith(a + bar)) return { s: 'close', msg: 'Right digits! Only the digits that repeat go under the bar.' };
+    return { s: 'bad', msg: 'Not quite. Try a hint.' };
+  }
+  const r = readDec(raw);
   if (!clean(raw)) return { s: 'bad', msg: 'Type a decimal first.' };
   if (!r) return { s: 'bad', msg: 'Type a decimal like 0.75.' };
   if (r.dots !== undefined) {
     if (!e.rep) return { s: 'close', msg: 'This decimal stops, so no dots are needed.' };
     const want = digitsTo(e, r.dots.length);
     if (!want.startsWith(r.dots)) return { s: 'bad', msg: 'Not quite. Try a hint.' };
-    if (r.dots.length < e.repStart + e.b.length) return { s: 'close', msg: 'Right start! Show a little more before the dots.' };
-    return { s: 'good' };
+    return { s: 'close', msg: 'Right! Now use bar notation: type the repeating digit in the bar box.' };
   }
+  if (r.form === 'bracket' && same(r.n, r.d, n, d)) return { s: 'close', msg: 'Right! Now use bar notation: type the repeating digit in the bar box.' };
   if (same(r.n, r.d, n, d)) return { s: 'good' };
   if (e.rep && r.digits !== undefined && r.ip === 0) {
-    if (digitsTo(e, r.digits.length).startsWith(r.digits)) return { s: 'close', msg: 'Close! The digits keep going. Show it repeats: add ... at the end.' };
+    if (digitsTo(e, r.digits.length).startsWith(r.digits)) return { s: 'close', msg: 'Close! The digits keep going. Type the repeating digit in the bar box.' };
   }
-  if (r.digits === String(n) + String(d)) return { s: 'bad', msg: `Not the digits side by side: ${fracT(n, d)} means ${n} ÷ ${d}.` };
+  if (r.digits === String(n) + String(d)) return { s: 'bad', msg: `Not the digits side by side: ${fracT(n, d)} means ${n} divided by ${d}.` };
   if (same(r.n * 10, r.d, n, d) || same(r.n, r.d * 10, n, d)) return { s: 'bad', msg: 'The digits are right. Check the place value.' };
   return { s: 'bad', msg: 'Not quite. Try a hint.' };
 }
@@ -445,7 +468,8 @@ function check() {
   if (solved || revealed) return;
   let res = []; // [id, state, msg]
   if (mode === 'f2d') {
-    const j = judgeDec($('#a1').value, q.n, q.d); res.push(['#a1', j.s, j.msg]);
+    const r = $('#a1r'), j = judgeDec($('#a1').value, q.n, q.d, r ? r.value : '');
+    res.push(['#a1', j.s, j.msg]); if (r) res.push(['#a1r', j.s]);
   } else if (mode === 'd2f') {
     const a = num('#a1'), b = num('#a2');
     const sn = q.sn ?? q.n, sd = q.sd ?? q.d;
@@ -493,7 +517,7 @@ function showAnswer() {
   revealed = true;
   if (!tried) { tried = true; done++; $('#score').textContent = `${right} / ${done}`; }
   const put = (id, v) => { $(id).value = v; mark(id, 'good'); };
-  if (mode === 'f2d') put('#a1', q.dec.text);
+  if (mode === 'f2d') { if (q.dec.rep && $('#a1r')) { put('#a1', '0.' + q.dec.a); put('#a1r', q.dec.b); } else put('#a1', q.dec.text); }
   else if (mode === 'd2f') { put('#a1', q.sn ?? q.n); put('#a2', q.sd ?? q.d); }
   else if (q.dir === 'r2d') { put('#a1', q.n * q.k); put('#a2', q.dec.text); }
   else { put('#a1', q.p); put('#a2', q.sn); put('#a3', q.sd); }
@@ -505,18 +529,19 @@ function showAnswer() {
 /* ---------- steps ---------- */
 const place = k => (k === 1 ? 'tenths' : k === 2 ? 'hundredths' : 'thousandths');
 function divSteps(n, d) {
-  const e = decOf(n, d), out = [`Divide: ${M(`${n} ÷ ${d}`)}. Write ${n} as ${M(n + '.000…')}`];
-  e.steps.forEach(s => out.push(`${M(`${s.t} ÷ ${d} = ${s.dg}`)} remainder ${M(s.r)}, so the next digit is ${M(s.dg)}`));
-  out.push(`Remainder ${M(e.steps[e.steps.length - 1].r)} came back, so ${M(e.b)} repeats forever`);
+  const e = decOf(n, d), out = [`Divide ${M(n)} by ${M(d)}. Write ${n} as ${M(n + '.000')}`];
+  e.steps.forEach(s => out.push(`${M(d)} goes into ${M(s.t)} ${M(s.dg)} times, remainder ${M(s.r)}, so the next digit is ${M(s.dg)}`));
+  out.push(`Remainder ${M(e.steps[e.steps.length - 1].r)} came back, so ${M(e.b)} repeats forever: ${M(e.long)} and on and on`);
   return out;
 }
 function steps() {
   const { n, d, dec } = q, k = dec.digits.length;
   if (mode === 'f2d') {
     if (q.type === 'repeating') {
-      if (d === 9) return [`Each ninth repeats: ${M('1/9 = 0.111…')} (${M('1 ÷ 9')} leaves remainder 1 every time)`,
-        `${M(fracT(n, d))} is ${n} ninths: ${M(`${n} × 0.111… = ${dec.text}`)}`, `${M(fracT(n, d))} = ${M(dec.text)}, written ${M(dec.html)}`];
-      return [...divSteps(n, d), `${M(fracT(n, d))} = ${M(dec.text)}, written ${M(dec.html)}`];
+      const ninth = '0.<span class="rep">1</span>';
+      if (d === 9) return [`Each ninth repeats: ${M('1/9 = ' + ninth)} (dividing 1 by 9 leaves remainder 1 every time)`,
+        `${M(fracT(n, d))} is ${n} ninths: ${M(`${n} × ${ninth} = ${dec.html}`)}`, `${M(fracT(n, d))} = ${M(dec.html)}. The bar shows the ${dec.b} repeats forever`];
+      return [...divSteps(n, d), `${M(fracT(n, d))} = ${M(dec.html)}. The bar shows the ${dec.b} repeats forever`];
     }
     if (d === 10 || d === 100) return [`The denominator is ${d}, so ${M(fracT(n, d))} is ${M(n)} ${d === 10 ? 'tenths' : 'hundredths'}`,
       `${d === 10 ? 'Tenths' : 'Hundredths'} ${d === 10 ? 'is 1 place' : 'are 2 places'} after the point${d === 100 && n < 10 ? ', so a 0 holds the tenths place' : ''}`,
@@ -528,16 +553,16 @@ function steps() {
   }
   if (mode === 'd2f') {
     if (q.type === 'repeating') {
-      const out = [`${M(dec.text)} repeats one digit forever. Repeating digits are ninths: ${M('0.111… = 1/9')}`,
-        `So ${M(dec.text)} is ${n} ninths: ${M(fracT(n, 9))}`];
+      const out = [`The bar shows the ${dec.b} repeats forever. One repeating digit makes ninths: ${M('0.<span class="rep">1</span> = 1/9')}`,
+        `So ${M(dec.html)} is ${n} ninths: ${M(fracT(n, 9))}`];
       if (q.sd !== 9) out.push(`Simplify: divide both by 3 to get ${M(`${fracT(n, 9)} = ${fracT(q.sn, q.sd)}`)}`);
-      out.push(`${M(dec.text)} = ${M(fracT(q.sn, q.sd))}`);
+      out.push(`${M(dec.html)} = ${M(fracT(q.sn, q.sd))}`);
       return out;
     }
     const T = 10 ** k, p = n * T / d, g = gcd(p, T);
     const out = [`${M(dec.text)} has ${k} digit${k > 1 ? 's' : ''} after the point, so it is ${place(k)}`,
       `${M(dec.text)} = ${M(fracT(p, T))}`];
-    if (g > 1) out.push(`Both divide by ${g} (the GCF): ${M(`${p} ÷ ${g} = ${p / g}`)} and ${M(`${T} ÷ ${g} = ${T / g}`)}`);
+    if (g > 1) out.push(`Both divide by ${g} (the GCF): ${M(`${fracT(p, g)} = ${p / g}`)} and ${M(`${fracT(T, g)} = ${T / g}`)}`);
     else out.push(`${p} and ${T} share no factor, so it is already simplest`);
     out.push(`${M(dec.text)} = ${M(fracT(p / g, T / g))}`);
     return out;
@@ -548,7 +573,7 @@ function steps() {
     `${M(`${n} : ${d}`)} = ${M(`${n * q.k} : ${q.T}`)} = ${M(dec.text)}`];
   const g = q.T / q.sd;
   const out = [`${M(dec.text)} is ${q.p} ${place(k)}: ${M(`${q.p} : ${q.T}`)}`];
-  if (g > 1) out.push(`Divide both by ${g} (the GCF): ${M(`${q.p} ÷ ${g} = ${q.sn}`)} and ${M(`${q.T} ÷ ${g} = ${q.sd}`)}`);
+  if (g > 1) out.push(`Divide both by ${g} (the GCF): ${M(`${fracT(q.p, g)} = ${q.sn}`)} and ${M(`${fracT(q.T, g)} = ${q.sd}`)}`);
   else out.push(`${q.p} and ${q.T} share no factor, so it is already simplest`);
   out.push(`${M(dec.text)} = ${M(`${q.p} : ${q.T}`)} = ${M(`${q.sn} : ${q.sd}`)}`);
   return out;
@@ -615,7 +640,8 @@ function draw() {
     el('text', { x: lx + lw * i / 100, y: ny + 38, class: 'tk-t' }, svg, i === 0 ? '0' : i === 100 ? '1' : '0.' + i / 10);
   }
   el('circle', { cx: px, cy: ny, r: 10, class: 'dot' });
-  el('text', { x: px, y: ny + 80, class: 'val' }, svg, open ? valTxt : '?');
+  const vt = el('text', { x: px, y: ny + 80, class: 'val' }, svg, open ? (q.dec.rep ? '0.' + q.dec.a : valTxt) : '?');
+  if (open && q.dec.rep) el('tspan', { style: 'text-decoration: overline' }, vt, q.dec.b);
   if (open && q.dec.rep) el('text', { x: lx + lw / 2, y: ny + 120, class: 'cap' }, svg, `Between ${(Math.floor(v * 10) / 10).toFixed(1)} and ${(Math.floor(v * 10 + 1) / 10).toFixed(1)}, never landing on a hundredth`);
 }
 
@@ -806,7 +832,27 @@ window.I18N_PAGE = {
  "What did you multiply {n} by to get {n}? Do the same to {n}.": "Par quoi as-tu multiplié {n} pour obtenir {n}? Fais la même chose avec {n}.",
  "Part : whole {0} is the fraction {1}": "Partie : tout {0} donne la fraction {1}",
  "Scale the whole to 100: {0}, so {1}": "Ramène le tout à 100 : {0}, donc {1}",
- "{0} is {n} hundredths": "{0}, c’est {n} centièmes"
+ "{0} is {n} hundredths": "{0}, c’est {n} centièmes",
+ "If digits repeat forever, type them once in the bar box. {0} and {1} makes {2}": "Si des chiffres se répètent à l’infini, écris-les une fois dans la case à barre. {0} et {1} donne {2}",
+ "repeats": "se répète",
+ "repeating digits": "chiffres qui se répètent",
+ "Type only digits in the bar box.": "Écris seulement des chiffres dans la case à barre.",
+ "Type the digits before the repeat in the first box, like 0.1": "Écris les chiffres avant la répétition dans la première case, comme 0.1",
+ "This decimal stops, so leave the bar box empty.": "Ce nombre décimal s’arrête, laisse la case à barre vide.",
+ "Equal! Write it shorter: only the digits that repeat go under the bar, once.": "Égal ! Écris-le plus court : seulement les chiffres qui se répètent vont sous la barre, une fois.",
+ "Right digits! Only the digits that repeat go under the bar.": "Bons chiffres ! Seulement les chiffres qui se répètent vont sous la barre.",
+ "Right! Now use bar notation: type the repeating digit in the bar box.": "Exact ! Utilise maintenant la notation avec une barre : écris le chiffre qui se répète dans la case à barre.",
+ "Close! The digits keep going. Type the repeating digit in the bar box.": "Presque ! Les chiffres continuent. Écris le chiffre qui se répète dans la case à barre.",
+ "Not the digits side by side: {n}/{n} means {n} divided by {n}.": "Pas les chiffres côte à côte : {n}/{n} veut dire {n} divisé par {n}.",
+ "Divide {0} by {1}. Write {n} as {2}": "Divise {0} par {1}. Écris {n} comme {2}",
+ "{0} goes into {1} {2} times, remainder {3}, so the next digit is {4}": "{1} contient {0} {2} fois, reste {3}, donc le chiffre suivant est {4}",
+ "Remainder {0} came back, so {1} repeats forever: {2} and on and on": "Le reste {0} revient, donc {1} se répète à l’infini : {2} et ainsi de suite",
+ "Each ninth repeats: {0} (dividing {n} by {n} leaves remainder {n} every time)": "Chaque neuvième se répète : {0} (diviser {n} par {n} laisse toujours un reste de {n})",
+ "{0} is {n} ninths: {1}": "{0}, c’est {n} neuvièmes : {1}",
+ "{0} = {1}. The bar shows the {n} repeats forever": "{0} = {1}. La barre montre que le {n} se répète à l’infini",
+ "The bar shows the {n} repeats forever. One repeating digit makes ninths: {0}": "La barre montre que le {n} se répète à l’infini. Un seul chiffre qui se répète donne des neuvièmes : {0}",
+ "So {0} is {n} ninths: {1}": "Donc {0}, c’est {n} neuvièmes : {1}",
+ "Both divide by {n} (the GCF): {0} and {1}": "Les deux se divisent par {n} (le PGFC) : {0} et {1}"
 };
 </script>
 <script>

@@ -156,6 +156,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .equals .frac { color: var(--green); }
 .equals .frac > span:first-child { border-bottom-width: 4px; }
 .equals .decv { color: var(--pt); }
+.rep { text-decoration: overline; text-decoration-thickness: 0.07em; }
 .equals .mixed { font-size: 0.6em; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
 .equals .mixed .frac { color: var(--muted); }
 .side { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; }
@@ -258,6 +259,17 @@ svg.dragging, svg.dragging #slider { cursor: grabbing; }
     return (n / d).toFixed(3) + "…";
   }
 
+  // Repeating decimals in bar notation (Shawn 2026-10-15): 1/3 = 0.3 with a bar over the 3, 1/6 = 0.16 with a bar over the 6.
+  function barDecimal(n, d) {
+    const g = gcd(n, d); n /= g; d /= g;
+    if (terminates(d)) return decimal(n, d, false);
+    const whole = Math.floor(n / d), digits = [], seen = {};
+    let r = n % d;
+    while (!(r in seen)) { seen[r] = digits.length; r *= 10; digits.push(Math.floor(r / d)); r %= d; }
+    const k = seen[r];
+    return `${whole}.${digits.slice(0, k).join("")}<span class="rep">${digits.slice(k).join("")}</span>`;
+  }
+
   function read() {
     const n = $("n").value === "" ? NaN : +$("n").value;
     const d = $("d").value === "" ? NaN : +$("d").value;
@@ -331,7 +343,7 @@ svg.dragging, svg.dragging #slider { cursor: grabbing; }
   });
 
   function readout(n, d) {
-    let html = `<span class="frac"><span>${n}</span><span>${d}</span></span><span>=</span><span class="decv">${decimal(n, d, false)}</span>`;
+    let html = `<span class="frac"><span>${n}</span><span>${d}</span></span><span>=</span><span class="decv">${barDecimal(n, d)}</span>`;
     if (n > d && n % d) html += `<span class="mixed">(${Math.floor(n / d)}<span class="frac"><span>${n % d}</span><span>${d}</span></span>)</span>`;
     $("eq").innerHTML = html;
   }
