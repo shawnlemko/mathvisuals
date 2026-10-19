@@ -215,6 +215,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .hint-t { font-family: var(--font-body); fill: var(--muted); text-anchor: middle; }
 .sep { stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 6 8; }
 .gbox { fill: var(--green); fill-opacity: 0.1; stroke: var(--green); stroke-width: 4; }
+.gbox.big { fill-opacity: 0.2; stroke-width: 7; }
 .lbox { fill: var(--orange); fill-opacity: 0.1; stroke: var(--orange); stroke-width: 5; stroke-linejoin: round; }
 .rule { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
 .coach { font-family: var(--font-body); color: var(--ink); font-size: 30px; line-height: 1.3; height: 100%; display: flex; flex-direction: column; gap: 22px; }
@@ -270,6 +271,18 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
 .lad .inl { box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--orange) 12%, transparent); }
 .pdone { font-family: var(--font-display); font-weight: 800; font-size: 2rem; }
 .pdone.g { color: var(--green); } .pdone.l { color: var(--orange); }
+/* Logic */
+.arc { fill: none; stroke: var(--c); stroke-width: 4; stroke-linecap: round; }
+.num.fc { fill: var(--c); }
+.pairs { font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.pairs tspan { fill: var(--c); }
+.head { font-family: var(--font-display); font-weight: 800; fill: var(--ink); dominant-baseline: central; }
+.cring { fill: none; stroke: var(--green); stroke-width: 4; }
+.lring { fill: var(--orange); fill-opacity: 0.14; stroke: var(--orange); stroke-width: 5; }
+.lline { stroke: var(--orange); stroke-width: 4; stroke-dasharray: 2 10; stroke-linecap: round; }
+.hop { fill: none; stroke: var(--grid-major); stroke-width: 3; stroke-linecap: round; }
+.hop.gap { stroke-dasharray: 4 8; }
+.hopt { font-family: var(--font-num); font-weight: 700; fill: var(--muted); text-anchor: middle; }
 .fresh { animation: pop 0.5s ease-out both; transform-box: fill-box; transform-origin: center; }
 @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .fresh { animation: none; } }
@@ -282,6 +295,7 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     <div class="tabs" id="tabs" role="group" aria-label="Strategy">
       <button type="button" data-m="tree" aria-pressed="true">Factor Tree</button>
       <button type="button" data-m="ladder" aria-pressed="false">Ladder</button>
+      <button type="button" data-m="logic" aria-pressed="false">Logic</button>
       <button type="button" data-m="practice" aria-pressed="false">Practice</button>
     </div>
   </header>
@@ -570,6 +584,120 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     return { steps, draw, gcfAt: G, lcmAt: LC };
   }
 
+  // ---------- Logic ----------
+  // GCF: list every factor of each number in a line, with an arc joining each factor pair (1 × 12, 2 × 6, 3 × 4).
+  // Circle the factors in common; the greatest one is the GCF.
+  // LCM: skip count each number in a row. The first number in every list is the LCM.
+  function logicPlan(ns, g, L) {
+    const n = ns.length;
+    const facs = ns.map(v => { const f = []; for (let d = 1; d <= v; d++) if (v % d === 0) f.push(d); return f; });
+    const common = facs[0].filter(d => facs.every(f => f.includes(d)));
+    const pairsOf = v => { const ps = []; for (let d = 1; d * d <= v; d++) if (v % d === 0) ps.push([d, v / d]); return ps; };
+    const PCOL = ["p2", "p3", "p5", "p7", "p11", "p13"];
+    const both = n === 2 ? "both" : "all the";
+    const steps = [{ say: () => `Start with ${list(ns)}.` }];
+    ns.forEach(v => steps.push({ say: () => `Factors of ${v}: ${m(pairsOf(v).map(([a, b]) => `${a} × ${b}`).join(", "))}` }));
+    const C = steps.length;
+    steps.push({ say: () => `Circle the factors in common: ${m(list(common))}` });
+    const G = steps.length;
+    steps.push({ say: () => `GCF: the greatest factor in common. ${m(`GCF = ${A("gcf", g)}`)}` });
+    const M = steps.length;
+    ns.forEach(v => steps.push({ say: () => `Count by ${v}s: ${m(skip(v, L))}` }));
+    const LC = steps.length;
+    steps.push({ say: () => `LCM: the first number in ${n === 2 ? "both lists" : "every list"}. ${m(`LCM = ${A("lcm", L)}`)}` });
+
+    const BOT = 600; // rows above, coaching below
+    function drawFactors(k) {
+      const rowH = Math.min(270, BOT / n);
+      const maxN = Math.max(...facs.map(f => f.length)), maxLen = String(Math.max(...ns)).length;
+      const cw = Math.min(120, 1100 / maxN), fs = Math.max(16, Math.min(50, cw * 0.82 / (maxLen * 0.62), rowH * 0.22));
+      ns.forEach((v, r) => {
+        const top = 10 + r * rowH, yHead = top + 20, yN = top + rowH - 80, yP = yN + fs * 0.6 + 26;
+        txt(`Factors of ${v}`, { class: "head", x: 24, y: yHead, "font-size": 30 }, svg, 0);
+        if (k < r + 1) return;
+        const f = facs[r], x0 = 600 - (f.length * cw) / 2, x = i => x0 + (i + 0.5) * cw;
+        const ps = pairsOf(v), archH = yN - fs * 0.6 - (yHead + 26), span0 = x(f.length - 1) - x(0);
+        const row = el("g", {}, svg, r + 1);
+        ps.forEach(([a, b], j) => {
+          const xa = x(f.indexOf(a)), xb = x(f.indexOf(b)), y = yN - fs * 0.6, c = PCOL[j % PCOL.length];
+          if (a === b) { const w = cw * 0.28; el("path", { class: "arc " + c, d: `M${xa - w} ${y} A${w} ${Math.max(18, archH * 0.18)} 0 0 1 ${xa + w} ${y}` }, row); }
+          else { const ry = Math.max(16, archH * (xb - xa) / (span0 || 1)); el("path", { class: "arc " + c, d: `M${xa} ${y} A${(xb - xa) / 2} ${ry} 0 0 1 ${xb} ${y}` }, row); }
+        });
+        const colOf = d => PCOL[ps.findIndex(p => p.includes(d)) % PCOL.length];
+        f.forEach((d, i) => {
+          if (k >= C && common.includes(d)) {
+            const big = k >= G && d === g && !(hideAns && !shown.gcf), w = Math.max(cw * 0.9, String(d).length * fs * 0.62 + 16), h = fs * 1.25;
+            el("rect", { class: big ? "gbox big" : "cring", x: x(i) - w / 2, y: yN - h / 2, width: w, height: h, rx: 12 }, svg, big ? G : C);
+          }
+          txt(d, { class: "num fc " + colOf(d), x: x(i), y: yN, "font-size": fs }, row);
+        });
+        const t = el("text", { class: "pairs", x: 600, y: yP, "font-size": Math.min(30, fs * 0.75) }, row);
+        ps.forEach(([a, b], j) => {
+          const s1 = document.createElementNS(NS, "tspan"); s1.setAttribute("class", PCOL[j % PCOL.length]); s1.textContent = `${a} × ${b}`;
+          if (j) s1.setAttribute("dx", Math.min(30, fs * 0.75) * 1.4);
+          t.appendChild(s1);
+        });
+      });
+    }
+    function drawMultiples(k) {
+      const rowH = Math.min(250, BOT / n);
+      const cnt = ns.map(v => L / v + 1), maxLen = Math.max(...ns.map(v => fmt(L + v).length));
+      const cells = Math.max(5, Math.min(18, Math.floor(1100 / (maxLen * 0.62 * 36 + 24))));
+      // Short lists sit on one shared scale, like a number line, so the LCM lines up in a column in every row.
+      // Long lists are evenly spaced and shortened with …
+      const lined = Math.max(...cnt) <= cells, mn = Math.min(...ns), span = L + Math.max(...ns);
+      const cw = lined ? Math.min(220, 1100 * mn / span) : 1100 / cells;
+      const fs = Math.max(18, Math.min(60, cw * 0.72 / (maxLen * 0.62), rowH * 0.32));
+      const lx = val => 40 + (val - mn) / (span - mn) * (1100 - cw) + cw / 2;
+      let lcmX = 0;
+      const rings = [];
+      ns.forEach((v, r) => {
+        const top = 10 + r * rowH, yHead = top + 20, yN = top + rowH - 50;
+        txt(`Count by ${v}s`, { class: "head", x: 24, y: yHead, "font-size": 30 }, svg, M);
+        if (k < M + r) return;
+        // Every multiple up to one past the LCM; a long list keeps the start, then …, the LCM and one more.
+        const items = [];
+        if (cnt[r] <= cells) for (let i = 1; i <= cnt[r]; i++) items.push(i * v);
+        else { for (let i = 1; i <= cells - 3; i++) items.push(i * v); items.push(null, L, L + v); }
+        const row = el("g", {}, svg, M + r);
+        const x = i => lined ? lx(items[i]) : 40 + (i + 0.5) * cw;
+        items.forEach((val, i) => {
+          if (i) {
+            const gap = val === null || items[i - 1] === null, pad = Math.min(cw * 0.12, (x(i) - x(i - 1)) * 0.12), xa = x(i - 1) + pad, xb = x(i) - pad, y = yN - fs * 0.62, ry = Math.min(30, rowH * 0.14);
+            el("path", { class: "hop" + (gap ? " gap" : ""), d: `M${xa} ${y} A${(xb - xa) / 2} ${ry} 0 0 1 ${xb} ${y}` }, row);
+            if (i === 1) txt(`+${fmt(v)}`, { class: "hopt", x: (xa + xb) / 2, y: y - ry - 10, "font-size": Math.min(26, fs * 0.6) }, row);
+          }
+          if (val === L && k >= LC && !(hideAns && !shown.lcm)) {
+            const w = Math.max(cw * 0.9, fmt(L).length * fs * 0.62 + 16), h = fs * 1.3;
+            lcmX = x(i); rings.push([yN - h / 2, yN + h / 2]);
+            el("rect", { class: "lring", x: x(i) - w / 2, y: yN - h / 2, width: w, height: h, rx: 12 }, svg, LC);
+          }
+          txt(val === null ? "…" : fmt(val), { class: "num" + (val === null ? " dn" : ""), x: x(i), y: yN, "font-size": fs }, row);
+        });
+      });
+      if (lined && lcmX) for (let r = 1; r < rings.length; r++) el("line", { class: "lline", x1: lcmX, y1: rings[r - 1][1] + 6, x2: lcmX, y2: rings[r][0] - 6 }, svg, LC);
+    }
+    const coachAt = k => {
+      if (k === 0) return { q: `What pairs of numbers multiply to make ${ns[0]}?<small>Start with 1 × ${ns[0]}.</small>` };
+      if (k < C) return k < n ? { q: `Now find the factor pairs of ${ns[k]}.` } : { q: `Which factors are in ${both} lists?<small>Look for the greatest factor in common.</small>` };
+      if (k === C) return { a: `In common: <b>${list(common)}</b>`, q: "Which factor in common is the greatest?" };
+      if (k === G) return { q: `Now the LCM. Count by ${ns[0]}s.` };
+      if (k < LC) return k - M < n - 1 ? { q: `Now count by ${ns[k - M + 1]}s.` } :
+        { q: n === 2 ? "Look through both lists. What is the first number in both?" : "Look through all the lists. What is the first number in all of them?" };
+      return {};
+    };
+    function draw(k) {
+      if (k < M) drawFactors(k); else drawMultiples(k);
+      el("line", { class: "sep", x1: 20, y1: BOT + 14, x2: 1180, y2: BOT + 14 });
+      const c = coachAt(k);
+      let html = (c.a ? `<div class="a${fr(k)}">${c.a}</div>` : "") + (c.q ? `<div class="q${fr(k)}">${c.q}</div>` : "") + '<div class="boxes">';
+      if (k === G) html += `<div class="box g${fr(G)}"><h3>GCF = ${A("gcf", g)}</h3>The GCF is the greatest factor that ${list(ns)} have in common.</div>`;
+      if (k >= LC) html += `<div class="box l${fr(LC)}"><h3>LCM = ${A("lcm", L)}</h3>The LCM is the lowest number in ${n === 2 ? "both lists" : "every list"}: the first one you reach when you count by ${list(ns.map(v => v + "s"))}.</div>`;
+      coach(24, BOT + 26, 1152, H - BOT - 30, html + "</div>");
+    }
+    return { steps, draw, gcfAt: G, lcmAt: LC };
+  }
+
   // ---------- Practice ----------
   // Students do the work: type each number's primes (Factor Tree) or the prime to divide by and the new row (Ladder),
   // then the GCF and LCM. Every check gives a short hint instead of the answer.
@@ -792,7 +920,7 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     document.body.classList.toggle("practicing", prac);
     svg.toggleAttribute("hidden", prac); $("prac").hidden = !prac;
     if (prac) { plan = null; pracStart(); return; }
-    if (nums.length) plan = (mode === "tree" ? treePlan : ladderPlan)(nums, g, L);
+    if (nums.length) plan = ({ tree: treePlan, ladder: ladderPlan, logic: logicPlan })[mode](nums, g, L);
     step = 0; fwd = false;
     render();
   }
@@ -987,7 +1115,38 @@ window.I18N_PAGE = {
  "Type it on the left, then divide each number and write the new row.": "Tape-le à gauche, puis divise chaque nombre et écris la nouvelle rangée.",
  "No prime goes into both": "Aucun nombre premier ne divise les deux",
  "Type a prime number on the left to divide by.": "Tape un nombre premier à gauche pour diviser.",
- "~Not yet\\. A prime still goes into both (.+)\\.": "Pas encore. Un nombre premier divise encore $1."
+ "~Not yet\\. A prime still goes into both (.+)\\.": "Pas encore. Un nombre premier divise encore $1.",
+ "Logic": "Logique",
+ "Factors of {n}": "Facteurs de {n}",
+ "Factors of {n}: {0}": "Facteurs de {n} : {0}",
+ "Circle the factors in common: {0}": "Encercle les facteurs en commun : {0}",
+ "~([\\d, ]+) and (\\d+)": "$1 et $2",
+ "~(\\d+)s and (\\d+)s": "$1 et $2",
+ "~(\\d+)s, (\\d+)s and (\\d+)s": "$1, $2 et $3",
+ "GCF: the greatest factor in common. {0}": "PGFC : le plus grand facteur en commun. {0}",
+ "GCF = {n}": "PGFC = {n}",
+ "GCF = ?": "PGFC = ?",
+ "LCM = {n}": "PPCM = {n}",
+ "LCM = ?": "PPCM = ?",
+ "Count by {n}s": "Compte par bonds de {n}",
+ "Count by {n}s: {0}": "Compte par bonds de {n} : {0}",
+ "LCM: the first number in both lists. {0}": "PPCM : le premier nombre dans les deux listes. {0}",
+ "LCM: the first number in every list. {0}": "PPCM : le premier nombre dans chaque liste. {0}",
+ "What pairs of numbers multiply to make {n}?{0}": "Quelles paires de nombres donnent {n} quand on les multiplie?{0}",
+ "Now find the factor pairs of {n}.": "Trouve maintenant les paires de facteurs de {n}.",
+ "Which factors are in both lists?{0}": "Quels facteurs sont dans les deux listes?{0}",
+ "Which factors are in all the lists?{0}": "Quels facteurs sont dans toutes les listes?{0}",
+ "Look for the greatest factor in common.": "Cherche le plus grand facteur en commun.",
+ "In common: {0}": "En commun : {0}",
+ "Which factor in common is the greatest?": "Quel facteur en commun est le plus grand?",
+ "Now the LCM. Count by {n}s.": "Maintenant le PPCM. Compte par bonds de {n}.",
+ "Now count by {n}s.": "Compte maintenant par bonds de {n}.",
+ "Look through both lists. What is the first number in both?": "Regarde les deux listes. Quel est le premier nombre qui est dans les deux?",
+ "Look through all the lists. What is the first number in all of them?": "Regarde toutes les listes. Quel est le premier nombre qui est dans toutes?",
+ "~The GCF is the greatest factor that (.+) have in common\\.": "Le PGFC est le plus grand facteur que $1 ont en commun.",
+ "both lists": "les deux listes",
+ "every list": "chaque liste",
+ "~The LCM is the lowest number in (both lists|every list): the first one you reach when you count by (.+)\\.": "Le PPCM est le plus petit nombre dans $1 : le premier que tu atteins en comptant par bonds de $2."
 };
 </script>
 <script>
