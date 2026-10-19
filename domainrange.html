@@ -158,6 +158,15 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
 .seg-btns button.on { background: var(--pt); color: var(--sheet); }
 @media (max-width: 1440px) { .seg-btns button { font-size: 1rem; padding: 6px 11px; } .tools { gap: 10px; } header { gap: 8px 16px; } }
 
+.vl-btn { font-size: 1.1rem; min-height: 52px; padding: 6px 16px; border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); }
+.vl-btn[aria-pressed="true"] { background: #7a4fc9; border-color: #7a4fc9; color: #fff; }
+@media (max-width: 1440px) { .vl-btn { font-size: 1rem; padding: 6px 11px; } }
+/* Vertical line test: a purple line students drag across the graph. It never says if the graph is a function. */
+.vl { cursor: ew-resize; outline: none; }
+.vl .hit { stroke: transparent; stroke-width: 34; }
+.vl .ln { stroke: #7a4fc9; stroke-width: 4; }
+.vl .knob { fill: #7a4fc9; stroke: var(--sheet); stroke-width: 3; }
+.vl:focus-visible .knob { stroke: var(--ink); }
 .panel { gap: 10px; }
 .panel .card { padding: 12px 16px; }
 /* Check, Show answer and New graph stay in view when the answers make the panel scroll. */
@@ -218,6 +227,7 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
         <button type="button" data-k="discrete">Discrete</button>
         <button type="button" data-k="continuous">Continuous</button>
       </div>
+      <button type="button" id="vlBtn" class="vl-btn" aria-pressed="false">Vertical line</button>
     </div>
   </header>
 
@@ -856,6 +866,22 @@ h1 .d { color: var(--pt); } h1 .r { color: var(--orange); }
   document.querySelectorAll("#kindBtns button").forEach(x => x.addEventListener("click", () => {
     kind = x.dataset.k; document.querySelectorAll("#kindBtns button").forEach(y => y.classList.toggle("on", y === x)); newGraph();
   }));
+  // ---------- vertical line test (drag left and right; no answer is given) ----------
+  const vl = el("g", { class: "vl", tabindex: 0, role: "slider", "aria-label": "Vertical line. Drag or use the arrow keys." }, b.layers.points);
+  const vlHit = el("line", { class: "hit", y1: Y(10), y2: Y(-10) }, vl), vlLn = el("line", { class: "ln", y1: Y(10), y2: Y(-10) }, vl);
+  const vlKnobs = [10, -10].map(y => el("circle", { class: "knob", r: 11, cy: Y(y) }, vl));
+  let vlX = 0.5;
+  const placeVl = x => { vlX = Math.max(-10, Math.min(10, Math.round(x * 4) / 4)); [vlHit, vlLn].forEach(l => { l.setAttribute("x1", X(vlX)); l.setAttribute("x2", X(vlX)); }); vlKnobs.forEach(k => k.setAttribute("cx", X(vlX))); };
+  const svgX = e => { const pt = b.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(b.svg.getScreenCTM().inverse()); return -10 + (q.x - X(-10)) / (X(1) - X(0)); };
+  vl.addEventListener("pointerdown", e => { e.preventDefault(); vl.setPointerCapture(e.pointerId); vl.focus(); });
+  vl.addEventListener("pointermove", e => { if (vl.hasPointerCapture(e.pointerId)) placeVl(svgX(e)); });
+  vl.addEventListener("keydown", e => { const d = { ArrowLeft: -0.25, ArrowRight: 0.25 }[e.key]; if (d) { e.preventDefault(); placeVl(vlX + d); } });
+  placeVl(vlX); b.show(vl, false);
+  $("vlBtn").addEventListener("click", () => {
+    const on = $("vlBtn").getAttribute("aria-pressed") !== "true";
+    $("vlBtn").setAttribute("aria-pressed", String(on)); b.show(vl, on);
+  });
+
   $("checkBtn").addEventListener("click", check);
   $("showBtn").addEventListener("click", showAnswer);
   $("newBtn").addEventListener("click", newGraph);
@@ -966,6 +992,8 @@ window.I18N_PAGE = {
  "Mixed": "Mélangé",
  "Discrete": "Discret",
  "Continuous": "Continu",
+ "Vertical line": "Droite verticale",
+ "Vertical line. Drag or use the arrow keys.": "Droite verticale. Glisse-la ou utilise les flèches.",
  "{n} separate points": "{n} points séparés",
  "{0} the x-values": "{0} les valeurs de x",
  "{0} the y-values": "{0} les valeurs de y",
