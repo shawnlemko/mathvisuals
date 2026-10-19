@@ -629,16 +629,28 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
     prevSig = sig;
     const strip = st.model === "strips";
     const Wd = 1000, LW = Math.max(200, ...rows.map(r => 44 + numW(r.label) + 24)), GX = 14, GY = 16, CAP = 32, PAD = 18, HMAX = 620;
+    // Full shapes go on the left and the part-filled shapes in their own column on the right, lined up from row to row,
+    // so the wholes and the pieces can be counted separately (Shawn).
+    const full = u => u.fill.length > 0 && u.fill.every(Boolean);
+    const split = rows.map(r => {
+      const us = r.units.length ? r.units : [U(1, 1, 0, "", { cap: "0" })];
+      return { w: us.filter(full), p: us.filter(u => !full(u)) };
+    });
+    const maxW = Math.max(0, ...split.map(z => z.w.length)), maxP = Math.max(0, ...split.map(z => z.p.length)), ZG = 36;
     const layout = s => {
       const bw = strip ? s * 1.6 : s, bh = strip ? s * 0.6 : s;
-      const per = Math.max(1, Math.floor((Wd - LW + GX) / (bw + GX)));
+      const room = Wd - LW + GX - maxP * (bw + GX) - (maxW && maxP ? ZG : 0);
+      const fitC = Math.floor(room / (bw + GX));
+      // When the wholes need more than one line, wrap them in fives so they are easy to count.
+      const wcols = Math.max(1, Math.min(maxW || 1, fitC >= 5 && maxW > fitC ? fitC - fitC % 5 : fitC));
       let Ht = 0;
-      const hs = rows.map(r => { const lines = Math.ceil(Math.max(1, r.units.length) / per), h = lines * (bh + CAP) + (lines - 1) * GY + PAD * 2; Ht += h; return h; });
-      return { bw, bh, per, hs, Ht };
+      const hs = split.map(z => { const lines = Math.max(1, Math.ceil(z.w.length / wcols)), h = lines * (bh + CAP) + (lines - 1) * GY + PAD * 2; Ht += h; return h; });
+      return { bw, bh, wcols, hs, Ht, fits: room >= (maxW ? bw + GX : 0) };
     };
     let s = 150, Lo = layout(s);
-    while (Lo.Ht > HMAX && s > 40) Lo = layout(s -= 4);
-    const { bw, bh, per, hs, Ht } = Lo;
+    while ((Lo.Ht > HMAX || !Lo.fits) && s > 40) Lo = layout(s -= 4);
+    const { bw, bh, wcols, hs, Ht } = Lo;
+    const PX = LW + (maxW ? wcols * (bw + GX) + (maxP ? ZG : 0) : 0);
     svg.setAttribute("viewBox", `0 0 ${Wd} ${Math.max(Ht, 200)}`);
     const defs = el("defs", {}, svg);
     const pat = el("pattern", { id: "hatch", width: 10, height: 10, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
@@ -650,9 +662,9 @@ line.new { stroke-dasharray: 100; animation: draw 0.7s ease-out both; }
       const top = y + PAD, cy = top + bh / 2;
       if (r.sign) el("text", { x: 18, y: cy + 17, class: "sign", "text-anchor": "middle" }, g, r.sign);
       numeral(g, 44, cy, r.label, r.key);
-      const units = r.units.length ? r.units : [U(1, 1, 0, "", { cap: "0" })];
       seq.row = r.key;
-      units.forEach((u, i) => unit(g, LW + (i % per) * (bw + GX), top + Math.floor(i / per) * (bh + CAP + GY), bw, bh, u, animate));
+      split[ri].w.forEach((u, i) => unit(g, LW + (i % wcols) * (bw + GX), top + Math.floor(i / wcols) * (bh + CAP + GY), bw, bh, u, animate));
+      split[ri].p.forEach((u, i) => unit(g, PX + i * (bw + GX), top, bw, bh, u, animate));
       y += hs[ri];
     });
   }
