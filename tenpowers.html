@@ -162,6 +162,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .seg-btns button + button { border-left: 2px solid var(--grid-major); }
 .seg-btns button.on { background: var(--pt); color: var(--sheet); }
 header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
+.hctl { display: flex; flex-wrap: wrap; gap: 10px 16px; }
 .wide { display: flex; width: 100%; }
 .wide button { flex: 1 1 0; }
 .factors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
@@ -207,6 +208,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 .dig.z0 { fill: var(--muted); }
 .dig.zf { fill: var(--orange); }
 .dot { fill: var(--ink); }
+.dot.mv { stroke: var(--sheet); stroke-width: 4; }
 .dotlbl { font-family: var(--font-body); font-weight: 700; font-size: 16px; fill: var(--muted); }
 .arc { fill: none; stroke-width: 5; stroke-linecap: round; }
 .arc.big { stroke: var(--big); } .arc.small { stroke: var(--small); }
@@ -228,9 +230,14 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
-    <h1>Powers of Ten: Multiply and Divide</h1></div>
-    <div class="seg-btns" role="group" aria-label="Mode">
-      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    <h1>Powers of Ten</h1></div>
+    <div class="hctl">
+      <div class="seg-btns" role="group" aria-label="What moves" id="views">
+        <button type="button" data-view="digits" class="on">Move digits</button><button type="button" data-view="point">Move decimal</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Mode">
+        <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+      </div>
     </div>
   </header>
 
@@ -411,6 +418,12 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     }
   }
 
+  // Move decimal view: nine equal boxes with no place names; the digits stay and the point sits on a box edge.
+  const boxX = i => X0 + GAP / 2 + i * W + W / 2; // centre of box i (0 = left)
+  const edgeX = b => X0 + GAP / 2 + (b + 1) * W;  // the edge after box b
+  function boxes() {
+    for (let i = 0; i <= MAXP - MINP; i++) E("rect", { x: boxX(i) - W / 2, y: CY, width: W, height: CH, class: "cell" });
+  }
   function chart() {
     HEAD.forEach(([v, name], i) => {
       const p = MAXP - i, x = colX(p) - W / 2;
@@ -427,9 +440,13 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   }
 
   // The rule to remember, always on the board. Once the direction is known the other box dims.
+  const WORDS = {
+    digits: { big: "Bigger: digits move LEFT ←", small: "Smaller: digits move RIGHT →" },
+    point: { big: "Bigger: decimal moves RIGHT →", small: "Smaller: decimal moves LEFT ←" },
+  };
   function rules(active) {
-    [["big", 30, "Bigger: digits move LEFT ←", "× 10, 100, 1000", "divide by 0.1, 0.01, 0.001"],
-     ["small", 510, "Smaller: digits move RIGHT →", "× 0.1, 0.01, 0.001", "divide by 10, 100, 1000"]].forEach(([c, x, t, l1, l2]) => {
+    [["big", 30, WORDS[view].big, "× 10, 100, 1000", "divide by 0.1, 0.01, 0.001"],
+     ["small", 510, WORDS[view].small, "× 0.1, 0.01, 0.001", "divide by 10, 100, 1000"]].forEach(([c, x, t, l1, l2]) => {
       const g = E("g", { class: "rule" + (active && active !== c ? " dim" : "") });
       E("rect", { x, y: 596, width: 460, height: 108, rx: 12, class: "rbox " + c }, g);
       E("text", { x: x + 18, y: 630, class: "rt " + c }, g, t);
@@ -449,12 +466,12 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     const jumps = Math.max(0, Math.min(k, st - 2)), filled = st >= 3 + k;
     const res = result(q);
     equation(q, st >= 2, filled ? fmt(res) : "?");
-    chart();
+    if (view === "point") boxes(); else chart();
     rules(st >= 1 ? cls : null);
     // Banner under the chart: which way, and how many places.
     if (st >= 1) {
       const by = CY + CH + 82;
-      const word = s > 0 ? "Bigger: digits move LEFT ←" : "Smaller: digits move RIGHT →";
+      const word = WORDS[view][cls];
       E("text", { x: 500, y: by, class: "ban " + cls + (anim && st === 1 ? " pop" : ""), "text-anchor": "middle", "font-size": 44 }, svg, word);
       if (st >= 2) {
         const f = factorStr(q.f);
@@ -465,6 +482,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
         for (let i = 0; i < k; i++) E("circle", { cx: dx0 + i * 34, cy: by + 43, r: 12, class: "jd " + cls + (i < jumps ? " on" : "") }, svg);
       }
     }
+    if (view === "point") { renderPoint(q, k, dir, cls, jumps, filled, st, anim); return; }
     // Zeros: the start number's zeros (grey) until the digits move; the answer's zeros (orange) at the end.
     if (jumps === 0) fillZeros(q.n).forEach(p => E("text", { x: colX(p), y: DIGY, class: "dig z0", "text-anchor": "middle" }, svg, "0"));
     if (filled) fillZeros(res).forEach(p => E("text", { x: colX(p), y: DIGY, class: "dig zf" + (anim ? " pop" : ""), "text-anchor": "middle" }, svg, "0"));
@@ -493,27 +511,56 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     }
   }
 
+  // Move decimal view: digits stay in their boxes; the point jumps the other way along the box edges.
+  // A digit at place p sits in box MAXP - p; the point starts after box MAXP (the ones box).
+  function renderPoint(q, k, dir, cls, jumps, filled, st, anim) {
+    const s = shiftOf(q), res = result(q);
+    if (jumps === 0) fillZeros(q.n).forEach(p => E("text", { x: boxX(MAXP - p), y: DIGY, class: "dig z0", "text-anchor": "middle" }, svg, "0"));
+    if (filled) fillZeros(res).forEach(r => E("text", { x: boxX(MAXP - r + s), y: DIGY, class: "dig zf" + (anim ? " pop" : ""), "text-anchor": "middle" }, svg, "0"));
+    places(q.n).forEach(({ d, p }) => E("text", { x: boxX(MAXP - p), y: DIGY, class: "dig", "text-anchor": "middle" }, svg, d));
+    const to = edgeX(MAXP + jumps * dir), from = edgeX(MAXP + (jumps - 1) * dir);
+    const dot = E("circle", { cx: to, cy: DIGY - 6, r: 15, class: "dot mv" });
+    if (st >= 3 && st <= 2 + k) {
+      const y = CY + CH + 4;
+      E("path", { d: `M${from} ${y} Q${(from + to) / 2} ${y + 44} ${to} ${y + 4}`, class: "arc " + cls + (anim && !reduced() ? " draw" : ""), pathLength: 1, "marker-end": `url(#ah-${cls})` });
+      if (anim && !reduced()) {
+        dot.setAttribute("cx", from);
+        const t0 = performance.now(), D = 600;
+        const tick = now => {
+          const u = Math.min(1, (now - t0) / D), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+          dot.setAttribute("cx", from + (to - from) * e);
+          if (u < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+      }
+    }
+  }
+
   // ---------- words ----------
   function say(q, st) {
     const k = places_(q), f = factorStr(q.f), s = shiftOf(q), n = fmt(q.n), res = fmt(result(q));
-    const dirW = s > 0 ? "left" : "right";
-    if (st === 0) return `Here is ${n} in the place value chart. The decimal point stays put. The digits move.`;
+    const pt = view === "point";
+    const dirW = (s > 0) !== pt ? "left" : "right";
+    const who = pt ? "the decimal point moves" : "the digits move";
+    const Who = pt ? "The decimal point moves" : "The digits move";
+    if (st === 0) return pt ? `Here is ${n}. The digits stay put. The decimal point moves.` : `Here is ${n} in the place value chart. The decimal point stays put. The digits move.`;
     if (st === 1) {
-      if (q.op === "mul" && q.f > 0) return `Multiplying by ${f} makes the number bigger. The digits move left.`;
-      if (q.op === "div" && q.f > 0) return `Dividing by ${f} makes the number smaller. The digits move right.`;
+      if (q.op === "mul" && q.f > 0) return `Multiplying by ${f} makes the number bigger. ${Who} ${dirW}.`;
+      if (q.op === "div" && q.f > 0) return `Dividing by ${f} makes the number smaller. ${Who} ${dirW}.`;
       const same = factorStr(-q.f);
-      if (q.op === "mul") return `Multiplying by ${f} makes the number smaller. It is the same as dividing by ${same}. The digits move right.`;
-      return `Dividing by ${f} makes the number bigger. It is the same as multiplying by ${same}. The digits move left.`;
+      if (q.op === "mul") return `Multiplying by ${f} makes the number smaller. It is the same as dividing by ${same}. ${Who} ${dirW}.`;
+      return `Dividing by ${f} makes the number bigger. It is the same as multiplying by ${same}. ${Who} ${dirW}.`;
     }
     if (st === 2) {
-      if (q.f > 0) return k === 1 ? `${f} has 1 zero, so the digits move 1 place.` : `${f} has ${k} zeros, so the digits move ${k} places.`;
-      return k === 1 ? `${f} has 1 decimal place, so the digits move 1 place.` : `${f} has ${k} decimal places, so the digits move ${k} places.`;
+      if (q.f > 0) return k === 1 ? `${f} has 1 zero, so ${who} 1 place.` : `${f} has ${k} zeros, so ${who} ${k} places.`;
+      return k === 1 ? `${f} has 1 decimal place, so ${who} 1 place.` : `${f} has ${k} decimal places, so ${who} ${k} places.`;
     }
-    if (st <= 2 + k) return `Jump ${st - 2}: every digit moves one place ${dirW}.`;
+    if (st <= 2 + k) return pt ? `Jump ${st - 2}: the decimal point moves one place ${dirW}.` : `Jump ${st - 2}: every digit moves one place ${dirW}.`;
     return fillZeros(result(q)).length ? `Fill the empty places with 0, up to the decimal point. The answer is ${res}.` : `The answer is ${res}.`;
   }
 
   // ---------- Learn ----------
+  let view = "digits";
   let mode = "learn", lq = { n: parse("3.45"), op: "mul", f: 1 }, step = 0, lok = true;
   const numIn = $("#num");
   function showLearn(anim) {
@@ -582,7 +629,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     count(false);
     ansIn.className = "big-in bad";
     const s = shiftOf(pq);
-    if (a.m === pq.n.m && same(a, shifted(pq.n, -s))) feedback("The digits moved the wrong way. Will the answer be bigger or smaller?", "no");
+    if (a.m === pq.n.m && same(a, shifted(pq.n, -s))) feedback(view === "point" ? "The decimal point moved the wrong way. Will the answer be bigger or smaller?" : "The digits moved the wrong way. Will the answer be bigger or smaller?", "no");
     else if (a.m === pq.n.m && Math.sign(a.e - pq.n.e) === Math.sign(s)) feedback("Right way! Count the places again.", "no");
     else feedback("Not quite. Try Hint.", "no");
   }
@@ -623,6 +670,12 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     if (m === "learn") showLearn(false); else if (!pq) newQuestion(); else render(pq, solved ? stepCount(pq) - 1 : hints, false);
   }
   document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  // Move digits / Move decimal: the same steps, drawn the other way. Redraws where the student is.
+  document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => {
+    view = b.dataset.view;
+    document.querySelectorAll("[data-view]").forEach(x => x.classList.toggle("on", x === b));
+    setMode(mode);
+  });
   readNum();
 })();
 </script>
@@ -718,7 +771,25 @@ window.I18N_COMMON = {
 /* French for Powers of Ten: Multiply and Divide (tenpowers.html). Decimals keep the point, like the other pages. */
 window.I18N_PAGE = {
   "Powers of Ten: Multiply and Divide": "Puissances de dix : multiplier et diviser",
+  "Powers of Ten": "Puissances de dix",
   "Learn": "Apprendre",
+  "What moves": "Ce qui bouge",
+  "Move digits": "Chiffres",
+  "Move decimal": "Virgule",
+  "Bigger: decimal moves RIGHT →": "Plus grand : virgule à DROITE →",
+  "Smaller: decimal moves LEFT ←": "Plus petit : virgule à GAUCHE ←",
+  "Here is {n}.": "Voici {n}.",
+  "The digits stay put.": "Les chiffres restent en place.",
+  "The decimal point moves.": "C'est la virgule décimale qui bouge.",
+  "The decimal point moves left.": "La virgule décimale va à gauche.",
+  "The decimal point moves right.": "La virgule décimale va à droite.",
+  "{n} has 1 zero, so the decimal point moves 1 place.": "{n} a 1 zéro, donc la virgule décimale se déplace de 1 position.",
+  "{n} has {n} zeros, so the decimal point moves {n} places.": "{n} a {n} zéros, donc la virgule décimale se déplace de {n} positions.",
+  "{n} has 1 decimal place, so the decimal point moves 1 place.": "{n} a 1 décimale, donc la virgule décimale se déplace de 1 position.",
+  "{n} has {n} decimal places, so the decimal point moves {n} places.": "{n} a {n} décimales, donc la virgule décimale se déplace de {n} positions.",
+  "Jump {n}: the decimal point moves one place left.": "Saut {n} : la virgule décimale avance d'une position vers la gauche.",
+  "Jump {n}: the decimal point moves one place right.": "Saut {n} : la virgule décimale avance d'une position vers la droite.",
+  "The decimal point moved the wrong way.": "La virgule décimale est allée du mauvais côté.",
   "Mode": "Mode",
   "A place value chart. The digits jump left or right.": "Un tableau de valeur de position. Les chiffres sautent à gauche ou à droite.",
   "Number": "Nombre",
@@ -736,8 +807,8 @@ window.I18N_PAGE = {
   "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
   "Step {n} of {n}": "Étape {n} sur {n}",
   "Remember": "À retenir",
-  "Bigger: digits move LEFT ←": "Plus grand : vers la GAUCHE ←",
-  "Smaller: digits move RIGHT →": "Plus petit : vers la DROITE →",
+  "Bigger: digits move LEFT ←": "Plus grand : chiffres à GAUCHE ←",
+  "Smaller: digits move RIGHT →": "Plus petit : chiffres à DROITE →",
   "divide by {n}, {n}, {n}": "diviser par {n}, {n}, {n}",
   "Ten Thousands": "Dizaines de mille",
   "Thousands": "Unités de mille",

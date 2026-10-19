@@ -226,6 +226,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 .cb * { stroke-width: 2.5; stroke-linejoin: round; }
 .sq.new, .cb.new * { fill: none; stroke: var(--orange); stroke-width: 3.5; stroke-dasharray: 11 8; }
 .unit { stroke: var(--pt); stroke-opacity: 0.35; stroke-width: 1.3; }
+.impact { fill: color-mix(in srgb, var(--green) 10%, var(--sheet)); stroke: var(--green); stroke-width: 3; }
 .trap { fill: none; stroke: var(--warn); stroke-width: 6; stroke-dasharray: 14 8; }
 .karr { stroke: var(--muted); stroke-width: 4; stroke-linecap: round; fill: none; }
 .karr-h { fill: var(--muted); }
@@ -259,7 +260,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
           <button type="button" data-k="1/2"><span class="frac"><span>1</span><span>2</span></span></button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="4">4</button>
         </div>
         <span class="lbl">Old side</span>
-        <div class="stepper"><button type="button" id="sDn" aria-label="Shorter side">−</button><output id="sOut">3</output><span class="u">cm</span><button type="button" id="sUp" aria-label="Longer side">+</button></div>
+        <div class="stepper"><button type="button" id="sDn" aria-label="Shorter side">−</button><output id="sOut">2</output><span class="u">cm</span><button type="button" id="sUp" aria-label="Longer side">+</button></div>
       </section>
       <section class="card">
         <p class="steplbl" id="steplbl"></p>
@@ -341,74 +342,75 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   }
 
   // ---------- the work, one line per step, = lined up ----------
+  // Shawn 2026-10-19: no k² = 2 × 2 line. Compare the old and new measure (4 vs 16), then one
+  // "impact" banner: k = 2 → area × 4 (k²).
+  const BIG = { 1: "Old length", 2: "Old area", 3: "Old volume" }, NEW = { 1: "New length", 2: "New area", 3: "New volume" };
+  const POW = { 1: "(k)", 2: "(k²)", 3: "(k³)" };
   function work(q) {
-    const f = facts(q), d = q.dim, L = [];
-    const kk = []; for (let i = 0; i < d; i++) { if (i) kk.push("×"); kk.push(tok(f.k)); }
-    if (q.find === "k") {
-      const ratio = { fr: [f.N.n, f.M.n] };
-      if (d === 1) {
-        L.push({ l: "k", r: [ratio], name: "New length over old length" });
-        L.push({ l: "", r: [tok(f.k, "g")], name: "" });
-      } else {
-        L.push({ l: d === 2 ? "k²" : "k³", r: [ratio], name: d === 2 ? "New area over old area" : "New volume over old volume" });
-        L.push({ l: "", r: [tok(f.F)], name: "" });
-        L.push({ l: "k", r: [tok(f.k, "g")], name: `${Array(d).fill(kTxt(f.k)).join(" × ")} = ${kTxt(f.F)}` });
-      }
-      return L;
+    const f = facts(q), d = q.dim, u = up(q), L = [];
+    const meas = (side, val, c) => {
+      const r = [];
+      if (d > 1) { for (let i = 0; i < d; i++) { if (i) r.push("×"); r.push(vTxt(side)); } r.push("="); }
+      r.push({ v: `${vTxt(val)} ${u}`, c }); return r;
+    };
+    if (q.learn) {
+      L.push({ l: BIG[d], r: meas(Q(q.s), f.M, "b"), name: "" });
+      L.push({ l: NEW[d], r: meas(mul(Q(q.s), f.k), f.N, "g"), name: "" });
+    } else if (q.find === "k") {
+      L.push({ l: BIG[d], r: [{ v: `${vTxt(f.M)} ${u}`, c: "b" }], name: "" });
+      L.push({ l: NEW[d], r: [{ v: `${vTxt(f.N)} ${u}`, c: "o" }], name: "" });
+      L.push({ l: d === 1 ? "k" : "Copies", r: [{ fr: [f.N.n, f.M.n] }, "=", tok(d === 1 ? f.k : f.F, d === 1 ? "g" : "")], name: "New over old" });
+    } else {
+      L.push({ l: BIG[d], r: [{ v: `${vTxt(f.M)} ${u}`, c: "b" }], name: "" });
+      L.push({ l: NEW[d], r: [tok(f.F), "×", tok(f.M), "=", { v: `${vTxt(f.N)} ${u}`, c: "g" }],
+        name: f.grow ? (d === 1 ? `${f.m} copies of the old line` : `${kTxt(f.F)} copies of the old ${SHAPE[d]}`) : "" });
     }
-    L.push({ l: "k", r: [tok(f.k)], name: "Scale factor" });
-    if (d === 1) L.push({ l: "New length", r: [tok(f.k), "×", tok(f.M)], name: "Scale factor × old length" });
-    else {
-      L.push({ l: d === 2 ? "k²" : "k³", r: kk, name: d === 2 ? "Area factor" : "Volume factor" });
-      L.push({ l: "", r: [tok(f.F)], name: "" });
-      L.push({ l: d === 2 ? "New area" : "New volume", r: [tok(f.F), "×", tok(f.M)], name: d === 2 ? "Area factor × old area" : "Volume factor × old volume" });
-    }
-    if (f.F.d > 1) L.push({ l: "", r: [{ fr: [f.F.n * f.M.n, f.F.d * f.M.d] }], name: "" });
-    L.push({ l: "", r: [{ v: `${vTxt(f.N)} ${up(q)}`, c: "g" }], name: "" });
     return L;
   }
+  // The impact: k = 2 → area × 4 (k²).
+  function banner(q) {
+    const f = facts(q);
+    return ["k", "=", tok(f.k, q.find === "k" ? "g" : ""), "→", NAME[q.dim], "×", tok(f.F, "g"), { v: POW[q.dim], c: "m" }];
+  }
 
-  // ---------- steps: what is said, what the picture shows (v), how many work lines (w) ----------
+  // ---------- steps: what is said, what the picture shows (v), how many work lines (w), banner (b) ----------
   function steps(q) {
     const f = facts(q), d = q.dim, K = kTxt(f.k), m = f.m, u = up(q), sh = SHAPE[d], nm = NAME[d];
     const Mv = vTxt(f.M), Nv = vTxt(f.N), Fv = kTxt(f.F), mm = m ** d, L = work(q).length;
-    const dirs = d === 2 ? `${m} across and ${m} down` : `${m} across, ${m} up and ${m} back`;
+    const kp = d === 1 ? "k" : d === 2 ? "k²" : "k³";
+    const impact = `When k = ${K}, the ${nm} is ${Fv}${f.grow ? " times" : ""} as ${d === 1 ? "long" : "big"}. That is ${kp}.`;
     const S = [];
     if (q.find === "k") {
-      S.push({ say: `The old ${nm} is ${Mv} ${u}. The new ${nm} is ${Nv} ${u}.`, v: { new: 1 }, w: 0 });
+      S.push({ say: `The old ${nm} is ${Mv} ${u}. The new ${nm} is ${Nv} ${u}.`, v: { new: 1 }, w: 2 });
       const ratio = `New over old is ${f.N.n}/${f.M.n} = ${Fv}, so it is ${Fv}${f.grow ? " times" : ""} as ${d === 1 ? "long" : "big"}.`;
       if (d === 1) {
-        S.push({ say: ratio, v: { new: 1, copies: 1 }, w: 1 });
-        S.push({ say: f.grow ? `${m} copies fit end to end. So k = ${K}.` : `The new line is ${K} as long as the old one. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
+        S.push({ say: ratio, v: { new: 1, copies: 1 }, w: 3 });
+        S.push({ say: f.grow ? `${m} copies fit end to end. So k = ${K}.` : `The new line is ${K} as long as the old one. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: L, b: 1 });
         return S;
       }
-      S.push({ say: ratio + (f.grow ? ` So ${Fv} copies of the old ${sh} fit in the new one.` : ` So ${mm} new ${sh}s fit in the old one.`), v: { new: 1, copies: 1 }, w: 2 });
+      S.push({ say: ratio + (f.grow ? ` So ${Fv} copies of the old ${sh} fit in the new one.` : ` So ${mm} new ${sh}s fit in the old one.`), v: { new: 1, copies: 1 }, w: 3 });
       const by = d === 2 ? `a ${m} by ${m} square` : `a ${m} by ${m} by ${m} cube`;
-      S.push({ say: f.grow ? `${Fv} copies make ${by}, because ${Array(d).fill(m).join(" × ")} = ${Fv}. So k = ${K}.`
-                           : `${mm} new ${sh}s make ${by}, so each side is ${K} as long. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
+      S.push({ say: f.grow ? `${Fv} copies make ${by}. So k = ${K}.`
+                           : `${mm} new ${sh}s make ${by}, so each side is ${K} as long. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: L, b: 1 });
       return S;
     }
     // Find the new size.
     let s0 = `The old ${nm} is ${Mv} ${u}.`;
-    if (q.learn) s0 = d === 1 ? `This line is ${q.s} cm long.` : d === 2 ? `This square has sides of ${q.s} cm. Its area is ${q.s} × ${q.s} = ${Mv} cm².`
-      : `This cube has sides of ${q.s} cm. Its volume is ${q.s} × ${q.s} × ${q.s} = ${Mv} cm³.`;
-    S.push({ say: s0, v: {}, w: 0 });
+    if (q.learn) s0 = d === 1 ? `This line is ${q.s} cm long.` : d === 2 ? `This square has sides of ${q.s} cm. Its area is ${Mv} cm².`
+      : `This cube has sides of ${q.s} cm. Its volume is ${Mv} cm³.`;
+    S.push({ say: s0, v: {}, w: 1 });
     let s1 = f.grow ? `Scale factor ${K}: every length gets ${K} times as long.` : `Scale factor ${K}: every length gets half as long.`;
     if (q.learn) s1 += d === 1 ? ` The line goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.` : ` Each side goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.`;
     S.push({ say: s1, v: { new: 1 }, w: 1 });
     const s2 = d === 1 ? (f.grow ? `${m} copies of the old line fit end to end.` : `${m} new lines fit in the old one.`)
-      : f.grow ? `Fill the new ${sh} with copies of the old one: ${dirs}.` : `Fill the old ${sh} with new ones: ${dirs}.`;
-    S.push({ say: s2, v: { new: 1, copies: 1 }, w: 1 });
-    const ansSay = f.grow ? `${Fv} copies of ${Mv} ${u} make ${Nv} ${u}.` : `${Fv} of ${Mv} ${u} is ${Nv} ${u}.`;
-    if (d === 1) { S.push({ say: ansSay, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L }); return S; }
-    S.push({ say: f.grow ? `That is ${Array(d).fill(m).join(" × ")} = ${Fv} copies. The ${nm} grows ${Fv} times, not ${m} times.`
-                         : `${mm} new ${sh}s fill the old one. The new ${nm} is ${Fv} of the old ${nm}.`, v: { new: 1, copies: 1, count: 1 }, w: 3 });
-    S.push({ say: ansSay, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
-    if (q.learn) {
+      : f.grow ? `The new ${sh} holds ${Fv} copies of the old one.` : `The old ${sh} holds ${mm} new ones.`;
+    S.push({ say: s2, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: 2 });
+    S.push({ say: `${Mv} ${u} became ${Nv} ${u}. ${impact}`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: 2, b: 1 });
+    if (q.learn && d > 1) {
       const row = vTxt(mul(f.grow ? Q(m) : f.k, f.M));
       S.push({ say: f.grow ? `Why not ${m} × ${Mv} = ${row}? That only fills one row of copies. The ${sh} grows in ${d} directions.`
                            : `Why not ${K} × ${Mv} = ${row}? That is only one row of new ${sh}s. The ${sh} shrinks in ${d} directions.`,
-               v: { new: 1, copies: 1, count: 1, ans: 1, trap: 1 }, w: L });
+               v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1, trap: 1 }, w: 2, b: 1 });
     }
     return S;
   }
@@ -438,7 +440,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
         d.draw(g, x + (w - d.w) / 2, y + gap + d.up);
       } };
   }
-  const node = (it, fs) => typeof it === "string" ? T(it, fs, /^[×=]$/.test(it) ? "op" : "")
+  const node = (it, fs) => typeof it === "string" ? T(it, fs, /^[×=→]$/.test(it) ? "op" : "")
     : it.fr ? Fr(it.fr[0], it.fr[1], fs, it.c) : T(it.v, fs, it.c);
   const line = (items, fs) => R(items.map(it => node(it, fs)), fs * 0.4);
   // A label centred on (cx, cy): "k = " and a value that may be a fraction.
@@ -597,7 +599,8 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     const PH = picture(pg, q, v, isNew);
     let y = PH + 6; const ys = [];
     nodes.forEach((n, k) => { y += n.up + (k ? 14 : 0); ys.push(y); y += n.dn; });
-    const H = Math.max(700, y + 24);
+    const bn = line(banner(q), FS), BY = y + 34 + bn.up, bw = bn.w + 48;
+    const H = Math.max(700, BY + bn.dn + 30);
     svg.setAttribute("viewBox", `0 0 ${VW} ${H}`);
     const prevW = anim && i > 0 ? S[i - 1].w : w;
     for (let k = 0; k < w; k++) {
@@ -609,11 +612,16 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       nodes[k].draw(g, RHS, ys[k]);
       if (L[k].name) E("text", { x: NX, y: ys[k] + 10, class: "sname" + (k === w - 1 ? " now" : ""), "font-size": 28 }, g, L[k].name);
     }
+    if (!hint && S[i].b) {
+      const g = E("g", { class: anim && !(i > 0 && S[i - 1].b) ? "pop" : "" });
+      E("rect", { x: 40, y: BY - bn.up - 14, width: bw, height: bn.up + bn.dn + 28, rx: 14, class: "impact" }, g);
+      bn.draw(g, 64, BY);
+    }
   }
 
   // ---------- Learn ----------
   let mode = "learn", step = 0;
-  const lq = { learn: true, find: "new", dim: 2, k: Q(2), s: 3, u: "cm" };
+  const lq = { learn: true, find: "new", dim: 2, k: Q(2), s: 2, u: "cm" };
   const syncM = () => { lq.M = Q(lq.s ** lq.dim); };
   function showLearn(anim) {
     syncM();
@@ -631,7 +639,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     $("#rk").innerHTML = `k = ${fracHTML(lq.k)}`;
     const names = ["Length", "Area", "Volume"];
     $("#rule").innerHTML = names.map((n, j) => {
-      const F = pw(lq.k, j + 1), why = j ? Array(j + 1).fill(kTxt(lq.k)).join(" × ") : "";
+      const F = pw(lq.k, j + 1), why = ["k", "k²", "k³"][j];
       return `<div class="${j + 1 === lq.dim ? "on" : ""}"><span class="nm">${n}</span><span class="mx">× ${kTxt(F)}</span><span class="why">${why}</span></div>`;
     }).join("");
   }
@@ -961,6 +969,30 @@ window.I18N_PAGE = (function () {
     "~(\\d+) new squares make a (\\d+) by (\\d+) square, so each side is (.+) as long\\.": "$1 nouveaux carrés forment un carré de $2 sur $3, donc chaque côté mesure $4 de l'ancien.",
     "~(\\d+) new cubes make a (\\d+) by (\\d+) by (\\d+) cube, so each side is (.+) as long\\.": "$1 nouveaux cubes forment un cube de $2 sur $3 sur $4, donc chaque côté mesure $5 de l'ancien.",
 
+    // Old vs new and the impact banner (2026-10-19)
+    "Old length": "Longueur initiale",
+    "Old area": "Aire initiale",
+    "Old volume": "Volume initial",
+    "Copies": "Copies",
+    "New over old": "Nouveau sur ancien",
+    "length": "longueur",
+    "area": "aire",
+    "volume": "volume",
+    "{n} copies of the old line": "{n} copies de l'ancienne ligne",
+    "{n} copies of the old square": "{n} copies de l'ancien carré",
+    "{n} copies of the old cube": "{n} copies de l'ancien cube",
+    "Its area is {n} cm².": "Son aire est de {n} cm².",
+    "Its volume is {n} cm³.": "Son volume est de {n} cm³.",
+    "{n} copies make a {n} by {n} square.": "{n} copies forment un carré de {n} sur {n}.",
+    "{n} copies make a {n} by {n} by {n} cube.": "{n} copies forment un cube de {n} sur {n} sur {n}.",
+    "~When k = ([^ ]+), the length is ([^ ]+) times as long\\.": "Quand k = $1, la longueur est $2 fois plus longue.",
+    "~When k = ([^ ]+), the area is ([^ ]+) times as big\\.": "Quand k = $1, l'aire est $2 fois plus grande.",
+    "~When k = ([^ ]+), the volume is ([^ ]+) times as big\\.": "Quand k = $1, le volume est $2 fois plus grand.",
+    "~When k = ([^ ]+), the length is ([^ ]+) as long\\.": "Quand k = $1, la longueur est $2 de la longueur initiale.",
+    "~When k = ([^ ]+), the area is ([^ ]+) as big\\.": "Quand k = $1, l'aire est $2 de l'aire initiale.",
+    "~When k = ([^ ]+), the volume is ([^ ]+) as big\\.": "Quand k = $1, le volume est $2 du volume initial.",
+    "~That is (k.?)\\.": "C'est $1.",
+    "~([^ ]+) (c?m[²³]?) became ([^ ]+) (c?m[²³]?)\\.": "$1 $2 est devenu $3 $4.",
     // Practice questions
     "It is enlarged by a scale factor of {n}.": "Agrandissement avec un facteur d'échelle de {n}.",
     "It is reduced by a scale factor of {0}.": "Réduction avec un facteur d'échelle de {0}.",
