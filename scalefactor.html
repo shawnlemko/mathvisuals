@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Scale Factors: Length, Area and Volume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Scale Factors: Length, Area and Volume (Math 20-2, Shawn 2026-10-15).
+   Students multiply an area or a volume by the scale factor itself (area 9, scale factor 2, "18").
+   The picture shows why that is wrong: the new shape is filled with copies of the old one,
+   k copies on a line, k × k copies in a square, k × k × k copies in a cube (or, shrinking by 1/2,
+   the old shape holds 2, 4 or 8 new ones). Old shape and its copies blue, new shape orange, answers green.
+   Learn: Next step reveals one step at a time, ending with "Why not 18?". Practice: find the new size
+   or find the scale factor, Check, Hint, Show me. Work runs down the board with = lined up and step
+   names on the right. Never the ÷ sign: dividing is written as a fraction. */
+.main { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 46px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.seg-btns button:disabled { opacity: 0.4; cursor: default; }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; }
+.ctl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; align-items: center; }
+.ctl .lbl { font-weight: 700; color: var(--muted); }
+.stepper { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; }
+.stepper button { min-width: 48px; min-height: 46px; font-size: 1.4rem; padding: 0; }
+.stepper output { min-width: 2ch; text-align: center; color: var(--pt); }
+.stepper .u { font-size: 1.1rem; color: var(--muted); }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.say { font-size: 1.25rem; margin: 0; min-height: 3em; line-height: 1.45; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.frac { vertical-align: middle; font-family: var(--font-num); font-size: 0.85em; }
+/* What the scale factor does to each measure; the row being shown is lit. */
+.rule { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.rule > div { display: contents; }
+.rule span { padding: 3px 0; }
+.rule .nm { font-weight: 700; }
+#rk { text-transform: none; font-family: var(--font-num); font-size: 1rem; color: var(--ink); }
+.rule .mx { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; }
+.rule .why { font-family: var(--font-num); color: var(--muted); }
+.rule > div:not(.on) span { opacity: 0.55; }
+.rule > div.on .mx { color: var(--green); }
+.rule > div.on .nm::before { content: "▸ "; color: var(--green); }
+.q p { font-size: 1.3rem; margin: 0 0 4px; line-height: 1.4; }
+.q p.ask { font-weight: 700; margin-top: 6px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 10px; }
+.fld { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; }
+.fld input { font: inherit; font-size: 1.6rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 54px; width: 5.5ch; text-align: center; padding: 0 4px; }
+.fld input.bad { border-color: var(--warn); }
+.fld input.ok { border-color: var(--green); color: var(--green); }
+.fb { margin: 8px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.4em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.05rem; color: var(--muted); margin: 8px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+.pset { display: flex; flex-direction: column; gap: 8px; }
+
+/* Board */
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.tx.b { fill: var(--pt); } .tx.o { fill: var(--orange); } .tx.g { fill: var(--green); } .tx.r { fill: var(--warn); }
+.tx.op, .tx.m { fill: var(--muted); }
+.tx.n { font-weight: 500; fill: var(--muted); stroke: none; }
+.bar { stroke: var(--ink); stroke-linecap: round; }
+.bar.g { stroke: var(--green); }
+.eqs { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.sname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.sname.now { fill: var(--ink); }
+.sq { stroke-width: 3; stroke-linejoin: round; }
+.sq.b0, .cb.b0 .f { fill: color-mix(in srgb, var(--pt) 30%, var(--sheet)); }
+.sq.b1, .cb.b1 .f { fill: color-mix(in srgb, var(--pt) 14%, var(--sheet)); }
+.sq.b0, .sq.b1, .cb.b0 *, .cb.b1 * { stroke: var(--pt); }
+.cb.b0 .t, .cb.b1 .t { fill: color-mix(in srgb, var(--pt) 8%, var(--sheet)); }
+.cb.b0 .r { fill: color-mix(in srgb, var(--pt) 48%, var(--sheet)); }
+.cb.b1 .r { fill: color-mix(in srgb, var(--pt) 34%, var(--sheet)); }
+.sq.o0, .cb.o0 .f { fill: color-mix(in srgb, var(--orange) 32%, var(--sheet)); }
+.sq.o1, .cb.o1 .f { fill: color-mix(in srgb, var(--orange) 15%, var(--sheet)); }
+.sq.o0, .sq.o1, .cb.o0 *, .cb.o1 * { stroke: var(--orange); }
+.cb.o0 .t, .cb.o1 .t { fill: color-mix(in srgb, var(--orange) 9%, var(--sheet)); }
+.cb.o0 .r { fill: color-mix(in srgb, var(--orange) 50%, var(--sheet)); }
+.cb.o1 .r { fill: color-mix(in srgb, var(--orange) 36%, var(--sheet)); }
+.cb * { stroke-width: 2.5; stroke-linejoin: round; }
+.sq.new, .cb.new * { fill: none; stroke: var(--orange); stroke-width: 3.5; stroke-dasharray: 11 8; }
+.unit { stroke: var(--pt); stroke-opacity: 0.35; stroke-width: 1.3; }
+.trap { fill: none; stroke: var(--warn); stroke-width: 6; stroke-dasharray: 14 8; }
+.karr { stroke: var(--muted); stroke-width: 4; stroke-linecap: round; fill: none; }
+.karr-h { fill: var(--muted); }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+.fade { animation: fade 0.5s ease-out both; }
+@keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pop, .fade { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Scale Factors: Length, Area and Volume</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1100 720" role="img" aria-label="The old shape and the new shape, with the new one filled with copies of the old one, and the work written step by step."></svg></div>
+
+    <div class="panel" id="learn">
+      <section class="card ctl">
+        <span class="lbl">Shape</span>
+        <div class="seg-btns" role="group" aria-label="Shape" id="dims">
+          <button type="button" data-dim="1">Length</button><button type="button" data-dim="2">Area</button><button type="button" data-dim="3">Volume</button>
+        </div>
+        <span class="lbl">Scale factor k</span>
+        <div class="seg-btns" role="group" aria-label="Scale factor k" id="ks">
+          <button type="button" data-k="1/2"><span class="frac"><span>1</span><span>2</span></span></button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="4">4</button>
+        </div>
+        <span class="lbl">Old side</span>
+        <div class="stepper"><button type="button" id="sDn" aria-label="Shorter side">−</button><output id="sOut">3</output><span class="u">cm</span><button type="button" id="sUp" aria-label="Longer side">+</button></div>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+      </div>
+      <section class="card">
+        <p class="label"><span>With scale factor</span> <span id="rk"></span></p>
+        <div class="rule" id="rule"></div>
+      </section>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card pset">
+        <div class="seg-btns" role="group" aria-label="Shape" id="pdims">
+          <button type="button" data-pdim="1">Length</button><button type="button" data-pdim="2">Area</button><button type="button" data-pdim="3">Volume</button><button type="button" data-pdim="mix" class="on">Mixed</button>
+        </div>
+        <div class="seg-btns" role="group" aria-label="What to find" id="pfinds">
+          <button type="button" data-pfind="new" class="on">Find the new size</button><button type="button" data-pfind="k">Find the scale factor</button>
+        </div>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card q">
+        <div id="qtext"></div>
+        <div class="row">
+          <label class="fld" id="ansBox"></label>
+          <div class="btns"><button type="button" class="go" id="check">Check</button><button type="button" id="newq">New question</button></div>
+        </div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  // ---------- fractions (every number is kept exact) ----------
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+  const Q = (n, d = 1) => { const g = gcd(n, d); return { n: n / g, d: d / g }; };
+  const mul = (a, b) => Q(a.n * b.n, a.d * b.d);
+  const pw = (a, e) => Q(a.n ** e, a.d ** e);
+  const same = (a, b) => a.n * b.d === b.n * a.d;
+  const kTxt = a => a.d === 1 ? `${a.n}` : `${a.n}/${a.d}`;
+  function decOf(a) { let d = a.d; while (d % 2 === 0) d /= 2; while (d % 5 === 0) d /= 5; return d === 1 ? String(+(a.n / a.d).toFixed(6)) : null; }
+  const vTxt = a => a.d === 1 ? `${a.n}` : decOf(a) ?? kTxt(a);
+  const tok = (a, c) => a.d === 1 ? (c ? { v: `${a.n}`, c } : `${a.n}`) : { fr: [a.n, a.d], c };
+  const fracHTML = a => a.d === 1 ? `${a.n}` : `<span class="frac"><span>${a.n}</span><span>${a.d}</span></span>`;
+
+  const NAME = { 1: "length", 2: "area", 3: "volume" };
+  const SHAPE = { 1: "line", 2: "square", 3: "cube" };
+  const up = q => q.u + ["", "²", "³"][q.dim - 1];
+
+  // k: the scale factor. M: old measure. F: what the measure is multiplied by (k, k², k³). N: new measure.
+  // m: copies along each direction (k when growing, the 2 of 1/2 when shrinking).
+  function facts(q) {
+    const k = q.k, F = pw(k, q.dim), grow = k.n > k.d;
+    return { k, M: q.M, F, N: mul(F, q.M), grow, m: grow ? k.n : k.d };
+  }
+
+  // ---------- the work, one line per step, = lined up ----------
+  function work(q) {
+    const f = facts(q), d = q.dim, L = [];
+    const kk = []; for (let i = 0; i < d; i++) { if (i) kk.push("×"); kk.push(tok(f.k)); }
+    if (q.find === "k") {
+      const ratio = { fr: [f.N.n, f.M.n] };
+      if (d === 1) {
+        L.push({ l: "k", r: [ratio], name: "New length over old length" });
+        L.push({ l: "", r: [tok(f.k, "g")], name: "" });
+      } else {
+        L.push({ l: d === 2 ? "k²" : "k³", r: [ratio], name: d === 2 ? "New area over old area" : "New volume over old volume" });
+        L.push({ l: "", r: [tok(f.F)], name: "" });
+        L.push({ l: "k", r: [tok(f.k, "g")], name: `${Array(d).fill(kTxt(f.k)).join(" × ")} = ${kTxt(f.F)}` });
+      }
+      return L;
+    }
+    L.push({ l: "k", r: [tok(f.k)], name: "Scale factor" });
+    if (d === 1) L.push({ l: "New length", r: [tok(f.k), "×", tok(f.M)], name: "Scale factor × old length" });
+    else {
+      L.push({ l: d === 2 ? "k²" : "k³", r: kk, name: d === 2 ? "Area factor" : "Volume factor" });
+      L.push({ l: "", r: [tok(f.F)], name: "" });
+      L.push({ l: d === 2 ? "New area" : "New volume", r: [tok(f.F), "×", tok(f.M)], name: d === 2 ? "Area factor × old area" : "Volume factor × old volume" });
+    }
+    if (f.F.d > 1) L.push({ l: "", r: [{ fr: [f.F.n * f.M.n, f.F.d * f.M.d] }], name: "" });
+    L.push({ l: "", r: [{ v: `${vTxt(f.N)} ${up(q)}`, c: "g" }], name: "" });
+    return L;
+  }
+
+  // ---------- steps: what is said, what the picture shows (v), how many work lines (w) ----------
+  function steps(q) {
+    const f = facts(q), d = q.dim, K = kTxt(f.k), m = f.m, u = up(q), sh = SHAPE[d], nm = NAME[d];
+    const Mv = vTxt(f.M), Nv = vTxt(f.N), Fv = kTxt(f.F), mm = m ** d, L = work(q).length;
+    const dirs = d === 2 ? `${m} across and ${m} down` : `${m} across, ${m} up and ${m} back`;
+    const S = [];
+    if (q.find === "k") {
+      S.push({ say: `The old ${nm} is ${Mv} ${u}. The new ${nm} is ${Nv} ${u}.`, v: { new: 1 }, w: 0 });
+      const ratio = `New over old is ${f.N.n}/${f.M.n} = ${Fv}, so it is ${Fv}${f.grow ? " times" : ""} as ${d === 1 ? "long" : "big"}.`;
+      if (d === 1) {
+        S.push({ say: ratio, v: { new: 1, copies: 1 }, w: 1 });
+        S.push({ say: f.grow ? `${m} copies fit end to end. So k = ${K}.` : `The new line is ${K} as long as the old one. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
+        return S;
+      }
+      S.push({ say: ratio + (f.grow ? ` So ${Fv} copies of the old ${sh} fit in the new one.` : ` So ${mm} new ${sh}s fit in the old one.`), v: { new: 1, copies: 1 }, w: 2 });
+      const by = d === 2 ? `a ${m} by ${m} square` : `a ${m} by ${m} by ${m} cube`;
+      S.push({ say: f.grow ? `${Fv} copies make ${by}, because ${Array(d).fill(m).join(" × ")} = ${Fv}. So k = ${K}.`
+                           : `${mm} new ${sh}s make ${by}, so each side is ${K} as long. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
+      return S;
+    }
+    // Find the new size.
+    let s0 = `The old ${nm} is ${Mv} ${u}.`;
+    if (q.learn) s0 = d === 1 ? `This line is ${q.s} cm long.` : d === 2 ? `This square has sides of ${q.s} cm. Its area is ${q.s} × ${q.s} = ${Mv} cm².`
+      : `This cube has sides of ${q.s} cm. Its volume is ${q.s} × ${q.s} × ${q.s} = ${Mv} cm³.`;
+    S.push({ say: s0, v: {}, w: 0 });
+    let s1 = f.grow ? `Scale factor ${K}: every length gets ${K} times as long.` : `Scale factor ${K}: every length gets half as long.`;
+    if (q.learn) s1 += d === 1 ? ` The line goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.` : ` Each side goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.`;
+    S.push({ say: s1, v: { new: 1 }, w: 1 });
+    const s2 = d === 1 ? (f.grow ? `${m} copies of the old line fit end to end.` : `${m} new lines fit in the old one.`)
+      : f.grow ? `Fill the new ${sh} with copies of the old one: ${dirs}.` : `Fill the old ${sh} with new ones: ${dirs}.`;
+    S.push({ say: s2, v: { new: 1, copies: 1 }, w: 1 });
+    const ansSay = f.grow ? `${Fv} copies of ${Mv} ${u} make ${Nv} ${u}.` : `${Fv} of ${Mv} ${u} is ${Nv} ${u}.`;
+    if (d === 1) { S.push({ say: ansSay, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L }); return S; }
+    S.push({ say: f.grow ? `That is ${Array(d).fill(m).join(" × ")} = ${Fv} copies. The ${nm} grows ${Fv} times, not ${m} times.`
+                         : `${mm} new ${sh}s fill the old one. The new ${nm} is ${Fv} of the old ${nm}.`, v: { new: 1, copies: 1, count: 1 }, w: 3 });
+    S.push({ say: ansSay, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: L });
+    if (q.learn) {
+      const row = vTxt(mul(f.grow ? Q(m) : f.k, f.M));
+      S.push({ say: f.grow ? `Why not ${m} × ${Mv} = ${row}? That only fills one row of copies. The ${sh} grows in ${d} directions.`
+                           : `Why not ${K} × ${Mv} = ${row}? That is only one row of new ${sh}s. The ${sh} shrinks in ${d} directions.`,
+               v: { new: 1, copies: 1, count: 1, ans: 1, trap: 1 }, w: L });
+    }
+    return S;
+  }
+
+  // ---------- layout: text and fractions that know their size ----------
+  const CW = 0.62; // character width of the number font, in em
+  const FS = 34, LFS = 32; // work lines, labels on the picture
+  // Width is measured on the French words when French is on (the switch translates after drawing).
+  const shown = s => { const fr = document.documentElement.lang === "fr" && window.I18N_PAGE && window.I18N_PAGE[s]; return fr || s; };
+  function T(s, fs, cls, anchor) {
+    s = String(s);
+    return { w: shown(s).length * CW * fs, up: fs * 0.5, dn: fs * 0.5,
+      draw(g, x, y) { return E("text", { x: x + this.w / 2, y: y + fs * 0.36, class: "tx " + (cls || ""), "text-anchor": "middle", "font-size": fs }, g, s); } };
+  }
+  function R(items, sp) {
+    const w = items.reduce((t, i) => t + i.w, 0) + sp * (items.length - 1);
+    return { w, up: Math.max(...items.map(i => i.up)), dn: Math.max(...items.map(i => i.dn)),
+      draw(g, x, y) { for (const i of items) { i.draw(g, x, y); x += i.w + sp; } } };
+  }
+  function Fr(a, b, fs, cls) {
+    const t = T(a, fs * 0.8, cls), d = T(b, fs * 0.8, cls), pad = fs * 0.15, gap = fs * 0.14;
+    const w = Math.max(t.w, d.w) + 2 * pad;
+    return { w, up: t.up + t.dn + gap, dn: d.up + d.dn + gap,
+      draw(g, x, y) {
+        E("line", { x1: x, x2: x + w, y1: y, y2: y, class: "bar " + (cls || ""), "stroke-width": 4 }, g);
+        t.draw(g, x + (w - t.w) / 2, y - gap - t.dn);
+        d.draw(g, x + (w - d.w) / 2, y + gap + d.up);
+      } };
+  }
+  const node = (it, fs) => typeof it === "string" ? T(it, fs, /^[×=]$/.test(it) ? "op" : "")
+    : it.fr ? Fr(it.fr[0], it.fr[1], fs, it.c) : T(it.v, fs, it.c);
+  const line = (items, fs) => R(items.map(it => node(it, fs)), fs * 0.4);
+  // A label centred on (cx, cy): "k = " and a value that may be a fraction.
+  function label(g, items, fs, cx, cy, anchor) {
+    const n = line(items, fs);
+    const x = anchor === "end" ? cx - n.w : anchor === "start" ? cx : cx - n.w / 2;
+    const lg = E("g", {}, g); n.draw(lg, x, cy); return lg;
+  }
+
+  let timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+
+  // ---------- drawing ----------
+  const W = 1000, GAP = 170, D = 0.42; // picture width, room between the shapes, depth of a cube drawing
+  function cube(g, x, y, a, cls) { // front face from (x, y - a) to (x + a, y); depth goes up and right
+    const c = E("g", { class: "cb " + cls }, g), e = a * D;
+    E("rect", { x, y: y - a, width: a, height: a, class: "f" }, c);
+    E("polygon", { points: `${x},${y - a} ${x + a},${y - a} ${x + a + e},${y - a - e} ${x + e},${y - a - e}`, class: "t" }, c);
+    E("polygon", { points: `${x + a},${y} ${x + a},${y - a} ${x + a + e},${y - a - e} ${x + a + e},${y - e}`, class: "r" }, c);
+    return c;
+  }
+  function popIn(el, i, n) { el.classList.add("pop"); el.style.animationDelay = Math.round(i * Math.min(260, 2600 / n)) + "ms"; }
+
+  // Copies: m along each direction, each of size a (px), starting at (X, Y) = bottom-left front corner.
+  // Returns nothing; draws in painter's order (far, low, left first) and pops them in layer by layer.
+  function copies(g, q, X, Y, a, m, colour, anim, valueTxt, number) {
+    const d = q.dim, n = m ** d;
+    if (d === 1) {
+      for (let i = 0; i < m; i++) {
+        const r = E("rect", { x: X + i * a, y: Y - 60, width: a, height: 60, class: `sq ${colour}${i % 2}` }, g);
+        if (anim) popIn(r, i, n);
+        if (valueTxt && a >= 56) { const t = E("text", { x: X + i * a + a / 2, y: Y - 20, class: "tx", "text-anchor": "middle", "font-size": Math.min(28, a * 0.32) }, g, valueTxt); if (anim) popIn(t, i, n); }
+      }
+      return;
+    }
+    if (d === 2) {
+      for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) {
+        const cg = E("g", {}, g), x = X + i * a, y = Y - (m - j) * a, idx = j * m + i;
+        E("rect", { x, y, width: a, height: a, class: `sq ${colour}${(i + j) % 2}` }, cg);
+        if (q.learn && colour === "b") units(cg, x, y, a, q.s);
+        if (valueTxt && a >= 60) E("text", { x: x + a / 2, y: y + a / 2 + 10, class: "tx", "text-anchor": "middle", "font-size": Math.min(30, a * 0.3) }, cg, valueTxt);
+        if (number && a >= 44) E("text", { x: x + 8, y: y + 24, class: "tx n", "font-size": 20 }, cg, idx + 1);
+        if (anim) popIn(cg, idx, n);
+      }
+      return;
+    }
+    const e = a * D, order = [];
+    for (let l = m - 1; l >= 0; l--) for (let j = 0; j < m; j++) for (let i = 0; i < m; i++) order.push([i, j, l]);
+    for (const [i, j, l] of order) {
+      const x = X + i * a + l * e, y = Y - j * a - l * e;
+      const c = cube(g, x, y, a, `${colour}${(i + j + l) % 2}`);
+      if (valueTxt && l === 0 && a >= 60) E("text", { x: x + a / 2, y: y - a / 2 + 10, class: "tx", "text-anchor": "middle", "font-size": Math.min(30, a * 0.3) }, c, valueTxt);
+      if (anim) popIn(c, j * m * m + (m - 1 - l) * m + i, n);
+    }
+  }
+  // Faint unit squares inside a square of side s units drawn a px wide (Learn only).
+  function units(g, x, y, a, s) {
+    const u = a / s; if (u < 9 || s < 2) return;
+    for (let t = 1; t < s; t++) {
+      E("line", { x1: x + t * u, x2: x + t * u, y1: y, y2: y + a, class: "unit" }, g);
+      E("line", { x1: x, x2: x + a, y1: y + t * u, y2: y + t * u, class: "unit" }, g);
+    }
+  }
+
+  // Draws the picture into g; returns its height.
+  function picture(g, q, v, isNew) {
+    const f = facts(q), d = q.dim, kf = f.k.n / f.k.d, s = q.s, big = Math.max(1, kf), m = f.m, u = up(q);
+    const Mv = vTxt(f.M), oldTxt = `${Mv} ${u}`;
+    const newTxt = q.find === "k" || v.ans ? `${vTxt(f.N)} ${u}` : "?";
+    const newCls = q.find === "k" ? "o" : v.ans ? "g" : "o";
+    const kItems = q.find === "k" && !v.ans ? ["k", "=", "?"] : ["k", "=", tok(f.k, q.find === "k" ? "g" : "")];
+    const sideTxt = len => `${vTxt(len)} cm`;
+
+    if (d === 1) {
+      const PH = 380, X0 = 250, YO = 160, YN = 320, BH = 60;
+      const un = Math.min((W - X0 - 60) / (s * big), 80), so = s * un, sn = so * kf;
+      // Old line: one blue bar, or (shrinking) the new pieces inside it.
+      if (!f.grow && v.copies) copies(g, q, X0, YO, sn, m, "o", isNew("copies"), null);
+      else E("rect", { x: X0, y: YO - BH, width: so, height: BH, class: "sq b0" }, g);
+      if (q.learn) for (let t = 1; t < s; t++) E("line", { x1: X0 + t * un, x2: X0 + t * un, y1: YO - BH, y2: YO, class: "unit" }, g);
+      label(g, [{ v: oldTxt, c: "b" }], LFS, X0 + so / 2, YO - BH - 30);
+      if (v.new) {
+        const ng = E("g", { class: isNew("new") ? "fade" : "" }, g);
+        if (f.grow && v.copies) copies(ng, q, X0, YN, so, m, "b", isNew("copies"), Mv);
+        else E("rect", { x: X0, y: YN - BH, width: sn, height: BH, class: f.grow ? "sq new" : "sq o0" }, ng);
+        const nl = label(ng, [{ v: newTxt, c: newCls }], LFS, X0 + sn / 2, YN - BH - 30);
+        if (isNew("ans")) nl.classList.add("pop");
+        // k arrow from the old line down to the new one.
+        E("line", { x1: X0 - 30, x2: X0 - 30, y1: YO + 10, y2: YN - BH - 14, class: "karr" }, ng);
+        E("polygon", { points: `${X0 - 41},${YN - BH - 20} ${X0 - 19},${YN - BH - 20} ${X0 - 30},${YN - BH - 2}`, class: "karr-h" }, ng);
+        const kl = label(ng, kItems, LFS, X0 - 50, (YO + YN - BH) / 2, "end");
+        if (q.find === "k" && isNew("ans")) kl.classList.add("pop");
+      }
+      return PH;
+    }
+
+    const PH = d === 2 ? 470 : 500, yB = PH - 60, ext = d === 3 ? 1 + D : 1;
+    const un = Math.min((PH - 120) / (s * big * ext), (W - 260 - GAP) / (s * (1 + kf) * ext), 85);
+    const so = s * un, sn = so * kf, wo = so * ext, wn = sn * ext;
+    const x0 = (W - wo - GAP - wn) / 2, x1 = x0 + wo + GAP;
+    // Old shape (blue), or (shrinking) the new pieces that fill it (orange).
+    if (!f.grow && v.copies) copies(g, q, x0, yB, sn, m, "o", isNew("copies"), null, v.count && d === 2);
+    else if (d === 2) { E("rect", { x: x0, y: yB - so, width: so, height: so, class: "sq b0" }, g); if (q.learn) units(g, x0, yB - so, so, s); }
+    else cube(g, x0, yB, so, "b0");
+    label(g, [{ v: oldTxt, c: "b" }], LFS, x0 + wo / 2, yB - wo - 30);
+    if (q.learn) label(g, [{ v: sideTxt(Q(s)), c: "b" }], 28, x0 + so / 2, yB + 32);
+    if (v.new) {
+      const ng = E("g", { class: isNew("new") ? "fade" : "" }, g);
+      if (f.grow && v.copies) copies(ng, q, x1, yB, so, m, "b", isNew("copies"), Mv, v.count && d === 2);
+      else if (d === 2) E("rect", { x: x1, y: yB - sn, width: sn, height: sn, class: f.grow ? "sq new" : "sq o0" }, ng);
+      else cube(ng, x1, yB, sn, f.grow ? "new" : "o0");
+      const nl = label(ng, [{ v: newTxt, c: newCls }], LFS, x1 + wn / 2, yB - wn - 30);
+      if (isNew("ans")) nl.classList.add("pop");
+      if (q.learn) label(ng, [{ v: sideTxt(mul(Q(s), f.k)), c: "o" }], 28, x1 + sn / 2, yB + 32);
+      // k arrow from the old shape to the new one, level with the middle of the smaller one.
+      const ym = yB - Math.min(so, sn) / 2, ax0 = x0 + wo + 16, ax1 = x1 - 16;
+      E("line", { x1: ax0, x2: ax1 - 14, y1: ym, y2: ym, class: "karr" }, ng);
+      E("polygon", { points: `${ax1 - 18},${ym - 11} ${ax1 - 18},${ym + 11} ${ax1},${ym}`, class: "karr-h" }, ng);
+      const kl = label(ng, kItems, LFS, (ax0 + ax1) / 2, ym - 40);
+      if (q.find === "k" && isNew("ans")) kl.classList.add("pop");
+    }
+    // Why not k × old? Outline one row of copies and say what it is worth.
+    if (v.trap) {
+      const tg = E("g", { class: isNew("trap") ? "pop" : "" }, g);
+      const row = `${vTxt(mul(f.grow ? Q(m) : f.k, f.M))} ${u}`;
+      if (f.grow) {
+        E("rect", { x: x1 - 4, y: yB - so - 4, width: sn + 8, height: so + 8, class: "trap" }, tg);
+        label(tg, [{ v: row, c: "r" }], LFS, x1 + wn + 14, yB - so / 2, "start");
+      } else {
+        E("rect", { x: x0 - 4, y: yB - sn - 4, width: so + 8, height: sn + 8, class: "trap" }, tg);
+        label(tg, [{ v: row, c: "r" }], LFS, x0 - 14, yB - sn / 2, "end");
+      }
+    }
+    return PH;
+  }
+
+  let redraw = () => {};
+  // Draws question q at step i. anim: animate what this step adds. hint: extra things to show (Practice).
+  function render(q, i, anim, hint) {
+    redraw = () => render(q, i, false, hint);
+    svg.innerHTML = "";
+    const S = steps(q);
+    const v = hint ? Object.assign({}, S[0].v, hint) : S[i].v;
+    const w = hint ? 0 : S[i].w;
+    const was = anim && i > 0 ? S[i - 1].v : v;
+    const isNew = key => !!(anim && v[key] && !was[key]);
+
+    // The work: = lined up, step names on the right. Places come from every line so nothing jumps.
+    const L = work(q), lhs = L.map(l => T(l.l, FS, "op")), nodes = L.map(l => line(l.r, FS));
+    const EQX = 60 + Math.max(...lhs.map(n => n.w)) + 22, RHS = EQX + 34;
+    const NX = Math.max(...nodes.map(n => RHS + n.w)) + 56;
+    const nameW = Math.max(0, ...L.map(l => shown(l.name).length * 0.5 * 28));
+    const VW = Math.max(W, NX + nameW + 30);
+    const pg = E("g", { transform: `translate(${(VW - W) / 2},0)` });
+    const PH = picture(pg, q, v, isNew);
+    let y = PH + 6; const ys = [];
+    nodes.forEach((n, k) => { y += n.up + (k ? 14 : 0); ys.push(y); y += n.dn; });
+    const H = Math.max(700, y + 24);
+    svg.setAttribute("viewBox", `0 0 ${VW} ${H}`);
+    const prevW = anim && i > 0 ? S[i - 1].w : w;
+    for (let k = 0; k < w; k++) {
+      const g = E("g", { class: anim && k >= prevW ? "pop" : "" });
+      if (anim && k >= prevW) g.style.animationDelay = (k - prevW) * 250 + "ms";
+      const lt = lhs[k].draw(g, EQX - 18 - lhs[k].w, ys[k]);
+      lt.setAttribute("x", EQX - 18); lt.setAttribute("text-anchor", "end");
+      E("text", { x: EQX, y: ys[k] + FS * 0.36, class: "eqs", "text-anchor": "middle", "font-size": FS }, g, "=");
+      nodes[k].draw(g, RHS, ys[k]);
+      if (L[k].name) E("text", { x: NX, y: ys[k] + 10, class: "sname" + (k === w - 1 ? " now" : ""), "font-size": 28 }, g, L[k].name);
+    }
+  }
+
+  // ---------- Learn ----------
+  let mode = "learn", step = 0;
+  const lq = { learn: true, find: "new", dim: 2, k: Q(2), s: 3, u: "cm" };
+  const syncM = () => { lq.M = Q(lq.s ** lq.dim); };
+  function showLearn(anim) {
+    syncM();
+    const S = steps(lq);
+    render(lq, step, anim);
+    $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
+    $("#say").textContent = S[step].say;
+    $("#next").disabled = step >= S.length - 1;
+    $("#back").disabled = step === 0;
+    document.querySelectorAll("[data-dim]").forEach(b => b.classList.toggle("on", +b.dataset.dim === lq.dim));
+    document.querySelectorAll("[data-k]").forEach(b => b.classList.toggle("on", same(Q(...b.dataset.k.split("/").map(Number)), lq.k)));
+    $("#sOut").textContent = lq.s;
+    $("#sDn").disabled = lq.s <= 1; $("#sUp").disabled = lq.s >= 10;
+    // What the scale factor does to each measure.
+    $("#rk").innerHTML = `k = ${fracHTML(lq.k)}`;
+    const names = ["Length", "Area", "Volume"];
+    $("#rule").innerHTML = names.map((n, j) => {
+      const F = pw(lq.k, j + 1), why = j ? Array(j + 1).fill(kTxt(lq.k)).join(" × ") : "";
+      return `<div class="${j + 1 === lq.dim ? "on" : ""}"><span class="nm">${n}</span><span class="mx">× ${kTxt(F)}</span><span class="why">${why}</span></div>`;
+    }).join("");
+  }
+  const restart = () => { step = 0; showLearn(false); };
+  $("#dims").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { lq.dim = +b.dataset.dim; restart(); } });
+  $("#ks").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { lq.k = Q(...b.dataset.k.split("/").map(Number)); restart(); } });
+  $("#sDn").onclick = () => { if (lq.s > 1) { lq.s--; restart(); } };
+  $("#sUp").onclick = () => { if (lq.s < 10) { lq.s++; restart(); } };
+  $("#next").onclick = () => { if (step < steps(lq).length - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = restart;
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  let pdim = "mix", pfind = "new", pq = null, tried = false, solved = false, right = 0, total = 0, inp = null;
+  const fb = $("#fb");
+  function feedback(text, cls) { fb.className = "fb " + (cls || ""); fb.textContent = text; }
+  // Where the numbers live: [sentence with the old measure, unit].
+  const CTX = {
+    1: [["A pencil is {M} long.", "cm"], ["A fence is {M} long.", "m"]],
+    2: [["A photo has an area of {M}.", "cm"], ["A garden has an area of {M}.", "m"]],
+    3: [["A box has a volume of {M}.", "cm"], ["A tank has a volume of {M}.", "m"]],
+  };
+  const COPY = { 1: "is {N} long.", 2: "has an area of {N}.", 3: "has a volume of {N}." };
+  function gen() {
+    for (let tries = 0; tries < 30; tries++) {
+      const dim = pdim === "mix" ? ri(1, 3) : +pdim;
+      const kv = pick([2, 2, 3, 3, 4, 5, "half"]), k = kv === "half" ? Q(1, 2) : Q(kv);
+      const [ctx, u] = pick(CTX[dim]);
+      const M = k.d > 1 ? Q(2 ** dim * ri(1, dim === 1 ? 5 : 4)) : Q(ri(2, [0, 15, 20, 10][dim]));
+      const m = k.d > 1 ? 2 : k.n;
+      const q = { learn: false, find: pfind, dim, k, M, u, ctx, s: k.d > 1 ? 4 : m >= 4 ? 2 : 3 };
+      if (!pq || pq.dim !== q.dim || !same(pq.k, q.k) || !same(pq.M, q.M)) return q;
+    }
+  }
+  function writeQuestion(q) {
+    const f = facts(q), u = up(q);
+    const lines = [q.ctx.replace("{M}", `${vTxt(f.M)} ${u}`)];
+    if (q.find === "new") {
+      lines.push(f.grow ? `It is enlarged by a scale factor of ${kTxt(f.k)}.` : `It is reduced by a scale factor of ${fracHTML(f.k)}.`);
+      lines.push(`What is the new ${NAME[q.dim]}?`);
+    } else {
+      lines.push(`${f.grow ? "A bigger copy" : "A smaller copy"} ${COPY[q.dim].replace("{N}", `${vTxt(f.N)} ${u}`)}`);
+      lines.push("What is the scale factor?");
+    }
+    $("#qtext").innerHTML = lines.map((t, j) => `<p class="${j === 2 ? "ask" : ""}">${t}</p>`).join("");
+    const box = $("#ansBox");
+    box.innerHTML = q.find === "k" ? `<span>k =</span><input type="text" autocomplete="off" inputmode="decimal" aria-label="Your answer">`
+      : `<input type="text" autocomplete="off" inputmode="decimal" aria-label="Your answer"><span>${u}</span>`;
+    inp = box.querySelector("input");
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  }
+  function newQuestion() {
+    clearTimers();
+    pq = gen(); tried = false; solved = false;
+    writeQuestion(pq);
+    feedback("");
+    render(pq, 0, false);
+    inp.focus({ preventScroll: true });
+  }
+  // A typed number: whole, decimal or fraction; a unit or "k =" may be typed too.
+  function parse(s) {
+    s = s.replace(/\s+/g, "").replace(/,/g, ".").replace(/^k=/i, "").replace(/(cm|m)[²³]?$/i, "");
+    let t;
+    if (/^\d+$/.test(s)) return Q(+s);
+    if ((t = s.match(/^(\d*)\.(\d+)$/))) { const p = 10 ** t[2].length; return Q(+(t[1] || 0) * p + +t[2], p); }
+    if ((t = s.match(/^(\d+)\/(\d+)$/)) && +t[2] > 0) return Q(+t[1], +t[2]);
+    return null;
+  }
+  function count(ok) { if (!tried) { tried = true; total++; if (ok) right++; $("#right").textContent = right; $("#total").textContent = total; } }
+  // The mistakes Shawn sees most: using k for an area or volume, and k² for a volume.
+  function mistake(q, got) {
+    const f = facts(q), d = q.dim, K = kTxt(f.k), kk = Array(d).fill(K).join(" × ");
+    if (q.find === "new") {
+      if (d > 1 && same(got, mul(f.k, f.M))) return d === 2 ? `Not quite. That is only one row of copies. Area grows in 2 directions: ${kk}.` : `Not quite. That is only one row of copies. Volume grows in 3 directions: ${kk}.`;
+      if (d === 3 && same(got, mul(pw(f.k, 2), f.M))) return `Not quite. That is only one layer of copies. Volume grows in 3 directions: ${kk}.`;
+      if (!f.grow && same(got, mul(pw(Q(f.m), d), f.M))) return `Not quite. A scale factor of ${K} makes it smaller.`;
+      return "Not quite. Try a Hint.";
+    }
+    if (d > 1 && same(got, f.F)) return d === 2 ? `Not quite. ${kTxt(f.F)} is how much the area changed. Which number times itself makes ${kTxt(f.F)}?` : `Not quite. ${kTxt(f.F)} is how much the volume changed. Which number times itself three times makes ${kTxt(f.F)}?`;
+    if (!f.grow && same(got, Q(f.m))) return "Not quite. The new one is smaller, so k is less than 1.";
+    return "Not quite. Try a Hint.";
+  }
+  function check() {
+    if (solved) return;
+    const raw = inp.value.trim();
+    if (!raw) { feedback("Type your answer in the box.", "mid"); return; }
+    const got = parse(raw);
+    if (!got) { feedback("Type a number, like 36, 2.5 or 1/2.", "mid"); return; }
+    const f = facts(pq), want = pq.find === "k" ? f.k : f.N;
+    if (same(got, want)) {
+      count(true); solved = true; inp.className = "ok";
+      feedback("Correct!", "ok");
+      render(pq, steps(pq).length - 1, false);
+      return;
+    }
+    count(false); inp.className = "bad";
+    feedback(mistake(pq, got), "no");
+  }
+  $("#check").onclick = check;
+  $("#newq").onclick = newQuestion;
+  $("#hint").onclick = () => {
+    if (solved) return;
+    const f = facts(pq), d = pq.dim, sh = SHAPE[d], mm = Array(d).fill(f.m).join(" × ");
+    render(pq, 0, false, { new: 1, copies: 1 });
+    if (pq.find === "k") feedback(`Write new over old: ${f.N.n}/${f.M.n}.` + (d === 2 ? " Then find the number that times itself makes it." : d === 3 ? " Then find the number that times itself three times makes it." : ""), "mid");
+    else if (f.grow) feedback(d === 1 ? `The new line holds ${f.m} copies of the old one.` : `The new ${sh} holds ${mm} copies of the old one.`, "mid");
+    else feedback(d === 1 ? `The old line holds ${f.m} of the new ones.` : `The old ${sh} holds ${mm} new ones.`, "mid");
+  };
+  $("#showme").onclick = () => {
+    if (solved) return;
+    count(false); solved = true; clearTimers();
+    const S = steps(pq), f = facts(pq);
+    let k = 0;
+    const play = () => {
+      render(pq, k, true);
+      feedback(S[k].say, "mid");
+      if (k < S.length - 1) { k++; later(play, 2600); }
+      else { inp.value = pq.find === "k" ? kTxt(f.k) : vTxt(f.N); inp.className = "ok"; }
+    };
+    play();
+  };
+  $("#pdims").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    pdim = b.dataset.pdim;
+    document.querySelectorAll("[data-pdim]").forEach(x => x.classList.toggle("on", x === b));
+    newQuestion();
+  });
+  $("#pfinds").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    pfind = b.dataset.pfind;
+    document.querySelectorAll("[data-pfind]").forEach(x => x.classList.toggle("on", x === b));
+    newQuestion();
+  });
+
+  function setMode(m) {
+    mode = m; clearTimers();
+    document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false); else newQuestion();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  // French words are wider: lay the work out again when the language changes.
+  window.addEventListener("langchange", () => redraw());
+  setMode("learn");
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Scale Factors: Length, Area and Volume (scalefactor.html). Canadian French: facteur d'échelle, aire. */
+window.I18N_PAGE = (function () {
+  const d = {
+    "Scale Factors: Length, Area and Volume": "Facteurs d'échelle : longueur, aire et volume",
+    "The old shape and the new shape, with the new one filled with copies of the old one, and the work written step by step.": "L'ancienne figure et la nouvelle, remplie de copies de l'ancienne, avec la démarche étape par étape.",
+    "Learn": "Apprendre",
+    "Mode": "Mode",
+    "Shape": "Forme",
+    "Length": "Longueur",
+    "Area": "Aire",
+    "Volume": "Volume",
+    "Mixed": "Mélangé",
+    "Scale factor k": "Facteur d'échelle k",
+    "Old side": "Côté initial",
+    "Shorter side": "Côté plus court",
+    "Longer side": "Côté plus long",
+    "Step {n} of {n}": "Étape {n} sur {n}",
+    "With scale factor": "Avec le facteur d'échelle",
+    "What to find": "Ce qu'on cherche",
+    "Find the new size": "Trouver la nouvelle mesure",
+    "Find the scale factor": "Trouver le facteur d'échelle",
+    "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+    "Your answer": "Ta réponse",
+    "Show me": "Montre-moi",
+
+    // The work on the board
+    "Scale factor": "Facteur d'échelle",
+    "Area factor": "Facteur d'aire",
+    "Volume factor": "Facteur de volume",
+    "New length": "Nouvelle longueur",
+    "New area": "Nouvelle aire",
+    "New volume": "Nouveau volume",
+    "Scale factor × old length": "Facteur d'échelle × longueur initiale",
+    "Area factor × old area": "Facteur d'aire × aire initiale",
+    "Volume factor × old volume": "Facteur de volume × volume initial",
+    "New length over old length": "Nouvelle longueur sur longueur initiale",
+    "New area over old area": "Nouvelle aire sur aire initiale",
+    "New volume over old volume": "Nouveau volume sur volume initial",
+
+    // Learn steps
+    "This line is {n} cm long.": "Cette ligne mesure {n} cm.",
+    "This square has sides of {n} cm.": "Ce carré a des côtés de {n} cm.",
+    "Its area is {n} × {n} = {n} cm².": "Son aire est {n} × {n} = {n} cm².",
+    "This cube has sides of {n} cm.": "Ce cube a des côtés de {n} cm.",
+    "Its volume is {n} × {n} × {n} = {n} cm³.": "Son volume est {n} × {n} × {n} = {n} cm³.",
+    "Scale factor {n}: every length gets {n} times as long.": "Facteur d'échelle {n} : chaque longueur devient {n} fois plus longue.",
+    "Scale factor {n}/{n}: every length gets half as long.": "Facteur d'échelle {n}/{n} : chaque longueur devient deux fois plus courte.",
+    "The line goes from {n} cm to {n} cm.": "La ligne passe de {n} cm à {n} cm.",
+    "Each side goes from {n} cm to {n} cm.": "Chaque côté passe de {n} cm à {n} cm.",
+    "{n} copies of the old line fit end to end.": "{n} copies de l'ancienne ligne se placent bout à bout.",
+    "{n} new lines fit in the old one.": "{n} nouvelles lignes entrent dans l'ancienne.",
+    "Fill the new square with copies of the old one: {n} across and {n} down.": "Remplis le nouveau carré avec des copies de l'ancien : {n} de large et {n} de haut.",
+    "Fill the new cube with copies of the old one: {n} across, {n} up and {n} back.": "Remplis le nouveau cube avec des copies de l'ancien : {n} de large, {n} de haut et {n} de profondeur.",
+    "Fill the old square with new ones: {n} across and {n} down.": "Remplis l'ancien carré avec des nouveaux : {n} de large et {n} de haut.",
+    "Fill the old cube with new ones: {n} across, {n} up and {n} back.": "Remplis l'ancien cube avec des nouveaux : {n} de large, {n} de haut et {n} de profondeur.",
+    "That is {n} × {n} = {n} copies.": "Cela fait {n} × {n} = {n} copies.",
+    "That is {n} × {n} × {n} = {n} copies.": "Cela fait {n} × {n} × {n} = {n} copies.",
+    "The area grows {n} times, not {n} times.": "L'aire devient {n} fois plus grande, pas {n} fois.",
+    "The volume grows {n} times, not {n} times.": "Le volume devient {n} fois plus grand, pas {n} fois.",
+    "{n} new squares fill the old one.": "{n} nouveaux carrés remplissent l'ancien.",
+    "{n} new cubes fill the old one.": "{n} nouveaux cubes remplissent l'ancien.",
+    "The new area is {n}/{n} of the old area.": "La nouvelle aire est {n}/{n} de l'aire initiale.",
+    "The new volume is {n}/{n} of the old volume.": "Le nouveau volume est {n}/{n} du volume initial.",
+    "That only fills one row of copies.": "Cela ne remplit qu'une rangée de copies.",
+    "The square grows in {n} directions.": "Le carré grandit dans {n} directions.",
+    "The cube grows in {n} directions.": "Le cube grandit dans {n} directions.",
+    "That is only one row of new squares.": "C'est seulement une rangée de nouveaux carrés.",
+    "That is only one row of new cubes.": "C'est seulement une rangée de nouveaux cubes.",
+    "The square shrinks in {n} directions.": "Le carré rapetisse dans {n} directions.",
+    "The cube shrinks in {n} directions.": "Le cube rapetisse dans {n} directions.",
+    "~Why not (.+) = (.+)\\?": "Pourquoi pas $1 = $2?",
+
+    // Find the scale factor
+    "~New over old is (.+), so it is (.+) times as long\\.": "Le nouveau sur l'ancien donne $1, donc c'est $2 fois plus long.",
+    "~New over old is (.+), so it is (.+) times as big\\.": "Le nouveau sur l'ancien donne $1, donc c'est $2 fois plus grand.",
+    "~New over old is (.+), so it is (.+) as long\\.": "Le nouveau sur l'ancien donne $1, donc c'est $2 de la longueur initiale.",
+    "~New over old is (.+), so it is (.+) as big\\.": "Le nouveau sur l'ancien donne $1, donc c'est $2 de la taille initiale.",
+    "So {n} copies of the old square fit in the new one.": "Donc {n} copies de l'ancien carré entrent dans le nouveau.",
+    "So {n} copies of the old cube fit in the new one.": "Donc {n} copies de l'ancien cube entrent dans le nouveau.",
+    "So {n} new squares fit in the old one.": "Donc {n} nouveaux carrés entrent dans l'ancien.",
+    "So {n} new cubes fit in the old one.": "Donc {n} nouveaux cubes entrent dans l'ancien.",
+    "{n} copies fit end to end.": "{n} copies se placent bout à bout.",
+    "~So k = (.+)\\.": "Donc k = $1.",
+    "~The new line is (.+) as long as the old one\\.": "La nouvelle ligne mesure $1 de l'ancienne.",
+    "{n} copies make a {n} by {n} square, because {n} × {n} = {n}.": "{n} copies forment un carré de {n} sur {n}, car {n} × {n} = {n}.",
+    "{n} copies make a {n} by {n} by {n} cube, because {n} × {n} × {n} = {n}.": "{n} copies forment un cube de {n} sur {n} sur {n}, car {n} × {n} × {n} = {n}.",
+    "~(\\d+) new squares make a (\\d+) by (\\d+) square, so each side is (.+) as long\\.": "$1 nouveaux carrés forment un carré de $2 sur $3, donc chaque côté mesure $4 de l'ancien.",
+    "~(\\d+) new cubes make a (\\d+) by (\\d+) by (\\d+) cube, so each side is (.+) as long\\.": "$1 nouveaux cubes forment un cube de $2 sur $3 sur $4, donc chaque côté mesure $5 de l'ancien.",
+
+    // Practice questions
+    "It is enlarged by a scale factor of {n}.": "Agrandissement avec un facteur d'échelle de {n}.",
+    "It is reduced by a scale factor of {0}.": "Réduction avec un facteur d'échelle de {0}.",
+    "What is the new length?": "Quelle est la nouvelle longueur?",
+    "What is the new area?": "Quelle est la nouvelle aire?",
+    "What is the new volume?": "Quel est le nouveau volume?",
+    "What is the scale factor?": "Quel est le facteur d'échelle?",
+
+    // Feedback and hints
+    "Type your answer in the box.": "Écris ta réponse dans la case.",
+    "Type a number, like {n}, {n} or {n}/{n}.": "Écris un nombre, comme {n}, {n} ou {n}/{n}.",
+    "Try a Hint.": "Essaie un indice.",
+    "That is only one row of copies.": "C'est seulement une rangée de copies.",
+    "That is only one layer of copies.": "C'est seulement une couche de copies.",
+    "~Area grows in (\\d) directions: (.+)\\.": "L'aire grandit dans $1 directions : $2.",
+    "~Volume grows in (\\d) directions: (.+)\\.": "Le volume grandit dans $1 directions : $2.",
+    "~A scale factor of (.+) makes it smaller\\.": "Un facteur d'échelle de $1 rend la figure plus petite.",
+    "~(.+) is how much the area changed\\.": "L'aire a été multipliée par $1.",
+    "~(.+) is how much the volume changed\\.": "Le volume a été multiplié par $1.",
+    "~Which number times itself makes (.+)\\?": "Quel nombre multiplié par lui-même donne $1?",
+    "~Which number times itself three times makes (.+)\\?": "Quel nombre multiplié trois fois par lui-même donne $1?",
+    "The new one is smaller, so k is less than {n}.": "La nouvelle figure est plus petite, donc k est plus petit que {n}.",
+    "~Write new over old: ([^ ]+)\\.": "Écris le nouveau sur l'ancien : $1.",
+    "Then find the number that times itself makes it.": "Trouve ensuite le nombre qui, multiplié par lui-même, donne ce résultat.",
+    "Then find the number that times itself three times makes it.": "Trouve ensuite le nombre qui, multiplié trois fois par lui-même, donne ce résultat.",
+    "~The new line holds (\\d+) copies of the old one\\.": "La nouvelle ligne contient $1 copies de l'ancienne.",
+    "~The new square holds (.+) copies of the old one\\.": "Le nouveau carré contient $1 copies de l'ancien.",
+    "~The new cube holds (.+) copies of the old one\\.": "Le nouveau cube contient $1 copies de l'ancien.",
+    "~The old line holds (\\d+) of the new ones\\.": "L'ancienne ligne contient $1 nouvelles lignes.",
+    "~The old square holds (.+) new ones\\.": "L'ancien carré contient $1 nouveaux carrés.",
+    "~The old cube holds (.+) new ones\\.": "L'ancien cube contient $1 nouveaux cubes.",
+  };
+  // Sentences that name a measure with its unit (cm or m, squared or cubed).
+  const units = { 1: ["cm", "m"], 2: ["cm²", "m²"], 3: ["cm³", "m³"] };
+  const oldFr = { 1: "La longueur initiale est de", 2: "L'aire initiale est de", 3: "Le volume initial est de" };
+  const newFr = { 1: "La nouvelle longueur est de", 2: "La nouvelle aire est de", 3: "Le nouveau volume est de" };
+  const nm = { 1: "length", 2: "area", 3: "volume" };
+  for (const k of [1, 2, 3]) for (const u of units[k]) {
+    d[`The old ${nm[k]} is {n} ${u}.`] = `${oldFr[k]} {n} ${u}.`;
+    d[`The new ${nm[k]} is {n} ${u}.`] = `${newFr[k]} {n} ${u}.`;
+    d[`{n} copies of {n} ${u} make {n} ${u}.`] = `{n} copies de {n} ${u} font {n} ${u}.`;
+    d[`{n}/{n} of {n} ${u} is {n} ${u}.`] = `{n}/{n} de {n} ${u}, c'est {n} ${u}.`;
+  }
+  Object.assign(d, {
+    "A pencil is {n} cm long.": "Un crayon mesure {n} cm.",
+    "A fence is {n} m long.": "Une clôture mesure {n} m.",
+    "A photo has an area of {n} cm².": "Une photo a une aire de {n} cm².",
+    "A garden has an area of {n} m².": "Un jardin a une aire de {n} m².",
+    "A box has a volume of {n} cm³.": "Une boîte a un volume de {n} cm³.",
+    "A tank has a volume of {n} m³.": "Un réservoir a un volume de {n} m³.",
+  });
+  for (const [en, fr] of [["bigger", "plus grande"], ["smaller", "plus petite"]]) for (const u of ["cm", "m"]) {
+    d[`A ${en} copy is {n} ${u} long.`] = `Une copie ${fr} mesure {n} ${u}.`;
+    d[`A ${en} copy has an area of {n} ${u}².`] = `Une copie ${fr} a une aire de {n} ${u}².`;
+    d[`A ${en} copy has a volume of {n} ${u}³.`] = `Une copie ${fr} a un volume de {n} ${u}³.`;
+  }
+  return d;
+})();
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

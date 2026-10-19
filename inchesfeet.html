@@ -145,11 +145,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* Inches, Feet and Yards (grade 9-10, Shawn 2026-10-15).
-   Every inch is a small block. 12 blocks in a row make a 1 ft bar (blue); 3 foot bars make a yard (green outline).
-   Leftover inches are orange, with the empty spots of their row dashed, so "not a full foot yet" shows.
-   Decimal feet: the part of a foot is shaded, then split into 12 inches and into equal parts (halves or quarters),
-   so 0.75 ft = 3/4 of 12 in = 9 in. Five kinds of question, in both directions.
+/* Inches, Feet and Yards (grade 9-10, Shawn 2026-10-15; redrawn as one tape measure 2026-10-19).
+   One yellow tape measure across the board, one small mark per inch. Every 12 inches a blue 1 ft bar appears over
+   the tape and the skip count 12 + 12 + 12 ... runs under it; 3 foot bars get a green 1 yd bracket. Leftover inches are
+   orange. Decimal feet: the part of a foot is zoomed out under the tape as a double number line, inches below
+   (0 to 12) and feet above (0, 0.25, 0.5, 0.75, 1), so 0.25 ft lines up with 3 in. Five kinds of question.
    Work is written down the board with = lined up and step names in a right column. Never the ÷ sign.
    Learn: Next step reveals one step at a time. Practice: typed answers, Check, Hint, Show me. */
 .main { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); }
@@ -184,7 +184,28 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 .score { font-size: 1.05rem; color: var(--muted); margin: 10px 0 0; }
 .score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
 
-/* Board */
+/* Board. The tape is tape-measure yellow in both themes. */
+:root { --tape: #f3d35b; --tape-edge: #b99a1f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tape: #6e5c16; --tape-edge: #a8902e; } }
+:root[data-theme="dark"] { --tape: #6e5c16; --tape-edge: #a8902e; }
+.tape { fill: var(--tape); stroke: var(--tape-edge); stroke-width: 2; }
+.tk { stroke: var(--ink); stroke-width: 1.6; }
+.tk.half { stroke-width: 2.2; }
+.tk.foot { stroke-width: 3.5; }
+.tk.foot.b { stroke: var(--pt); }
+.meas { fill: var(--pt); opacity: 0.16; }
+.meas.ft { opacity: 0.3; }
+.meas.in { fill: var(--orange); opacity: 0.5; }
+.ftbar { fill: var(--pt); }
+.inbar { fill: var(--orange); }
+.barlbl { font-family: var(--font-num); font-weight: 700; fill: var(--sheet); }
+.endmk { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.yardb { fill: none; stroke: var(--green); stroke-width: 4; stroke-linejoin: round; }
+.zoombox { fill: var(--sheet); stroke: var(--ink); stroke-width: 3; }
+.zfill { fill: var(--orange); opacity: 0.55; }
+.ztk { stroke: var(--grid-major); stroke-width: 2; }
+.zlink { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
+.ztitle { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
 .tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
 .tx.b { fill: var(--pt); } .tx.o { fill: var(--orange); } .tx.g { fill: var(--green); } .tx.op, .tx.q { fill: var(--muted); }
 .tx.m { fill: var(--muted); font-weight: 500; }
@@ -224,7 +245,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   </header>
 
   <div class="main">
-    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Inch blocks grouped into feet and yards, with the work written step by step."></svg></div>
+    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="Tape measure: inches grouped into feet and yards, with the work written step by step."></svg></div>
 
     <div class="panel" id="learn">
       <section class="card">
@@ -292,9 +313,9 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     { k: 2, name: "Inches to yards, feet and inches" },
     { k: 3, name: "Decimal feet to feet and inches" },
     { k: 4, name: "Feet and inches to inches" },
-    { k: 5, name: "Feet and inches to decimal feet" },
+    { k: 5, name: "Inches to decimal feet" },
   ];
-  const EXAMPLES = { 1: 70, 2: 70, 3: 21, 4: 70, 5: 21 };
+  const EXAMPLES = { 1: 70, 2: 70, 3: 21, 4: 70, 5: 15 };
   function facts(q) {
     const n = q.n, F = Math.floor(n / 12), R = n % 12, Y = Math.floor(F / 3), Fy = F % 3;
     const parts = R === 6 ? 2 : 4, a = R / (12 / parts); // 9 in = 3 of 4 parts
@@ -304,7 +325,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     for (let t = 0; t < 60; t++) {
       let n;
       if (k === 1) n = ri(14, 100);
-      else if (k === 2) n = ri(40, 130);
+      else if (k === 2) n = ri(40, 108);
       else if (k === 3 || k === 5) n = ri(1, 6) * 12 + 3 * ri(1, 3);
       else n = ri(1, 8) * 12 + ri(1, 11);
       if (n % 12 === 0 || (prev && prev.n === n)) continue;
@@ -326,7 +347,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   }
   function startOf(q) {
     const f = facts(q);
-    if (q.k <= 2) return [[f.n, "in", ""]];
+    if (q.k <= 2 || q.k === 5) return [[f.n, "in", ""]];
     if (q.k === 3) return [[f.D, "ft", ""]];
     return [[f.F, "ft", "b"], [f.R, "in", "o"]];
   }
@@ -354,6 +375,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       { items: answerOf(q), name: "Add" },
     ];
     return [
+      { items: [[f.F * 12, "in", "b"], "+", [f.R, "in", "o"]], name: "Groups of 12" },
       { items: [[f.F, "ft", "b"], "+", { fr: [f.R, 12], u: "ft", c: "o" }], name: "12 in = 1 ft" },
       { items: [[f.F, "ft", "b"], "+", { fr: [f.a, f.parts], u: "ft", c: "o" }], name: "Simplify" },
       { items: [[f.F, "ft", "b"], "+", [f.p, "ft", "o"]], name: "Decimal" },
@@ -370,10 +392,11 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     let v = {}, w = 0;
     const add = (ch, dw, say) => { v = Object.assign({}, v, ch); w += dw; S.push({ v, w, say }); };
     const inches = v => `${v} ${pl(v, "inch", "inches")}`, feet = v => `${v} ${pl(v, "foot", "feet")}`;
+    const by12 = Array.from({ length: f.F }, (_, i) => 12 * (i + 1)).join(", ");
     const leftSay = f.R ? `${inches(f.R)} ${pl(f.R, "is", "are")} left over. That is not enough for another foot.` : "No inches are left over.";
     if (q.k === 1 || q.k === 2) {
-      add({}, 0, `Here are ${f.n} inches. Each block is 1 inch.`);
-      add({ feet: 1, counts: 1 }, 0, `12 inches make 1 foot. Each full row of 12 is 1 foot. There ${pl(f.F, "is", "are")} ${f.F} full ${pl(f.F, "row", "rows")}.`);
+      add({}, 0, `Here are ${f.n} inches. Each small mark on the tape is 1 inch.`);
+      add({ feet: 1, counts: 1 }, 0, `12 inches make 1 foot. Skip count by 12: ${by12}. That is ${feet(f.F)}.`);
       add({ left: 1 }, 0, leftSay);
       if (q.k === 1) {
         add({}, 1, `${f.F} groups of 12 is ${f.F * 12}. So ${f.n} = ${f.F * 12} + ${f.R}.`);
@@ -387,25 +410,26 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     } else if (q.k === 3) {
       add({ plabel: `${f.p} ft` }, 0, `${f.D} ft is ${f.F} whole ${pl(f.F, "foot", "feet")} and ${f.p} of a foot.`);
       add({}, 1, `Split ${f.D} into ${f.F} + ${f.p}.`);
-      add({ cells: 1 }, 1, `Every foot is 12 inches. Find ${f.p} of 12 inches.`);
+      add({ cells: 1 }, 1, `Zoom in on the last foot. It is 12 inches. Find ${f.p} of 12 inches.`);
       add({ parts: 1, plabel: `${f.R} in` }, 1, f.parts === 2
         ? `0.5 is 1/2. Split the 12 inches into 2 equal parts of 6. Take 1 part: 6 inches.`
         : `${f.p} is ${f.a}/4. Split the 12 inches into 4 equal parts of 3. Take ${f.a} ${pl(f.a, "part", "parts")}: ${f.R} inches.`);
       add({ done: 1 }, 1, `${f.D} ft = ${f.F} ft ${f.R} in.`);
     } else if (q.k === 4) {
       add({}, 0, `This is ${feet(f.F)} and ${inches(f.R)}. How many inches in all?`);
-      const by12 = Array.from({ length: f.F }, (_, i) => 12 * (i + 1)).join(", ");
       add({ counts: 1 }, 1, `Each foot is 12 inches. Count by 12: ${by12}.`);
       add({}, 1, `${feet(f.F)} is ${f.F * 12} inches.`);
       add({ total: 1, done: 1 }, 1, `Add the leftover inches: ${f.F * 12} + ${f.R} = ${f.n}. So ${f.F} ft ${f.R} in = ${f.n} in.`);
     } else {
-      add({ plabel: `${f.R} in` }, 0, `This is ${feet(f.F)} and ${inches(f.R)}. Write it in feet only, as a decimal.`);
-      add({}, 1, `A foot has 12 inches. ${inches(f.R)} is ${f.R}/12 of a foot.`);
+      add({}, 0, `Here are ${f.n} inches. Each small mark on the tape is 1 inch. Write it in feet, as a decimal.`);
+      add({ feet: 1, counts: 1 }, 0, `12 inches make 1 foot. Skip count by 12: ${by12}. That is ${feet(f.F)}.`);
+      add({ left: 1 }, 1, `${inches(f.R)} ${pl(f.R, "is", "are")} left over. So ${f.n} in = ${f.F * 12} in + ${f.R} in.`);
+      add({ cells: 1 }, 1, `Zoom in on the last foot. It has 12 inches. ${inches(f.R)} is ${f.R}/12 of a foot.`);
       add({ parts: 1, plabel: `${f.a}/${f.parts} ft` }, 1, f.parts === 2
         ? `Split the foot into 2 equal parts of 6 inches. 6 inches fills 1 of the 2 parts: 1/2.`
         : `Split the foot into 4 equal parts of 3 inches. ${f.R} inches ${pl(f.a, "fills", "fill")} ${f.a} of the 4 parts: ${f.a}/4.`);
       add({ plabel: `${f.p} ft` }, 1, `${f.a}/${f.parts} = ${f.p}. ${money[f.p]}`);
-      add({ done: 1 }, 1, `So ${f.F} ft ${f.R} in = ${f.D} ft.`);
+      add({ done: 1 }, 1, `So ${f.n} in = ${f.D} ft.`);
     }
     return S;
   }
@@ -449,14 +473,9 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   const line = (items, fs, unknown) => R(items.map(it => node(it, fs, unknown)), fs * 0.45);
 
   // ---------- drawing ----------
-  const C = 36, P = 48, RX = 200, YGAP = 16; // block size, row pitch, left of the rows, extra gap between yards
-  const LBX = RX + 12 * C + 22, CTX = LBX + 118; // row label, running count
-  function rowsOf(q) {
-    const f = facts(q), rows = [];
-    for (let i = 0; i < f.F; i++) rows.push({ kind: "full" });
-    if (f.R) rows.push({ kind: q.k === 3 || q.k === 5 ? "part" : "left", r: f.R });
-    return rows;
-  }
+  // The tape runs across the board, one mark per inch, to the next whole foot.
+  const TX0 = 70, TX1 = 930, BAR_Y = 142, BAR_H = 38, TAPE_Y = 196, TAPE_H = 56, LBL_Y = 288, SKIP_Y = 332;
+  const ZX0 = 230, ZX1 = 770, ZY = 418, ZH = 56; // the zoomed foot (decimal kinds)
 
   let timers = [];
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
@@ -477,77 +496,94 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     const tg = E("g", { class: isNew("done") ? "pop" : "" });
     title.draw(tg, (W - title.w) / 2, 50);
 
-    // The blocks.
-    const rows = rowsOf(q), Y0 = 112;
-    const yOf = r => Y0 + r * P + (q.k === 2 ? Math.floor(r / 3) * YGAP : 0);
-    let feetLit = 0;
-    rows.forEach((row, r) => {
-      const y = yOf(r), g = E("g", {});
-      const cell = (j, cls, delay) => {
-        const b = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "blk " + cls }, g);
-        if (delay != null) { b.classList.add("lit"); b.style.animationDelay = delay + "ms"; }
-      };
-      const label = (s, cls, x, delay, anchor) => {
-        const t = E("text", { x: x || LBX, y: y + C / 2 + 10, class: "tx " + cls, "font-size": 28, "text-anchor": anchor || "start" }, g, s);
-        if (delay != null) { t.classList.add("lit"); t.style.animationDelay = delay + "ms"; }
-      };
-      if (row.kind === "full") {
-        const blue = q.k >= 3 || v.feet, d = isNew("feet") ? feetLit++ * 260 : null;
-        for (let j = 0; j < 12; j++) cell(j, blue ? "ft" : "g0", d);
-        if (blue) label("1 ft", "b", null, d);
-        if (v.counts) label(`${12 * (r + 1)} in`, "m", CTX, isNew("counts") ? (q.k <= 2 ? d : r * 260) : null);
-      } else if (row.kind === "left") {
-        const orange = q.k === 4 || v.left, d = isNew("left") ? 0 : null;
-        for (let j = 0; j < 12; j++) {
-          if (j < row.r) cell(j, orange ? "in" : "g0", d);
-          else if (orange) { const e = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "empty" }, g); if (d != null) e.classList.add("fade"); }
-        }
-        if (orange) label(`${row.r} in`, "o", null, d);
-        if (v.total) label(`${f.n} in`, "", CTX, isNew("total") ? 0 : null);
-      } else {
-        // Part of a foot: a dashed foot outline. Kind 3 starts as a plain shaded length; kind 5 starts in inches.
-        const cells = q.k === 5 || v.cells, dc = isNew("cells") ? 0 : null;
-        if (!cells) {
-          E("rect", { x: RX + 2, y: y + 2, width: 12 * C - 4, height: C - 4, rx: 5, class: "empty" }, g);
-          E("rect", { x: RX + 2, y: y + 2, width: row.r * C - 4, height: C - 4, rx: 5, class: "shade" }, g);
-        } else {
-          for (let j = 0; j < 12; j++) {
-            if (j < row.r) cell(j, "in", dc);
-            else { const e = E("rect", { x: RX + j * C + 2, y: y + 2, width: C - 4, height: C - 4, rx: 5, class: "empty" }, g); if (dc != null) e.classList.add("fade"); }
-          }
-        }
-        if (v.parts) {
-          const step = 12 / f.parts;
-          for (let m = 1; m < f.parts; m++) {
-            const x = RX + m * step * C;
-            const l = E("line", { x1: x, x2: x, y1: y - 9, y2: y + C + 9, class: "div" }, g);
-            if (isNew("parts")) { l.classList.add("lit"); l.style.animationDelay = m * 250 + "ms"; }
-          }
-        }
-        if (v.plabel) {
-          const t = E("text", { x: LBX, y: y + C / 2 + 10, class: "tx o", "font-size": 28 }, g, v.plabel);
-          if (anim && v.plabel !== was.plabel) t.classList.add("pop");
-        }
+    // The tape measure.
+    const Lt = Math.max(12, Math.ceil(f.n / 12) * 12), sc = (TX1 - TX0) / Lt, X = i => TX0 + i * sc;
+    const showFeet = v.feet || q.k === 3 || q.k === 4, showLeft = v.left || q.k === 3 || q.k === 4;
+    const lit = (el, ms) => { if (ms != null) { el.classList.add("lit"); el.style.animationDelay = ms + "ms"; } return el; };
+    E("rect", { x: TX0, y: TAPE_Y, width: TX1 - TX0, height: TAPE_H, rx: 4, class: "tape" });
+    // The measured length: shaded, blue over whole feet and orange over the leftover once grouped.
+    if (!showFeet) E("rect", { x: TX0, y: TAPE_Y, width: f.n * sc, height: TAPE_H, class: "meas" });
+    else {
+      E("rect", { x: TX0, y: TAPE_Y, width: f.F * 12 * sc, height: TAPE_H, class: "meas ft" });
+      if (f.R) E("rect", { x: X(f.F * 12), y: TAPE_Y, width: f.R * sc, height: TAPE_H, class: showLeft ? "meas in" : "meas" });
+    }
+    for (let i = 0; i <= Lt; i++) {
+      const foot = i % 12 === 0, len = foot ? TAPE_H : i % 6 === 0 ? 26 : i % 3 === 0 ? 18 : 11;
+      E("line", { x1: X(i), x2: X(i), y1: TAPE_Y, y2: TAPE_Y + len, class: "tk" + (foot ? " foot" + (showFeet && i <= f.F * 12 ? " b" : "") : i % 6 === 0 ? " half" : "") });
+    }
+    E("line", { x1: X(f.n), x2: X(f.n), y1: BAR_Y - 8, y2: TAPE_Y + TAPE_H + 8, class: "endmk" });
+
+    // 1 ft bars over every 12 inches, lighting up one after another.
+    if (showFeet) for (let k = 0; k < f.F; k++) {
+      const g = lit(E("g", {}), isNew("feet") ? k * 300 : null), wd = 12 * sc - 4;
+      E("rect", { x: X(12 * k) + 2, y: BAR_Y, width: wd, height: BAR_H, rx: 8, class: "ftbar" }, g);
+      if (wd > 56) E("text", { x: X(12 * k) + 6 * sc, y: BAR_Y + BAR_H / 2 + 9, class: "barlbl", "text-anchor": "middle", "font-size": 25 }, g, "1 ft");
+    }
+    // The leftover inches (or the part of a foot): an orange bar with its label above.
+    if (f.R && showLeft) {
+      const g = lit(E("g", {}), isNew("left") ? 0 : null), x0 = X(f.F * 12), wd = f.R * sc;
+      E("rect", { x: x0 + 2, y: BAR_Y, width: Math.max(4, wd - 4), height: BAR_H, rx: 8, class: "inbar" }, g);
+      const lbl = q.k === 3 || q.k === 5 ? v.plabel || `${f.R} in` : `${f.R} in`;
+      const t = E("text", { x: x0 + wd / 2, y: BAR_Y - 12, class: "tx o", "text-anchor": "middle", "font-size": 28 }, g, lbl);
+      if (anim && v.plabel !== was.plabel) t.classList.add("pop");
+    }
+    // Yards: a green bracket over every 3 feet.
+    if (v.yards) for (let y = 0; y < f.Y; y++) {
+      const g = lit(E("g", {}), isNew("yards") ? y * 400 : null), x1 = X(36 * y) + 4, x2 = X(36 * y + 36) - 4;
+      E("path", { d: `M${x1} ${BAR_Y - 6} V${BAR_Y - 22} H${x2} V${BAR_Y - 6}`, class: "yardb" }, g);
+      E("text", { x: (x1 + x2) / 2, y: BAR_Y - 32, class: "tx g", "text-anchor": "middle", "font-size": 30 }, g, "1 yd");
+    }
+
+    // Under the tape: 0, then the running count at every foot (12, 24, 36 ...), or 1 ft, 2 ft for decimal feet.
+    const tl = (x, s, cls, ms) => lit(E("text", { x, y: LBL_Y, class: "tx " + cls, "text-anchor": "middle", "font-size": 24 }, svg, s), ms);
+    tl(X(0), "0", "m");
+    if (q.k === 3) for (let k = 1; k * 12 <= Lt; k++) tl(X(12 * k), `${k} ft`, "b");
+    else if (v.counts) for (let k = 1; k <= f.F; k++) tl(X(12 * k), `${12 * k}`, "b", isNew("counts") ? k * 300 : null);
+    if (q.k !== 3 && (!v.counts || v.total) && (!v.counts || f.R)) tl(X(f.n), `${f.n} in`, v.total ? "" : "m", isNew("total") ? 0 : null);
+    // The skip count: 12 + 12 + 12 ... + leftover, each number under its piece of tape.
+    if (v.counts && q.k !== 3) {
+      const sk = (x, s, cls, ms) => lit(E("text", { x, y: SKIP_Y, class: "tx " + cls, "text-anchor": "middle", "font-size": 28 }, svg, s), ms);
+      for (let k = 0; k < f.F; k++) {
+        const d = isNew("counts") ? (k + 1) * 300 : null;
+        sk(X(12 * k) + 6 * sc, "12", "b", d);
+        if (k) sk(X(12 * k), "+", "op", d);
       }
-    });
-    // Yards: each group of 3 full rows gets a green outline and "1 yd".
-    if (v.yards) {
-      for (let y = 0; y < f.Y; y++) {
-        const top = yOf(3 * y) - 7, bot = yOf(3 * y + 2) + C + 7;
-        const g = E("g", { class: isNew("yards") ? "lit" : "" });
-        if (isNew("yards")) g.style.animationDelay = y * 400 + "ms";
-        E("rect", { x: RX - 8, y: top, width: 12 * C + 16, height: bot - top, rx: 10, class: "yard" }, g);
-        E("text", { x: RX - 22, y: (top + bot) / 2 + 11, class: "tx g", "font-size": 32, "text-anchor": "end" }, g, "1 yd");
+      if (f.R && showLeft) {
+        const d = isNew("left") ? 0 : isNew("counts") ? (f.F + 1) * 300 : null;
+        sk(X(f.F * 12), "+", "op", d);
+        sk(X(f.F * 12) + Math.max(f.R * sc / 2, 26), String(f.R), "o", d);
       }
     }
-    const rowsBottom = rows.length ? yOf(rows.length - 1) + C : Y0;
+
+    // Decimal kinds: the last foot zoomed out as a double number line, inches below and feet above.
+    const zoomed = (q.k === 3 || q.k === 5) && v.cells;
+    if (zoomed) {
+      const g = lit(E("g", {}), isNew("cells") ? 0 : null), zs = (ZX1 - ZX0) / 12, ZXo = i => ZX0 + i * zs;
+      E("path", { d: `M${X(f.F * 12)} ${TAPE_Y + TAPE_H} L${ZX0} ${ZY} M${X(f.F * 12 + 12)} ${TAPE_Y + TAPE_H} L${ZX1} ${ZY}`, class: "zlink" }, g);
+      E("rect", { x: ZX0, y: ZY, width: ZX1 - ZX0, height: ZH, class: "zoombox" }, g);
+      E("rect", { x: ZX0, y: ZY, width: f.R * zs, height: ZH, class: "zfill" }, g);
+      for (let i = 1; i < 12; i++) E("line", { x1: ZXo(i), x2: ZXo(i), y1: ZY, y2: ZY + ZH, class: "ztk" }, g);
+      for (let i = 0; i <= 12; i++) E("text", { x: ZXo(i), y: ZY + ZH + 30, class: "tx " + (i === f.R ? "o" : "m"), "text-anchor": "middle", "font-size": 24 }, g, String(i));
+      E("text", { x: ZX1 + 26, y: ZY + ZH + 30, class: "tx m", "font-size": 24 }, g, "in");
+      E("text", { x: ZX0 - 24, y: ZY + ZH / 2 + 9, class: "ztitle", "text-anchor": "end", "font-size": 24 }, g, "1 foot");
+      if (v.parts) {
+        const pg = lit(E("g", {}), isNew("parts") ? 200 : null), step = 12 / f.parts;
+        for (let m = 1; m < f.parts; m++) E("line", { x1: ZXo(m * step), x2: ZXo(m * step), y1: ZY - 10, y2: ZY + ZH + 6, class: "div" }, pg);
+        for (let m = 0; m <= f.parts; m++) {
+          const val = m === f.parts ? "1" : dec(m / f.parts), on = m * step === f.R;
+          E("text", { x: ZXo(m * step), y: ZY - 18, class: "tx " + (on ? "o" : "m"), "text-anchor": "middle", "font-size": 24 }, pg, val);
+        }
+        E("text", { x: ZX1 + 26, y: ZY - 18, class: "tx m", "font-size": 24 }, pg, "ft");
+      }
+    }
+    const rowsBottom = q.k === 3 || q.k === 5 ? ZY + ZH + 40 : q.k === 3 ? LBL_Y : SKIP_Y + 10;
 
     // The work: = lined up, step names in a right column. Places are fixed so lines never jump.
     const L = workOf(q), start = line(startOf(q), FS);
     const EQX = 40 + start.w + 30, RHS = EQX + 32;
     const nodes = L.map(l => line(l.items, FS));
     const NX = Math.max(...nodes.map(n => RHS + n.w)) + 44;
-    let y = rowsBottom + 44; const ys = [];
+    let y = rowsBottom + 50; const ys = [];
     nodes.forEach((n, k) => { y += n.up + (k ? 16 : 0); ys.push(y); y += n.dn; });
     const H = Math.max(480, y + 24), VW = Math.max(W, NX + 250);
     svg.setAttribute("viewBox", `0 0 ${VW} ${H}`);
@@ -591,12 +627,12 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     2: { units: ["in"], read: ([i]) => { const n = whole(i); return n >= 36 && n <= 130 ? n : null; }, msg: "Type whole inches from 36 to 130." },
     3: { units: ["ft"], wide: true, read: ([d]) => { const x = +d.trim(); if (!/^\d+(\.\d+)?$/.test(d.trim()) || x < 1 || x > 10) return null; const n = x * 12; return Math.abs(n - Math.round(n)) < 1e-9 && Math.round(n) % 3 === 0 && Math.round(n) % 12 ? Math.round(n) : null; }, msg: "Type feet like 1.5 or 2.75, from 1 to 10." },
     4: { units: ["ft", "in"], read: ([a, b]) => { const F = whole(a), I = whole(b); return F >= 1 && F <= 10 && I >= 1 && I <= 11 ? F * 12 + I : null; }, msg: "Type feet from 1 to 10 and inches from 1 to 11." },
-    5: { units: ["ft", "in"], read: ([a, b]) => { const F = whole(a), I = whole(b); return F >= 1 && F <= 9 && [3, 6, 9].includes(I) ? F * 12 + I : null; }, msg: "Type feet from 1 to 9 and inches 3, 6 or 9." },
+    5: { units: ["in"], read: ([i]) => { const n = whole(i); return n >= 13 && n <= 117 && n % 3 === 0 && n % 12 ? n : null; }, msg: "Type inches from 13 to 117 that 3 goes into, but not 12 (like 15, 18 or 21)." },
   };
   function fillOwn() {
     const o = OWN[lq.k], f = facts(lq);
     ownIn = fields($("#own"), o.units, o.wide, "Your own number");
-    const vals = lq.k <= 2 ? [f.n] : lq.k === 3 ? [f.D] : [f.F, f.R];
+    const vals = lq.k <= 2 || lq.k === 5 ? [f.n] : lq.k === 3 ? [f.D] : [f.F, f.R];
     ownIn.forEach((inp, j) => { inp.value = vals[j]; inp.addEventListener("keydown", e => { if (e.key === "Enter") useOwn(); }); });
     $("#ownFb").textContent = "";
   }
@@ -670,6 +706,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     }
     if (q.k === 5) {
       const [D] = got;
+      if (Math.abs(D - f.n / 10) < 1e-9) return "Not yet. A foot is 12 inches, not 10.";
       if (Math.abs(D - (f.F + f.R / 10)) < 1e-9 || Math.abs(D - (f.F + f.R / 100)) < 1e-9) return `Not yet. ${f.R} inches is not 0.${f.R} of a foot. A foot has 12 inches.`;
     }
     return "Not yet. Try a Hint.";
@@ -699,11 +736,11 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   $("#check").onclick = check;
   $("#newq").onclick = newQuestion;
   const HINTS = {
-    1: [{ feet: 1, left: 1, counts: 1 }, () => "Make groups of 12. Each full row is 1 foot. The orange blocks are left over."],
+    1: [{ feet: 1, left: 1, counts: 1 }, () => "Skip count by 12 along the tape. Each 12 is 1 foot. The orange inches are left over."],
     2: [{ feet: 1, left: 1, counts: 1, yards: 1 }, () => "Make groups of 12 for feet. Then group the feet by 3 for yards."],
-    3: [{ cells: 1, parts: 1 }, f => `${f.p} of a foot. Count the orange inches.`],
+    3: [{ cells: 1, parts: 1 }, f => `Find ${f.p} on the top of the zoomed foot. Read the inches under it.`],
     4: [{ counts: 1 }, () => "Each foot is 12 inches. Count by 12, then add the leftover inches."],
-    5: [{ parts: 1 }, f => `${f.R} inches out of 12 is ${f.R}/12 of a foot. Simplify, then write it as a decimal.`],
+    5: [{ feet: 1, left: 1, counts: 1, cells: 1, parts: 1 }, f => `Skip count by 12 for whole feet. In the zoomed foot, find ${f.R} inches on the bottom. Read the feet on top.`],
   };
   $("#hint").onclick = () => {
     if (solved) return;
@@ -955,6 +992,32 @@ window.I18N_PAGE = {
  "Type feet like {n} or {n}, from {n} to {n}.": "Écris des pieds comme {n} ou {n}, de {n} à {n}.",
  "Type feet from {n} to {n} and inches from {n} to {n}.": "Écris des pieds de {n} à {n} et des pouces de {n} à {n}.",
  "Type feet from {n} to {n} and inches {n}, {n} or {n}.": "Écris des pieds de {n} à {n} et des pouces {n}, {n} ou {n}.",
+ "Each small mark on the tape is {n} inch.": "Chaque petit trait du ruban vaut {n} pouce.",
+ "~Skip count by 12: ([\\d, ]+)\\.": "Compte par bonds de 12 : $1.",
+ "That is {n} feet.": "Cela fait {n} pieds.",
+ "That is {n} foot.": "Cela fait {n} pied.",
+ "{0}Inches to decimal feet": "{0}Pouces en pieds décimaux",
+ "Inches to decimal feet": "Pouces en pieds décimaux",
+ "Write it in feet, as a decimal.": "Écris-le en pieds, en nombre décimal.",
+ "So {n} in = {n} in + {n} in.": "Donc {n} po = {n} po + {n} po.",
+ "{n} inches are left over.": "Il reste {n} pouces.",
+ "Zoom in on the last foot.": "Agrandis le dernier pied.",
+ "It has {n} inches.": "Il a {n} pouces.",
+ "It is {n} inches.": "Il mesure {n} pouces.",
+ "{n} inches is {n}/{n} of a foot.": "{n} pouces, c'est {n}/{n} d'un pied.",
+ "{n} inch is {n}/{n} of a foot.": "{n} pouce, c'est {n}/{n} d'un pied.",
+ "So {n} in = {n} ft.": "Donc {n} po = {n} pi.",
+ "1 foot": "1 pied",
+ "Skip count by {n} along the tape.": "Compte par bonds de {n} le long du ruban.",
+ "Each {n} is {n} foot.": "Chaque {n} vaut {n} pied.",
+ "The orange inches are left over.": "Les pouces orange sont ce qui reste.",
+ "Find {n} on the top of the zoomed foot.": "Trouve {n} en haut du pied agrandi.",
+ "Read the inches under it.": "Lis les pouces en dessous.",
+ "Skip count by {n} for whole feet.": "Compte par bonds de {n} pour les pieds entiers.",
+ "In the zoomed foot, find {n} inches on the bottom.": "Dans le pied agrandi, trouve {n} pouces en bas.",
+ "Read the feet on top.": "Lis les pieds en haut.",
+ "Type inches from {n} to {n} that {n} goes into, but not {n} (like {n}, {n} or {n}).": "Écris des pouces de {n} à {n} que {n} divise, mais pas {n} (comme {n}, {n} ou {n}).",
+ "Tape measure: inches grouped into feet and yards, with the work written step by step.": "Ruban à mesurer : des pouces groupés en pieds et en verges, avec la démarche étape par étape.",
 };
 </script>
 <script>
