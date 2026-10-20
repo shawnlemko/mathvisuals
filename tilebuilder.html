@@ -179,6 +179,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .dimout { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: 1.9rem; line-height: 1.2; }
 .dimout small { display: block; font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .dim-brace { stroke: var(--ink); stroke-width: 3; fill: none; pointer-events: none; }
+/* Frame lines (Shawn 2026-10-20): one line keeps the length and one keeps the width apart from the area. */
+.dim-line { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
 .dim-text { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 34px; dominant-baseline: central; pointer-events: none; }
 .rot button:disabled { opacity: 0.4; cursor: default; background: var(--pt); color: var(--sheet); }
 .blocks { display: flex; flex-direction: column; gap: 12px; font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; line-height: 1.2; }
@@ -366,13 +368,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     dimOut.hidden = !dimsOn;
     if (!dimsOn) return;
     dimOut.innerHTML = `<span><small>Length</small>${m.len}</span><span><small>Width</small>${m.wid}</span>`;
-    // Braces with the length above (or below) and the width left (or right) of the rectangle.
-    const up = m.y0 >= 64, lt = m.x0 >= 30 + m.wid.length * 21;
-    const by = up ? m.y0 - 12 : m.y1 + 12, bx = lt ? m.x0 - 12 : m.x1 + 12, d = up ? -12 : 12, e = lt ? -12 : 12;
-    el("path", { class: "dim-brace", d: `M${m.x0 + 3},${by - d} v${d} H${m.x1 - 3} v${-d}` }, dimLayer);
-    el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + d * 2, "text-anchor": "middle" }, dimLayer).textContent = m.len;
-    el("path", { class: "dim-brace", d: `M${bx - e},${m.y0 + 3} h${e} V${m.y1 - 3} h${-e}` }, dimLayer);
-    el("text", { class: "dim-text", x: bx + e, y: (m.y0 + m.y1) / 2, "text-anchor": lt ? "end" : "start" }, dimLayer).textContent = m.wid;
+    // Braces with the length above (or below) and the width left (or right) of the rectangle,
+    // outside two frame lines that cross at the corner and keep the dimensions apart from the area.
+    const up = m.y0 >= 70, lt = m.x0 >= 36 + m.wid.length * 21;
+    const u = up ? -1 : 1, l = lt ? -1 : 1, hy = up ? m.y0 - 6 : m.y1 + 6, vx = lt ? m.x0 - 6 : m.x1 + 6, OV = 44;
+    el("line", { class: "dim-line", x1: lt ? vx - OV : m.x0, y1: hy, x2: lt ? m.x1 : vx + OV, y2: hy }, dimLayer);
+    el("line", { class: "dim-line", x1: vx, y1: up ? hy - OV : m.y0, x2: vx, y2: up ? m.y1 : hy + OV }, dimLayer);
+    const by = hy + u * 12, bx = vx + l * 12;
+    el("path", { class: "dim-brace", d: `M${m.x0 + 3},${hy + u * 3} V${by} H${m.x1 - 3} V${hy + u * 3}` }, dimLayer);
+    el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + u * 24, "text-anchor": "middle" }, dimLayer).textContent = m.len;
+    el("path", { class: "dim-brace", d: `M${vx + l * 3},${m.y0 + 3} H${bx} V${m.y1 - 3} H${vx + l * 3}` }, dimLayer);
+    el("text", { class: "dim-text", x: bx + l * 12, y: (m.y0 + m.y1) / 2, "text-anchor": lt ? "end" : "start" }, dimLayer).textContent = m.wid;
   }
   dimsBtn.addEventListener("click", () => { dimsOn = !dimsOn; showDims(); });
 
