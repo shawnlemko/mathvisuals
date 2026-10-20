@@ -7,7 +7,7 @@
 <script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
-<title>GridCraft CAD</title>
+<title>Blueprinting</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
@@ -146,10 +146,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* GridCraft CAD: a blueprint drafting studio. Draw walls, rooms and polygons on a snapping grid,
-   read side lengths, area (shoelace formula), perimeter and interior angles, then slide, flip and turn shapes.
-   Rooms are cyan; the header sums area and perimeter. 1 unit = 1 m.
-   The Furniture tool places doors, windows and fixtures (toilet, bed, sofa...) that can be dragged, turned and copied.
+/* Blueprinting: a house and room planner on a blueprint grid (1 unit = 1 m).
+   Draw rooms (rectangles) and walls (lines), read side lengths, area (shoelace formula), perimeter and angles,
+   add doors and furniture (Indoor) or yard items (Outdoor) from the one toolbar under the plan, then export the plan with its name.
+   The grid widens to fill the screen. A small toolbar beside the selected shape turns, flips, copies or deletes it.
    The page always uses the dark blueprint look (Shawn's spec), in light and dark mode alike. */
 :root:not(#gc) {
   --paper: #061a33; --sheet: #0a2342; --grid: #1a4170; --grid-major: #2b5a90;
@@ -181,93 +181,68 @@ h1 em { font-style: normal; color: var(--pt); }
 .tele b { color: var(--pt); min-width: 3.2ch; display: inline-block; }
 #totC { color: var(--orange); }
 
-/* Work area: tools | blueprint | inspector. */
-.stage { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(300px, 370px); gap: 14px; align-items: start; }
-@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+/* Work area: tools | blueprint (with the furniture bar under it). */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.stage > .bcol { position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: visible; }
+.bcol > .board { flex: 1 1 auto; min-height: 0; }
 .board { background: var(--sheet); padding: 6px; border-color: var(--grid-major); }
 #cad.t-line, #cad.t-rect, #cad.t-poly { cursor: crosshair; }
 #cad.t-erase { cursor: not-allowed; }
 #cad.t-erase .sh:hover > * { stroke: #ff6b81 !important; }
 #cad.t-select .sh { cursor: move; }
 #cad .handle { cursor: grab; }
+#cad .resize { cursor: nwse-resize; }
+/* Furniture can be stretched, so its lines keep one thickness whatever its size. */
+#cad .sh * { vector-effect: non-scaling-stroke; }
+#cad .dash { stroke-dasharray: 6 4; }
+#cad .cut { stroke-width: 8px; }
+.fitems .dash { stroke-dasharray: 0.12 0.08; }
+.fitems .cut { stroke-width: 0.2; }
 
-.tools { display: flex; flex-direction: column; gap: 3px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; width: 9.2rem; }
-@media (max-width: 860px) { .tools { flex-direction: row; flex-wrap: wrap; width: auto; } }
-.tools .label { margin: 6px 2px 0; font-size: 0.66rem; }
-.tools .label:first-child { margin-top: 0; }
-.tools button { display: flex; align-items: center; gap: 8px; padding: 5px 8px; min-height: 36px; background: transparent; border-color: transparent; text-align: left; line-height: 1.1; font-size: 0.92rem; }
-.tools button svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.io { display: flex; gap: 0; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; flex: none; }
+.io button { border: 0; border-radius: 0; padding: 6px 12px; background: transparent; font-weight: 800; white-space: nowrap; }
+.io button[aria-pressed="true"] { background: var(--green); color: var(--paper); }
+
+/* The one toolbar under the plan: draw, grid, edit and export on top, the item picker below. */
+.dock { display: flex; flex-direction: column; gap: 6px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 6px 8px; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tools .sep { width: 1px; align-self: stretch; background: var(--grid-major); margin: 0 4px; }
+.tools button { display: flex; align-items: center; gap: 6px; padding: 4px 9px; min-height: 36px; background: transparent; border-color: transparent; line-height: 1.1; font-size: 0.9rem; white-space: nowrap; }
+.tools button svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tools button:hover { border-color: var(--pt); }
 .tools button[aria-pressed="true"] { background: var(--pt); color: var(--paper); border-color: var(--pt); }
 .tools .tog[aria-pressed="true"] { background: var(--chip); color: var(--pt); border-color: var(--pt); }
-.tools .export { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.tools .export button { justify-content: center; border-color: var(--grid-major); min-height: 36px; font-family: var(--font-num); }
+.tools .exp { border-color: var(--grid-major); font-family: var(--font-num); }
+.tools .push { margin-left: auto; }
 
-/* Inspector panel. */
-.panel { gap: 10px; }
-.card { padding: 12px 14px; border-color: var(--grid-major); }
-.label { margin-bottom: 6px; }
-.howto { margin: 0; font-size: 1.05rem; font-weight: 700; }
-.howto b { color: var(--pt); }
-.msg { margin: 8px 0 0; color: var(--orange); font-weight: 700; }
-.drawbtns { display: flex; gap: 8px; margin-top: 10px; }
-.go { background: var(--pt); color: var(--paper); border-color: var(--pt); }
-.go:hover { background: var(--sheet); color: var(--pt); }
-.palette { margin-top: 4px; }
-.palette .grp { margin: 8px 0 4px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
-.palette .row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
-.palette button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px; background: var(--sheet); font-size: 0.8rem; line-height: 1.1; }
-.palette button svg { width: 40px; height: 32px; }
-.palette button small { font-family: var(--font-num); font-size: 0.72rem; color: var(--muted); }
-.palette button[aria-pressed="true"] { background: var(--chip); border: 2px solid var(--orange); color: var(--orange); }
-.palrow { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-.danger { background: transparent; color: var(--warn); border-color: var(--warn); padding: 4px 10px; }
+.hintbar { margin: 0; display: flex; gap: 14px; align-items: baseline; font-weight: 700; font-size: 0.98rem; min-height: 1.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hintbar .msg { color: var(--orange); }
 
-.legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.legend li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; }
-.legend b { display: block; }
-.legend small { color: var(--muted); font-size: 0.85rem; }
-.sw { width: 22px; height: 22px; border-radius: 5px; border: 3px solid var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
-.sw.wall { height: 6px; border-width: 3px 0 0; border-radius: 0; background: none; }
+/* Furniture bar: room groups on the left, that group's items, then Turn. */
+.fbar { display: flex; align-items: stretch; gap: 10px; border-top: 1px solid var(--grid-major); padding-top: 6px; }
+.ftabs { display: grid; grid-template-columns: repeat(3, auto); gap: 4px; align-content: center; }
+.ftabs button { padding: 3px 8px; font-size: 0.82rem; background: transparent; }
+.ftabs button[aria-pressed="true"] { background: var(--chip); color: var(--orange); border-color: var(--orange); }
+.fitems { display: flex; gap: 5px; flex: 1; min-width: 0; overflow-x: auto; }
+.fitems button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 6px; min-width: 4.6rem; background: var(--paper); font-size: 0.78rem; line-height: 1.1; }
+.fitems button svg { width: 36px; height: 26px; }
+.fitems button[aria-pressed="true"] { border: 2px solid var(--orange); color: var(--orange); background: var(--chip); }
+.fbar .turn { align-self: center; white-space: nowrap; }
 
-.insp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.insp-head h2 { margin: 0; flex: 1; font-family: var(--font-display); font-size: 1.35rem; }
-.insp-head .sw { flex: none; }
-.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
-.tabs button { flex: 1; border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.05rem; padding: 8px 6px; }
-.tabs button + button { border-left: 2px solid var(--grid-major); }
-.tabs button[aria-pressed="true"] { background: var(--pt); color: var(--paper); }
-
-
-.meas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
-.meas div { background: var(--chip); border-radius: 8px; padding: 4px 8px; }
-.meas span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
-.meas b { font-family: var(--font-num); font-size: 1.25rem; white-space: nowrap; }
-.verts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
-.vrow { display: flex; align-items: center; gap: 3px; font-family: var(--font-num); font-size: 1.1rem; }
-.vrow b { color: var(--orange); width: 1.4ch; }
-input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--ink); background: var(--paper); border: 1px solid var(--grid-major); border-radius: 6px; padding: 3px 4px; text-align: center; }
-.warn { color: var(--warn); font-weight: 700; margin: 10px 0 0; }
-.note { color: var(--muted); margin: 6px 0 0; font-size: 0.9rem; }
-
-.mv .label { margin-top: 12px; }
-.mv .label:first-child { margin-top: 0; }
-.slide { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.slide label { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-num); font-weight: 700; font-size: 1.1rem; }
-.btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.btns button { padding: 8px 4px; line-height: 1.15; }
-.btns button i { display: block; font-style: normal; font-size: 1.3rem; }
-.seg { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
-.seg span { color: var(--muted); font-weight: 700; font-size: 0.9rem; }
-.seg button { padding: 5px 10px; background: var(--sheet); }
-.seg button[aria-pressed="true"] { background: var(--orange); color: var(--paper); border-color: var(--orange); }
-
+/* Context toolbar that floats beside the selected shape. */
+.ctx { position: absolute; z-index: 5; display: flex; align-items: center; gap: 4px; padding: 4px; background: var(--paper); border: 2px solid var(--orange); border-radius: 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); white-space: nowrap; }
+.ctx .nm { padding: 0 6px; font-weight: 800; font-family: var(--font-display); }
+.ctx .ms { padding: 0 4px; font-family: var(--font-num); font-weight: 700; color: var(--pt); }
+.ctx button { padding: 4px 8px; font-size: 0.85rem; background: var(--sheet); }
+.ctx button i { font-style: normal; margin-right: 3px; }
+.ctx .del { color: var(--warn); border-color: var(--warn); }
 </style>
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
-    <h1>GridCraft <em>CAD</em></h1></div>
+    <h1>Blue<em>printing</em></h1>
+    <div class="io" id="io" role="group" aria-label="Indoor or outdoor"><button type="button" data-io="in" aria-pressed="true">🏠 Indoor</button><button type="button" data-io="out" aria-pressed="false">🌲 Outdoor</button></div></div>
     <div class="hud">
       <div class="ptitle"><label class="k" for="planName">Plan name</label><input id="planName" type="text" maxlength="40" value="My House Plan"></div>
       <div class="tele" aria-label="Cursor position"><span>X:</span><b id="tx">–</b><span>Y:</span><b id="ty">–</b></div>
@@ -277,78 +252,62 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   </header>
 
   <div class="stage">
-    <nav class="tools" id="tools" aria-label="Drawing tools">
-      <p class="label">Draw</p>
-      <button type="button" data-tool="select" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3l6.5 17 2.4-7.1L21 10.5z"/></svg><span>Select</span></button>
-      <button type="button" data-tool="line" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.5 17.5l11-11"/></svg><span>Line / Wall</span></button>
-      <button type="button" data-tool="rect" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/></svg><span>Rectangle</span></button>
-      <button type="button" data-tool="erase" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.6 14.6l9.2-9.2a2 2 0 0 1 2.8 0l2.9 2.9a2 2 0 0 1 0 2.8L11.6 19H8.9z"/><path d="M9 10l5 5"/></svg><span>Eraser</span></button>
-      <button type="button" data-tool="furn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/></svg><span>Furniture</span></button>
 
-      <p class="label">Grid</p>
+    <div class="bcol" id="bcol">
+      <p class="hintbar" aria-live="polite"><span id="howto"></span><span class="msg" id="msg"></span></p>
+      <div class="board" id="board">
+        <svg id="cad" class="t-select" viewBox="0 0 880 880" role="img" aria-label="Blueprint grid with shapes">
+          <defs>
+            <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+            <clipPath id="gridClip"><rect id="gridClipR" x="34" y="34" width="812" height="812"/></clipPath>
+            <clipPath id="dimClip"><rect id="dimClipR" x="14" y="14" width="852" height="852"/></clipPath>
+          </defs>
+          <g id="gGrid"></g>
+          <g id="gShapes" clip-path="url(#gridClip)"></g>
+          <g id="gDims" pointer-events="none" clip-path="url(#dimClip)"></g>
+          <g id="gTop"></g>
+        </svg>
+      </div>
+      <div class="dock">
+        <div class="tools" id="tools" role="toolbar" aria-label="Drawing tools">
+      <button type="button" data-tool="select" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3l6.5 17 2.4-7.1L21 10.5z"/></svg><span>Select</span></button>
+      <button type="button" data-tool="line" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.5 17.5l11-11"/></svg><span id="lineLbl">Line / Wall</span></button>
+      <button type="button" data-tool="rect" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/></svg><span id="rectLbl">Rectangle</span></button>
+      <button type="button" data-tool="erase" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.6 14.6l9.2-9.2a2 2 0 0 1 2.8 0l2.9 2.9a2 2 0 0 1 0 2.8L11.6 19H8.9z"/><path d="M9 10l5 5"/></svg><span>Eraser</span></button>
+      <span class="sep"></span>
       <button type="button" data-mode="axes" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3v16h16"/></svg><span>Quadrant I</span></button>
       <button type="button" data-mode="plain" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg><span>Plain grid</span></button>
       <button type="button" class="tog" id="halfBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></svg><span>Half-Snap</span></button>
-      <button type="button" class="tog" id="dimBtn" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7.5 12.5l2 2M10.5 9.5l2 2M13.5 6.5l2 2"/></svg><span>Show Dimensions</span></button>
-
-      <p class="label">Edit</p>
+      <button type="button" class="tog" id="dimBtn" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7.5 12.5l2 2M10.5 9.5l2 2M13.5 6.5l2 2"/></svg><span>Dimensions</span></button>
+      <span class="sep"></span>
       <button type="button" id="undoBtn"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span>Undo</span></button>
-      <button type="button" id="clearBtn"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>Clear Canvas</span></button>
-
-      <p class="label">Export my plan</p>
-      <div class="export"><button type="button" id="pngBtn">PNG</button><button type="button" id="svgBtn">SVG</button></div>
-    </nav>
-
-    <div class="board">
-      <svg id="cad" class="t-select" viewBox="0 0 880 880" role="img" aria-label="Blueprint grid with shapes">
-        <defs>
-          <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
-          <clipPath id="gridClip"><rect x="34" y="34" width="812" height="812"/></clipPath>
-          <clipPath id="dimClip"><rect x="14" y="14" width="852" height="852"/></clipPath>
-        </defs>
-        <g id="gGrid"></g>
-        <g id="gShapes" clip-path="url(#gridClip)"></g>
-        <g id="gDims" pointer-events="none" clip-path="url(#dimClip)"></g>
-        <g id="gTop"></g>
-      </svg>
+      <button type="button" id="clearBtn"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>Clear</span></button>
+      <button type="button" class="exp push" id="pngBtn" title="Export my plan">⤓ PNG</button><button type="button" class="exp" id="svgBtn" title="Export my plan">⤓ SVG</button>
     </div>
-
-    <aside class="panel">
-      <section class="card" aria-live="polite">
-        <p class="label">How to use this tool</p>
-        <p class="howto" id="howto"></p>
-        <div id="furnBox" hidden>
-          <div class="palette" id="palette" role="group" aria-label="Furniture"></div>
-          <div class="palrow"><button type="button" id="turnGhost">↺ Turn 90°</button><span class="note" style="margin:0">or press R</span></div>
-        </div>
-        <div class="drawbtns" id="drawBtns" hidden><button type="button" class="go" id="finishBtn">Finish shape</button><button type="button" id="cancelBtn">Cancel</button></div>
-        <p class="msg" id="msg" hidden></p>
-      </section>
-
-      <section class="card" id="emptyCard">
-        <p class="label">Key (1 unit = 1 m)</p>
-        <ul class="legend">
-          <li><span class="sw" style="--c: var(--pt)"></span><span><b>Room</b><small>Area and perimeter count</small></span></li>
-          <li><span class="sw wall" style="--c: var(--pt)"></span><span><b>Wall (line)</b><small>Shows its length</small></span></li>
-          <li><span class="sw" style="--c: var(--ink)"></span><span><b>Doors and furniture</b><small>Placed on the plan; not measured</small></span></li>
-        </ul>
-        <p class="note">Pick <b>Select</b> and click a shape to see its measures and move it.</p>
-      </section>
-
-      <section class="card" id="insp" hidden></section>
-    </aside>
+      <div class="fbar" aria-label="Doors and furniture">
+        <div class="ftabs" id="ftabs" role="group" aria-label="Rooms"></div>
+        <div class="fitems" id="fitems" role="group" aria-label="Furniture"></div>
+        <button type="button" class="turn" id="turnGhost">↺ Turn 90°</button>
+      </div>
+      </div>
+      <div class="ctx" id="ctx" hidden></div>
+    </div>
   </div>
 </div>
 
 <script>
 (function () {
-  const U = 40, M = 40, SIZE = 880;                 // grid square size, margin, viewBox size (20 squares across)
+  const U = 40, M = 40, ROWS = 20, HGT = 2 * M + ROWS * U;   // grid square size, margin, 20 rows tall
+  let COLS = 20;                                    // columns grow with the window so the plan fills the screen
+  const W = () => 2 * M + COLS * U;
   // Fixed blueprint colours, written straight into the SVG so exported blueprints look the same.
   const C = { bg: "#0a2342", minor: "#18406d", major: "#2b5d96", axis: "#a8cdf5", tick: "#d6e8ff",
-    cyan: "#22d3ee", amber: "#fbbf24", emerald: "#34d399", pool: "#7c9bff", ink: "#eef6ff", pill: "#06182f" };
+    cyan: "#22d3ee", amber: "#fbbf24", emerald: "#34d399", pool: "#7c9bff", ink: "#eef6ff", pill: "#06182f", wood: "#e0a96d", grey: "#b4c4d8" };
   const MAT = {
     room: { name: "Room", c: C.cyan, op: 0.16 },
-    wall: { name: "Wall", c: C.cyan }
+    wall: { name: "Wall", c: C.cyan },
+    yard: { name: "Yard", c: C.emerald, op: 0.12 },
+    fence: { name: "Fence", c: C.wood }
   };
   // Doors, windows and fixtures. Each is drawn in its own box from (0, 0) to (w, h) in grid units, y up;
   // a door's hinge is at (0, 0) and its threshold lies on the bottom edge, a window lies along y = 0.
@@ -357,8 +316,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   const E = (x, y, rx, ry) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`;
   const L = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
   const ITEMS = {
-    door: { name: "Door", w: 1, h: 1, draw: `<line x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}" stroke-width="0.2"/>` + L(0, 0, 0, 1) + `<path d="M1 0A1 1 0 0 1 0 1" fill="none" stroke-dasharray="0.12 0.08"/>` },
-    door2: { name: "Double door", w: 2, h: 1, draw: `<line x1="0.04" y1="0" x2="1.96" y2="0" stroke="${C.bg}" stroke-width="0.2"/>` + L(0, 0, 0, 1) + L(2, 0, 2, 1) + `<path d="M1 0A1 1 0 0 1 0 1M1 0A1 1 0 0 0 2 1" fill="none" stroke-dasharray="0.12 0.08"/>` },
+    door: { name: "Door", w: 1, h: 1, draw: `<line class="cut" x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}"/>` + L(0, 0, 0, 1) + `<path class="dash" d="M1 0A1 1 0 0 1 0 1" fill="none"/>` },
+    door2: { name: "Double door", w: 2, h: 1, draw: `<line class="cut" x1="0.04" y1="0" x2="1.96" y2="0" stroke="${C.bg}"/>` + L(0, 0, 0, 1) + L(2, 0, 2, 1) + `<path class="dash" d="M1 0A1 1 0 0 1 0 1M1 0A1 1 0 0 0 2 1" fill="none"/>` },
     window: { name: "Window", w: 2, h: 0, draw: `<rect x="0" y="-0.15" width="2" height="0.3" fill="${C.bg}"/>` + L(0, 0, 2, 0) },
     stairs: { name: "Stairs", w: 1, h: 3, draw: R(0, 0, 1, 3) + [0.375, 0.75, 1.125, 1.5, 1.875, 2.25, 2.625].map(y => L(0, y, 1, y)).join("") + L(0.5, 0.2, 0.5, 2.8) + `<path d="M0.35 2.6L0.5 2.8L0.65 2.6" fill="none"/>` },
     fridge: { name: "Fridge", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.06) + L(0, 0.35, 1, 0.35) + L(0.82, 0.45, 0.82, 0.8) },
@@ -384,29 +343,68 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     coffee: { name: "Coffee table", w: 2, h: 1, draw: R(0.15, 0.2, 1.7, 0.6, 0.12) },
     tv: { name: "TV", w: 2, h: 1, draw: R(0, 0.55, 2, 0.45) + R(0.2, 0.42, 1.6, 0.08) },
     shelf: { name: "Bookshelf", w: 2, h: 1, draw: R(0, 0.55, 2, 0.45) + [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75].map(x => L(x, 0.55, x, 1)).join("") },
+    slider: { name: "Sliding door", w: 2, h: 0, draw: `<rect x="0" y="-0.15" width="2" height="0.3" fill="${C.bg}"/>` + L(0, 0.07, 1.15, 0.07) + L(0.85, -0.07, 2, -0.07) },
+    garagedoor: { name: "Garage door", w: 5, h: 0, draw: `<rect x="0" y="-0.15" width="5" height="0.3" fill="${C.bg}"/>` + `<path class="dash" d="M0 0H5" fill="none"/>` },
+    island: { name: "Island", w: 2, h: 1, draw: R(0, 0.4, 2, 0.6) + O(0.5, 0.17, 0.14) + O(1.5, 0.17, 0.14) },
+    fireplace: { name: "Fireplace", w: 2, h: 1, draw: R(0, 0.5, 2, 0.5) + `<path d="M0.4 0.5L0.6 0H1.4L1.6 0.5" fill="none"/>` + `<path d="M1 0.15C0.85 0.3 1.05 0.35 1 0.45" fill="none"/>` },
+    furnace: { name: "Furnace", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.04) + O(0.5, 0.58, 0.24) + L(0.2, 0.18, 0.8, 0.18) },
+    waterheater: { name: "Water heater", w: 1, h: 1, draw: O(0.5, 0.5, 0.42) + O(0.5, 0.5, 0.12) },
+    bootbench: { name: "Boot bench", w: 2, h: 1, draw: R(0, 0, 2, 0.45) + L(0, 0.95, 2, 0.95) + [0.4, 0.8, 1.2, 1.6].map(x => O(x, 0.75, 0.07)).join("") },
+    car: { name: "Car", w: 2, h: 5, draw: R(0.1, 0, 1.8, 5, 0.45) + R(0.3, 2.9, 1.4, 0.9, 0.15) + R(0.3, 0.8, 1.4, 0.7, 0.15) },
+    gate: { name: "Gate", w: 1, h: 1, c: C.wood, draw: `<line class="cut" x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}"/>` + L(0, 0, 0, 1) + `<path class="dash" d="M1 0A1 1 0 0 1 0 1" fill="none"/>` },
+    gate2: { name: "Wide gate", w: 2, h: 1, c: C.wood, draw: `<line class="cut" x1="0.04" y1="0" x2="1.96" y2="0" stroke="${C.bg}"/>` + L(0, 0, 0, 1) + L(2, 0, 2, 1) + `<path class="dash" d="M1 0A1 1 0 0 1 0 1M1 0A1 1 0 0 0 2 1" fill="none"/>` },
+    steps: { name: "Steps", w: 1, h: 1, c: C.grey, draw: R(0, 0, 1, 1) + L(0, 0.33, 1, 0.33) + L(0, 0.67, 1, 0.67) },
+    stones: { name: "Stepping stones", w: 1, h: 3, c: C.grey, draw: O(0.5, 0.45, 0.32) + O(0.5, 1.5, 0.32) + O(0.5, 2.55, 0.32) },
+    garage: { name: "Garage", w: 6, h: 6, draw: R(0, 0, 6, 6) + L(0, 0, 6, 6) + L(0, 6, 6, 0) + `<path class="dash" d="M0.5 0.3H5.5" fill="none"/>` },
+    shed: { name: "Shed", w: 2, h: 2, c: C.wood, draw: R(0, 0, 2, 2) + L(0, 0, 2, 2) + L(0, 2, 2, 0) },
+    driveway: { name: "Driveway", w: 3, h: 6, c: C.grey, draw: R(0, 0, 3, 6) + `<path class="dash" d="M1.5 0.3V5.7" fill="none"/>` },
+    sidewalk: { name: "Sidewalk", w: 1, h: 4, c: C.grey, draw: R(0, 0, 1, 4) + L(0, 1, 1, 1) + L(0, 2, 1, 2) + L(0, 3, 1, 3) },
+    tree: { name: "Tree", w: 3, h: 3, c: C.emerald, draw: O(1.5, 1.5, 1.4) + O(1.5, 1.5, 0.2) + L(1.5, 1.7, 1.5, 2.6) + L(1.3, 1.4, 0.6, 0.9) + L(1.7, 1.4, 2.4, 0.9) },
+    spruce: { name: "Spruce tree", w: 2, h: 2, c: C.emerald, draw: O(1, 1, 0.95) + [0, 45, 90, 135, 180, 225, 270, 315].map(d => { const r = d * Math.PI / 180; return L(1, 1, 1 + 0.95 * Math.cos(r), 1 + 0.95 * Math.sin(r)); }).join("") },
+    bush: { name: "Bush", w: 1, h: 1, c: C.emerald, draw: O(0.5, 0.5, 0.42) + O(0.5, 0.5, 0.18) },
+    garden: { name: "Garden", w: 3, h: 2, c: C.emerald, draw: R(0, 0, 3, 2, 0.08) + [0.5, 1, 1.5].map(y => `<path class="dash" d="M0.3 ${y}H2.7" fill="none"/>`).join("") },
+    flowers: { name: "Flower bed", w: 2, h: 1, c: C.emerald, draw: R(0, 0, 2, 1, 0.4) + [0.4, 0.8, 1.2, 1.6].map(x => O(x, 0.5, 0.12)).join("") },
+    deck: { name: "Deck", w: 4, h: 3, c: C.wood, draw: R(0, 0, 4, 3) + [0.5, 1, 1.5, 2, 2.5, 3, 3.5].map(x => L(x, 0, x, 3)).join("") },
+    patio: { name: "Patio table", w: 2, h: 2, draw: O(1, 1, 0.55) + R(0.8, 0.05, 0.4, 0.3, 0.06) + R(0.8, 1.65, 0.4, 0.3, 0.06) + R(0.05, 0.8, 0.3, 0.4, 0.06) + R(1.65, 0.8, 0.3, 0.4, 0.06) },
+    bbq: { name: "BBQ", w: 1, h: 1, draw: R(0.08, 0.25, 0.84, 0.5, 0.2) + L(0.3, 0.3, 0.3, 0.7) + L(0.5, 0.3, 0.5, 0.7) + L(0.7, 0.3, 0.7, 0.7) },
+    firepit: { name: "Fire pit", w: 2, h: 2, c: C.amber, draw: O(1, 1, 0.9) + O(1, 1, 0.55) },
+    hottub: { name: "Hot tub", w: 2, h: 2, c: C.pool, draw: R(0, 0, 2, 2, 0.3) + R(0.2, 0.2, 1.6, 1.6, 0.3) },
+    trampoline: { name: "Trampoline", w: 3, h: 3, draw: O(1.5, 1.5, 1.45) + O(1.5, 1.5, 1.15) },
+    swings: { name: "Swing set", w: 3, h: 2, draw: L(0, 0, 0.5, 1) + L(0, 2, 0.5, 1) + L(3, 0, 2.5, 1) + L(3, 2, 2.5, 1) + L(0.5, 1, 2.5, 1) + R(0.85, 0.8, 0.4, 0.4, 0.05) + R(1.75, 0.8, 0.4, 0.4, 0.05) },
+    sandbox: { name: "Sandbox", w: 2, h: 2, c: C.amber, draw: R(0, 0, 2, 2) + R(0.15, 0.15, 1.7, 1.7) },
+    playhouse: { name: "Playhouse", w: 2, h: 2, draw: R(0, 0, 2, 2) + L(0, 1, 2, 1) + L(0, 0, 1, 1) + L(2, 0, 1, 1) },
     plant: { name: "Plant", w: 1, h: 1, c: C.emerald, draw: O(0.5, 0.5, 0.42) + O(0.5, 0.5, 0.15) + L(0.5, 0.08, 0.5, 0.92) + L(0.08, 0.5, 0.92, 0.5) }
   };
-  // The furniture palette, grouped the way people think about a house.
-  const GROUPS = [
-    ["Doors and stairs", ["door", "door2", "window", "stairs"]],
-    ["Kitchen", ["fridge", "stove", "counter", "ksink", "dishwasher", "table"]],
-    ["Bathroom and laundry", ["toilet", "sink", "bathtub", "shower", "washer", "dryer"]],
+  // The furniture bar, grouped the way people think about a house.
+  // Indoor follows the rooms of an Alberta house; Outdoor mirrors it for the yard.
+  const IN = [
+    ["Doors", ["door", "door2", "slider", "window", "garagedoor", "stairs"]],
+    ["Kitchen", ["fridge", "stove", "counter", "ksink", "dishwasher", "island", "table"]],
+    ["Bath", ["toilet", "sink", "bathtub", "shower"]],
     ["Bedroom", ["bed", "single", "closet", "dresser", "nightstand", "desk"]],
-    ["Living room", ["sofa", "armchair", "coffee", "tv", "shelf", "plant"]]
+    ["Living", ["sofa", "armchair", "coffee", "tv", "shelf", "fireplace", "plant"]],
+    ["Laundry", ["washer", "dryer", "furnace", "waterheater", "bootbench", "car"]]
   ];
+  const OUT = [
+    ["Gates", ["gate", "gate2", "steps", "stones"]],
+    ["Garage", ["garage", "shed", "car", "driveway", "sidewalk"]],
+    ["Yard", ["tree", "spruce", "bush", "garden", "flowers"]],
+    ["Deck", ["deck", "patio", "bbq", "firepit", "hottub"]],
+    ["Play", ["trampoline", "swings", "sandbox", "playhouse"]]
+  ];
+  let GROUPS = IN;
   const FONT = "'Spline Sans Mono', ui-monospace, Menlo, monospace";
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const S = { shapes: [], selId: null, tool: "select", axes: true, half: false, dims: true, item: "door", itemRot: 0,
-    tab: "shape", pivot: "center", draft: null, cursor: null, nextId: 1 };
+  const S = { shapes: [], selId: null, tool: "select", out: false, axes: true, half: false, dims: true, item: "door", itemRot: 0, group: 0,
+    draft: null, cursor: null, nextId: 1 };
   const history = [];
-  let drag = null, anim = false, inspKey = "";
+  let drag = null, anim = false;
 
   const $ = id => document.getElementById(id);
   const svg = $("cad");
-  const lo = () => 0, hi = () => 20;
   const step = () => (S.half ? 0.5 : 1);
-  const sx = x => M + (x - lo()) * U, sy = y => M + (hi() - y) * U;
+  const sx = x => M + x * U, sy = y => M + (ROWS - y) * U;
   const clean = v => Math.round(v * 1000) / 1000 + 0;
   const eq = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
   const cur = () => S.shapes.find(s => s.id === S.selId) || null;
@@ -501,7 +499,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     return { area, per };
   }
   const bbox = P => { const xs = P.map(p => p[0]), ys = P.map(p => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
-  const offGrid = P => P.some(p => p[0] < lo() - 1e-9 || p[0] > hi() + 1e-9 || p[1] < lo() - 1e-9 || p[1] > hi() + 1e-9);
+  const offGrid = P => P.some(p => p[0] < -1e-9 || p[0] > COLS + 1e-9 || p[1] < -1e-9 || p[1] > ROWS + 1e-9);
   function shapeName(sh) {
     if (sh.kind === "item") return ITEMS[sh.type].name + " " + (S.shapes.filter(s => s.type === sh.type).indexOf(sh) + 1);
     const same = S.shapes.filter(s => s.kind !== "item" && s.mat === sh.mat);
@@ -509,16 +507,18 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   }
 
   // ---- Furniture: an item is stored by the grid point of its box's (0, 0) corner and a quarter-turn angle.
-  function itemBox(type, rot) {                     // the turned box around (0, 0): [minx, miny, maxx, maxy]
-    const it = ITEMS[type], a = rot * Math.PI / 180, c = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
-    const P = [[0, 0], [it.w, 0], [it.w, it.h], [0, it.h]].map(([x, y]) => [x * c - y * sn, x * sn + y * c]);
+  // An item's size in metres: its own (after stretching) or the default from ITEMS.
+  const sizeOf = sh => [sh.w ?? ITEMS[sh.type].w, sh.h ?? ITEMS[sh.type].h];
+  function itemBox(type, rot, w = ITEMS[type].w, h = ITEMS[type].h) {   // the turned box around (0, 0): [minx, miny, maxx, maxy]
+    const a = rot * Math.PI / 180, c = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
+    const P = [[0, 0], [w, 0], [w, h], [0, h]].map(([x, y]) => [x * c - y * sn, x * sn + y * c]);
     return bbox(P);
   }
-  function itemBounds(sh) { const b = itemBox(sh.type, sh.rot); return [sh.x + b[0], sh.y + b[1], sh.x + b[2], sh.y + b[3]]; }
+  function itemBounds(sh) { const b = itemBox(sh.type, sh.rot, ...sizeOf(sh)); return [sh.x + b[0], sh.y + b[1], sh.x + b[2], sh.y + b[3]]; }
   // Where an item goes when the cursor is at g: its box is centred on the cursor and its corners land on grid points.
-  function itemAt(type, rot, g) {
-    const b = itemBox(type, rot), w = b[2] - b[0], h = b[3] - b[1];
-    const mx = Math.min(hi() - w, Math.max(lo(), Math.round(g[0] - w / 2))), my = Math.min(hi() - h, Math.max(lo(), Math.round(g[1] - h / 2)));
+  function itemAt(type, rot, g, size = []) {
+    const b = itemBox(type, rot, ...size), w = b[2] - b[0], h = b[3] - b[1];
+    const mx = Math.min(COLS - w, Math.max(0, Math.round(g[0] - w / 2))), my = Math.min(ROWS - h, Math.max(0, Math.round(g[1] - h / 2)));
     return { x: clean(mx - b[0]), y: clean(my - b[1]) };
   }
   // Furniture whose middle is inside a room travels with the room when it is dragged.
@@ -526,14 +526,14 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     return S.shapes.filter(s => s.kind === "item").filter(s => { const b = itemBounds(s); return inside(room.pts, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2); })
       .map(s => [s, s.x, s.y]);
   }
-  function itemSVG(sh, sel, ghost, k = 1) {
-    const it = ITEMS[sh.type], col = ghost ? C.amber : it.c || C.ink;
-    const pad = it.h ? 0 : 0.25;
-    return `<g class="sh"${ghost ? "" : ` data-id="${sh.id}"`} transform="translate(${sx(sh.x)} ${sy(sh.y)}) rotate(${-sh.rot}) scale(${U * k} ${-U * k})"` +
-      ` fill="${C.bg}" fill-opacity="${ghost ? 0.4 : 0.85}" stroke="${col}" stroke-width="${2.5 / (U * k)}" stroke-linejoin="round" stroke-linecap="round"${ghost ? ' opacity="0.85"' : ""}>` +
-      (sel ? `<rect x="-0.08" y="${-pad - 0.08}" width="${it.w + 0.16}" height="${it.h + 2 * pad + 0.16}" fill="none" stroke="${C.amber}" stroke-width="${10 / U}" opacity="0.4"/>` : "") +
+  function itemSVG(sh, sel, ghost) {
+    const it = ITEMS[sh.type], col = ghost ? C.amber : it.c || C.ink, [w, h] = sizeOf(sh);
+    const pad = it.h ? 0 : 0.25, kx = w / it.w, ky = it.h ? h / it.h : 1;
+    return `<g class="sh"${ghost ? "" : ` data-id="${sh.id}"`} transform="translate(${sx(sh.x)} ${sy(sh.y)}) rotate(${-sh.rot}) scale(${U * kx} ${-U * ky})"` +
+      ` fill="${C.bg}" fill-opacity="${ghost ? 0.4 : 0.85}" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"${ghost ? ' opacity="0.85"' : ""}>` +
+      (sel ? `<rect x="0" y="${-pad}" width="${it.w}" height="${it.h + 2 * pad}" fill="none" stroke="${C.amber}" stroke-width="10" opacity="0.4"/>` : "") +
       `<rect x="0" y="${-pad}" width="${it.w}" height="${it.h + 2 * pad}" fill="transparent" stroke="none"/>` +
-      (ghost ? it.draw.split(`stroke="${C.bg}"`).length > 1 ? it.draw.replace(/<line[^>]*stroke="#0a2342"[^>]*\/>/, "") : it.draw : it.draw) + `</g>`;
+      (ghost ? it.draw.split(`stroke="${C.bg}"`).length > 1 ? it.draw.replace(/<line class="cut"[^>]*\/>/, "") : it.draw : it.draw) + `</g>`;
   }
   function iconSVG(type) {
     const it = ITEMS[type], y0 = it.h ? 0 : -0.15, y1 = it.h ? it.h : 0.15, pad = 0.12;
@@ -555,25 +555,21 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
 
   // ---- Drawing the blueprint.
   function gridSVG() {
-    let s = `<rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="${C.bg}"/>`;
-    for (let i = 0; i <= 20; i++) {
-      const v = lo() + i, p = M + i * U, col = v % 5 === 0 ? C.major : C.minor;
-      s += `<line x1="${p}" y1="${M}" x2="${p}" y2="${SIZE - M}" stroke="${col}" stroke-width="1"/>`;
-      s += `<line x1="${M}" y1="${p}" x2="${SIZE - M}" y2="${p}" stroke="${col}" stroke-width="1"/>`;
-    }
+    const right = W() - M, bottom = HGT - M;
+    let s = `<rect x="0" y="0" width="${W()}" height="${HGT}" fill="${C.bg}"/>`;
+    for (let i = 0; i <= COLS; i++) s += `<line x1="${sx(i)}" y1="${M}" x2="${sx(i)}" y2="${bottom}" stroke="${i % 5 ? C.minor : C.major}" stroke-width="1"/>`;
+    for (let j = 0; j <= ROWS; j++) s += `<line x1="${M}" y1="${sy(j)}" x2="${right}" y2="${sy(j)}" stroke="${j % 5 ? C.minor : C.major}" stroke-width="1"/>`;
     if (S.axes) {                                   // Quadrant I: axes on the left and bottom, every line labeled
-      s += `<line x1="${M}" y1="${SIZE - M}" x2="${SIZE - M + 6}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
-      s += `<line x1="${M}" y1="${M - 6}" x2="${M}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      s += `<line x1="${M}" y1="${bottom}" x2="${right + 6}" y2="${bottom}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      s += `<line x1="${M}" y1="${M - 6}" x2="${M}" y2="${bottom}" stroke="${C.axis}" stroke-width="2.5"/>`;
       const t = (x, y, txt, anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="19" font-weight="700" fill="${C.tick}" stroke="${C.bg}" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
-      for (let v = 0; v <= 20; v++) {
-        s += t(sx(v), SIZE - M + 22, num(v, 0), "middle");
-        if (v) s += t(M - 7, sy(v) + 6, num(v, 0), "end");
-      }
-      s += `<text x="${SIZE - M + 12}" y="${SIZE - M + 6}" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">x</text>`;
+      for (let v = 0; v <= COLS; v++) s += t(sx(v), bottom + 22, num(v, 0), "middle");
+      for (let v = 1; v <= ROWS; v++) s += t(M - 7, sy(v) + 6, num(v, 0), "end");
+      s += `<text x="${right + 12}" y="${bottom + 6}" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">x</text>`;
       s += `<text x="${M}" y="${M - 14}" text-anchor="middle" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">y</text>`;
     }
     // The scale, written in the top margin like on a printed plan.
-    s += `<text x="${SIZE - M}" y="${M - 12}" text-anchor="end" font-size="18" font-weight="700" fill="${C.cyan}">Scale: 1 unit = 1 m</text>`;
+    s += `<text x="${right}" y="${M - 12}" text-anchor="end" font-size="18" font-weight="700" fill="${C.cyan}">Scale: 1 unit = 1 m</text>`;
     return `<g font-family="${FONT}">${s}</g>`;
   }
   const ptsAttr = P => P.map(p => sx(p[0]) + "," + sy(p[1])).join(" ");
@@ -657,18 +653,6 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       s += `<rect x="${sx(x)}" y="${sy(y)}" width="${w * U}" height="${h * U}" ${dash} fill-opacity="0.1"/>`;
       if (w > 0 && h > 0) s += pill(sx(x + w / 2), sy(y - h / 2), num(w, 1) + " × " + num(h, 1) + " = " + num(w * h, 2) + " m²", C.amber, true);
     }
-    if (D.type === "poly") {
-      s += `<polyline points="${ptsAttr(D.pts)}" fill="none" stroke="${C.amber}" stroke-width="3.5" stroke-linejoin="round"/>`;
-      const last = D.pts[D.pts.length - 1];
-      if (g && !eq(g, last)) {
-        s += `<line x1="${sx(last[0])}" y1="${sy(last[1])}" x2="${sx(g[0])}" y2="${sy(g[1])}" ${dash}/>`;
-        s += pill(sx((last[0] + g[0]) / 2), sy((last[1] + g[1]) / 2) - 24, approx(dist(last, g), 1) + " m", C.amber, true);
-      }
-      const closing = g && D.pts.length >= 3 && eq(g, D.pts[0]);
-      s += `<circle cx="${sx(D.pts[0][0])}" cy="${sy(D.pts[0][1])}" r="${closing ? 13 : 10}" fill="${closing ? C.amber : C.bg}" stroke="${C.amber}" stroke-width="3"/>`;
-      D.pts.slice(1).forEach(p => { s += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="6" fill="${C.amber}"/>`; });
-      D.pts.forEach((p, i) => { s += label(sx(p[0]) + 16, sy(p[1]) - 12, LET(i), C.amber, 18); });
-    }
     if (D.a) s += `<circle cx="${sx(D.a[0])}" cy="${sy(D.a[1])}" r="7" fill="${C.amber}"/>`;
     return s;
   }
@@ -689,9 +673,9 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     $("gDims").innerHTML = S.dims ? `<g font-family="${FONT}">${S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, s === sel)).join("")}</g>` : "";
     let top = "";
     if (S.tool === "furn" && S.cursor) top += `<g pointer-events="none">${itemSVG({ type: S.item, rot: S.itemRot, ...itemAt(S.item, S.itemRot, S.cursor) }, false, true)}</g>`;
-    if (sel && sel.kind !== "item" && S.tab === "move" && S.tool === "select") {
-      const pv = pivotPt(sel);
-      top += `<g pointer-events="none"><circle cx="${sx(pv[0])}" cy="${sy(pv[1])}" r="9" fill="none" stroke="${C.amber}" stroke-width="3"/><circle cx="${sx(pv[0])}" cy="${sy(pv[1])}" r="3" fill="${C.amber}"/></g>`;
+    if (sel && sel.kind === "item" && S.tool === "select" && !anim) {
+      const b = itemBounds(sel);
+      top += `<rect class="handle resize" data-r="1" x="${sx(b[2]) - 9}" y="${sy(b[3]) - 9}" width="18" height="18" rx="3" fill="${C.amber}" stroke="${C.bg}" stroke-width="2"/>`;
     }
     if (sel && sel.kind !== "item" && S.tool === "select" && !anim)
       top += sel.pts.map((p, i) => `<circle class="handle" data-v="${i}" cx="${sx(p[0])}" cy="${sy(p[1])}" r="10" fill="${C.bg}" stroke="${C.amber}" stroke-width="3.5"/>`).join("");
@@ -706,93 +690,59 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const T = totals();
     $("totA").textContent = num(T.area, 3) + " m²";
     $("totP").textContent = approx(T.per, 1) + " m";
-    renderHowto(); renderInspector();
+    renderHowto(); renderCtx();
   }
   function renderGrid() { $("gGrid").innerHTML = gridSVG(); }
 
-  // ---- Panel: how-to and inspector.
+  // ---- Hint line, furniture bar and the toolbar beside the selection.
   const HOW = {
-    select: "Click a shape to select it. Drag a corner to reshape it, or drag the inside to slide it.",
+    select: "Click a shape to select it. Drag a corner to reshape or stretch it, or drag the inside to move it.",
     line: "Click point A, then point B.",
-    rect: "Click one corner, then the opposite corner.",
+    rect: "Click one corner of the room, then the opposite corner.",
+    rectOut: "Click one corner of the yard, then the opposite corner.",
     erase: "Click a shape to remove it.",
-    furn: "Pick an item, then click the plan to place it."
+    furn: "Click the plan to place it. Press R to turn it."
   };
   function renderHowto() {
     const D = S.draft;
-    let h = HOW[S.tool];
+    let h = HOW[S.tool === "rect" && S.out ? "rectOut" : S.tool];
     if (D && D.type === "line") h = "Now click point B.";
     if (D && D.type === "rect") h = "Now click the opposite corner.";
-    if (D && D.type === "poly") h = D.pts.length < 3 ? "Keep clicking to place the corners." : "Click A again, or double-click, to close the shape.";
     $("howto").textContent = h;
-    $("drawBtns").hidden = !(D && D.type === "poly");
-    $("furnBox").hidden = S.tool !== "furn";
-    $("palette").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.item === S.item)));
-    $("finishBtn").disabled = !(D && D.pts && D.pts.length >= 3);
+    $("ftabs").querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", String(i === S.group)));
+    $("fitems").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(S.tool === "furn" && b.dataset.item === S.item)));
   }
   let msgTimer = 0;
   function say(t) {
-    const el = $("msg"); clearTimeout(msgTimer);
-    el.hidden = !t; el.textContent = t;
-    if (t) msgTimer = setTimeout(() => { el.hidden = true; }, 6000);
+    clearTimeout(msgTimer);
+    $("msg").textContent = t;
+    if (t) msgTimer = setTimeout(() => { $("msg").textContent = ""; }, 6000);
   }
-
-  function inspHTML(sh) {
-    const line = sh.kind === "line";
-    const swc = "var(--pt)";
-    const tabs = line ? "" : `<div class="tabs" role="group" aria-label="Inspector"><button type="button" data-tab="shape" aria-pressed="${S.tab === "shape"}">Measure</button><button type="button" data-tab="move" aria-pressed="${S.tab === "move"}">Transform</button></div>`;
-    const st = step();
-    const verts = sh.pts.map((p, i) => `<div class="vrow"><b>${LET(i)}</b><span>(</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vx="${i}" aria-label="${LET(i)} x"><span>,</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vy="${i}" aria-label="${LET(i)} y"><span>)</span></div>`).join("");
-    const shapePane = `<div data-pane="shape"${!line && S.tab !== "shape" ? " hidden" : ""}>
-      ${line ? `<p class="note" style="margin:0 0 10px">A line is a wall or fence.</p>` : ""}
-      <div class="meas" id="iMeas"></div>
-      <p class="label">${line ? "End points (x, y)" : "Corners (x, y)"}</p>
-      <div class="verts">${verts}</div>
-      <p class="warn" id="iWarn" hidden></p>
-    </div>`;
-    const movePane = line ? "" : `<div data-pane="move" class="mv"${S.tab !== "move" ? " hidden" : ""}>
-      <p class="label">Slide (translate)</p>
-      <div class="slide"><label>Δx <input type="number" id="sdx" value="0" step="${st}"></label><label>Δy <input type="number" id="sdy" value="0" step="${st}"></label><button type="button" class="go" data-act="slide">Apply Slide</button></div>
-      <p class="label">Flip (reflect)</p>
-      <div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="flipc"><i>↔</i><span>Flip left to right</span></button><button type="button" data-act="flipv"><i>↕</i><span>Flip top to bottom</span></button></div>
-      <p class="label">Turn (rotate) around the amber center</p>
-      <div class="btns"><button type="button" data-act="cw"><i>↻</i><span>90° clockwise</span></button><button type="button" data-act="ccw"><i>↺</i><span>90° counter&shy;clockwise</span></button><button type="button" data-act="half"><i>⟲</i><span>180°</span></button></div>
-      <p class="label">Copy</p>
-      <button type="button" data-act="dup">Duplicate shape</button>
-      <p class="note">Make a copy, then move the copy. The original stays put, so you can compare the pre-image with its image.</p>
-    </div>`;
-    return `<div class="insp-head"><span class="sw${line ? " wall" : ""}" style="--c: ${swc}"></span><h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>${tabs}${shapePane}${movePane}`;
+  function renderFurnBar() {
+    $("ftabs").innerHTML = GROUPS.map(([g], i) => `<button type="button" data-g="${i}">${g}</button>`).join("");
+    $("fitems").innerHTML = GROUPS[S.group][1].map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span></button>`).join("");
   }
-  function renderInspector() {
-    const sh = cur();
-    $("insp").hidden = !sh; $("emptyCard").hidden = !!sh;
-    if (!sh) { inspKey = ""; return; }
-    if (sh.kind === "item") {
-      const k = "item|" + sh.id;
-      if (k !== inspKey) {
-        $("insp").innerHTML = `<div class="insp-head">${iconSVG(sh.type).replace("<svg", '<svg style="width:40px;height:32px;color:var(--ink)"')}<h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>` +
-          `<div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="iturn"><i>↺</i><span>Turn 90°</span></button><button type="button" data-act="dup"><i>⧉</i><span>Duplicate</span></button></div>` +
-          `<p class="note">Drag it to move it. Furniture does not change the area or perimeter.</p>`;
-        inspKey = k;
-      }
-      $("iName").textContent = shapeName(sh);
-      return;
-    }
-    const key = [sh.id, sh.kind, sh.pts.length, sh.mat, S.tab, S.pivot, S.half].join("|");
-    if (key !== inspKey) { $("insp").innerHTML = inspHTML(sh); inspKey = key; }
-    $("iName").textContent = shapeName(sh);
-    const m = measure(sh);
-    if (sh.kind === "line") {
-      $("iMeas").innerHTML = `<div><span>Length</span><b>${approx(m.len, 1)} m</b></div>`;
-    } else {
-      $("iMeas").innerHTML = `<div><span>Area</span><b>${m.crossing ? "–" : num(m.area, 3) + " m²"}</b></div><div><span>Perimeter</span><b>${approx(m.per, 1)} m</b></div>`;
-    }
-    $("insp").querySelectorAll("[data-vx]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vx][0], 1).replace("−", "-"); });
-    $("insp").querySelectorAll("[data-vy]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vy][1], 1).replace("−", "-"); });
-    const w = $("iWarn");
-    const warn = m.crossing ? "The sides cross each other, so the area cannot be found. Drag a corner to fix it."
-      : offGrid(sh.pts) ? "Part of this shape is off the grid. Press Undo or move it back." : "";
-    w.hidden = !warn; w.textContent = warn;
+  // The selected shape's name, measures and actions, floating just above it (or below it near the top).
+  let ctxKey = "";
+  function renderCtx() {
+    const sh = cur(), box = $("ctx");
+    if (!sh || S.tool !== "select" || drag || anim) { box.hidden = true; ctxKey = ""; return; }
+    const item = sh.kind === "item", m = item ? null : measure(sh);
+    const ms = item ? `<span class="ms">${num(sizeOf(sh)[0], 1)}${sizeOf(sh)[1] ? " × " + num(sizeOf(sh)[1], 1) : ""} m</span>` : sh.kind === "line" ? `<span class="ms">${approx(m.len, 1)} m</span>` :
+      `<span class="ms">${m.crossing ? "–" : num(m.area, 3) + " m²"}</span><span class="ms">${approx(m.per, 1)} m</span>`;
+    const btn = (a, i, t) => `<button type="button" data-act="${a}"><i>${i}</i>${t}</button>`;
+    const html = `<span class="nm">${shapeName(sh)}</span>${ms}` + (sh.kind === "line" ? "" : btn("turn", "↺", "Turn")) +
+      (sh.kind === "poly" ? btn("flip", "↔", "Flip") : "") + btn("copy", "⧉", "Copy") + `<button type="button" class="del" data-act="delete"><i>✕</i>Delete</button>`;
+    if (html !== ctxKey) { box.innerHTML = html; ctxKey = html; }
+    box.hidden = false;
+    const b = item ? itemBounds(sh) : bbox(sh.pts), ctm = svg.getScreenCTM(), host = $("bcol").getBoundingClientRect();
+    if (!ctm) return;
+    const pt = (x, y) => new DOMPoint(sx(x), sy(y)).matrixTransform(ctm);
+    const tl = pt(b[0], b[3]), br = pt(b[2], b[1]), bw = box.offsetWidth, bh = box.offsetHeight, brd = $("board").getBoundingClientRect();
+    let top = tl.y - host.top - bh - 12;
+    if (tl.y - bh - 12 < brd.top + 4) top = br.y - host.top + 12;
+    const left = Math.min(host.width - bw - 4, Math.max(4, (tl.x + br.x) / 2 - host.left - bw / 2));
+    box.style.top = top + "px"; box.style.left = left + "px";
   }
 
   // ---- Pointer: screen pixels to snapped grid coordinates through getScreenCTM.
@@ -800,30 +750,23 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const ctm = svg.getScreenCTM(); if (!ctm) return null;
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
     const st = step();
-    const gx = Math.round((lo() + (p.x - M) / U) / st) * st, gy = Math.round((hi() - (p.y - M) / U) / st) * st;
-    return [clean(Math.min(hi(), Math.max(lo(), gx))), clean(Math.min(hi(), Math.max(lo(), gy)))];
+    const gx = Math.round(((p.x - M) / U) / st) * st, gy = Math.round((ROWS - (p.y - M) / U) / st) * st;
+    return [clean(Math.min(COLS, Math.max(0, gx))), clean(Math.min(ROWS, Math.max(0, gy)))];
   }
   function select(id) { S.selId = id; }
   function addShape(kind, pts, mat) {
     pushUndo();
     const sh = { id: S.nextId++, kind, pts, mat };
-    S.shapes.push(sh); S.selId = sh.id; S.tab = "shape";
+    S.shapes.push(sh); S.selId = sh.id;
     return sh;
   }
   function commitTwo(b) {
     const a = S.draft.a, type = S.draft.type;
     S.draft = null;
-    if (type === "line") { addShape("line", [a, b], "wall"); return; }
+    if (type === "line") { addShape("line", [a, b], S.out ? "fence" : "wall"); return; }
     const x1 = Math.min(a[0], b[0]), x2 = Math.max(a[0], b[0]), y1 = Math.min(a[1], b[1]), y2 = Math.max(a[1], b[1]);
     if (x1 === x2 || y1 === y2) { say("A rectangle needs width and height. Try again."); return; }
-    addShape("poly", [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], "room");
-  }
-  function closePoly() {
-    const P = S.draft.pts; S.draft = null;
-    if (P.length < 3 || Math.abs(signedArea(P)) < 1e-9) { say("That shape has no area. Try again."); render(); return; }
-    addShape("poly", P, "room");
-    if (selfCrossing(P)) say("The sides cross each other. Drag a corner so they don't.");
-    render();
+    addShape("poly", [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], S.out ? "yard" : "room");
   }
   function cancelDraft() { S.draft = null; render(); }
 
@@ -831,11 +774,12 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     if (anim || e.button > 0) return;
     const g = gridPt(e); if (!g) return;
     S.cursor = g;
-    const t = e.target.closest("[data-id],[data-v]");
+    const t = e.target.closest("[data-id],[data-v],[data-r]");
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
     if (S.tool === "select") {
       const sh = cur();
       if (t && t.dataset.v != null && sh) drag = { kind: "vertex", i: +t.dataset.v, before: snap(), moved: false };
+      else if (t && t.dataset.r && sh) { const b = itemBounds(sh); drag = { kind: "resize", x0: b[0], y0: b[1], before: snap(), moved: false }; }
       else if (t && t.dataset.id) {
         select(+t.dataset.id);
         const s2 = cur();
@@ -851,13 +795,6 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     } else if (S.tool === "line" || S.tool === "rect") {
       if (!S.draft) { S.draft = { type: S.tool, a: g }; drag = { kind: "draw" }; }
       else if (!eq(g, S.draft.a)) commitTwo(g);
-    } else if (S.tool === "poly") {
-      if (!S.draft) S.draft = { type: "poly", pts: [g] };
-      else {
-        const P = S.draft.pts;
-        if (P.length >= 3 && eq(g, P[0])) { closePoly(); return; }
-        if (!eq(g, P[P.length - 1])) P.push(g);
-      }
     }
     render();
   });
@@ -868,16 +805,23 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     if (drag && !anim) {
       const sh = cur();
       if (drag.kind === "vertex" && sh && !eq(sh.pts[drag.i], g)) { sh.pts[drag.i] = g; drag.moved = true; }
+      if (drag.kind === "resize" && sh) {            // stretch: the lower-left corner stays, the dragged corner snaps
+        const it = ITEMS[sh.type], vert = sh.rot % 180 !== 0, st = step();
+        let ww = Math.max(st, g[0] - drag.x0), hh = Math.max(st, g[1] - drag.y0);
+        if (!it.h) { if (vert) ww = 0; else hh = 0; }
+        const [w, h] = vert ? [hh, ww] : [ww, hh], nb = itemBox(sh.type, sh.rot, w, h);
+        if (w !== sizeOf(sh)[0] || h !== sizeOf(sh)[1]) { sh.w = w; sh.h = h; sh.x = clean(drag.x0 - nb[0]); sh.y = clean(drag.y0 - nb[1]); drag.moved = true; }
+      }
       if (drag.kind === "move" && sh && sh.kind === "item") {
         const b = drag.b;
-        const dx = Math.min(hi() - b[2], Math.max(lo() - b[0], Math.round(g[0] - drag.start[0])));
-        const dy = Math.min(hi() - b[3], Math.max(lo() - b[1], Math.round(g[1] - drag.start[1])));
+        const dx = Math.min(COLS - b[2], Math.max(-b[0], Math.round(g[0] - drag.start[0])));
+        const dy = Math.min(ROWS - b[3], Math.max(-b[1], Math.round(g[1] - drag.start[1])));
         sh.x = clean(drag.ox + dx); sh.y = clean(drag.oy + dy);
         if (dx || dy) drag.moved = true;
       } else if (drag.kind === "move" && sh) {
         const b = bbox(drag.orig);
-        const dx = Math.min(hi() - b[2], Math.max(lo() - b[0], g[0] - drag.start[0]));
-        const dy = Math.min(hi() - b[3], Math.max(lo() - b[1], g[1] - drag.start[1]));
+        const dx = Math.min(COLS - b[2], Math.max(-b[0], g[0] - drag.start[0]));
+        const dy = Math.min(ROWS - b[3], Math.max(-b[1], g[1] - drag.start[1]));
         sh.pts = drag.orig.map(p => [clean(p[0] + dx), clean(p[1] + dy)]);
         drag.inner.forEach(([it, x, y]) => { it.x = clean(x + dx); it.y = clean(y + dy); });
         if (dx || dy) drag.moved = true;
@@ -887,14 +831,13 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   });
   function endDrag(e) {
     if (!drag) return;
-    if ((drag.kind === "vertex" || drag.kind === "move") && drag.moved) pushUndo(drag.before);
+    if ((drag.kind === "vertex" || drag.kind === "move" || drag.kind === "resize") && drag.moved) pushUndo(drag.before);
     if (drag.kind === "draw" && S.draft && S.draft.a) { const g = gridPt(e); if (g && !eq(g, S.draft.a)) commitTwo(g); }
     drag = null; render();
   }
   svg.addEventListener("pointerup", endDrag);
   svg.addEventListener("pointercancel", endDrag);
   svg.addEventListener("pointerleave", () => { if (!drag) { S.cursor = null; render(); } });
-  svg.addEventListener("dblclick", () => { if (S.draft && S.draft.type === "poly" && S.draft.pts.length >= 3) closePoly(); });
 
   // ---- Transformations, animated so students see the slide, flip or turn happen.
   function animate(sh, to, rot) {
@@ -917,45 +860,38 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const a = deg * Math.PI / 180, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
     return P.map(([x, y]) => [px + (x - px) * c - (y - py) * s, py + (x - px) * s + (y - py) * c]);
   }
+  // Where a copy goes: beside the original (right, left, above, below) when there is room, else on top of it.
+  function copyShift(b) {
+    const w = b[2] - b[0], h = b[3] - b[1];
+    if (b[2] + w <= COLS) return [w, 0];
+    if (b[0] - w >= 0) return [-w, 0];
+    if (b[3] + h <= ROWS) return [0, h];
+    if (b[1] - h >= 0) return [0, -h];
+    return [0, 0];
+  }
   function act(a) {
     const sh = cur(); if (!sh || anim) return;
     if (a === "delete") { pushUndo(); S.shapes = S.shapes.filter(s => s !== sh); S.selId = null; render(); return; }
-    if (sh.kind === "item") {
-      if (a !== "iturn" && a !== "dup") return;
+    if (a === "copy") {
       pushUndo();
-      if (a === "iturn") {                          // turn in place: the box keeps its lower-left corner
-        const b0 = itemBounds(sh), r = (sh.rot + 90) % 360, nb = itemBox(sh.type, r);
-        sh.rot = r; sh.x = b0[0] - nb[0]; sh.y = b0[1] - nb[1];
-        const fit = itemAt(sh.type, r, [b0[0] + (nb[2] - nb[0]) / 2, b0[1] + (nb[3] - nb[1]) / 2]);
-        sh.x = fit.x; sh.y = fit.y;
-      } else {                                      // the copy goes beside the original when there is room
-        const b = itemBounds(sh), w = b[2] - b[0];
-        const dx = b[2] + w <= hi() ? w : b[0] - w >= lo() ? -w : 0;
-        const copy = { ...sh, id: S.nextId++, x: sh.x + dx };
-        S.shapes.push(copy); S.selId = copy.id;
-      }
+      const [dx, dy] = copyShift(sh.kind === "item" ? itemBounds(sh) : bbox(sh.pts));
+      const copy = sh.kind === "item" ? { ...sh, id: S.nextId++, x: sh.x + dx, y: sh.y + dy }
+        : { id: S.nextId++, kind: sh.kind, pts: sh.pts.map(p => [p[0] + dx, p[1] + dy]), mat: sh.mat };
+      S.shapes.push(copy); S.selId = copy.id; render(); return;
+    }
+    if (sh.kind === "item") {
+      if (a !== "turn") return;
+      pushUndo();                                   // turn in place: the box keeps its lower-left corner
+      const b0 = itemBounds(sh), r = (sh.rot + 90) % 360, nb = itemBox(sh.type, r, ...sizeOf(sh));
+      const fit = itemAt(sh.type, r, [b0[0] + (nb[2] - nb[0]) / 2, b0[1] + (nb[3] - nb[1]) / 2], sizeOf(sh));
+      sh.rot = r; sh.x = fit.x; sh.y = fit.y;
       render(); return;
     }
-    if (a === "dup") {
-      pushUndo();
-      const copy = { id: S.nextId++, kind: sh.kind, pts: sh.pts.map(p => p.slice()), mat: sh.mat };
-      S.shapes.push(copy); S.selId = copy.id; S.tab = "move";
-      say("Copy made on top of the original. Slide, flip or turn the copy to compare."); render(); return;
-    }
+    if (sh.kind !== "poly") return;
     const P = sh.pts;
     let to = null, rot = null;
-    if (a === "slide") {
-      const st = step(), rd = v => Math.round((parseFloat(v) || 0) / st) * st;
-      const dx = rd($("sdx").value), dy = rd($("sdy").value);
-      if (!dx && !dy) { say("Type how far to slide in Δx or Δy first."); return; }
-      to = P.map(p => [p[0] + dx, p[1] + dy]);
-    }
-    if (a === "flipv") { const b = bbox(P); to = P.map(p => [p[0], b[1] + b[3] - p[1]]); }
-    if (a === "flipc") { const b = bbox(P); to = P.map(p => [b[0] + b[2] - p[0], p[1]]); }
-    if (a === "cw" || a === "ccw" || a === "half") {
-      const deg = a === "cw" ? -90 : a === "ccw" ? 90 : 180, pv = pivotPt(sh);
-      to = rotatePts(P, deg, pv); rot = { deg, p: pv };
-    }
+    if (a === "flip") { const b = bbox(P); to = P.map(p => [b[0] + b[2] - p[0], p[1]]); }
+    if (a === "turn") { const pv = pivotPt(sh); to = rotatePts(P, 90, pv); rot = { deg: 90, p: pv }; }
     if (!to) return;
     pushUndo(); say("");
     animate(sh, to, rot);
@@ -985,54 +921,43 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     pushUndo(); S.shapes = []; S.selId = null; S.draft = null;
     say("Canvas cleared. Press Undo to bring it back."); render();
   });
-  $("finishBtn").addEventListener("click", () => { if (S.draft && S.draft.pts && S.draft.pts.length >= 3) closePoly(); });
-  $("cancelBtn").addEventListener("click", cancelDraft);
-  $("palette").innerHTML = GROUPS.map(([g, keys]) => `<p class="grp">${g}</p><div class="row">` +
-    keys.map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span></button>`).join("") + `</div>`).join("");
-  $("palette").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { S.item = b.dataset.item; S.itemRot = 0; render(); } });
-  $("turnGhost").addEventListener("click", () => { S.itemRot = (S.itemRot + 90) % 360; render(); });
-
-  $("insp").addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    const sh = cur(); if (!sh) return;
-    if (b.dataset.tab) { S.tab = b.dataset.tab; render(); }
-    else if (b.dataset.pivot) { S.pivot = b.dataset.pivot; render(); }
-    else if (b.dataset.act) act(b.dataset.act);
+  $("ftabs").addEventListener("click", e => { const b = e.target.closest("[data-g]"); if (b) { S.group = +b.dataset.g; renderFurnBar(); render(); } });
+  $("fitems").addEventListener("click", e => {
+    const b = e.target.closest("[data-item]"); if (!b) return;
+    S.item = b.dataset.item; S.itemRot = 0; setTool("furn");
   });
-  $("insp").addEventListener("change", e => {
-    const inp = e.target, sh = cur(); if (!sh) return;
-    const ix = inp.dataset.vx, iy = inp.dataset.vy; if (ix == null && iy == null) return;
-    const st = step(), v = parseFloat(inp.value);
-    const i = +(ix ?? iy), k = ix != null ? 0 : 1;
-    if (isNaN(v)) { inp.value = sh.pts[i][k]; return; }
-    const nv = clean(Math.min(hi(), Math.max(lo(), Math.round(v / st) * st)));
-    inp.value = nv;
-    if (nv === sh.pts[i][k]) return;
-    pushUndo(); sh.pts[i] = k === 0 ? [nv, sh.pts[i][1]] : [sh.pts[i][0], nv]; render();
+  $("turnGhost").addEventListener("click", () => { if (S.tool === "furn") { S.itemRot = (S.itemRot + 90) % 360; render(); } else act("turn"); });
+  $("io").addEventListener("click", e => {
+    const b = e.target.closest("[data-io]"); if (!b) return;
+    S.out = b.dataset.io === "out"; GROUPS = S.out ? OUT : IN; S.group = 0;
+    document.querySelectorAll("[data-io]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    $("lineLbl").textContent = S.out ? "Line / Fence" : "Line / Wall";
+    $("rectLbl").textContent = S.out ? "Yard" : "Rectangle";
+    if (S.tool === "furn") setTool("select");
+    renderFurnBar(); render();
   });
-  $("insp").addEventListener("keydown", e => { if (e.key === "Enter" && (e.target.id === "sdx" || e.target.id === "sdy")) act("slide"); });
+  $("ctx").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b) act(b.dataset.act); });
 
   document.addEventListener("keydown", e => {
     const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) { e.preventDefault(); undo(); return; }
     if (typing) return;
-    if ((e.key === "r" || e.key === "R") && S.tool === "furn") { S.itemRot = (S.itemRot + 90) % 360; render(); }
+    if (e.key === "r" || e.key === "R") { if (S.tool === "furn") { S.itemRot = (S.itemRot + 90) % 360; render(); } else act("turn"); }
     if (e.key === "Escape") { if (S.draft) cancelDraft(); else { S.selId = null; render(); } }
-    if (e.key === "Enter" && S.draft && S.draft.type === "poly" && S.draft.pts.length >= 3) closePoly();
     if ((e.key === "Delete" || e.key === "Backspace") && cur()) { e.preventDefault(); act("delete"); }
   });
 
   // ---- Export: a clean blueprint (no cursor, handles or selection) with a title strip.
   function blueprintSVG() {
-    const T = totals(), H = SIZE + 60;
+    const T = totals(), WD = W(), H = HGT + 60;
     const title = esc($("planName").value.trim() || "My House Plan");
-    let strip = `<rect x="0" y="${SIZE}" width="${SIZE}" height="${H - SIZE}" fill="${C.pill}"/>` +
-      `<text x="24" y="${SIZE + 38}" font-size="26" font-weight="700" fill="${C.cyan}" font-family="'Bricolage Grotesque', system-ui, sans-serif">${title}</text>` +
-      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="18" font-weight="700" fill="${C.ink}">Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m</text>`;
+    let strip = `<rect x="0" y="${HGT}" width="${WD}" height="${H - HGT}" fill="${C.pill}"/>` +
+      `<text x="24" y="${HGT + 38}" font-size="26" font-weight="700" fill="${C.cyan}" font-family="'Bricolage Grotesque', system-ui, sans-serif">${title}</text>` +
+      `<text x="${WD - 24}" y="${HGT + 36}" text-anchor="end" font-size="18" font-weight="700" fill="${C.ink}">Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m</text>`;
     const shapes = shapesSVG(null);
     const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") : "";
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${H}" width="${SIZE}" height="${H}" font-family="${FONT}">` +
-      `<defs><clipPath id="c"><rect x="34" y="34" width="812" height="812"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)">${shapes}</g><g>${dims}</g>${strip}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WD} ${H}" width="${WD}" height="${H}" font-family="${FONT}">` +
+      `<style>.sh *{vector-effect:non-scaling-stroke}.dash{stroke-dasharray:6 4}.cut{stroke-width:8px}</style><defs><clipPath id="c"><rect x="34" y="34" width="${WD - 68}" height="${HGT - 68}"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)">${shapes}</g><g>${dims}</g>${strip}</svg>`;
   }
   const esc = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const fileName = ext => (($("planName").value.trim() || "My House Plan").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "plan") + "." + ext;
@@ -1064,7 +989,20 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   // ---- Start with one L-shaped room so the labels show right away.
   S.shapes.push({ id: S.nextId++, kind: "poly", pts: [[2, 2], [8, 2], [8, 5], [5, 5], [5, 8], [2, 8]], mat: "room" });
   S.shapes.push({ id: S.nextId++, kind: "item", type: "door", x: 4, y: 2, rot: 0 });
-  renderGrid(); render();
+  // The grid takes as many columns as the board's shape allows (20 rows tall, 20 to 40 columns wide).
+  const fits = matchMedia("(min-width: 861px) and (min-height: 520px)");
+  function fitGrid() {
+    const bd = $("board"), w = bd.clientWidth - 12, h = bd.clientHeight - 12;
+    const cols = fits.matches && h > 100 ? Math.max(20, Math.min(40, Math.floor((HGT * w / h - 2 * M) / U))) : 20;
+    if (cols === COLS && svg.getAttribute("viewBox") === `0 0 ${W()} ${HGT}`) { render(); return; }
+    COLS = cols;
+    svg.setAttribute("viewBox", `0 0 ${W()} ${HGT}`);
+    $("gridClipR").setAttribute("width", W() - 68);
+    $("dimClipR").setAttribute("width", W() - 28);
+    renderGrid(); render();
+  }
+  new ResizeObserver(fitGrid).observe($("board"));
+  renderFurnBar(); renderGrid(); fitGrid();
 })();
 </script>
 
@@ -1156,26 +1094,51 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
-/* French for GridCraft CAD (gridcraft.html). Numbers in live readouts are matched with {n}. */
+/* French for Blueprinting (gridcraft.html). Numbers in live readouts are matched with {n}. */
 window.I18N_PAGE = {
+  "Sliding door": "Porte coulissante", "Sliding door {n}": "Porte coulissante {n}",
+  "Garage door": "Porte de garage", "Garage door {n}": "Porte de garage {n}",
+  "Island": "Îlot", "Island {n}": "Îlot {n}",
+  "Fireplace": "Foyer", "Fireplace {n}": "Foyer {n}",
+  "Furnace": "Fournaise", "Furnace {n}": "Fournaise {n}",
+  "Water heater": "Chauffe-eau", "Water heater {n}": "Chauffe-eau {n}",
+  "Boot bench": "Banc à bottes", "Boot bench {n}": "Banc à bottes {n}",
+  "Car": "Auto", "Car {n}": "Auto {n}",
+  "Gate": "Barrière", "Gate {n}": "Barrière {n}",
+  "Wide gate": "Grande barrière", "Wide gate {n}": "Grande barrière {n}",
+  "Steps": "Marches", "Steps {n}": "Marches {n}",
+  "Stepping stones": "Pas japonais", "Stepping stones {n}": "Pas japonais {n}",
+  "Garage": "Garage", "Garage {n}": "Garage {n}",
+  "Shed": "Remise", "Shed {n}": "Remise {n}",
+  "Driveway": "Entrée de garage", "Driveway {n}": "Entrée de garage {n}",
+  "Sidewalk": "Trottoir", "Sidewalk {n}": "Trottoir {n}",
+  "Tree": "Arbre", "Tree {n}": "Arbre {n}",
+  "Spruce tree": "Épinette", "Spruce tree {n}": "Épinette {n}",
+  "Bush": "Arbuste", "Bush {n}": "Arbuste {n}",
+  "Garden": "Jardin", "Garden {n}": "Jardin {n}",
+  "Flower bed": "Plate-bande", "Flower bed {n}": "Plate-bande {n}",
+  "Deck": "Terrasse", "Deck {n}": "Terrasse {n}",
+  "Patio table": "Table de patio", "Patio table {n}": "Table de patio {n}",
+  "BBQ": "BBQ", "BBQ {n}": "BBQ {n}",
+  "Fire pit": "Foyer extérieur", "Fire pit {n}": "Foyer extérieur {n}",
+  "Hot tub": "Spa", "Hot tub {n}": "Spa {n}",
+  "Trampoline": "Trampoline", "Trampoline {n}": "Trampoline {n}",
+  "Swing set": "Balançoire", "Swing set {n}": "Balançoire {n}",
+  "Sandbox": "Carré de sable", "Sandbox {n}": "Carré de sable {n}",
+  "Playhouse": "Cabane", "Playhouse {n}": "Cabane {n}",
+  "Yard": "Cour", "Yard {n}": "Cour {n}",
+  "Fence": "Clôture", "Fence {n}": "Clôture {n}",
+  "Gates": "Barrières", "Play": "Jeux", "Laundry": "Buanderie",
+  "Line / Fence": "Ligne / Clôture", "Dimensions": "Mesures", "Clear": "Effacer",
+  "🏠 Indoor": "🏠 Intérieur", "🌲 Outdoor": "🌲 Extérieur", "Indoor or outdoor": "Intérieur ou extérieur",
+  "Click one corner of the yard, then the opposite corner.": "Clique sur un coin de la cour, puis sur le coin opposé.",
+  "⤓ PNG": "⤓ PNG",
   "Furniture": "Meubles",
-  "Pick an item, then click the plan to place it.": "Choisis un objet, puis clique sur le plan pour le placer.",
   "↺ Turn {n}°": "↺ Tourner de {n}°",
-  "Turn {n}°": "Tourner de {n}°",
-  "or press R": "ou appuie sur R",
-  "Duplicate": "Dupliquer",
   "Door": "Porte", "Window": "Fenêtre", "Toilet": "Toilette", "Sink": "Lavabo", "Bathtub": "Baignoire", "Shower": "Douche",
   "Door {n}": "Porte {n}", "Window {n}": "Fenêtre {n}", "Toilet {n}": "Toilette {n}", "Sink {n}": "Lavabo {n}", "Bathtub {n}": "Baignoire {n}", "Shower {n}": "Douche {n}",
   "Plain grid": "Quadrillage simple",
-  "Doors and furniture": "Portes et meubles",
-  "Flip left to right": "Réflexion gauche-droite",
-  "Flip top to bottom": "Réflexion haut-bas",
-  "Turn (rotate) around the amber center": "Tourner (rotation) autour du centre orange",
   "Part of the image is off the grid. Press Undo or move it back.": "Une partie de l'image est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
-  "Shows its length": "Montre sa longueur",
-  "Placed on the plan; not measured": "Placés sur le plan; non mesurés",
-  "A line is a wall or fence.": "Une ligne est un mur ou une clôture.",
-  "Drag it to move it. Furniture does not change the area or perimeter.": "Fais-le glisser pour le déplacer. Les meubles ne changent ni l'aire ni le périmètre.",
   "Plan name": "Nom du plan",
   "Export my plan": "Exporter mon plan",
   "The file could not be saved here.": "Le fichier n'a pas pu être enregistré ici.",
@@ -1197,13 +1160,21 @@ window.I18N_PAGE = {
   "TV": "Télé", "TV {n}": "Télé {n}",
   "Bookshelf": "Bibliothèque", "Bookshelf {n}": "Bibliothèque {n}",
   "Plant": "Plante", "Plant {n}": "Plante {n}",
-  "Doors and stairs": "Portes et escaliers",
   "Kitchen": "Cuisine",
-  "Bathroom and laundry": "Salle de bain et lavage",
   "Bedroom": "Chambre",
-  "Living room": "Salon",
-  "Key ({n} unit = {n} m)": "Légende ({n} unité = {n} m)",
   "Scale: {n} unit = {n} m": "Échelle : {n} unité = {n} m",
+  "Click a shape to select it. Drag a corner to reshape or stretch it, or drag the inside to move it.": "Clique sur une figure pour la sélectionner. Fais glisser un coin pour changer sa forme ou l'étirer, ou l'intérieur pour la déplacer.",
+  "Click one corner of the room, then the opposite corner.": "Clique sur un coin de la pièce, puis sur le coin opposé.",
+  "Click the plan to place it. Press R to turn it.": "Clique sur le plan pour le placer. Appuie sur R pour le tourner.",
+  "Doors": "Portes",
+  "Bath": "Salle de bain",
+  "Living": "Salon",
+  "Rooms": "Pièces",
+  "Doors and furniture": "Portes et meubles",
+  "{0}Turn": "{0}Tourner",
+  "{0}Flip": "{0}Retourner",
+  "{0}Copy": "{0}Copier",
+  "{0}Delete": "{0}Supprimer",
   "Cursor position": "Position du curseur",
   "Total area": "Aire totale",
   "Total perimeter": "Périmètre total",
@@ -1219,42 +1190,16 @@ window.I18N_PAGE = {
   "Edit": "Modifier",
   "Clear Canvas": "Tout effacer",
   "Blueprint grid with shapes": "Plan quadrillé avec des figures",
-  "How to use this tool": "Comment utiliser cet outil",
-  "Cancel": "Annuler",
-  "Room": "Pièce",
-  "Wall (line)": "Mur (ligne)",
-  "Pick {0} and click a shape to see its measures and move it.": "Choisis {0} et clique sur une figure pour voir ses mesures et la déplacer.",
-  "Click a shape to select it. Drag a corner to reshape it, or drag the inside to slide it.": "Clique sur une figure pour la sélectionner. Fais glisser un sommet pour changer sa forme, ou l'intérieur pour la déplacer.",
   "Click point A, then point B.": "Clique sur le point A, puis sur le point B.",
-  "Click one corner, then the opposite corner.": "Clique sur un coin, puis sur le coin opposé.",
   "Click a shape to remove it.": "Clique sur une figure pour l'effacer.",
   "Now click point B.": "Clique maintenant sur le point B.",
   "Now click the opposite corner.": "Clique maintenant sur le coin opposé.",
   "Delete": "Supprimer",
-  "Inspector": "Inspecteur",
-  "Measure": "Mesurer",
-  "Transform": "Transformer",
-  "End points (x, y)": "Extrémités (x, y)",
-  "Corners (x, y)": "Sommets (x, y)",
-  "Length": "Longueur",
   "Room {n}": "Pièce {n}",
   "Wall {n}": "Mur {n}",
-  "Slide (translate)": "Glisser (translation)",
-  "Apply Slide": "Appliquer la translation",
-  "Flip (reflect)": "Retourner (réflexion)",
-  "Turn (rotate)": "Tourner (rotation)",
-  "{n}° clockwise": "{n}° sens horaire",
-  "{n}° counter­clockwise": "{n}° sens anti­horaire",
-  "Copy": "Copie",
-  "Duplicate shape": "Dupliquer la figure",
-  "Make a copy, then move the copy. The original stays put, so you can compare the pre-image with its image.": "Fais une copie, puis déplace la copie. L'original reste en place pour comparer la figure initiale et son image.",
-  "The sides cross each other, so the area cannot be found. Drag a corner to fix it.": "Les côtés se croisent, donc on ne peut pas trouver l'aire. Fais glisser un sommet pour corriger.",
-  "Part of this shape is off the grid. Press Undo or move it back.": "Une partie de la figure est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
   "sides cross": "côtés croisés",
   "Nothing to undo.": "Rien à annuler.",
   "A rectangle needs width and height. Try again.": "Un rectangle a besoin d'une largeur et d'une hauteur. Essaie encore.",
-  "Copy made on top of the original. Slide, flip or turn the copy to compare.": "Copie faite par-dessus l'original. Fais glisser, retourne ou tourne la copie pour comparer.",
-  "Type how far to slide in Δx or Δy first.": "Écris d'abord la distance de la translation dans Δx ou Δy.",
   "Canvas cleared. Press Undo to bring it back.": "Tout est effacé. Appuie sur Annuler pour le ravoir."
 };
 </script>

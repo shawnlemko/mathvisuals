@@ -154,7 +154,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    Works with mouse, touch and stylus (pointer events). Nothing is saved after the page closes.
    Equation (Shawn 2026-10-20, "keep it simple"): a small box with Fraction, Exponent, Square root, π, × and ± buttons
    and a live typeset preview. Typing follows a/b, x^2, √(x); brackets group and are hidden in the typeset form.
-   Placed equations sit on the board, drag to move; with the Eraser, tap one to remove it. No ÷ button: use a fraction. */
+   Placed equations sit on the board, drag to move; with the Eraser, tap one to remove it. No ÷ button: use a fraction.
+   Select (Shawn 2026-10-20): tap a drawing or equation to pick it, or drag a box around several; drag to move them
+   (whole squares when the grid snaps), Delete removes them. */
 .wbg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .wbg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 14px; }
 .wbg button + button { border-left: 2px solid var(--grid-major); }
@@ -179,7 +181,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .acts button { min-height: 50px; font-size: 1.05rem; }
 .acts button:disabled { opacity: 0.45; cursor: default; }
 #clear { color: var(--warn); }
-.tool.wide { grid-column: span 2; flex-direction: row; justify-content: center; gap: 8px; min-height: 50px; font-size: 1rem; }
+.tool .m { font-size: 1.05rem; height: 28px; }
+#ink.select { cursor: default; }
+#ink.select.over { cursor: move; }
+.select-mode .eq-item { pointer-events: none; }
+.eq-item.sel { outline: 2px dashed var(--pt); }
+#seldel { position: absolute; z-index: 4; min-height: 44px; padding: 6px 14px; font-size: 1rem; background: var(--sheet); color: var(--warn); border: 2px solid var(--warn); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18); }
 
 /* Typeset equations (preview and on the board) */
 .m { font-family: var(--font-num); font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; line-height: 1.1; }
@@ -241,14 +248,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="card tools">
       <p class="label">Draw</p>
       <div class="tgrid" id="toolset">
+        <button type="button" class="tool" data-tool="select"><svg viewBox="0 0 28 28"><path d="M7 4l14 9-6 1.5 3.5 7-3 1.5-3.5-7L7 20z"/></svg>Select</button>
         <button type="button" class="tool" data-tool="pen" aria-pressed="true"><svg viewBox="0 0 28 28"><path d="M5 23l3-1 13-13-2-2L6 20z"/><path d="M17 7l2-2 4 4-2 2"/></svg>Pen</button>
         <button type="button" class="tool" data-tool="eraser"><svg viewBox="0 0 28 28"><path d="M11 23l-6-6L16 6l7 7-8 10z"/><path d="M9 13l7 7M11 23h12"/></svg>Eraser</button>
         <button type="button" class="tool" data-tool="line"><svg viewBox="0 0 28 28"><path d="M5 23L23 5"/></svg>Line</button>
         <button type="button" class="tool" data-tool="arrow"><svg viewBox="0 0 28 28"><path d="M5 23L22 6M13 6h9v9"/></svg>Arrow</button>
         <button type="button" class="tool" data-tool="rect"><svg viewBox="0 0 28 28"><rect x="4" y="7" width="20" height="14" rx="1"/></svg>Rectangle</button>
         <button type="button" class="tool" data-tool="circle"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="9.5"/></svg>Circle</button>
+        <button type="button" class="tool" id="eqbtn"><span class="m" aria-hidden="true"><span class="fr"><span><i>x</i></span><span>2</span></span></span>Equation</button>
       </div>
-      <button type="button" class="tool wide" id="eqbtn"><span class="m" aria-hidden="true"><span class="fr"><span><i>x</i></span><span>2</span></span></span>Equation</button>
       <p class="label">Colour</p>
       <div class="swatches" id="colours">
         <button type="button" class="sw" data-c="ink" aria-pressed="true" aria-label="Black" title="Black"></button>
@@ -272,6 +280,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <canvas id="bg" aria-hidden="true"></canvas>
       <canvas id="ink" aria-label="Drawing area"></canvas>
       <div id="eqs"></div>
+      <button type="button" id="seldel" hidden>Delete</button>
       <p class="snapnote" id="snapnote">Shapes snap to the grid</p>
       <div class="card eqbox" id="eqbox" hidden role="dialog" aria-label="Equation">
         <p class="label">Equation</p>
@@ -442,7 +451,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     drawEqs();
     inkX.setTransform(dpr, 0, 0, dpr, 0, 0);
     inkX.clearRect(0, 0, W, H);
-    for (const it of items) if (it.type !== "eq") drawItem(inkX, it);
+    for (const it of shown()) if (it.type !== "eq") drawItem(inkX, it);
+    drawSelection();
     if (live) {
       drawItem(inkX, live);
       if (live.a && snaps()) for (const p of [live.a, live.b]) { // show the snapped points while drawing a shape
@@ -455,11 +465,128 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const snap = p => snaps() ? [Math.round(p[0]), Math.round(p[1])] : p;
   const pos = e => { const r = inkC.getBoundingClientRect(); return toUnits(e.clientX - r.left, e.clientY - r.top); };
 
+  /* Select: tap a drawing or equation to pick it, or drag a box around several, then drag them to move. */
+  let sel = new Set();   // selected items
+  let moving = null;     // {start, dx, dy} while dragging the selection
+  let boxing = null;     // {a, b} while dragging a selection box
+  const shift = (it, dx, dy) => {
+    const m = q => [q[0] + dx, q[1] + dy];
+    if (it.pts) return Object.assign({}, it, { pts: it.pts.map(m) });
+    if (it.type === "eq") return Object.assign({}, it, { p: m(it.p) });
+    return Object.assign({}, it, { a: m(it.a), b: m(it.b) });
+  };
+  const shown = () => (moving ? items.map(x => (sel.has(x) ? shift(x, moving.dx, moving.dy) : x)) : items);
+  function bbox(it) { // [x0, y0, x1, y1] in grid units
+    if (it.type === "eq") {
+      if (!it.el || !it.el.isConnected) return null;
+      const r = it.el.getBoundingClientRect(), c = inkC.getBoundingClientRect();
+      const a = toUnits(r.left - c.left, r.top - c.top), b = toUnits(r.right - c.left, r.bottom - c.top);
+      return [a[0], a[1], b[0], b[1]];
+    }
+    let xs, ys, pad = it.w / 2;
+    if (it.pts) { xs = it.pts.map(q => q[0]); ys = it.pts.map(q => q[1]); }
+    else if (it.type === "circle") { const r = Math.hypot(it.b[0] - it.a[0], it.b[1] - it.a[1]); xs = [it.a[0] - r, it.a[0] + r]; ys = [it.a[1] - r, it.a[1] + r]; }
+    else { xs = [it.a[0], it.b[0]]; ys = [it.a[1], it.b[1]]; if (it.type === "arrow") pad = Math.max(pad, 0.35); }
+    return [Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) + pad, Math.max(...ys) + pad];
+  }
+  const segDist = (p, a, b) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+    const t = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0;
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+  };
+  function hits(it, p) {
+    const tol = it.w / 2 + 0.4;
+    if (it.type === "eraser") return false;
+    if (it.type === "eq") { const b = bbox(it); return b && p[0] >= b[0] && p[0] <= b[2] && p[1] >= b[1] && p[1] <= b[3]; }
+    if (it.pts) { if (it.pts.length === 1) return Math.hypot(p[0] - it.pts[0][0], p[1] - it.pts[0][1]) < tol; for (let i = 1; i < it.pts.length; i++) if (segDist(p, it.pts[i - 1], it.pts[i]) < tol) return true; return false; }
+    if (it.type === "line" || it.type === "arrow") return segDist(p, it.a, it.b) < tol;
+    if (it.type === "circle") return Math.abs(Math.hypot(p[0] - it.a[0], p[1] - it.a[1]) - Math.hypot(it.b[0] - it.a[0], it.b[1] - it.a[1])) < tol;
+    const [x0, y0, x1, y1] = [Math.min(it.a[0], it.b[0]), Math.min(it.a[1], it.b[1]), Math.max(it.a[0], it.b[0]), Math.max(it.a[1], it.b[1])];
+    return [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]].some(([a, b]) => segDist(p, a, b) < tol);
+  }
+  const topHit = p => { for (let i = items.length - 1; i >= 0; i--) if (hits(items[i], p)) return items[i]; return null; };
+  const selBox = () => {
+    let r = null;
+    for (const it of sel) { const b = bbox(it); if (!b) continue; r = r ? [Math.min(r[0], b[0]), Math.min(r[1], b[1]), Math.max(r[2], b[2]), Math.max(r[3], b[3])] : b; }
+    return r && moving && [r[0] + moving.dx, r[1] + moving.dy, r[2] + moving.dx, r[3] + moving.dy] || r;
+  };
+  function drawSelection() {
+    const del = document.getElementById("seldel");
+    const pt = css("--pt");
+    inkX.save(); inkX.setLineDash([7, 5]); inkX.lineWidth = 2; inkX.strokeStyle = pt;
+    if (boxing) {
+      const a = toPx(boxing.a), b = toPx(boxing.b);
+      inkX.globalAlpha = 0.08; inkX.fillStyle = pt; inkX.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+      inkX.globalAlpha = 1; inkX.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+    }
+    const r = sel.size ? selBox() : null;
+    if (r) {
+      // Equations show their own outline; ink gets one dashed box around everything picked.
+      const a = toPx([r[0] - 0.2, r[1] - 0.2]), b = toPx([r[2] + 0.2, r[3] + 0.2]);
+      if ([...sel].some(x => x.type !== "eq") || sel.size > 1) inkX.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+      del.hidden = !!moving;
+      del.style.left = Math.max(4, Math.min(W - del.offsetWidth - 4, b[0] - del.offsetWidth)) + "px";
+      del.style.top = (a[1] - del.offsetHeight - 8 > 4 ? a[1] - del.offsetHeight - 8 : b[1] + 8) + "px";
+    } else del.hidden = true;
+    inkX.restore();
+  }
+  function setSel(next) { sel = new Set(next); drawInk(); }
+  function deleteSel() {
+    if (!sel.size) return;
+    const gone = sel; sel = new Set();
+    commit(items.filter(x => !gone.has(x)));
+  }
+  document.getElementById("seldel").addEventListener("click", deleteSel);
+  document.addEventListener("keydown", e => {
+    if ((e.key === "Delete" || e.key === "Backspace") && sel.size && e.target.tagName !== "INPUT") { e.preventDefault(); deleteSel(); }
+  });
+  function selectDown(e, p) {
+    const hit = topHit(p);
+    if (hit) {
+      if (!sel.has(hit)) sel = new Set([hit]);
+      moving = { start: p, dx: 0, dy: 0 };
+    } else { sel = new Set(); boxing = { a: p, b: p }; }
+    drawInk();
+  }
+  function selectMove(p) {
+    if (moving) {
+      let dx = p[0] - moving.start[0], dy = p[1] - moving.start[1];
+      if (snaps()) { dx = Math.round(dx); dy = Math.round(dy); } // keep shapes on the grid
+      moving.dx = dx; moving.dy = dy;
+    } else if (boxing) boxing.b = p;
+    drawInk();
+  }
+  function selectUp() {
+    if (moving) {
+      const { dx, dy } = moving; moving = null;
+      if (dx || dy) {
+        const map = new Map();
+        for (const it of sel) {
+          const n = shift(it, dx, dy);
+          if (it.el) { n.el = it.el; n.el.__item = n; it.el = null; }
+          map.set(it, n);
+        }
+        sel = new Set(map.values());
+        commit(items.map(x => map.get(x) || x));
+      } else drawInk();
+    } else if (boxing) {
+      const x0 = Math.min(boxing.a[0], boxing.b[0]), x1 = Math.max(boxing.a[0], boxing.b[0]);
+      const y0 = Math.min(boxing.a[1], boxing.b[1]), y1 = Math.max(boxing.a[1], boxing.b[1]);
+      boxing = null;
+      setSel(items.filter(it => { if (it.type === "eraser") return false; const b = bbox(it); return b && b[0] < x1 && b[2] > x0 && b[1] < y1 && b[3] > y0; }));
+    }
+  }
+  inkC.addEventListener("pointermove", e => {
+    if (state.tool !== "select" || activeId !== null) return;
+    inkC.classList.toggle("over", !!topHit(pos(e)));
+  });
+
   inkC.addEventListener("pointerdown", e => {
     if (activeId !== null || (e.pointerType === "mouse" && e.button !== 0)) return;
     activeId = e.pointerId;
     inkC.setPointerCapture(e.pointerId);
     const p = pos(e);
+    if (state.tool === "select") { selectDown(e, p); e.preventDefault(); return; }
     if (state.tool === "pen") live = { type: "pen", c: state.colour, w: WIDTHS[state.size], pts: [p] };
     else if (state.tool === "eraser") live = { type: "eraser", w: ERASER[state.size], pts: [p] };
     else { const s = snap(p); live = { type: state.tool, c: state.colour, w: WIDTHS[state.size], a: s, b: s }; }
@@ -467,7 +594,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     e.preventDefault();
   });
   inkC.addEventListener("pointermove", e => {
-    if (e.pointerId !== activeId || !live) return;
+    if (e.pointerId !== activeId) return;
+    if (state.tool === "select") { selectMove(pos(e)); return; }
+    if (!live) return;
     if (live.pts) {
       const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
       for (const ev of (evs.length ? evs : [e])) live.pts.push(pos(ev));
@@ -477,6 +606,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const finish = e => {
     if (e.pointerId !== activeId) return;
     activeId = null;
+    if (state.tool === "select") { selectUp(); return; }
     if (!live) return;
     const it = live; live = null;
     const tiny = it.a && Math.hypot(it.b[0] - it.a[0], it.b[1] - it.a[1]) < (snaps() ? 0.5 : 0.15);
@@ -487,6 +617,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   function commit(next) {
     history.push(items); items = next;
+    sel = new Set([...sel].filter(x => next.includes(x)));
     if (history.length > 200) history.shift();
     drawInk(); syncActs();
   }
@@ -496,7 +627,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
   document.getElementById("undo").addEventListener("click", () => {
     if (!history.length) return;
-    items = history.pop(); drawInk(); syncActs();
+    items = history.pop(); sel = new Set(); drawInk(); syncActs();
   });
   document.getElementById("clear").addEventListener("click", () => { if (items.length) commit([]); });
   document.addEventListener("keydown", e => {
@@ -556,7 +687,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         el.innerHTML = `<span class="m">${typeset(it.text)}</span>`;
         el.__item = it;
       }
-      const q = toPx(it.p);
+      const q = toPx(moving && sel.has(it) ? [it.p[0] + moving.dx, it.p[1] + moving.dy] : it.p);
+      el.classList.toggle("sel", sel.has(it));
       el.style.left = q[0] + "px"; el.style.top = q[1] + "px";
       el.style.fontSize = fs + "px"; el.style.color = colourOf(it.c);
       els.push(el);
@@ -640,15 +772,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function group(id, attr, key, after) {
     const el = document.getElementById(id);
     el.addEventListener("click", e => {
-      const b = e.target.closest("button"); if (!b) return;
-      for (const x of el.querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b));
+      const b = e.target.closest(`button[data-${attr}]`); if (!b) return;
+      for (const x of el.querySelectorAll(`button[data-${attr}]`)) x.setAttribute("aria-pressed", String(x === b));
       state[key] = key === "size" ? +b.dataset[attr] : b.dataset[attr];
       after && after();
     });
   }
-  group("toolset", "tool", "tool", () => { inkC.classList.toggle("erase", state.tool === "eraser"); board.classList.toggle("erase-mode", state.tool === "eraser"); });
-  group("colours", "c", "colour");
-  group("sizes", "s", "size");
+  group("toolset", "tool", "tool", () => {
+    inkC.classList.toggle("erase", state.tool === "eraser"); board.classList.toggle("erase-mode", state.tool === "eraser");
+    inkC.classList.toggle("select", state.tool === "select"); board.classList.toggle("select-mode", state.tool === "select");
+    if (state.tool !== "select" && sel.size) setSel([]);
+  });
+  // With something selected, a colour or size button also changes the selection.
+  const restyle = f => { if (sel.size) { const map = new Map([...sel].filter(x => x.type !== "eraser").map(x => { const n = Object.assign({}, x, f(x)); if (x.el) { n.el = x.el; n.el.__item = n; x.el = null; } return [x, n]; })); sel = new Set(map.values()); commit(items.map(x => map.get(x) || x)); } };
+  group("colours", "c", "colour", () => restyle(() => ({ c: state.colour })));
+  group("sizes", "s", "size", () => restyle(x => (x.type === "eq" ? {} : { w: WIDTHS[state.size] })));
   group("bgs", "bg", "bg", () => { document.getElementById("snapnote").hidden = !snaps(); drawBg(); drawInk(); });
 
   function paintSwatches() {
@@ -760,6 +898,8 @@ window.I18N_PAGE = {
   "Coordinate grid": "Plan cartésien",
   "Number line": "Droite numérique",
   "Draw": "Dessiner",
+  "Select": "Sélectionner",
+  "Delete": "Supprimer",
   "Pen": "Crayon",
   "Eraser": "Efface",
   "Line": "Droite",
