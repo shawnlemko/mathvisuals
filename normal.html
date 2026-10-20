@@ -170,8 +170,14 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
 .err:empty { display: none; }
 
 /* Shade switch */
-.shadebar { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px; padding: 6px 4px 2px; }
+.shadebar { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 28px; padding: 6px 4px 2px; }
 .shadelbl { font-weight: 700; font-size: 1.1rem; }
+.axisbar { display: flex; align-items: center; gap: 8px; }
+.axisbar label { font-weight: 700; }
+.axisbar input { font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; width: 5.5em; box-sizing: border-box; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.axisbar input.bad { border-color: var(--warn); }
+.autob { font-size: 1.05rem; min-height: 44px; padding: 6px 14px; background: var(--sheet); border: 2px solid var(--grid-major); }
+.autob.on { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
 .seg-btns { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .seg-btns button { flex: 1 1 auto; border: 0; border-radius: 0; background: var(--sheet); font-size: 1.1rem; min-height: 46px; padding: 6px 16px; white-space: nowrap; }
 .seg-btns button + button { border-left: 2px solid var(--grid-major); }
@@ -234,6 +240,12 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
           <button type="button" data-mode="between" aria-pressed="false">Between</button>
           <button type="button" data-mode="right" aria-pressed="false">Right of</button>
         </div>
+        <div class="axisbar">
+          <span class="shadelbl">x-axis</span>
+          <label for="xlo">min</label><input id="xlo" type="number" inputmode="decimal" step="any">
+          <label for="xhi">max</label><input id="xhi" type="number" inputmode="decimal" step="any">
+          <button type="button" class="autob on" id="xAuto" aria-pressed="true" title="Auto: the axis fits the curve">Auto</button>
+        </div>
       </div>
     </div>
     <div class="panel">
@@ -278,11 +290,10 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
   };
   const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-  // The curve is always drawn from 4 SDs below the mean to 4 SDs above, so every normal curve has the same shape;
-  // the mean and SD only change the numbers on the axis.
-  const CX = 500, PX = 110, BASE = 540, HT = 390, TOP = 8, ZMAX = 4;
-  const sx = z => CX + PX * z;
-  const sy = z => BASE - HT * Math.exp(-z * z / 2);
+  // The x-axis runs from lo to hi. Auto: from 4 SDs below the mean to 4 SDs above, so the curve always has the same shape
+  // and the mean and SD only change the numbers. A fixed axis (typed min and max) stays put, so the curve narrows and
+  // widens (and grows taller or flatter, keeping its area) as the SD changes.
+  const X0 = 60, X1 = 940, BASE = 540, HT = 390, TOP = 8;
 
   // Standard normal area to the left of z (erfc, Numerical Recipes, error under 1.2e-7).
   function phi(z) {
@@ -297,33 +308,60 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
   const fmtIn = v => String(Math.round(v * 1e4) / 1e4);
   const z2 = z => (z < 0 ? "−" : "") + Math.abs(z).toFixed(2);
 
-  const S = { mu: 70, sd: 10, mode: "off", a: 60, b: 80, showZ: false, active: "a" };
+  const S = { mu: 70, sd: 10, mode: "off", a: 60, b: 80, showZ: false, active: "a", auto: true, lo: 30, hi: 110 };
+  const lo = () => S.auto ? S.mu - 4 * S.sd : S.lo;
+  const hi = () => S.auto ? S.mu + 4 * S.sd : S.hi;
+  const sx = x => X0 + (x - lo()) / (hi() - lo()) * (X1 - X0);
+  const xAt = X => lo() + (X - X0) / (X1 - X0) * (hi() - lo());
+  // Peak height: full height in Auto. On a fixed axis the height is 1 over the SD (area stays 1), scaled so an SD of
+  // an eighth of the axis reaches 0.6 of full height; a very narrow curve runs off the top.
+  const peak = () => S.auto ? HT : HT * 0.6 * ((hi() - lo()) / 8) / S.sd;
+  const sy = x => { const z = (x - S.mu) / S.sd; return Math.max(-2000, BASE - peak() * Math.exp(-z * z / 2)); };
 
-  // Dragging snaps to a friendly step: 1, 2 or 5 times a power of ten, at most a tenth of an SD.
-  const stepOf = () => { const t = S.sd / 10, p = Math.pow(10, Math.floor(Math.log10(t))); return [5, 2, 1].map(m => m * p).find(s => s <= t + 1e-12); };
+  // Nice steps: 1, 2 or 5 times a power of ten, at most t.
+  const niceDown = t => { const p = Math.pow(10, Math.floor(Math.log10(t))); return [5, 2, 1].map(m => m * p).find(s => s <= t + 1e-12); };
+  // Dragging snaps to at most a tenth of an SD (or of an eighth of the axis, if that is smaller).
+  const stepOf = () => niceDown(Math.min(S.sd, (hi() - lo()) / 8) / 10);
   const snap = x => { const s = stepOf(); return S.mu + Math.round((x - S.mu) / s) * s; };
   const zOf = x => (x - S.mu) / S.sd;
-  const clampZ = z => Math.max(-ZMAX, Math.min(ZMAX, z));
+  const clampX = x => Math.max(lo(), Math.min(hi(), x));
   const used = () => S.mode === "between" ? ["a", "b"] : S.mode === "left" ? ["b"] : S.mode === "right" ? ["a"] : [];
 
   const svg = $("bell");
-  const gUnder = el("g", {}, svg), gShade = el("g", {}, svg), gGuide = el("g", {}, svg), gCurve = el("g", {}, svg),
+  const clip = el("clipPath", { id: "plotClip" }, el("defs", {}, svg));
+  el("rect", { x: 0, y: TOP, width: 1000, height: BASE - TOP }, clip);
+  const gUnder = el("g", { "clip-path": "url(#plotClip)" }, svg), gShade = el("g", { "clip-path": "url(#plotClip)" }, svg),
+    gGuide = el("g", { "clip-path": "url(#plotClip)" }, svg), gCurve = el("g", { "clip-path": "url(#plotClip)" }, svg),
     gAxis = el("g", {}, svg), gZ = el("g", {}, svg), gB = el("g", {}, svg);
+  const curvePts = (x0, x1, n) => { const p = []; for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n; p.push(sx(x).toFixed(1) + "," + sy(x).toFixed(1)); } return p; };
 
-  // Fixed drawing: curve, guide lines at the mean and 1, 2, 3 SDs, axis.
-  const curvePts = (z0, z1, n) => { const p = []; for (let i = 0; i <= n; i++) { const z = z0 + (z1 - z0) * i / n; p.push(sx(z).toFixed(1) + "," + sy(z).toFixed(1)); } return p; };
-  el("path", { class: "under", d: "M" + sx(-ZMAX) + "," + BASE + " L" + curvePts(-ZMAX, ZMAX, 240).join(" L") + " L" + sx(ZMAX) + "," + BASE + " Z" }, gUnder);
-  for (let k = -3; k <= 3; k++) el("line", { class: "guide" + (k === 0 ? " mid" : ""), x1: sx(k), x2: sx(k), y1: BASE, y2: sy(k) }, gGuide);
-  el("path", { class: "curve", d: "M" + curvePts(-ZMAX, ZMAX, 240).join(" L") }, gCurve);
-  el("line", { class: "ax", x1: sx(-ZMAX) - 10, x2: sx(ZMAX) + 10, y1: BASE, y2: BASE }, gAxis);
-  const xLabels = [];
-  for (let k = -3; k <= 3; k++) {
-    el("line", { class: "tick", x1: sx(k), x2: sx(k), y1: BASE, y2: BASE + 12 }, gAxis);
-    xLabels.push(el("text", { class: "xl", x: sx(k), y: BASE + 42 }, gAxis));
+  // Curve, guide lines at the mean and 1, 2, 3 SDs, axis with labels.
+  function drawCurve() {
+    gUnder.replaceChildren(); gGuide.replaceChildren(); gCurve.replaceChildren(); gAxis.replaceChildren(); gZ.replaceChildren();
+    const L = lo(), H = hi();
+    el("path", { class: "under", d: "M" + X0 + "," + BASE + " L" + curvePts(L, H, 400).join(" L") + " L" + X1 + "," + BASE + " Z" }, gUnder);
+    el("path", { class: "curve", d: "M" + curvePts(L, H, 400).join(" L") }, gCurve);
+    el("line", { class: "ax", x1: X0 - 10, x2: X1 + 10, y1: BASE, y2: BASE }, gAxis);
+    el("text", { class: "rowname", x: 26, y: BASE + 42, style: "fill: var(--ink)" }, gAxis, "x");
+    const sdMarks = [];
+    for (let k = -3; k <= 3; k++) { const x = S.mu + k * S.sd; if (x >= L - 1e-9 && x <= H + 1e-9) sdMarks.push([k, x]); }
+    for (const [k, x] of sdMarks) el("line", { class: "guide" + (k === 0 ? " mid" : ""), x1: sx(x), x2: sx(x), y1: BASE, y2: sy(x) }, gGuide);
+    // Auto labels the mean and 1, 2, 3 SDs; a fixed axis keeps its own steady numbers.
+    const ticks = S.auto ? sdMarks.map(m => m[1]) : (() => {
+      const st = niceDown((H - L) / 8), t = [];
+      for (let v = Math.ceil(L / st - 1e-9) * st; v <= H + 1e-9; v += st) t.push(Math.round(v / st) * st);
+      return t;
+    })();
+    for (const x of ticks) {
+      el("line", { class: "tick", x1: sx(x), x2: sx(x), y1: BASE, y2: BASE + 12 }, gAxis);
+      el("text", { class: "xl", x: sx(x), y: BASE + 42 }, gAxis, fmt(x));
+    }
+    // z row: −3 to 3 under the SD marks; when the SDs are too close to read, only the mean's 0.
+    el("text", { class: "rowname", x: 26, y: BASE + 86, style: "fill: var(--purple)" }, gZ, "z");
+    const roomy = sx(S.mu + S.sd) - sx(S.mu) >= 44;
+    for (const [k, x] of sdMarks) if (roomy || k === 0) el("text", { class: "zl", x: sx(x), y: BASE + 86 }, gZ, k < 0 ? "−" + -k : String(k));
+    gZ.style.display = S.showZ ? "" : "none";
   }
-  el("text", { class: "rowname", x: 26, y: BASE + 42, style: "fill: var(--ink)" }, gAxis, "x");
-  el("text", { class: "rowname", x: 26, y: BASE + 86, style: "fill: var(--purple)" }, gZ, "z");
-  for (let k = -3; k <= 3; k++) el("text", { class: "zl", x: sx(k), y: BASE + 86 }, gZ, k < 0 ? "−" + -k : String(k));
 
   // Boundaries: a blue line with a round handle on the axis and a value chip at the top.
   const B = {};
@@ -347,7 +385,7 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
   }
 
   function setBound(key, x) {
-    x = Math.max(S.mu - ZMAX * S.sd, Math.min(S.mu + ZMAX * S.sd, x));
+    x = clampX(x);
     if (S.mode === "between") { if (key === "a") x = Math.min(x, S.b); else x = Math.max(x, S.a); }
     S[key] = Math.round(x * 1e6) / 1e6;
     S.active = key;
@@ -356,22 +394,22 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
 
   // Drag a line, or press anywhere on the board to bring the nearest line there.
   let dragKey = null;
-  const svgZ = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return (q.x - CX) / PX; };
+  const svgX = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return xAt(p.matrixTransform(svg.getScreenCTM().inverse()).x); };
   function startDrag(key, e) {
     if (!used().includes(key)) return;
     dragKey = key; S.active = key;
     svg.setPointerCapture(e.pointerId);
     B[key].g.focus({ preventScroll: true });
-    setBound(key, snap(S.mu + svgZ(e) * S.sd));
+    setBound(key, snap(svgX(e)));
   }
   svg.addEventListener("pointerdown", e => {
     const keys = used();
     if (!keys.length) return;
-    const x = S.mu + svgZ(e) * S.sd;
+    const x = svgX(e);
     const key = keys.length === 1 ? keys[0] : (Math.abs(x - S.a) <= Math.abs(x - S.b) ? "a" : "b");
     startDrag(key, e);
   });
-  svg.addEventListener("pointermove", e => { if (dragKey) setBound(dragKey, snap(S.mu + svgZ(e) * S.sd)); });
+  svg.addEventListener("pointermove", e => { if (dragKey) setBound(dragKey, snap(svgX(e))); });
   const stop = () => { dragKey = null; };
   svg.addEventListener("pointerup", stop);
   svg.addEventListener("pointercancel", stop);
@@ -382,7 +420,7 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
       const o = B[key], on = keys.includes(key);
       o.g.style.display = on ? "" : "none";
       if (!on) continue;
-      const z = zOf(S[key]), X = sx(clampZ(z));
+      const z = zOf(S[key]), X = sx(clampX(S[key]));
       o.hit.setAttribute("x", X - 24);
       o.line.setAttribute("x1", X); o.line.setAttribute("x2", X);
       o.handle.setAttribute("cx", X);
@@ -406,10 +444,10 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
   function drawShade() {
     gShade.replaceChildren();
     if (S.mode === "off") return;
-    const z0 = S.mode === "left" ? -ZMAX : clampZ(zOf(S.a));
-    const z1 = S.mode === "right" ? ZMAX : clampZ(zOf(S.b));
-    if (z1 <= z0) return;
-    el("path", { class: "shade", d: "M" + sx(z0) + "," + BASE + " L" + curvePts(z0, z1, 160).join(" L") + " L" + sx(z1) + "," + BASE + " Z" }, gShade);
+    const x0 = S.mode === "left" ? lo() : clampX(S.a);
+    const x1 = S.mode === "right" ? hi() : clampX(S.b);
+    if (x1 <= x0) return;
+    el("path", { class: "shade", d: "M" + sx(x0) + "," + BASE + " L" + curvePts(x0, x1, 200).join(" L") + " L" + sx(x1) + "," + BASE + " Z" }, gShade);
   }
 
   function drawArea() {
@@ -456,11 +494,6 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
     row("", Math.abs(z * 100 - Math.round(z * 100)) < 1e-9 ? "=" : "≈", z2(z), "Divide", "ans");
   }
 
-  function drawAxis() {
-    for (let k = -3; k <= 3; k++) xLabels[k + 3].textContent = fmt(S.mu + k * S.sd);
-    gZ.style.display = S.showZ ? "" : "none";
-  }
-
   function syncInputs() {
     const keys = used();
     $("bounds").hidden = !keys.length;
@@ -474,9 +507,13 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
       const inp = $("b" + key);
       if (document.activeElement !== inp) inp.value = fmtIn(S[key]);
     }
+    if (document.activeElement !== $("xlo")) $("xlo").value = fmtIn(lo());
+    if (document.activeElement !== $("xhi")) $("xhi").value = fmtIn(hi());
+    $("xAuto").setAttribute("aria-pressed", String(S.auto));
+    $("xAuto").classList.toggle("on", S.auto);
   }
 
-  function render() { drawAxis(); drawShade(); drawBounds(); drawArea(); drawZ(); syncInputs(); }
+  function render() { drawCurve(); drawShade(); drawBounds(); drawArea(); drawZ(); syncInputs(); }
 
   // Mean and SD: the lines keep their z-score, so they move with the curve.
   function readData() {
@@ -487,8 +524,8 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
     if (!okMu || !okSd) return;
     const za = zOf(S.a), zb = zOf(S.b);
     S.mu = mu; S.sd = sd;
-    S.a = Math.round(snap(mu + za * sd) * 1e6) / 1e6;
-    S.b = Math.round(snap(mu + zb * sd) * 1e6) / 1e6;
+    S.a = Math.round(clampX(snap(mu + za * sd)) * 1e6) / 1e6;
+    S.b = Math.round(clampX(snap(mu + zb * sd)) * 1e6) / 1e6;
     render();
   }
   $("mu").addEventListener("input", readData);
@@ -518,6 +555,25 @@ button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet
     S.active = S.mode === "left" ? "b" : "a";
     render();
   }));
+
+  // x-axis min and max: typing either fixes the axis; Auto fits it to the curve again.
+  function readAxis() {
+    const a = parseFloat($("xlo").value), b = parseFloat($("xhi").value);
+    const ok = isFinite(a) && isFinite(b) && a < b;
+    $("xlo").classList.toggle("bad", !ok); $("xhi").classList.toggle("bad", !ok);
+    if (!ok) return;
+    S.auto = false; S.lo = a; S.hi = b;
+    render();
+  }
+  $("xlo").addEventListener("input", readAxis);
+  $("xhi").addEventListener("input", readAxis);
+  for (const id of ["xlo", "xhi"]) $(id).addEventListener("blur", () => { $(id).classList.remove("bad"); syncInputs(); });
+  $("xAuto").addEventListener("click", () => {
+    if (S.auto) { S.auto = false; S.lo = lo(); S.hi = hi(); }
+    else { S.auto = true; S.lo = lo(); S.hi = hi(); }
+    $("xlo").classList.remove("bad"); $("xhi").classList.remove("bad");
+    render();
+  });
 
   $("zTog").addEventListener("click", () => {
     S.showZ = !S.showZ;
@@ -651,7 +707,9 @@ window.I18N_PAGE = {
  "Fill in": "Remplacer",
  "Subtract": "Soustraire",
  "Divide": "Diviser",
- "Boundary": "Limite"
+ "Boundary": "Limite",
+ "x-axis": "Axe des x",
+ "Auto: the axis fits the curve": "Auto : l’axe s’ajuste à la courbe"
 };
 </script>
 <script>

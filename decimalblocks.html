@@ -147,11 +147,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </style>
 <style>
 /* Decimal Blocks (K-6, Number; Shawn 2026-10-15). A copy of Base Ten Blocks where the whole is redefined:
-   Tenths and Hundredths levels: the flat is 1 whole, a rod 0.1, a small cube 0.01.
-   Thousandths level: the big cube is 1 whole, a flat 0.1, a rod 0.01, a small cube 0.001.
-   Inside the page every count is a whole number of the block units below (cube = 1, rod = 10, flat = 100,
-   big cube = 1000); WHOLE says how many make 1, and dec() turns a count into its decimal.
-   A place value chart (Ones . Tenths . Hundredths . Thousandths) with a supply tray along its bottom.
+   The flat is 1 whole, a rod 0.1, a small cube 0.01 (Tenths and Hundredths levels only: Shawn 2026-10-20 dropped
+   Thousandths because making the big cube the whole changes the model).
+   Inside the page every count is a whole number of the block units below (cube = 1, rod = 10, flat = 100);
+   whole() says how many make 1, and dec() turns a count into its decimal.
+   Tap blocks (or drag a box around them) to pick them; with 10 of a kind picked, Group 10 snaps them into the next block.
+   A place value chart (Ones . Tenths . Hundredths) with a supply tray along its bottom.
    Tap or drag a tray block to add it; it always lands in its own column. Ten of a kind snap into the next block
    and slide to the next column. Double-tap a block (or tap it, then Break apart) to break it into ten of the next
    smaller block. Drag a block to the trash or back to the tray to remove it.
@@ -193,6 +194,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .edge { stroke: #1b2733; stroke-width: 1.4; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .gl { stroke: #1b2733; stroke-opacity: 0.35; stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
 .blk.sel .edge { stroke: #2f5fd0; stroke-width: 4; }
+.band { fill: #2f5fd0; fill-opacity: 0.08; stroke: #2f5fd0; stroke-width: 2; stroke-dasharray: 6 4; pointer-events: none; }
 .ghost { position: fixed; left: 0; top: 0; z-index: 900; pointer-events: none; overflow: visible; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25)); }
 
 .toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); background: var(--ink); color: var(--sheet); font-family: var(--font-display); font-weight: 800;
@@ -232,9 +234,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .key .it { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .key svg { display: block; overflow: visible; }
 .key .eq { color: var(--muted); }
-.key.four { font-size: 1.12rem; gap: 4px; }
-.tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.tools button { min-height: 50px; font-size: 1.1rem; }
+.tools { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.tools button { min-height: 50px; font-size: 1rem; padding-inline: 6px; }
+#groupBtn:not(:disabled) { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 .tools button:disabled { opacity: 0.45; cursor: default; }
 .tools button:disabled:hover { border-color: var(--grid-major); }
 #trash { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 66px; border: 3px dashed var(--grid-major); border-radius: 12px;
@@ -250,7 +252,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <h1>Decimal Blocks</h1></div>
     <div class="opts">
       <span class="seg" id="mode"><button type="button" data-v="build" aria-pressed="true">Free Build</button><button type="button" data-v="target" aria-pressed="false">Build the Number</button><button type="button" data-v="math" aria-pressed="false">Add &amp; Subtract</button></span>
-      <span class="seg" id="level"><button type="button" data-v="1" aria-pressed="false"></button><button type="button" data-v="2" aria-pressed="true"></button><button type="button" data-v="3" aria-pressed="false"></button></span>
+      <span class="seg" id="level"><button type="button" data-v="1" aria-pressed="false"></button><button type="button" data-v="2" aria-pressed="true"></button></span>
     </div>
   </header>
 
@@ -286,6 +288,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       </div>
       <div class="tools">
         <button type="button" id="breakBtn" disabled>Break apart</button>
+        <button type="button" id="groupBtn" disabled>Group 10</button>
         <button type="button" id="clearBtn">Clear all</button>
         <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M5 6l1 15h12l1-15M10 10v8M14 10v8"/></svg><span>Trash</span></div>
       </div>
@@ -368,10 +371,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   /* ---------- State ---------- */
-  const LEVEL = { 1: [100, 10], 2: [100, 10, 1], 3: [1000, 100, 10, 1] };
-  const WIDTH = { 1: [0.6, 0.4], 2: [0.42, 0.34, 0.24], 3: [0.3, 0.29, 0.22, 0.19] };
-  const RANGE = { 1: [1, 29], 2: [1, 299], 3: [1, 1999] }; // targets, counted in the smallest block
-  const st = { mode: "build", level: 2, cols: {}, busy: 0, sel: null, stars: 0, task: null, solved: false, step: 0, G: null, u: 20, uid: 0 };
+  const LEVEL = { 1: [100, 10], 2: [100, 10, 1] };
+  const WIDTH = { 1: [0.6, 0.4], 2: [0.42, 0.34, 0.24] };
+  const RANGE = { 1: [1, 29], 2: [1, 299] }; // targets, counted in the smallest block
+  const st = { mode: "build", level: 2, cols: {}, busy: 0, sels: [], stars: 0, task: null, solved: false, step: 0, G: null, u: 20, uid: 0 };
   const places = () => LEVEL[st.level];
   const top = () => places()[0];
   const whole = () => top();                       // the biggest block is always 1 whole
@@ -379,7 +382,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const dpOf = t => Math.round(Math.log10(whole() / t));
   const dp = () => dpOf(small());
   const dec = n => (n / whole()).toFixed(dp());   // decimals keep a point in French too
-  const cap = t => (t === top() ? (t === 1000 ? 2 : 3) : 19);
+  const cap = t => (t === top() ? 3 : 19);
   const total = () => places().reduce((s, t) => s + t * st.cols[t].length, 0);
 
   /* ---------- Layout ---------- */
@@ -465,11 +468,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Key card: 1 whole = 10 rods = 100 cubes (each with its block), so a tiny cube is clearly 0.01.
   function drawKey() {
     const k = $("key"); k.replaceChildren();
-    k.classList.toggle("four", places().length > 3);
     places().forEach((t, i) => {
       if (i) { const eq = document.createElement("span"); eq.className = "eq"; eq.textContent = "="; k.appendChild(eq); }
       const item = document.createElement("span"); item.className = "it";
-      const b = boxOf(t), s = (t === 1 ? 10 : places().length > 3 ? 24 : 28) / b.h;
+      const b = boxOf(t), s = (t === 1 ? 10 : 28) / b.h;
       const ic = el("svg", { width: b.w * s, height: b.h * s, viewBox: `0 0 ${b.w} ${b.h}`, "aria-hidden": "true" });
       drawBlock(el("g", {}, ic), t);
       const n = document.createElement("b"); n.textContent = fmtInt(whole() / t);
@@ -534,16 +536,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // Ten blocks slide together into the next block, which then moves to the next column.
-  async function snap(t) {
-    const list = st.cols[t], ten = list.slice(0, 10), u = st.u, f = ten[0];
+  async function snap(t, group) {
+    const list = st.cols[t], ten = group ? list.filter(b => group.includes(b)) : list.slice(0, 10), u = st.u, f = ten[0];
+    if (ten.some(b => st.sels.includes(b))) select(null);
     let ox = f.x, oy = f.y;
     if (t === 1) { const bottom = f.y + 1.5 * u; ten.forEach((b, r) => setPos(b, f.x, bottom - (r + 1.5) * u, u)); oy = bottom - 10.5 * u; }
     else if (t === 10) ten.forEach((b, i) => setPos(b, f.x + i * u, f.y, u));
     else { oy = Math.max(st.G.chartTop + 4, f.y - 4.5 * u); ten.forEach((b, i) => { const j = 9 - i; setPos(b, ox + 0.5 * j * u, oy + (4.5 - 0.5 * j) * u, u); }); }
     await wait(480);
     for (const b of ten) b.el.remove();
-    st.cols[t] = list.slice(10);
-    if (ten.includes(st.sel)) select(null);
+    st.cols[t] = list.filter(b => !ten.includes(b));
+
     const up = t * 10;
     toast(tx(`10 ${low(t)} = 1 ${one(up)}`, `10 ${low(t)} = 1 ${one(up)}`));
     st.cols[up].push(makeBlock(up, ox, oy, u));
@@ -582,7 +585,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   function remove(b) {
     st.cols[b.t].splice(st.cols[b.t].indexOf(b), 1);
-    if (st.sel === b) select(null);
+    if (st.sels.includes(b)) select(null);
     b.el.remove();
     layout();
     changed();
@@ -593,11 +596,34 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     for (const t in st.cols) st.cols[t] = [];
   }
 
-  function select(b) {
-    if (st.sel) st.sel.el.classList.remove("sel");
-    st.sel = b;
-    if (b) b.el.classList.add("sel");
-    $("breakBtn").disabled = !(b && b.t > 1);
+  // Picked blocks are all one kind. select(list) replaces the pick; pick(b) adds or removes one block.
+  function select(list) {
+    for (const b of st.sels) b.el.classList.remove("sel");
+    st.sels = list ? list.filter(b => b.t === list[0].t) : [];
+    for (const b of st.sels) b.el.classList.add("sel");
+    tools();
+  }
+  function pick(b) {
+    if (st.sels.includes(b)) { select(st.sels.filter(x => x !== b)); return; }
+    const was = st.sels.length;
+    select(st.sels.length && st.sels[0].t === b.t ? [...st.sels, b] : [b]);
+    if (!was && b.t !== top() && st.cols[b.t].length >= 10) toast(tx("Pick 10, then press Group 10", "Choisis-en 10, puis appuie sur Grouper 10"));
+  }
+  function tools() {
+    const s = st.sels, n = s.length, t = n && s[0].t;
+    $("breakBtn").disabled = !(n === 1 && t > small());
+    const g = $("groupBtn");
+    g.disabled = !(n === 10 && t !== top());
+    g.textContent = n && t !== top() ? tx("Group 10", "Grouper 10") + ` (${n}/10)` : tx("Group 10", "Grouper 10");
+  }
+  async function group() {
+    const s = st.sels;
+    if (s.length !== 10 || st.busy) return;
+    const t = s[0].t, up = t * 10;
+    if (st.cols[up].length + 1 > cap(up)) { toast(tx("The board is full!", "Le tableau est plein!")); return; }
+    st.busy++;
+    await snap(t, [...s]);
+    st.busy--;
   }
 
   /* ---------- Readouts ---------- */
@@ -637,15 +663,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const op = Math.random() < 0.5 ? "+" : "−", trade = Math.random() < 0.75;
     for (let tries = 0; tries < 500; tries++) {
       let a, b;
-      // Counted in the smallest block: tenths (L1), hundredths (L2), thousandths (L3).
+      // Counted in the smallest block: tenths (L1), hundredths (L2).
       if (op === "+") {
         if (L === 1) { a = rand(2, 19); b = rand(2, 15); if (a + b > 29) continue; }
-        else if (L === 2) { a = rand(11, 185); b = rand(11, 125); if (a + b > 299) continue; }
-        else { a = rand(105, 1450); b = rand(15, 480); if (a + b > 1999) continue; }
+        else { a = rand(11, 185); b = rand(11, 125); if (a + b > 299) continue; }
       } else {
         if (L === 1) { a = rand(8, 29); b = rand(2, a - 3); }
-        else if (L === 2) { a = rand(30, 299); b = rand(11, a - 8); }
-        else { a = rand(200, 1999); b = rand(25, Math.min(a - 20, 600)); }
+        else { a = rand(30, 299); b = rand(11, a - 8); }
       }
       a *= small(); b *= small();
       if (trade !== needsTrade(a, b, op === "+" ? "+" : "-")) continue;
@@ -728,14 +752,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   /* ---------- Pointer: tap or drag from the tray, drag blocks to the trash, double-tap to break ---------- */
-  let drag = null, lastTap = { id: 0, time: 0 };
+  let drag = null, band = null, lastTap = { id: 0, time: 0 };
+  const bandBox = (b, p) => ({ x: Math.min(b.x0, p.x), y: Math.min(b.y0, p.y), w: Math.abs(p.x - b.x0), h: Math.abs(p.y - b.y0) });
   const toSvg = (cx, cy) => { const m = svg.getScreenCTM().inverse(); return { x: m.a * cx + m.c * cy + m.e, y: m.b * cx + m.d * cy + m.f }; };
   const scr = () => svg.getScreenCTM().a;
 
   svg.addEventListener("pointerdown", e => {
     if (st.busy || e.button > 0) return;
     const tray = e.target.closest(".tray-item"), blk = e.target.closest(".blk");
-    if (!tray && !blk) { select(null); return; }
+    if (!tray && !blk) { // empty space: drag a box to pick blocks
+      select(null);
+      const p = toSvg(e.clientX, e.clientY);
+      if (p.y < st.G.chartBot) { e.preventDefault(); band = { x0: p.x, y0: p.y, el: el("rect", { class: "band", x: p.x, y: p.y, width: 0, height: 0 }, svg) }; }
+      return;
+    }
     e.preventDefault();
     const b = blk && blk.__b, t = b ? b.t : +tray.dataset.t;
     const bw = boxOf(t).w * st.u * scr(), bh = boxOf(t).h * st.u * scr();
@@ -744,6 +774,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     drag = { t, b, x0: e.clientX, y0: e.clientY, offX, offY, bw, bh, moving: false, ghost: null };
   });
   window.addEventListener("pointermove", e => {
+    if (band) { const r = bandBox(band, toSvg(e.clientX, e.clientY)); band.el.setAttribute("x", r.x); band.el.setAttribute("y", r.y); band.el.setAttribute("width", r.w); band.el.setAttribute("height", r.h); return; }
     if (!drag) return;
     if (!drag.moving && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 7) return;
     if (!drag.moving) {
@@ -765,6 +796,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     return toSvg(e.clientX, e.clientY).y > st.G.chartBot ? "tray" : "chart";
   }
   window.addEventListener("pointerup", e => {
+    if (band) { // pick every block whose middle is in the box (the kind with the most blocks, if mixed)
+      const r = bandBox(band, toSvg(e.clientX, e.clientY)); band.el.remove(); band = null;
+      if (r.w < 6 && r.h < 6) return;
+      const inside = places().map(t => st.cols[t].filter(b => { const bx = boxOf(t), cx = b.x + bx.w * b.u / 2, cy = b.y + bx.h * b.u / 2; return cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h; }));
+      const best = inside.reduce((a, c) => (c.length > a.length ? c : a), []);
+      if (best.length) { select(best); if (best[0].t !== top() && best.length !== 10) toast(tx(`${best.length} picked. Group 10 needs exactly 10.`, `${best.length} choisis. Grouper 10 en demande exactement 10.`)); }
+      return;
+    }
     if (!drag) return;
     const d = drag; drag = null;
     $("trash").classList.remove("hot");
@@ -774,7 +813,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const now = performance.now();
       if (lastTap.id === d.b.id && now - lastTap.time < 450) { lastTap = { id: 0, time: 0 }; breakApart(d.b); return; }
       lastTap = { id: d.b.id, time: now };
-      select(st.sel === d.b ? null : d.b);
+      pick(d.b);
       return;
     }
     const z = zone(e);
@@ -786,17 +825,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       add(d.t, p.x, p.y);
     }
   });
-  window.addEventListener("pointercancel", () => { if (drag) { if (drag.ghost) drag.ghost.remove(); if (drag.b) drag.b.el.classList.remove("lift"); drag = null; $("trash").classList.remove("hot"); } });
+  window.addEventListener("pointercancel", () => { if (band) { band.el.remove(); band = null; } if (drag) { if (drag.ghost) drag.ghost.remove(); if (drag.b) drag.b.el.classList.remove("lift"); drag = null; $("trash").classList.remove("hot"); } });
   svg.addEventListener("keydown", e => {
     const tray = e.target.closest && e.target.closest(".tray-item");
     if (tray && (e.key === "Enter" || e.key === " ") && !st.busy) { e.preventDefault(); const t = +tray.dataset.t, p = trayEls[t]; add(t, p.cx, p.cy); }
   });
   window.addEventListener("keydown", e => {
-    if ((e.key === "Delete" || e.key === "Backspace") && st.sel && !st.busy && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); remove(st.sel); }
+    if ((e.key === "Delete" || e.key === "Backspace") && st.sels.length && !st.busy && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); [...st.sels].forEach(remove); }
   });
 
   /* ---------- Controls ---------- */
-  $("breakBtn").addEventListener("click", () => breakApart(st.sel));
+  $("breakBtn").addEventListener("click", () => breakApart(st.sels[0]));
+  $("groupBtn").addEventListener("click", group);
   $("clearBtn").addEventListener("click", () => { if (st.busy) return; clearAll(); layout(); changed(); });
   $("check").addEventListener("click", check);
   $("newTask").addEventListener("click", () => { if (!st.busy) newTask(); });
@@ -808,12 +848,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     });
   }
   seg("mode", v => { st.mode = v; newTask(); });
-  seg("level", v => {
-    const was = whole();
-    setLevel(+v);
-    if (whole() !== was) toast(whole() === 1000 ? tx("Now the big cube is 1 whole!", "Maintenant, le gros cube vaut 1 entier!") : tx("Now the flat is 1 whole!", "Maintenant, la plaque vaut 1 entier!"));
-  });
-  const LEVELNAME = { 1: ["Tenths", "Dixièmes"], 2: ["Hundredths", "Centièmes"], 3: ["Thousandths", "Millièmes"] };
+  seg("level", v => setLevel(+v));
+  const LEVELNAME = { 1: ["Tenths", "Dixièmes"], 2: ["Hundredths", "Centièmes"] };
   function levelLabels() { $("level").querySelectorAll("button").forEach(b => { b.textContent = tx(...LEVELNAME[b.dataset.v]); }); }
 
   let rt;
@@ -822,7 +858,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     drawStatic(); layout(true);
     clearTimeout(rt); rt = setTimeout(() => board.classList.remove("resizing"), 100);
   }).observe(board);
-  window.addEventListener("langchange", () => { levelLabels(); drawStatic(); layout(true); drawKey(); renderTask(); totals(); if (st.solved) check(); });
+  window.addEventListener("langchange", () => { levelLabels(); drawStatic(); layout(true); drawKey(); renderTask(); totals(); tools(); if (st.solved) check(); });
 
   levelLabels();
   setLevel(2);
@@ -928,6 +964,7 @@ window.I18N_PAGE = {
   "Expanded form": "Forme développée",
   "Written form": "En lettres",
   "Break apart": "Défaire",
+  "Group 10": "Grouper 10",
   "Clear all": "Tout effacer",
   "Trash": "Poubelle",
   "Stars": "Étoiles",
