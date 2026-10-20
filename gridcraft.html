@@ -174,6 +174,8 @@ h1 em { font-style: normal; color: var(--pt); }
 .hud > * { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 3px 10px; display: flex; flex-direction: column; justify-content: center; }
 .hud .k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; line-height: 1.2; }
 .hud b { font-family: var(--font-num); font-size: 1.25rem; line-height: 1.25; white-space: nowrap; }
+.ptitle input { font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); background: transparent; border: 0; border-bottom: 2px dashed var(--grid-major); padding: 0 2px; width: 12rem; min-width: 0; }
+.ptitle input:focus { outline: none; border-bottom-color: var(--pt); }
 .tele { flex-direction: row !important; align-items: center; gap: 6px; font-family: var(--font-num); border-color: var(--pt) !important; }
 .tele span { color: var(--muted); font-weight: 700; }
 .tele b { color: var(--pt); min-width: 3.2ch; display: inline-block; }
@@ -219,6 +221,16 @@ h1 em { font-style: normal; color: var(--pt); }
 .palrow { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .danger { background: transparent; color: var(--warn); border-color: var(--warn); padding: 4px 10px; }
 
+.kseg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.kseg button { font-family: var(--font-num); font-size: 1.15rem; padding: 6px 4px; background: var(--sheet); }
+.kseg button[data-k="1"] { font-family: var(--font-body); font-size: 0.95rem; }
+.kseg button[aria-pressed="true"] { background: var(--orange); color: var(--paper); border-color: var(--orange); }
+.cmp { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 10px; margin-top: 10px; align-items: baseline; }
+.cmp .h { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+.cmp b { font-family: var(--font-num); font-size: 1.15rem; white-space: nowrap; }
+.cmp b.sc { color: var(--orange); }
+.krule { margin: 8px 0 0; font-weight: 700; }
+.krule b { color: var(--orange); font-family: var(--font-num); }
 .legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .legend li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; }
 .legend b { display: block; }
@@ -269,6 +281,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>GridCraft <em>CAD</em></h1></div>
     <div class="hud">
+      <div class="ptitle"><label class="k" for="planName">Plan name</label><input id="planName" type="text" maxlength="40" value="My House Plan"></div>
       <div class="tele" aria-label="Cursor position"><span>X:</span><b id="tx">–</b><span>Y:</span><b id="ty">–</b></div>
       <div><span class="k">Total area</span><b id="totA">0 m²</b></div>
       <div><span class="k">Total perimeter</span><b id="totP">0 m</b></div>
@@ -295,8 +308,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       <button type="button" id="undoBtn"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span>Undo</span></button>
       <button type="button" id="clearBtn"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>Clear Canvas</span></button>
 
-      <p class="label">Export blueprint</p>
-      <div class="export"><button type="button" id="svgBtn">SVG</button><button type="button" id="pngBtn">PNG</button></div>
+      <p class="label">Export my plan</p>
+      <div class="export"><button type="button" id="pngBtn">PNG</button><button type="button" id="svgBtn">SVG</button></div>
     </nav>
 
     <div class="board">
@@ -314,6 +327,12 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     </div>
 
     <aside class="panel">
+      <section class="card" id="scaleCard">
+        <p class="label">Scale factor</p>
+        <div class="kseg" id="kSeg" role="group" aria-label="Scale factor"><button type="button" data-k="1" aria-pressed="true">None</button><button type="button" data-k="0.5" aria-pressed="false">×½</button><button type="button" data-k="2" aria-pressed="false">×2</button><button type="button" data-k="3" aria-pressed="false">×3</button></div>
+        <div id="kOut" hidden></div>
+      </section>
+
       <section class="card" aria-live="polite">
         <p class="label">How to use this tool</p>
         <p class="howto" id="howto"></p>
@@ -376,7 +395,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const S = { shapes: [], selId: null, tool: "select", axes: true, half: false, dims: true, item: "door", itemRot: 0,
-    tab: "shape", pivot: "center", draft: null, cursor: null, nextId: 1 };
+    tab: "shape", pivot: "center", k: 1, draft: null, cursor: null, nextId: 1 };
   const history = [];
   let drag = null, anim = false, inspKey = "";
 
@@ -504,13 +523,14 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     return S.shapes.filter(s => s.kind === "item").filter(s => { const b = itemBounds(s); return inside(room.pts, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2); })
       .map(s => [s, s.x, s.y]);
   }
-  function itemSVG(sh, sel, ghost) {
+  function itemSVG(sh, sel, ghost, k = 1) {
     const it = ITEMS[sh.type], col = ghost ? C.amber : it.c || C.ink;
     const pad = it.h ? 0 : 0.25;
-    return `<g class="sh"${ghost ? "" : ` data-id="${sh.id}"`} transform="translate(${sx(sh.x)} ${sy(sh.y)}) rotate(${-sh.rot}) scale(${U} ${-U})"` +
-      ` fill="${C.bg}" fill-opacity="${ghost ? 0.4 : 0.85}" stroke="${col}" stroke-width="${2.5 / U}" stroke-linejoin="round" stroke-linecap="round"${ghost ? ' opacity="0.85"' : ""}>` +
+    return `<g class="sh"${ghost ? "" : ` data-id="${sh.id}"`} transform="translate(${sx(sh.x)} ${sy(sh.y)}) rotate(${-sh.rot}) scale(${U * k} ${-U * k})"` +
+      ` fill="${C.bg}" fill-opacity="${ghost ? 0.4 : 0.85}" stroke="${col}" stroke-width="${2.5 / (U * k)}" stroke-linejoin="round" stroke-linecap="round"${ghost ? ' opacity="0.85"' : ""}>` +
       (sel ? `<rect x="-0.08" y="${-pad - 0.08}" width="${it.w + 0.16}" height="${it.h + 2 * pad + 0.16}" fill="none" stroke="${C.amber}" stroke-width="${10 / U}" opacity="0.4"/>` : "") +
-      `<rect x="0" y="${-pad}" width="${it.w}" height="${it.h + 2 * pad}" fill="transparent" stroke="none"/>` + it.draw + `</g>`;
+      `<rect x="0" y="${-pad}" width="${it.w}" height="${it.h + 2 * pad}" fill="transparent" stroke="none"/>` +
+      (ghost ? it.draw.split(`stroke="${C.bg}"`).length > 1 ? it.draw.replace(/<line[^>]*stroke="#0a2342"[^>]*\/>/, "") : it.draw : it.draw) + `</g>`;
   }
   function iconSVG(type) {
     const it = ITEMS[type], y0 = it.h ? 0 : -0.15, y1 = it.h ? it.h : 0.15, pad = 0.12;
@@ -579,9 +599,9 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   }
   const label = (x, y, txt, col, fs) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${col}" stroke="${C.bg}" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
   function sideLen(L) { return num(L, 1); }
-  function dimsSVG(sh, sel) {
+  function dimsSVG(sh, sel, col) {
     let s = "";
-    const m = MAT[sh.mat], P = sh.pts;
+    const m = { c: col || MAT[sh.mat].c }, P = sh.pts;
     if (sh.kind === "line") {
       const [a, b] = P, L = dist(a, b); if (L < 1e-9) return "";
       const nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
@@ -594,7 +614,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
         s += pill(sx((a[0] + b[0]) / 2 + nx * 0.5), sy((a[1] + b[1]) / 2 + ny * 0.5), sideLen(L), m.c);
       }
       const mm = measure(sh), c = labelSpot(P);
-      s += label(sx(c[0]), sy(c[1]) + 8, mm.crossing ? "sides cross" : num(mm.area, 3) + " m²", C.ink, mm.crossing ? 20 : 28);
+      s += label(sx(c[0]), sy(c[1]) + 8, mm.crossing ? "sides cross" : num(mm.area, 3) + " m²", col || C.ink, mm.crossing ? 20 : 28);
     }
     if (sel && sh.kind !== "line") s += angleSVG(P);
     return s;
@@ -657,6 +677,32 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     return [Math.round((b[0] + b[2]) / 2 / st) * st, Math.round((b[1] + b[3]) / 2 / st) * st];
   }
 
+  // Scale factor: the plan dilated from the origin (0, 0), drawn as an amber dashed copy.
+  const scaled = sh => ({ ...sh, pts: sh.pts.map(p => [p[0] * S.k, p[1] * S.k]) });
+  function scaledSVG() {
+    if (S.k === 1) return "";
+    const dash = `fill="none" stroke="${C.amber}" stroke-width="3" stroke-dasharray="10 6" stroke-linejoin="round"`;
+    return `<g pointer-events="none">` + S.shapes.map(sh => {
+      if (sh.kind === "item") return itemSVG({ ...sh, x: sh.x * S.k, y: sh.y * S.k }, false, true, S.k);
+      const P = scaled(sh).pts;
+      return sh.kind === "line" ? `<line x1="${sx(P[0][0])}" y1="${sy(P[0][1])}" x2="${sx(P[1][0])}" y2="${sy(P[1][1])}" ${dash}/>` : `<polygon points="${ptsAttr(P)}" ${dash}/>`;
+    }).join("") + `</g>`;
+  }
+  const scaledDims = () => S.k === 1 ? "" : S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(scaled(s), false, C.amber)).join("");
+  const kTxt = k => k === 0.5 ? "½" : num(k, 2);
+  function renderScale() {
+    document.querySelectorAll("[data-k]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.k === S.k)));
+    const out = $("kOut"); out.hidden = S.k === 1;
+    if (S.k === 1) return;
+    const sel = cur(), one = sel && sel.kind === "poly";
+    const m = one ? measure(sel) : totals(), k = S.k;
+    const html = `<div class="cmp"><span></span><span class="h">${one ? shapeName(sel) : "Whole plan"}</span><span class="h">Scaled ×${kTxt(k)}</span>` +
+      `<span>Perimeter</span><b>${approx(m.per, 1)} m</b><b class="sc">${approx(m.per * k, 1)} m</b>` +
+      `<span>Area</span><b>${num(m.area, 3)} m²</b><b class="sc">${num(m.area * k * k, 3)} m²</b></div>` +
+      `<p class="krule">Lengths ×<b>${kTxt(k)}</b>. Area ×<b>${kTxt(k)}</b> × <b>${kTxt(k)}</b> = ×<b>${num(k * k, 2)}</b></p>` +
+      (S.shapes.some(sh => sh.kind !== "item" && offGrid(scaled(sh).pts)) ? `<p class="note">Part of the scaled plan goes past the edge of the grid.</p>` : "");
+    if (out.__html !== html) { out.innerHTML = html; out.__html = html; }
+  }
   // Shapes first (the selected one on top of them), then furniture so it stays clickable inside rooms.
   function shapesSVG(sel) {
     const plain = S.shapes.filter(s => s.kind !== "item"), items = S.shapes.filter(s => s.kind === "item");
@@ -665,8 +711,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   }
   function render() {
     const sel = cur();
-    $("gShapes").innerHTML = shapesSVG(sel);
-    $("gDims").innerHTML = S.dims ? `<g font-family="${FONT}">${S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, s === sel)).join("")}</g>` : "";
+    $("gShapes").innerHTML = shapesSVG(sel) + scaledSVG();
+    $("gDims").innerHTML = S.dims ? `<g font-family="${FONT}">${S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, s === sel)).join("")}${scaledDims()}</g>` : "";
     let top = "";
     if (S.tool === "furn" && S.cursor) top += `<g pointer-events="none">${itemSVG({ type: S.item, rot: S.itemRot, ...itemAt(S.item, S.itemRot, S.cursor) }, false, true)}</g>`;
     if (sel && sel.kind !== "item" && S.tab === "move" && S.tool === "select") {
@@ -686,7 +732,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const T = totals();
     $("totA").textContent = num(T.area, 3) + " m²";
     $("totP").textContent = approx(T.per, 1) + " m";
-    renderHowto(); renderInspector();
+    renderHowto(); renderInspector(); renderScale();
   }
   function renderGrid() { $("gGrid").innerHTML = gridSVG(); }
 
@@ -972,6 +1018,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   });
   $("finishBtn").addEventListener("click", () => { if (S.draft && S.draft.pts && S.draft.pts.length >= 3) closePoly(); });
   $("cancelBtn").addEventListener("click", cancelDraft);
+  $("kSeg").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) { S.k = +b.dataset.k; render(); } });
   $("palette").innerHTML = Object.keys(ITEMS).map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span></button>`).join("");
   $("palette").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { S.item = b.dataset.item; S.itemRot = 0; render(); } });
   $("turnGhost").addEventListener("click", () => { S.itemRot = (S.itemRot + 90) % 360; render(); });
@@ -1009,28 +1056,40 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
 
   // ---- Export: a clean blueprint (no cursor, handles or selection) with a title strip.
   function blueprintSVG() {
-    const T = totals(), H = SIZE + 56;
-    const strip = `<rect x="0" y="${SIZE}" width="${SIZE}" height="56" fill="${C.pill}"/>` +
-      `<text x="24" y="${SIZE + 36}" font-size="22" font-weight="700" fill="${C.cyan}">GridCraft CAD</text>` +
-      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="19" font-weight="700" fill="${C.ink}">Scale 1 square = 1 m · Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m</text>`;
-    const shapes = shapesSVG(null);
-    const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") : "";
+    const T = totals(), k = S.k, H = SIZE + (k === 1 ? 60 : 96);
+    const title = esc($("planName").value.trim() || "My House Plan");
+    let strip = `<rect x="0" y="${SIZE}" width="${SIZE}" height="${H - SIZE}" fill="${C.pill}"/>` +
+      `<text x="24" y="${SIZE + 38}" font-size="26" font-weight="700" fill="${C.cyan}" font-family="'Bricolage Grotesque', system-ui, sans-serif">${title}</text>` +
+      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="18" font-weight="700" fill="${C.ink}">Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m</text>`;
+    if (k !== 1) strip += `<text x="24" y="${SIZE + 76}" font-size="18" font-weight="700" fill="${C.amber}">Scale factor ×${kTxt(k)} (dashed): perimeter ${approx(T.per * k, 1)} m · area ${num(T.area * k * k, 3)} m²</text>`;
+    const shapes = shapesSVG(null) + scaledSVG();
+    const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") + scaledDims() : "";
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${H}" width="${SIZE}" height="${H}" font-family="${FONT}">` +
       `<defs><clipPath id="c"><rect x="34" y="34" width="812" height="812"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)">${shapes}</g><g>${dims}</g>${strip}</svg>`;
   }
-  function download(blob, name) {
+  const esc = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const fileName = ext => (($("planName").value.trim() || "My House Plan").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "plan") + "." + ext;
+  // In the claude.ai viewer the save goes through its downloads capability (the viewer confirms);
+  // on the website it is an ordinary browser download.
+  let dlP = null;
+  async function download(blob, name) {
+    if (window.claude && typeof window.claude.use === "function") {
+      dlP = dlP || window.claude.use("downloads").catch(() => null);
+      const dl = await dlP;
+      if (dl) { try { await dl.save({ filename: name, data: blob }); } catch (e) { if (e && e.code !== "declined") say("The file could not be saved here."); } return; }
+    }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }
-  $("svgBtn").addEventListener("click", () => download(new Blob([blueprintSVG()], { type: "image/svg+xml" }), "gridcraft-blueprint.svg"));
+  $("svgBtn").addEventListener("click", () => download(new Blob([blueprintSVG()], { type: "image/svg+xml" }), fileName("svg")));
   $("pngBtn").addEventListener("click", () => {
     const img = new Image(), src = blueprintSVG();
     img.onload = () => {
       const cv = document.createElement("canvas"); cv.width = img.width * 2; cv.height = img.height * 2;
       const cx = cv.getContext("2d"); cx.scale(2, 2); cx.drawImage(img, 0, 0);
-      cv.toBlob(b => b && download(b, "gridcraft-blueprint.png"), "image/png");
+      cv.toBlob(b => b && download(b, fileName("png")), "image/png");
     };
     img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(src);
   });
@@ -1156,6 +1215,16 @@ window.I18N_PAGE = {
   "A line is a wall or fence.": "Une ligne est un mur ou une clôture.",
   "Type": "Type",
   "Drag it to move it. Furniture does not change the area or perimeter.": "Fais-le glisser pour le déplacer. Les meubles ne changent ni l'aire ni le périmètre.",
+  "Plan name": "Nom du plan",
+  "Export my plan": "Exporter mon plan",
+  "Scale factor": "Facteur d'échelle",
+  "None": "Aucun",
+  "Whole plan": "Plan entier",
+  "Scaled ×{n}": "Agrandi ×{n}",
+  "Scaled ×½": "Réduit ×½",
+  "Lengths ×{0}. Area ×{1} × {2} = ×{3}": "Longueurs ×{0}. Aire ×{1} × {2} = ×{3}",
+  "Part of the scaled plan goes past the edge of the grid.": "Une partie du plan à l'échelle dépasse le bord du quadrillage.",
+  "The file could not be saved here.": "Le fichier n'a pas pu être enregistré ici.",
   "Cursor position": "Position du curseur",
   "Total area": "Aire totale",
   "Total perimeter": "Périmètre total",
@@ -1171,7 +1240,6 @@ window.I18N_PAGE = {
   "Show Dimensions": "Afficher les mesures",
   "Edit": "Modifier",
   "Clear Canvas": "Tout effacer",
-  "Export blueprint": "Exporter le plan",
   "Blueprint grid with shapes": "Plan quadrillé avec des figures",
   "How to use this tool": "Comment utiliser cet outil",
   "Finish shape": "Terminer la figure",
