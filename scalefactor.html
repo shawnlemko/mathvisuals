@@ -151,8 +151,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    k copies on a line, k × k copies in a square, k × k × k copies in a cube (or, shrinking by 1/2,
    the old shape holds 2, 4 or 8 new ones). Old shape and its copies blue, new shape orange, answers green.
    Learn: Next step reveals one step at a time, ending with "Why not 18?". Practice: find the new size
-   or find the scale factor, Check, Hint, Show me. Work runs down the board with = lined up and step
-   names on the right. Never the ÷ sign: dividing is written as a fraction. */
+   or find the scale factor, Check, Hint, Show me. Under the picture the focus is the connection
+   (Shawn 2026-10-20): Side 2 cm ×3 → 6 cm, Area 4 cm² ×9 → 36 cm², with no other working. Never the ÷ sign: dividing is written as a fraction. */
 .main { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); }
 .seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 46px; padding: 6px 14px; }
@@ -230,6 +230,10 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 .trap { fill: none; stroke: var(--warn); stroke-width: 6; stroke-dasharray: 14 8; }
 .karr { stroke: var(--muted); stroke-width: 4; stroke-linecap: round; fill: none; }
 .karr-h { fill: var(--muted); }
+.carr { stroke: var(--green); stroke-width: 6; stroke-linecap: round; }
+.carr-h { fill: var(--green); }
+.vbox { fill: var(--sheet); stroke-width: 3; }
+.vbox.b { stroke: var(--pt); } .vbox.o { stroke: var(--orange); } .vbox.g { stroke: var(--green); fill: color-mix(in srgb, var(--green) 10%, var(--sheet)); }
 .pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
 .fade { animation: fade 0.5s ease-out both; }
 @keyframes pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
@@ -342,75 +346,47 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   }
 
   // ---------- the work, one line per step, = lined up ----------
-  // Shawn 2026-10-19: no k² = 2 × 2 line. Compare the old and new measure (4 vs 16), then one
-  // "impact" banner: k = 2 → area × 4 (k²).
-  const BIG = { 1: "Old length", 2: "Old area", 3: "Old volume" }, NEW = { 1: "New length", 2: "New area", 3: "New volume" };
-  const POW = { 1: "(k)", 2: "(k²)", 3: "(k³)" };
-  function work(q) {
-    const f = facts(q), d = q.dim, u = up(q), L = [];
-    const meas = (side, val, c) => {
-      const r = [];
-      if (d > 1) { for (let i = 0; i < d; i++) { if (i) r.push("×"); r.push(vTxt(side)); } r.push("="); }
-      r.push({ v: `${vTxt(val)} ${u}`, c }); return r;
-    };
-    if (q.learn) {
-      L.push({ l: BIG[d], r: meas(Q(q.s), f.M, "b"), name: "" });
-      L.push({ l: NEW[d], r: meas(mul(Q(q.s), f.k), f.N, "g"), name: "" });
-    } else if (q.find === "k") {
-      L.push({ l: BIG[d], r: [{ v: `${vTxt(f.M)} ${u}`, c: "b" }], name: "" });
-      L.push({ l: NEW[d], r: [{ v: `${vTxt(f.N)} ${u}`, c: "o" }], name: "" });
-      L.push({ l: d === 1 ? "k" : "Copies", r: [{ fr: [f.N.n, f.M.n] }, "=", tok(d === 1 ? f.k : f.F, d === 1 ? "g" : "")], name: "New over old" });
-    } else {
-      L.push({ l: BIG[d], r: [{ v: `${vTxt(f.M)} ${u}`, c: "b" }], name: "" });
-      L.push({ l: NEW[d], r: [tok(f.F), "×", tok(f.M), "=", { v: `${vTxt(f.N)} ${u}`, c: "g" }],
-        name: f.grow ? (d === 1 ? `${f.m} copies of the old line` : `${kTxt(f.F)} copies of the old ${SHAPE[d]}`) : "" });
-    }
-    return L;
-  }
-  // The impact: k = 2 → area × 4 (k²).
-  function banner(q) {
-    const f = facts(q);
-    return ["k", "=", tok(f.k, q.find === "k" ? "g" : ""), "→", NAME[q.dim], "×", tok(f.F, "g"), { v: POW[q.dim], c: "m" }];
-  }
-
-  // ---------- steps: what is said, what the picture shows (v), how many work lines (w), banner (b) ----------
+  // ---------- steps: what is said and what the board shows (v) ----------
+  // Shawn 2026-10-19/20: keep the work light. The focus is the connection under the picture:
+  //   Side  2 cm  ── × 3 ──▶  6 cm
+  //   Area  4 cm² ── × 9 ──▶  36 cm²
   function steps(q) {
     const f = facts(q), d = q.dim, K = kTxt(f.k), m = f.m, u = up(q), sh = SHAPE[d], nm = NAME[d];
-    const Mv = vTxt(f.M), Nv = vTxt(f.N), Fv = kTxt(f.F), mm = m ** d, L = work(q).length;
-    const kp = d === 1 ? "k" : d === 2 ? "k²" : "k³";
-    const impact = `When k = ${K}, the ${nm} is ${Fv}${f.grow ? " times" : ""} as ${d === 1 ? "long" : "big"}. That is ${kp}.`;
+    const Mv = vTxt(f.M), Nv = vTxt(f.N), Fv = kTxt(f.F), mm = m ** d;
+    const kp = d === 2 ? "k²" : "k³";
     const S = [];
     if (q.find === "k") {
-      S.push({ say: `The old ${nm} is ${Mv} ${u}. The new ${nm} is ${Nv} ${u}.`, v: { new: 1 }, w: 2 });
+      S.push({ say: `The old ${nm} is ${Mv} ${u}. The new ${nm} is ${Nv} ${u}.`, v: { new: 1 } });
       const ratio = `New over old is ${f.N.n}/${f.M.n} = ${Fv}, so it is ${Fv}${f.grow ? " times" : ""} as ${d === 1 ? "long" : "big"}.`;
       if (d === 1) {
-        S.push({ say: ratio, v: { new: 1, copies: 1 }, w: 3 });
-        S.push({ say: f.grow ? `${m} copies fit end to end. So k = ${K}.` : `The new line is ${K} as long as the old one. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: L, b: 1 });
+        S.push({ say: ratio, v: { new: 1, copies: 1, impact: 1, ans: 1 } });
         return S;
       }
-      S.push({ say: ratio + (f.grow ? ` So ${Fv} copies of the old ${sh} fit in the new one.` : ` So ${mm} new ${sh}s fit in the old one.`), v: { new: 1, copies: 1 }, w: 3 });
+      S.push({ say: ratio + (f.grow ? ` So ${Fv} copies of the old ${sh} fit in the new one.` : ` So ${mm} new ${sh}s fit in the old one.`), v: { new: 1, copies: 1, impact: 1 } });
       const by = d === 2 ? `a ${m} by ${m} square` : `a ${m} by ${m} by ${m} cube`;
       S.push({ say: f.grow ? `${Fv} copies make ${by}. So k = ${K}.`
-                           : `${mm} new ${sh}s make ${by}, so each side is ${K} as long. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: L, b: 1 });
+                           : `${mm} new ${sh}s make ${by}, so each side is ${K} as long. So k = ${K}.`, v: { new: 1, copies: 1, count: 1, impact: 1, ans: 1 } });
       return S;
     }
     // Find the new size.
     let s0 = `The old ${nm} is ${Mv} ${u}.`;
     if (q.learn) s0 = d === 1 ? `This line is ${q.s} cm long.` : d === 2 ? `This square has sides of ${q.s} cm. Its area is ${Mv} cm².`
       : `This cube has sides of ${q.s} cm. Its volume is ${Mv} cm³.`;
-    S.push({ say: s0, v: {}, w: 1 });
+    S.push({ say: s0, v: {} });
     let s1 = f.grow ? `Scale factor ${K}: every length gets ${K} times as long.` : `Scale factor ${K}: every length gets half as long.`;
     if (q.learn) s1 += d === 1 ? ` The line goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.` : ` Each side goes from ${q.s} cm to ${vTxt(mul(Q(q.s), f.k))} cm.`;
-    S.push({ say: s1, v: { new: 1 }, w: 1 });
-    const s2 = d === 1 ? (f.grow ? `${m} copies of the old line fit end to end.` : `${m} new lines fit in the old one.`)
+    S.push({ say: s1, v: { new: 1 } });
+    const holds = d === 1 ? (f.grow ? `${m} copies of the old line fit end to end.` : `${m} new lines fit in the old one.`)
       : f.grow ? `The new ${sh} holds ${Fv} copies of the old one.` : `The old ${sh} holds ${mm} new ones.`;
-    S.push({ say: s2, v: { new: 1, copies: 1, count: 1, ans: 1 }, w: 2 });
-    S.push({ say: `${Mv} ${u} became ${Nv} ${u}. ${impact}`, v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 }, w: 2, b: 1 });
-    if (q.learn && d > 1) {
+    S.push({ say: `${holds} The new ${nm} is ${Nv} ${u}.`, v: { new: 1, copies: 1, count: 1, ans: 1 } });
+    if (d === 1) return S;
+    S.push({ say: f.grow ? `The sides grew × ${K}, but the ${nm} grew × ${Fv}. That is ${kp}.` : `The sides became × ${K}, and the ${nm} became × ${Fv}. That is ${kp}.`,
+             v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1 } });
+    if (q.learn) {
       const row = vTxt(mul(f.grow ? Q(m) : f.k, f.M));
       S.push({ say: f.grow ? `Why not ${m} × ${Mv} = ${row}? That only fills one row of copies. The ${sh} grows in ${d} directions.`
                            : `Why not ${K} × ${Mv} = ${row}? That is only one row of new ${sh}s. The ${sh} shrinks in ${d} directions.`,
-               v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1, trap: 1 }, w: 2, b: 1 });
+               v: { new: 1, copies: 1, count: 1, ans: 1, impact: 1, trap: 1 } });
     }
     return S;
   }
@@ -483,7 +459,6 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
         E("rect", { x, y, width: a, height: a, class: `sq ${colour}${(i + j) % 2}` }, cg);
         if (q.learn && colour === "b") units(cg, x, y, a, q.s);
         if (valueTxt && a >= 60) E("text", { x: x + a / 2, y: y + a / 2 + 10, class: "tx", "text-anchor": "middle", "font-size": Math.min(30, a * 0.3) }, cg, valueTxt);
-        if (number && a >= 44) E("text", { x: x + 8, y: y + 24, class: "tx n", "font-size": 20 }, cg, idx + 1);
         if (anim) popIn(cg, idx, n);
       }
       return;
@@ -512,7 +487,6 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     const Mv = vTxt(f.M), oldTxt = `${Mv} ${u}`;
     const newTxt = q.find === "k" || v.ans ? `${vTxt(f.N)} ${u}` : "?";
     const newCls = q.find === "k" ? "o" : v.ans ? "g" : "o";
-    const kItems = q.find === "k" && !v.ans ? ["k", "=", "?"] : ["k", "=", tok(f.k, q.find === "k" ? "g" : "")];
     const sideTxt = len => `${vTxt(len)} cm`;
 
     if (d === 1) {
@@ -532,8 +506,6 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
         // k arrow from the old line down to the new one.
         E("line", { x1: X0 - 30, x2: X0 - 30, y1: YO + 10, y2: YN - BH - 14, class: "karr" }, ng);
         E("polygon", { points: `${X0 - 41},${YN - BH - 20} ${X0 - 19},${YN - BH - 20} ${X0 - 30},${YN - BH - 2}`, class: "karr-h" }, ng);
-        const kl = label(ng, kItems, LFS, X0 - 50, (YO + YN - BH) / 2, "end");
-        if (q.find === "k" && isNew("ans")) kl.classList.add("pop");
       }
       return PH;
     }
@@ -560,8 +532,6 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       const ym = yB - Math.min(so, sn) / 2, ax0 = x0 + wo + 16, ax1 = x1 - 16;
       E("line", { x1: ax0, x2: ax1 - 14, y1: ym, y2: ym, class: "karr" }, ng);
       E("polygon", { points: `${ax1 - 18},${ym - 11} ${ax1 - 18},${ym + 11} ${ax1},${ym}`, class: "karr-h" }, ng);
-      const kl = label(ng, kItems, LFS, (ax0 + ax1) / 2, ym - 40);
-      if (q.find === "k" && isNew("ans")) kl.classList.add("pop");
     }
     // Why not k × old? Outline one row of copies and say what it is worth.
     if (v.trap) {
@@ -585,43 +555,50 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     svg.innerHTML = "";
     const S = steps(q);
     const v = hint ? Object.assign({}, S[0].v, hint) : S[i].v;
-    const w = hint ? 0 : S[i].w;
     const was = anim && i > 0 ? S[i - 1].v : v;
     const isNew = key => !!(anim && v[key] && !was[key]);
 
-    // The work: = lined up, step names on the right. Places come from every line so nothing jumps.
-    const L = work(q), lhs = L.map(l => T(l.l, FS, "op")), nodes = L.map(l => line(l.r, FS));
-    const EQX = 60 + Math.max(...lhs.map(n => n.w)) + 22, RHS = EQX + 34;
-    const NX = Math.max(...nodes.map(n => RHS + n.w)) + 56;
-    const nameW = Math.max(0, ...L.map(l => shown(l.name).length * 0.5 * 28));
-    const VW = Math.max(W, NX + nameW + 30);
-    const pg = E("g", { transform: `translate(${(VW - W) / 2},0)` });
-    const PH = picture(pg, q, v, isNew);
-    let y = PH + 6; const ys = [];
-    nodes.forEach((n, k) => { y += n.up + (k ? 14 : 0); ys.push(y); y += n.dn; });
-    const bn = line(banner(q), FS), BY = y + 34 + bn.up, bw = bn.w + 48;
-    const H = Math.max(700, BY + bn.dn + 30);
+    const VW = W;
+    const PH = picture(svg, q, v, isNew);
+    const H = Math.max(700, PH + connection(q, v, isNew, PH + 10) + 20);
     svg.setAttribute("viewBox", `0 0 ${VW} ${H}`);
-    const prevW = anim && i > 0 ? S[i - 1].w : w;
-    for (let k = 0; k < w; k++) {
-      const g = E("g", { class: anim && k >= prevW ? "pop" : "" });
-      if (anim && k >= prevW) g.style.animationDelay = (k - prevW) * 250 + "ms";
-      const lt = lhs[k].draw(g, EQX - 18 - lhs[k].w, ys[k]);
-      lt.setAttribute("x", EQX - 18); lt.setAttribute("text-anchor", "end");
-      E("text", { x: EQX, y: ys[k] + FS * 0.36, class: "eqs", "text-anchor": "middle", "font-size": FS }, g, "=");
-      nodes[k].draw(g, RHS, ys[k]);
-      if (L[k].name) E("text", { x: NX, y: ys[k] + 10, class: "sname" + (k === w - 1 ? " now" : ""), "font-size": 28 }, g, L[k].name);
-    }
-    if (!hint && S[i].b) {
-      const g = E("g", { class: anim && !(i > 0 && S[i - 1].b) ? "pop" : "" });
-      E("rect", { x: 40, y: BY - bn.up - 14, width: bw, height: bn.up + bn.dn + 28, rx: 14, class: "impact" }, g);
-      bn.draw(g, 64, BY);
-    }
+  }
+
+  // The focus: how much the side grew, and how much the area or volume grew.
+  function connection(q, v, isNew, y0) {
+    const f = facts(q), d = q.dim, u = up(q), CX0 = 330, CX1 = 770, BW = 210, BHT = 74, RH = 104;
+    const rows = [];
+    if (d > 1) rows.push({ name: "Side", l: q.learn ? `${q.s} cm` : null, r: q.learn && v.new ? `${vTxt(mul(Q(q.s), f.k))} cm` : null,
+      lc: "b", rc: "o", x: q.find === "k" && !v.ans ? null : f.k, show: q.find === "k" || v.new, key: q.find === "k" ? "ans" : "new", pw: "k" });
+    const known = q.find === "k" || v.ans;
+    rows.push({ name: d === 1 ? "Length" : d === 2 ? "Area" : "Volume", l: `${vTxt(f.M)} ${u}`, r: known ? `${vTxt(f.N)} ${u}` : "?",
+      lc: "b", rc: q.find === "k" ? "o" : v.ans ? "g" : "o", x: (d === 1 ? (q.find === "k" ? v.ans : v.new) : v.impact) ? f.F : null,
+      show: true, key: d === 1 ? (q.find === "k" ? "ans" : "new") : "impact", pw: d === 1 ? "k" : d === 2 ? "k²" : "k³", rkey: q.find === "k" ? null : "ans" });
+    rows.forEach((r, j) => {
+      const y = y0 + 50 + j * RH, g = E("g", {});
+      E("text", { x: 40, y: y + 12, class: "sname now", "font-size": 32 }, g, r.name);
+      const box = (cx, txt, cls, pop) => {
+        const bg = E("g", { class: pop ? "pop" : "" }, g);
+        E("rect", { x: cx - BW / 2, y: y - BHT / 2, width: BW, height: BHT, rx: 12, class: "vbox " + cls }, bg);
+        E("text", { x: cx, y: y + 14, class: "tx " + cls, "text-anchor": "middle", "font-size": 40 }, bg, txt);
+      };
+      if (r.l) box(CX0, r.l, r.lc);
+      if (r.r) box(CX1, r.r, r.rc, r.rkey && isNew(r.rkey) || (j === 0 && isNew("new")));
+      if (!r.show) return;
+      // The arrow and how much it multiplies by: the focus, big and green.
+      const ag = E("g", { class: isNew(r.key) ? "pop" : "" }, g), ax0 = CX0 + BW / 2 + 14, ax1 = CX1 - BW / 2 - 14;
+      E("line", { x1: ax0, x2: ax1 - 18, y1: y, y2: y, class: "carr" }, ag);
+      E("polygon", { points: `${ax1 - 24},${y - 14} ${ax1 - 24},${y + 14} ${ax1},${y}`, class: "carr-h" }, ag);
+      const lab = r.x ? ["×", tok(r.x, "g")] : ["×", { v: "?", c: "m" }];
+      label(ag, lab, 46, (ax0 + ax1) / 2, y - 34);
+      if (r.x) E("text", { x: (ax0 + ax1) / 2, y: y + 38, class: "tx m", "text-anchor": "middle", "font-size": 26 }, ag, r.pw);
+    });
+    return 50 + rows.length * RH;
   }
 
   // ---------- Learn ----------
   let mode = "learn", step = 0;
-  const lq = { learn: true, find: "new", dim: 2, k: Q(2), s: 2, u: "cm" };
+  const lq = { learn: true, find: "new", dim: 2, k: Q(3), s: 2, u: "cm" };
   const syncM = () => { lq.M = Q(lq.s ** lq.dim); };
   function showLearn(anim) {
     syncM();
@@ -701,7 +678,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     pq = gen(); tried = false; solved = false;
     writeQuestion(pq);
     feedback("");
-    render(pq, 0, false);
+    render(pq, pq.find === "new" ? 1 : 0, false);
     inp.focus({ preventScroll: true });
   }
   // A typed number: whole, decimal or fraction; a unit or "k =" may be typed too.
@@ -993,6 +970,12 @@ window.I18N_PAGE = (function () {
     "~When k = ([^ ]+), the volume is ([^ ]+) as big\\.": "Quand k = $1, le volume est $2 du volume initial.",
     "~That is (k.?)\\.": "C'est $1.",
     "~([^ ]+) (c?m[²³]?) became ([^ ]+) (c?m[²³]?)\\.": "$1 $2 est devenu $3 $4.",
+    // The connection under the picture (2026-10-20)
+    "Side": "Côté",
+    "~The sides grew × ([^ ]+), but the area grew × ([^ ]+)\\.": "Les côtés ont été multipliés par $1, mais l'aire par $2.",
+    "~The sides grew × ([^ ]+), but the volume grew × ([^ ]+)\\.": "Les côtés ont été multipliés par $1, mais le volume par $2.",
+    "~The sides became × ([^ ]+), and the area became × ([^ ]+)\\.": "Les côtés ont été multipliés par $1, et l'aire par $2.",
+    "~The sides became × ([^ ]+), and the volume became × ([^ ]+)\\.": "Les côtés ont été multipliés par $1, et le volume par $2.",
     // Practice questions
     "It is enlarged by a scale factor of {n}.": "Agrandissement avec un facteur d'échelle de {n}.",
     "It is reduced by a scale factor of {0}.": "Réduction avec un facteur d'échelle de {0}.",

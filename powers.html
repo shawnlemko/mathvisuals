@@ -249,10 +249,15 @@ i { font-family: var(--font-display); font-weight: 800; font-style: italic; }
 .acell { display: grid; place-items: center; text-align: center; min-width: 4.5em; min-height: 3.2em; padding: 6px 10px; border: 2px solid var(--k); border-radius: 8px; background: color-mix(in srgb, var(--k) 12%, var(--sheet)); }
 .acell small { display: block; font-size: 0.6em; color: var(--muted); font-weight: 500; }
 .acell.cut { opacity: 0.35; text-decoration: line-through; }
-.dist { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 2rem); }
-.dtop { margin-bottom: 6px; }
-.drow { display: grid; grid-template-columns: auto auto auto; gap: 14px; justify-content: start; padding: 2px 10px; border-left: 4px solid var(--grid-major); }
-.drow.cut > span:last-child { text-decoration: line-through; opacity: 0.4; }
+.work { display: grid; grid-template-columns: auto auto auto auto; column-gap: 14px; row-gap: 2px; align-items: center; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.15rem, 1.1vw + 0.6rem, 1.9rem); }
+.work > .wh { grid-column: 1 / -1; font-size: 0.8em; color: var(--muted); padding: 4px 0 6px; }
+.work > .wh b { font-family: var(--font-body); }
+.work > .wl { justify-self: end; white-space: nowrap; }
+.work > .wr { white-space: nowrap; }
+.work > .wn { font-family: var(--font-body); font-size: 0.6em; color: var(--muted); padding-left: 12px; border-left: 3px solid var(--grid-major); }
+.work > .wr.cut { justify-self: start; color: var(--muted); background: linear-gradient(transparent calc(50% - 2px), var(--orange) 0 calc(50% + 2px), transparent 0); }
+.work > .wn.cut { color: var(--orange); }
+.work > .new { color: var(--green); }
 .tiles { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .tgrp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tcount { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-width: 4.2em; color: var(--k); }
@@ -538,7 +543,7 @@ function genQuotient() {
   const bot = st => ({ items: rep(n, () => ch(B, "o", st ? "cut" : "")), cap: P(B, n) });
   return { ask: "Write as a single power.", q: fr(P(B, C("cb", m)), P(B, C("co", n))), a: `${B}^${d}`, kind: "pow", base: B, val: () => B ** d, hint: "Same base, dividing: subtract the exponents.",
     steps: [ST("", "Write the top and the bottom as factors.", { t: "chips", frac: true, rows: [[top(false)], [bot(false)]] }),
-      ST(fr(rep(m, () => B).join("·"), rep(n, () => B).join("·")), `Each ${B} ÷ ${B} = 1, so ${n} pairs cancel.`, { t: "chips", frac: true, rows: [[top(true)], [bot(true)]] }),
+      ST(fr(rep(m, () => B).join("·"), rep(n, () => B).join("·")), `Each ${fr(B, B)} = 1, so ${n} pairs cancel.`, { t: "chips", frac: true, rows: [[top(true)], [bot(true)]] }),
       ST(C("res", P(B, d)), `${m} − ${n} = ${d} factors are left. Subtract the exponents.`, { t: "chips", frac: true, rows: [[top(true)], [bot(true)]], res: P(B, d) })] };
 }
 
@@ -569,7 +574,7 @@ function genProdQuot() {
 function ladder(b, from, to, hlAt) {
   const rows = [];
   for (let e = from; e >= to; e--) rows.push({ l: P(baseH(b), M(e)), r: e >= 0 ? String(b ** e) : fr(1, b ** -e), k: e === 0 ? "g" : e < 0 ? "o" : "b", hl: e === hlAt });
-  return { t: "ladder", rows, op: `÷ ${b}` };
+  return { t: "ladder", rows, op: `divide by ${b}` };
 }
 
 function genZero() {
@@ -582,7 +587,7 @@ function genZero() {
   else if (t === "coef") { const k = ri(2, 9); q = `${k} × ${P(b, 0)}`; v = k; tip = `${P(b, 0)} = 1, so this is ${k} × 1.`; }
   else { const [p, d] = pick([[2, 3], [3, 4], [5, 7]]); q = P(`(${fr(p, d)})`, 0); v = 1; tip = "Any non-zero base to the exponent 0 is 1."; }
   a = String(v);
-  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(lb, "b", "cut")), cap: P(lb, 2) }], [{ items: rep(2, () => ch(lb, "o", "cut")), cap: P(lb, 2) }]], res: `${P(lb, 0)} = 1`, note: `${P(lb, 2)} ÷ ${P(lb, 2)}: everything cancels, and the exponent is 2 − 2 = 0.` };
+  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(lb, "b", "cut")), cap: P(lb, 2) }], [{ items: rep(2, () => ch(lb, "o", "cut")), cap: P(lb, 2) }]], res: `${P(lb, 0)} = 1`, note: `${fr(P(lb, 2), P(lb, 2))}: everything cancels, and the exponent is 2 − 2 = 0.` };
   return { ask: "Evaluate.", q, a, kind: "num", val: () => v, hint: tip,
     steps: [ST("", `Follow the pattern: each step down divides by ${lb}.`, ladder(lb, 3, 0, 0)),
       ST("", "Dividing a power by itself gives 1 and an exponent of 0.", quot),
@@ -607,7 +612,7 @@ function genNeg() {
   }
   const k = t === "coef" ? ri(2, 7) : 1, v = Q(k, b ** n);
   const q = (k > 1 ? `${k} × ` : "") + P(b, "−" + n);
-  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(b, "b", "cut")), cap: P(b, 2) }], [{ items: rep(2 + n, i => ch(b, "o", i < 2 ? "cut" : "")), cap: P(b, 2 + n) }]], res: fr(1, P(b, n)), note: `${P(b, 2)} ÷ ${P(b, 2 + n)}: the exponent is 2 − ${2 + n} = −${n}, and ${n} factor${n > 1 ? "s are" : " is"} left on the bottom.` };
+  const quot = { t: "chips", frac: true, rows: [[{ items: rep(2, () => ch(b, "b", "cut")), cap: P(b, 2) }], [{ items: rep(2 + n, i => ch(b, "o", i < 2 ? "cut" : "")), cap: P(b, 2 + n) }]], res: fr(1, P(b, n)), note: `${fr(P(b, 2), P(b, 2 + n))}: the exponent is 2 − ${2 + n} = −${n}, and ${n} factor${n > 1 ? "s are" : " is"} left on the bottom.` };
   return { ask: "Evaluate.", q, a: `${v[0]}/${v[1]}`.replace(/\/1$/, ""), kind: "num", val: () => k / b ** n, hint: `${P(b, "−" + n)} = ${fr(1, P(b, n))}: the negative exponent means the reciprocal.`,
     steps: [ST("", `Keep dividing by ${b} past the exponent 0.`, ladder(b, 2, -n, -n)),
       ST((k > 1 ? `${k} × ` : "") + fr(1, P(b, n)), "Leftover factors on the bottom: a negative exponent means the reciprocal.", quot),
@@ -629,9 +634,9 @@ function genMixed(ctx) {
     }
     const a = nz(), c = ri(2, 3), d = nz(), pw = a * c, r = pw - d;
     if (r < 2 || r > 9) continue;
-    const qh = `${P(`(${P(bh, M(a))})`, c)} ÷ ${P(bh, M(d))}`;
+    const qh = fr(P(`(${P(bh, M(a))})`, c), P(bh, M(d)));
     return { ask: "Write as a single power.", q: qh, a: `${bt}^${r}`, kind: "pow", base: B, val: () => B ** r, hint: "Power of a power: multiply. Then subtract for the division.",
-      steps: [ST(`${P(bh, C("cb", M(pw)))} ÷ ${P(bh, M(d))}`, "Power of a power: multiply the exponents.", { t: "lanes", rows: [{ k: "b", l: "Power", h: `${M(a)} × ${c} = ${M(pw)}` }] }),
+      steps: [ST(fr(P(bh, C("cb", M(pw))), P(bh, M(d))), "Power of a power: multiply the exponents.", { t: "lanes", rows: [{ k: "b", l: "Power", h: `${M(a)} × ${c} = ${M(pw)}` }] }),
         ST(C("res", P(bh, r)), "Dividing: subtract the exponents.", { t: "lanes", rows: [{ k: "b", l: "Power", h: `${M(a)} × ${c} = ${M(pw)}` }, { k: "g", l: "Divide", h: `${M(pw)} − ${pM(d)} = ${r}` }] })] };
   }
 }
@@ -675,7 +680,7 @@ function genVarLaws() {
       const a = nz(-3, 6), b = nz(-2, 5), d = nz(-3, 5), e = nz(-2, 4);
       cf = Q(c1, c2); ex = a - d; ey = b - e;
       q = fr(monoH(Q(c1), X, a, Y, b), monoH(Q(c2), X, d, Y, e));
-      cols = [[`${M(c1)} ÷ ${pM(c2)}`, `= ${FH(cf)}`], [`${P(xi(X), M(a))} ÷ ${P(xi(X), M(d))}`, `= ${P(xi(X), `${M(a)} − ${pM(d)}`)}`, `= ${P(xi(X), M(ex))}`], [`${P(xi(Y), M(b))} ÷ ${P(xi(Y), M(e))}`, `= ${P(xi(Y), `${M(b)} − ${pM(e)}`)}`, `= ${P(xi(Y), M(ey))}`]];
+      cols = [[fr(M(c1), M(c2)), `= ${FH(cf)}`], [fr(P(xi(X), M(a)), P(xi(X), M(d))), `= ${P(xi(X), `${M(a)} − ${pM(d)}`)}`, `= ${P(xi(X), M(ex))}`], [fr(P(xi(Y), M(b)), P(xi(Y), M(e))), `= ${P(xi(Y), `${M(b)} − ${pM(e)}`)}`, `= ${P(xi(Y), M(ey))}`]];
       say1 = "Sort by base. Divide the numbers. Same base: subtract the exponents.";
     }
     if (!ex && !ey) continue;
@@ -875,12 +880,20 @@ function genMult(ctx, useVars) {
       steps: [ST(`${coefH(ab)}${rad(radiH(p * q, vp))}`, "Multiply outside by outside, inside by inside.", lanes), ...rs.steps.slice(1)] };
   }
 }
-/* distributive property: each term of the first bracket times each term of the second, one line per product */
-function distH(A, B, cells, res, note) {
-  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"];
-  const top = `<div class="dtop">(${A.map((t, i) => C("c" + cA[i % 2], (i && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})(${B.map((t, j) => C("c" + cB[j % 2], (j && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})</div>`;
-  const rows = A.map((a, i) => B.map((b, j) => { const c = cells[i][j]; return `<div class="drow ${c.s || ""}"><span>${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}</span><span>=</span><span>${c.sub ? c.sub.replace(/^\+/, "") + " = " : ""}${c.h.replace(/^\+/, "")}</span></div>`; }).join("")).join("");
-  return { t: "html", h: `<div class="dist">${top}${rows}</div>` + (res ? resH(res) : "") + (note ? `<p class="note">${note}</p>` : "") };
+/* vertical work: one line per step, = aligned, step name in the right column.
+   rows: { head } or { l, r, n, s } where s "cut" crosses a line out and "new" marks the line just added */
+function workH(rows) {
+  const h = rows.map(w => w.head ? `<div class="wh">${w.head}</div>` : `<span class="wl ${w.s || ""}">${w.l || ""}</span><span>=</span><span class="wr ${w.s || ""}">${w.r}</span><span class="wn ${w.s || ""}">${w.n || ""}</span>`).join("");
+  return { t: "html", h: `<div class="work">${h}</div>` };
+}
+/* product lines for (A)(B): First, Outside, Inside, Last for two binomials */
+function prodRows(A, B, cut) {
+  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"], foil = [["First", "Outside"], ["Inside", "Last"]];
+  return A.flatMap((a, i) => B.map((b, j) => {
+    const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r), cancel = cut && cut(i, j);
+    const n = A.length === 2 && B.length === 2 ? foil[i][j] : ["First term", "Second term", "Third term"][j];
+    return { l: `${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}`, r: (raw.r !== sm.r ? tH(raw) + " = " : "") + tH(sm), n: cancel ? `${n}: cancels` : n, s: cancel ? "cut" : "" };
+  }));
 }
 function genDist() {
   for (;;) {
@@ -896,13 +909,16 @@ function genDist() {
     if (A.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1) || B.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1)) continue;
     const prods = rxMul(A, B), fin = rxCombine(prods);
     if (!fin.length || (form === "mono" && A[0].r === B[1].r && B[1].r === 1)) continue;
-    const cells = A.map(a => B.map(b => { const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r); return { h: rxSignedH(sm), sub: raw.r !== sm.r ? rxSignedH(raw) : "", k: sm.r === 1 ? "p" : "b" }; }));
     const sumOpp = prods.length === 4 && prods[1].r === prods[2].r && prods[1].c === -prods[2].c && prods[1].r !== 1;
-    const cut = cells.map((row, i) => row.map((c, j) => sumOpp && i + j === 1 ? { ...c, s: "cut" } : c));
-    const area = cs => distH(A, B, cs);
-    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", area(cells)),
-      ST(rxH(prods), "Write all the products. Simplify each radical.", area(cells)),
-      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : "Combine like terms.", distH(A, B, cut, rxH(fin)))];
+    const head = { head: `${qh}${form === "sq" ? ` = ${grp(A)}${grp(A)}` : ""}` };
+    const work = [head, ...prodRows(A, B)];
+    const last = [head, ...prodRows(A, B, (i, j) => sumOpp && i + j === 1)];
+    if (sumOpp) last.push({ l: rxH([prods[1], prods[2]]), r: "0", n: "Opposites cancel" });
+    const left = sumOpp ? [prods[0], prods[3]] : prods;
+    if (rxH(left) !== rxH(fin)) last.push({ l: rxH(left), r: C("res", rxH(fin)), n: "Combine like terms", s: "new" });
+    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", workH(work)),
+      ST(rxH(prods), "Write all the products. Simplify each radical.", workH(work)),
+      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : rxH(prods) === rxH(fin) ? "No like terms to combine." : "Combine like terms.", workH(last))];
     return { ask: "Expand and simplify.", q: qh, a: rxT(fin), kind: "rad", val: () => rxVal(fin), hint: "Multiply every term by every term, simplify each radical, then combine like terms.", steps };
   }
 }
@@ -913,7 +929,7 @@ function genDiv(ctx, useVars) {
     if (!useVars && Number.isInteger(Math.sqrt(m)) && Math.random() < 0.5) continue;
     const rs = radSteps(kk, m, 2, vm);
     const top = coefH(a) + rad(radiH(p, e1 ? [["x", e1]] : [])), bot = coefH(b) + rad(radiH(q, e2 ? [["x", e2]] : []));
-    const lanes = { t: "lanes", rows: [{ k: "p", l: "Outside", h: `${a} ÷ ${b} = ${kk}` }, { k: "b", l: "Inside", h: `${rad(radiH(p, e1 ? [["x", e1]] : []))} ÷ ${rad(radiH(q, e2 ? [["x", e2]] : []))} = ${rad(radiH(m, vm))}` }] };
+    const lanes = { t: "lanes", rows: [{ k: "p", l: "Outside", h: `${fr(a, b)} = ${kk}` }, { k: "b", l: "Inside", h: `${fr(rad(radiH(p, e1 ? [["x", e1]] : [])), rad(radiH(q, e2 ? [["x", e2]] : [])))} = ${rad(radiH(m, vm))}` }] };
     return { ask: "Divide and simplify.", q: fr(top, bot), a: rs.finT, kind: "rad", val: V => kk * Math.sqrt(m * (useVars ? V.x ** (e1 - e2) : 1)), hint: "Divide outside by outside and inside by inside, then simplify.",
       steps: [ST(coefH(kk) + rad(radiH(m, vm)), "Divide outside by outside, inside by inside.", lanes), ...(rs.any ? rs.steps.slice(1) : [ST(C("res", rs.fin), "Nothing more comes out of the radical.", lanes)])] };
   }
@@ -950,13 +966,21 @@ function genRatBin() {
     if (d < 0) { d = -d; top = top.map(t => ({ c: -t.c, r: t.r })); }
     if (top.length > 3) continue;
     const topH = rxH(top), fin = d === 1 ? topH : fr(topH, d), finT = d === 1 ? rxT(top) : `(${rxT(top)})/${d}`;
-    const cells = [den, conj].length && den.map((a, i) => conj.map((b, j) => { const sm = rx(a.c * b.c, a.r * b.r); return { h: rxSignedH(sm), k: sm.r === 1 ? "p" : "b", s: i !== j ? "cut" : "" }; }));
-    const area = distH(den, conj, cells, M(D), "The middle terms are opposites, so the radicals cancel.");
-    const rawTop = rxCombine(rxMul(numer, conj));
+    const bp = rxMul(den, conj), opp = [bp[1], bp[2]], left = [bp[0], bp[3]];
+    const pr = X => X.length > 1 ? `(${rxH(X)})` : rxH(X);
+    const topE = rxH(numer) === "1" ? rxH(conj) : `${rxH(numer)}${pr(conj)}`, botE = `${pr(den)}${pr(conj)}`;
+    const bHead = { head: `<b>Bottom:</b> ${botE}` }, cutRows = prodRows(den, conj, (i, j) => i !== j);
+    const oppRow = s => ({ l: rxH(opp), r: "0", n: "Opposites cancel", s });
+    const rawTop = rxMul(numer, conj), topC = rxCombine(rawTop);
+    const topWork = [{ head: `<b>Top:</b> ${topE}` }, ...prodRows(numer, conj)];
+    if (topC.length < rawTop.length) topWork.push({ l: rxH(rawTop), r: rxH(topC), n: "Combine like terms", s: "new" });
+    const topShow = topC.length < rawTop.length ? topC : rawTop;
     const steps = [ST(`${fr(rxH(numer), rxH(den))} × ${fr(C("cg", rxH(conj)), C("cg", rxH(conj)))}`, `Multiply the top and bottom by the conjugate ${rxH(conj)} (change the sign between the terms).`, null),
-      ST(fr(`${rxH(numer)}(${rxH(conj)})`, M(D)), "Bottom: the conjugates multiply to a whole number.", area),
-      ST(fr(rxH(rawTop), M(D)), "Top: distribute.", area)];
-    if (g > 1 || D < 0 || d === 1) steps.push(ST(C("res", fin), g > 1 ? `Divide every term by ${D < 0 ? -g : g}.` : D < 0 ? "Move the negative to the top." : "Simplify.", null)); else steps[2].e = C("res", fin);
+      ST(fr(topE, botE), "Bottom: multiply each term by each term.", workH([bHead, ...prodRows(den, conj)])),
+      ST(fr(topE, botE), "The middle terms are opposites, so they cancel to 0.", workH([bHead, ...cutRows, oppRow("new")])),
+      ST(fr(topE, M(D)), `Combine what is left: ${rxH(left)} = ${M(D)}. No radical left in the bottom.`, workH([bHead, ...cutRows, oppRow(""), { l: rxH(left), r: M(D), n: "Combine", s: "new" }])),
+      ...(rxH(numer) === "1" ? [] : [ST(fr(rxH(topShow), M(D)), "Top: distribute.", workH(topWork))])];
+    if (g > 1 || D < 0 || d === 1) steps.push(ST(C("res", fin), g > 1 ? `Divide every term by ${M(D < 0 ? -g : g)}.` : D < 0 ? "Move the negative to the top." : "Simplify.", null)); else steps[steps.length - 1].e = C("res", fin);
     return { ask: "Rationalize the denominator and simplify.", q: fr(rxH(numer), rxH(den)), a: finT, kind: "rad", val: () => rxVal(numer) / rxVal(den), hint: `Multiply the top and bottom by the conjugate ${rxH(conj)}.`, steps };
   }
 }
@@ -973,12 +997,12 @@ const L9 = ["9"], TEN = ["10C"], TWENTY = ["20-1", "20-2"];
 const SKILLS = [
   { id: "meaning", g: POW, name: "Powers as repeated multiplication", own: L9, gen: genMeaning, key: `<p>${P("a", "n")} = a × a × … × a<span class="means">n factors of the base a</span></p><p>${P("(−2)", 4)} = 16 &nbsp; −${P(2, 4)} = −16<span class="means">Brackets decide what the base is.</span></p>` },
   { id: "product", g: POW, name: "Product law", own: L9, gen: genProduct, key: `<p>${P("a", "m")} × ${P("a", "n")} = ${P("a", "m + n")}<span class="means">Same base, multiplying: add the exponents.</span></p>` },
-  { id: "quotient", g: POW, name: "Quotient law", own: L9, gen: genQuotient, key: `<p>${P("a", "m")} ÷ ${P("a", "n")} = ${P("a", "m − n")}<span class="means">Same base, dividing: subtract the exponents.</span></p>` },
+  { id: "quotient", g: POW, name: "Quotient law", own: L9, gen: genQuotient, key: `<p>${fr(P("a", "m"), P("a", "n"))} = ${P("a", "m − n")}<span class="means">Same base, dividing: subtract the exponents.</span></p>` },
   { id: "power", g: POW, name: "Power of a power", own: L9, gen: genPower, key: `<p>${P(`(${P("a", "m")})`, "n")} = ${P("a", "mn")}<span class="means">Multiply the exponents.</span></p>` },
   { id: "prodquot", g: POW, name: "Power of a product or quotient", own: L9, gen: genProdQuot, key: `<p>${P("(ab)", "n")} = ${P("a", "n")}${P("b", "n")}</p><p>${P(`(${fr("a", "b")})`, "n")} = ${fr(P("a", "n"), P("b", "n"))}<span class="means">Every factor in the brackets gets the exponent.</span></p>` },
   { id: "zero", g: POW, name: "Zero exponent", own: L9, gen: genZero, key: `<p>${P("a", 0)} = 1<span class="means">for any base a ≠ 0</span></p>` },
   { id: "neg", g: POW, name: "Negative exponents", own: L9, gen: genNeg, key: `<p>${P("a", "−n")} = ${fr(1, P("a", "n"))}</p><p>${P(`(${fr("a", "b")})`, "−n")} = ${P(`(${fr("b", "a")})`, "n")}<span class="means">A negative exponent means the reciprocal.</span></p>` },
-  { id: "mixed", g: POW, name: "Exponent laws together", own: L9, gen: genMixed, key: `<p>× add &nbsp; ÷ subtract &nbsp; ( )<sup>n</sup> multiply<span class="means">Same base: work with the exponents.</span></p>` },
+  { id: "mixed", g: POW, name: "Exponent laws together", own: L9, gen: genMixed, key: `<p>× add &nbsp; divide: subtract &nbsp; ( )<sup>n</sup> multiply<span class="means">Same base: work with the exponents.</span></p>` },
   { id: "varlaws", g: POW, name: "Exponent laws with variables", own: TEN, gen: genVarLaws, key: `<p>${P("(3x²y)", 2)} = 9${P(xi("x"), 4)}${P(xi("y"), 2)}<span class="means">Sort by base: numbers, then each variable.</span></p><p>${P(xi("x"), "−3")} = ${fr(1, P(xi("x"), 3))}<span class="means">Final answers use positive exponents.</span></p>` },
   { id: "ratconv", g: POW, name: "Rational exponents and radicals", own: TEN, gen: genRatConvert, key: `<p>${P("a", fr(C("co", "m"), C("cb", "n")))} = ${rad(P("a", C("co", "m")), C("cb", "n"))} = ${P(`(${rad("a", C("cb", "n"))})`, C("co", "m"))}<span class="means"><span class="co">power</span> over <span class="cb">root</span></span></p>` },
   { id: "rateval", g: POW, name: "Evaluate rational exponents", own: TEN, gen: genRatEval, key: `<p>${P(8, fr(2, 3))} = ${P(`(${rad(8, 3)})`, 2)} = ${P(2, 2)} = 4<span class="means">Root first, then the power.</span></p><p>${P(8, "−" + fr(2, 3))} = ${fr(1, 4)}<span class="means">Negative: take the reciprocal.</span></p>` },
@@ -990,7 +1014,7 @@ const SKILLS = [
   { id: "addsub", g: ROOT, name: "Add and subtract radicals", own: [...TEN, ...TWENTY], gen: genAddSub, key: `<p>3${rad(2)} + 5${rad(2)} = 8${rad(2)}<span class="means">Like radicals: same index and radicand. Simplify first.</span></p>` },
   { id: "mult", g: ROOT, name: "Multiply radicals", own: TWENTY, gen: genMult, key: `<p>a${rad("b")} × c${rad("d")} = ac${rad("bd")}<span class="means">Outside × outside, inside × inside, then simplify.</span></p>` },
   { id: "dist", g: ROOT, name: "Distribute and expand", own: TWENTY, gen: genDist, key: `<p>(2 + ${rad(3)})(1 − ${rad(3)}) = −1 − ${rad(3)}<span class="means">Distribute: each term times each term, then combine like terms.</span></p>` },
-  { id: "div", g: ROOT, name: "Divide radicals", own: TWENTY, gen: genDiv, key: `<p>${fr("a" + rad("b"), "c" + rad("d"))} = ${fr("a", "c")}${rad(fr("b", "d"))}<span class="means">Outside ÷ outside, inside ÷ inside.</span></p>` },
+  { id: "div", g: ROOT, name: "Divide radicals", own: TWENTY, gen: genDiv, key: `<p>${fr("a" + rad("b"), "c" + rad("d"))} = ${fr("a", "c")}${rad(fr("b", "d"))}<span class="means">Outside over outside, inside over inside.</span></p>` },
   { id: "ratmono", g: ROOT, name: "Rationalize a monomial denominator", own: TWENTY, gen: genRatMono, key: `<p>${fr(6, rad(3))} × ${fr(rad(3), rad(3))} = ${fr("6" + rad(3), 3)} = 2${rad(3)}<span class="means">No radical left in the denominator.</span></p>` },
   { id: "ratbin", g: ROOT, name: "Rationalize a binomial denominator (conjugates)", own: ["20-1"], gen: genRatBin, key: `<p>(a + ${rad("b")})(a − ${rad("b")}) = ${P("a", 2)} − b<span class="means">Multiply by the conjugate: the radicals cancel.</span></p>` },
   { id: "varrad", g: ROOT, name: "Radicals with variable radicands", own: TWENTY, gen: genVarRad, key: `<p>${rad("18" + P(xi("x"), 3))} = 3${xi("x")}${rad("2" + xi("x"))}<span class="means">Variables come out in groups too (x ≥ 0).</span></p>` },
@@ -1505,7 +1529,6 @@ window.I18N_PAGE = {
  "Same base, multiplying: add the exponents.": "Même base, multiplication : additionne les exposants.",
  "Write the top and the bottom as factors.": "Écris le haut et le bas en facteurs.",
  "Same base, dividing: subtract the exponents.": "Même base, division : soustrais les exposants.",
- "Each 10 ÷ 10 = 1, so 2 pairs cancel.": "Chaque 10 ÷ 10 = 1, donc 2 paires s’annulent.",
  "{n} − {n} = {n} factors are left. Subtract the exponents.": "Il reste {n} − {n} = {n} facteurs. Soustrais les exposants.",
  "The outside exponent 2 means 2 copies of 5{0}.": "L’exposant extérieur 2 veut dire 2 copies de 5{0}.",
  "Multiply the exponents.": "Multiplie les exposants.",
@@ -1525,7 +1548,7 @@ window.I18N_PAGE = {
  "Top": "Haut",
  "Bottom": "Bas",
  "Every power has the same base, so work with the exponents.": "Chaque puissance a la même base, alors travaille avec les exposants.",
- "× add ÷ subtract ( ){0} multiply{1}": "× additionne ÷ soustrais ( ){0} multiplie{1}",
+ "× add divide: subtract ( ){0} multiply{1}": "× additionne division : soustrais ( ){0} multiplie{1}",
  "Same base: work with the exponents.": "Même base : travaille avec les exposants.",
  "Multiplying on top: add the exponents.": "Multiplication en haut : additionne les exposants.",
  "Dividing: subtract the bottom exponent.": "Division : soustrais l’exposant du bas.",
@@ -1571,7 +1594,7 @@ window.I18N_PAGE = {
  "Every term times every term, then combine like terms.": "Chaque terme fois chaque terme, puis regroupe les termes semblables.",
  "Write all the products. Simplify each radical.": "Écris tous les produits. Simplifie chaque radical.",
  "The middle terms are opposites: they cancel. Combine what is left.": "Les termes du milieu sont opposés : ils s’annulent. Regroupe ce qui reste.",
- "Outside ÷ outside, inside ÷ inside.": "Extérieur ÷ extérieur, intérieur ÷ intérieur.",
+ "Outside over outside, inside over inside.": "Extérieur sur extérieur, intérieur sur intérieur.",
  "square with side root 7 and area 7": "carré de côté racine de 7 et d’aire 7",
  "area": "aire",
  "Multiply by {0}, which equals 1, so the value does not change.": "Multiplie par {0}, qui égale 1, donc la valeur ne change pas.",
@@ -1592,7 +1615,7 @@ window.I18N_PAGE = {
  "The exponent {n} says how many times the base {n} is a factor.": "L’exposant {n} dit combien de fois la base {n} est un facteur.",
  "Multiply the tops and multiply the bottoms.": "Multiplie les hauts et multiplie les bas.",
  "{n} × {n} = {n} and {n} × {n} = {n}.": "{n} × {n} = {n} et {n} × {n} = {n}.",
- "Each {n} ÷ {n} = {n}, so {n} pairs cancel.": "Chaque {n} ÷ {n} = {n}, donc {n} paires s’annulent.",
+ "Each {0} = {n}, so {n} pairs cancel.": "Chaque {0} = {n}, donc {n} paires s’annulent.",
  "The outside exponent {n} means {n} copies of {n}{0}.": "L’exposant extérieur {n} veut dire {n} copies de {n}{0}.",
  "{n} groups of {n} factors: {n} × {n} = {n}. Multiply the exponents.": "{n} groupes de {n} facteurs : {n} × {n} = {n}. Multiplie les exposants.",
  "Follow the pattern: each step down divides by {n}.": "Suis la régularité : chaque étape vers le bas divise par {n}.",
@@ -1640,7 +1663,28 @@ window.I18N_PAGE = {
  "Expand and simplify.": "Développe et simplifie.",
  "The top and the bottom both get the exponent.": "Le haut et le bas reçoivent tous les deux l’exposant.",
  "Evaluate the top and the bottom.": "Évalue le haut et le bas.",
- "Any non-zero base to the exponent 0 is 1.": "Toute base non nulle à l’exposant 0 vaut 1."
+ "Any non-zero base to the exponent 0 is 1.": "Toute base non nulle à l’exposant 0 vaut 1.",
+ "Bottom: multiply each term by each term.": "Bas : multiplie chaque terme par chaque terme.",
+ "The middle terms are opposites, so they cancel to {n}.": "Les termes du milieu sont opposés, alors ils s’annulent pour donner {n}.",
+ "Combine what is left: {n} − {n} = {n}.": "Regroupe ce qui reste : {n} − {n} = {n}.",
+ "No radical left in the bottom.": "Plus de radical au dénominateur.",
+ "Top: distribute.": "Haut : distribue.",
+ "No like terms to combine.": "Aucun terme semblable à regrouper.",
+ "Divide every term by {n}.": "Divise chaque terme par {n}.",
+ "Move the negative to the top.": "Place le signe négatif en haut.",
+ "Simplify.": "Simplifie.",
+ "Bottom:": "Bas :",
+ "Top:": "Haut :",
+ "First": "Premier",
+ "Last": "Dernier",
+ "Outside: cancels": "Extérieur : s’annule",
+ "Inside: cancels": "Intérieur : s’annule",
+ "Opposites cancel": "Les opposés s’annulent",
+ "Combine": "Regroupe",
+ "Combine like terms": "Regroupe les termes semblables",
+ "First term": "Premier terme",
+ "Second term": "Deuxième terme",
+ "↓ divide by {n}": "↓ divise par {n}"
 };
 </script>
 <script>
