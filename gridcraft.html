@@ -214,6 +214,7 @@ h1 em { font-style: normal; color: var(--pt); }
 .palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
 .palette button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px; background: var(--sheet); font-size: 0.8rem; line-height: 1.1; }
 .palette button svg { width: 40px; height: 32px; }
+.palette button small { font-family: var(--font-num); font-size: 0.72rem; color: var(--muted); }
 .palette button[aria-pressed="true"] { background: var(--chip); border: 2px solid var(--orange); color: var(--orange); }
 .palrow { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .danger { background: transparent; color: var(--warn); border-color: var(--warn); padding: 4px 10px; }
@@ -233,7 +234,7 @@ h1 em { font-style: normal; color: var(--pt); }
 .tabs button + button { border-left: 2px solid var(--grid-major); }
 .tabs button[aria-pressed="true"] { background: var(--pt); color: var(--paper); }
 
-.mats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.mats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
 .mats button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; background: var(--sheet); }
 .mats button small { font-weight: 400; font-size: 0.72rem; color: var(--muted); line-height: 1.2; text-align: center; }
 .mats button[aria-pressed="true"] { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 18%, var(--sheet)); }
@@ -243,8 +244,9 @@ h1 em { font-style: normal; color: var(--pt); }
 .meas span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
 .meas b { font-family: var(--font-num); font-size: 1.25rem; white-space: nowrap; }
 /* Cost work, one line per step with = aligned and the step name on the right. */
-.work { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 8px; font-family: var(--font-num); font-size: 1.05rem; margin-bottom: 12px; align-items: baseline; }
+.work { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 2px 8px; font-family: var(--font-num); font-size: 0.95rem; margin-bottom: 12px; align-items: baseline; }
 .work .e { text-align: right; }
+.work > span:not(.n) { white-space: nowrap; }
 .work .n { color: var(--muted); font-family: var(--font-body); font-size: 0.85rem; }
 .work .tot { color: var(--orange); font-weight: 700; }
 .verts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
@@ -274,8 +276,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     <h1>GridCraft <em>CAD</em></h1></div>
     <div class="hud">
       <div class="tele" aria-label="Cursor position"><span>X:</span><b id="tx">–</b><span>Y:</span><b id="ty">–</b></div>
-      <div><span class="k">Total area</span><b id="totA">0 u²</b></div>
-      <div><span class="k">Total perimeter</span><b id="totP">0 u</b></div>
+      <div><span class="k">Total area</span><b id="totA">0 m²</b></div>
+      <div><span class="k">Total perimeter</span><b id="totP">0 m</b></div>
       <div><span class="k">Project cost</span><b id="totC">$0</b></div>
     </div>
   </header>
@@ -291,8 +293,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       <button type="button" data-tool="furn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/></svg><span>Furniture</span></button>
 
       <p class="label">Grid</p>
-      <button type="button" data-mode="4" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg><span>4 Quadrants</span></button>
-      <button type="button" data-mode="1" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M5 3v16h16"/></svg><span>Quadrant I</span></button>
+      <button type="button" data-mode="axes" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3v16h16"/></svg><span>Quadrant I</span></button>
+      <button type="button" data-mode="plain" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg><span>Plain grid</span></button>
       <button type="button" class="tog" id="halfBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></svg><span>Half-Snap</span></button>
       <button type="button" class="tog" id="dimBtn" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7.5 12.5l2 2M10.5 9.5l2 2M13.5 6.5l2 2"/></svg><span>Show Dimensions</span></button>
 
@@ -331,13 +333,12 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       </section>
 
       <section class="card" id="emptyCard">
-        <p class="label">Materials and prices</p>
+        <p class="label">Materials and prices (1 square = 1 m)</p>
         <ul class="legend">
-          <li><span class="sw" style="--c: var(--pt)"></span><span><b>Room</b><small>$25 per unit of perimeter + $10 per u² of area</small></span></li>
-          <li><span class="sw" style="--c: var(--green)"></span><span><b>Garden</b><small>$5 per u² of area</small></span></li>
-          <li><span class="sw" style="--c: var(--pool)"></span><span><b>Pool</b><small>$20 per u² of area</small></span></li>
-          <li><span class="sw wall" style="--c: var(--pt)"></span><span><b>Wall (line)</b><small>$25 per unit of length</small></span></li>
-          <li><span class="sw" style="--c: var(--ink)"></span><span><b>Furniture</b><small>Free: it does not change area, perimeter or cost</small></span></li>
+          <li><span class="sw" style="--c: var(--pt)"></span><span><b>Room</b><small>$300 per metre of wall + $2,000 per m² of floor</small></span></li>
+          <li><span class="sw" style="--c: var(--green)"></span><span><b>Garden</b><small>$50 per m²</small></span></li>
+          <li><span class="sw wall" style="--c: var(--pt)"></span><span><b>Wall (line)</b><small>$300 per metre</small></span></li>
+          <li><span class="sw" style="--c: var(--ink)"></span><span><b>Doors and furniture</b><small>Each item has its own price</small></span></li>
         </ul>
         <p class="note">Pick <b>Select</b> and click a shape to see its measures and move it.</p>
       </section>
@@ -354,9 +355,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   const C = { bg: "#0a2342", minor: "#18406d", major: "#2b5d96", axis: "#a8cdf5", tick: "#d6e8ff",
     cyan: "#22d3ee", amber: "#fbbf24", emerald: "#34d399", pool: "#7c9bff", ink: "#eef6ff", pill: "#06182f" };
   const MAT = {
-    room: { name: "Room", c: C.cyan, op: 0.16, price: "$25/u + $10/u²" },
-    garden: { name: "Garden", c: C.emerald, op: 0.22, price: "$5/u²" },
-    pool: { name: "Pool", c: C.pool, op: 0.32, price: "$20/u²" },
+    room: { name: "Room", c: C.cyan, op: 0.16, price: "$300/m + $2,000/m²" },
+    garden: { name: "Garden", c: C.emerald, op: 0.22, price: "$50/m²" },
     wall: { name: "Wall", c: C.cyan }
   };
   // Doors, windows and fixtures. Each is drawn in its own box from (0, 0) to (w, h) in grid units, y up;
@@ -366,30 +366,32 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   const E = (x, y, rx, ry) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`;
   const L = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
   const ITEMS = {
-    door: { name: "Door", w: 1, h: 1, draw: `<line x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}" stroke-width="0.2"/>` + L(0, 0, 0, 1) + `<path d="M1 0A1 1 0 0 1 0 1" fill="none" stroke-dasharray="0.12 0.08"/>` },
-    window: { name: "Window", w: 2, h: 0, draw: `<rect x="0" y="-0.15" width="2" height="0.3" fill="${C.bg}"/>` + L(0, 0, 2, 0) },
-    toilet: { name: "Toilet", w: 1, h: 1, draw: R(0.15, 0.72, 0.7, 0.24, 0.05) + E(0.5, 0.4, 0.3, 0.33) },
-    sink: { name: "Sink", w: 1, h: 1, draw: R(0.08, 0.12, 0.84, 0.76, 0.12) + E(0.5, 0.46, 0.28, 0.2) + O(0.5, 0.76, 0.05) },
-    bathtub: { name: "Bathtub", w: 2, h: 1, draw: R(0, 0, 2, 1, 0.15) + R(0.12, 0.12, 1.76, 0.76, 0.3) + O(0.32, 0.5, 0.06) },
-    shower: { name: "Shower", w: 1, h: 1, draw: R(0, 0, 1, 1) + L(0, 0, 1, 1) + L(0, 1, 1, 0) + `<circle cx="0.5" cy="0.5" r="0.1" fill="${C.bg}"/>` },
-    bed: { name: "Bed", w: 2, h: 3, draw: R(0, 0, 2, 3, 0.08) + R(0.2, 2.4, 0.7, 0.4, 0.1) + R(1.1, 2.4, 0.7, 0.4, 0.1) + L(0, 2.1, 2, 2.1) + L(0, 2.1, 0.5, 1.6) },
-    table: { name: "Table", w: 2, h: 2, draw: O(1, 1, 0.55) + R(0.8, 0.05, 0.4, 0.3, 0.06) + R(0.8, 1.65, 0.4, 0.3, 0.06) + R(0.05, 0.8, 0.3, 0.4, 0.06) + R(1.65, 0.8, 0.3, 0.4, 0.06) },
-    sofa: { name: "Sofa", w: 3, h: 1, draw: R(0, 0, 3, 1, 0.15) + R(0, 0.7, 3, 0.3, 0.1) + R(0, 0, 0.3, 0.85, 0.1) + R(2.7, 0, 0.3, 0.85, 0.1) + L(1.5, 0.1, 1.5, 0.7) },
-    stove: { name: "Stove", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.05) + O(0.3, 0.3, 0.14) + O(0.7, 0.3, 0.14) + O(0.3, 0.7, 0.14) + O(0.7, 0.7, 0.14) },
-    fridge: { name: "Fridge", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.06) + L(0, 0.35, 1, 0.35) + L(0.82, 0.45, 0.82, 0.8) },
-    tree: { name: "Tree", w: 1, h: 1, c: C.emerald, draw: O(0.5, 0.5, 0.46) + O(0.5, 0.5, 0.2) + L(0.5, 0.04, 0.5, 0.96) + L(0.04, 0.5, 0.96, 0.5) }
+    door: { name: "Door", cost: 600, w: 1, h: 1, draw: `<line x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}" stroke-width="0.2"/>` + L(0, 0, 0, 1) + `<path d="M1 0A1 1 0 0 1 0 1" fill="none" stroke-dasharray="0.12 0.08"/>` },
+    window: { name: "Window", cost: 900, w: 2, h: 0, draw: `<rect x="0" y="-0.15" width="2" height="0.3" fill="${C.bg}"/>` + L(0, 0, 2, 0) },
+    toilet: { name: "Toilet", cost: 500, w: 1, h: 1, draw: R(0.15, 0.72, 0.7, 0.24, 0.05) + E(0.5, 0.4, 0.3, 0.33) },
+    sink: { name: "Sink", cost: 400, w: 1, h: 1, draw: R(0.08, 0.12, 0.84, 0.76, 0.12) + E(0.5, 0.46, 0.28, 0.2) + O(0.5, 0.76, 0.05) },
+    bathtub: { name: "Bathtub", cost: 1500, w: 2, h: 1, draw: R(0, 0, 2, 1, 0.15) + R(0.12, 0.12, 1.76, 0.76, 0.3) + O(0.32, 0.5, 0.06) },
+    shower: { name: "Shower", cost: 2500, w: 1, h: 1, draw: R(0, 0, 1, 1) + L(0, 0, 1, 1) + L(0, 1, 1, 0) + `<circle cx="0.5" cy="0.5" r="0.1" fill="${C.bg}"/>` },
+    bed: { name: "Bed", cost: 1200, w: 2, h: 3, draw: R(0, 0, 2, 3, 0.08) + R(0.2, 2.4, 0.7, 0.4, 0.1) + R(1.1, 2.4, 0.7, 0.4, 0.1) + L(0, 2.1, 2, 2.1) + L(0, 2.1, 0.5, 1.6) },
+    table: { name: "Table", cost: 800, w: 2, h: 2, draw: O(1, 1, 0.55) + R(0.8, 0.05, 0.4, 0.3, 0.06) + R(0.8, 1.65, 0.4, 0.3, 0.06) + R(0.05, 0.8, 0.3, 0.4, 0.06) + R(1.65, 0.8, 0.3, 0.4, 0.06) },
+    sofa: { name: "Sofa", cost: 1500, w: 3, h: 1, draw: R(0, 0, 3, 1, 0.15) + R(0, 0.7, 3, 0.3, 0.1) + R(0, 0, 0.3, 0.85, 0.1) + R(2.7, 0, 0.3, 0.85, 0.1) + L(1.5, 0.1, 1.5, 0.7) },
+    stove: { name: "Stove", cost: 1200, w: 1, h: 1, draw: R(0, 0, 1, 1, 0.05) + O(0.3, 0.3, 0.14) + O(0.7, 0.3, 0.14) + O(0.3, 0.7, 0.14) + O(0.7, 0.7, 0.14) },
+    fridge: { name: "Fridge", cost: 1800, w: 1, h: 1, draw: R(0, 0, 1, 1, 0.06) + L(0, 0.35, 1, 0.35) + L(0.82, 0.45, 0.82, 0.8) },
+    tree: { name: "Tree", cost: 150, w: 1, h: 1, c: C.emerald, draw: O(0.5, 0.5, 0.46) + O(0.5, 0.5, 0.2) + L(0.5, 0.04, 0.5, 0.96) + L(0.04, 0.5, 0.96, 0.5) }
   };
+  // Prices for a house plan (1 square = 1 m), rounded so the arithmetic stays friendly.
+  const PRICE = { wall: 300, floor: 2000, garden: 50 };
   const FONT = "'Spline Sans Mono', ui-monospace, Menlo, monospace";
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const S = { shapes: [], selId: null, tool: "select", quad4: true, half: false, dims: true, item: "door", itemRot: 0,
-    tab: "shape", pivot: "origin", draft: null, cursor: null, nextId: 1 };
+  const S = { shapes: [], selId: null, tool: "select", axes: true, half: false, dims: true, item: "door", itemRot: 0,
+    tab: "shape", pivot: "center", draft: null, cursor: null, nextId: 1 };
   const history = [];
   let drag = null, anim = false, inspKey = "";
 
   const $ = id => document.getElementById(id);
   const svg = $("cad");
-  const lo = () => (S.quad4 ? -10 : 0), hi = () => (S.quad4 ? 10 : 20);
+  const lo = () => 0, hi = () => 20;
   const step = () => (S.half ? 0.5 : 1);
   const sx = x => M + (x - lo()) * U, sy = y => M + (hi() - y) * U;
   const clean = v => Math.round(v * 1000) / 1000 + 0;
@@ -479,16 +481,16 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     });
   }
   function measure(sh) {
-    if (sh.kind === "line") { const L = dist(sh.pts[0], sh.pts[1]); return { len: L, cost: 25 * r1(L) }; }
+    if (sh.kind === "line") { const L = dist(sh.pts[0], sh.pts[1]); return { len: L, cost: PRICE.wall * r1(L) }; }
     const P = sh.pts, crossing = selfCrossing(P);
     const A = crossing ? 0 : Math.abs(signedArea(P));
     let per = 0; for (let i = 0; i < P.length; i++) per += dist(P[i], P[(i + 1) % P.length]);
-    const cost = sh.mat === "room" ? 25 * r1(per) + 10 * A : sh.mat === "garden" ? 5 * A : 20 * A;
+    const cost = sh.mat === "room" ? PRICE.wall * r1(per) + PRICE.floor * A : PRICE.garden * A;
     return { area: A, per, cost, crossing };
   }
   function totals() {
     let area = 0, per = 0, cost = 0;
-    S.shapes.forEach(sh => { if (sh.kind === "item") return; const m = measure(sh); cost += m.cost; if (sh.kind !== "line") { area += m.area; per += m.per; } });
+    S.shapes.forEach(sh => { if (sh.kind === "item") { cost += ITEMS[sh.type].cost; return; } const m = measure(sh); cost += m.cost; if (sh.kind !== "line") { area += m.area; per += m.per; } });
     return { area, per, cost };
   }
   const bbox = P => { const xs = P.map(p => p[0]), ys = P.map(p => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
@@ -551,18 +553,22 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       s += `<line x1="${p}" y1="${M}" x2="${p}" y2="${SIZE - M}" stroke="${col}" stroke-width="1"/>`;
       s += `<line x1="${M}" y1="${p}" x2="${SIZE - M}" y2="${p}" stroke="${col}" stroke-width="1"/>`;
     }
-    const ax = sx(Math.max(lo(), 0)), ay = sy(Math.max(lo(), 0));
-    s += `<line x1="${M - 6}" y1="${ay}" x2="${SIZE - M + 6}" y2="${ay}" stroke="${C.axis}" stroke-width="2.5"/>`;
-    s += `<line x1="${ax}" y1="${M - 6}" x2="${ax}" y2="${SIZE - M + 6}" stroke="${C.axis}" stroke-width="2.5"/>`;
-    const t = (x, y, txt, anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="19" font-weight="700" fill="${C.tick}" stroke="${C.bg}" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
-    for (let v = lo(); v <= hi(); v++) {
-      const lab = num(v, 0);
-      if (S.quad4 && v === 0) { s += t(ax - 7, ay + 20, "0", "end"); continue; }
-      s += t(sx(v), S.quad4 ? ay + 21 : SIZE - M + 22, lab, "middle");
-      if (!(!S.quad4 && v === 0)) s += t(S.quad4 ? ax - 7 : M - 7, sy(v) + 6, lab, "end");
+    if (S.axes) {                                   // Quadrant I: axes on the left and bottom, every line labeled
+      s += `<line x1="${M}" y1="${SIZE - M}" x2="${SIZE - M + 6}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      s += `<line x1="${M}" y1="${M - 6}" x2="${M}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      const t = (x, y, txt, anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="19" font-weight="700" fill="${C.tick}" stroke="${C.bg}" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
+      for (let v = 0; v <= 20; v++) {
+        s += t(sx(v), SIZE - M + 22, num(v, 0), "middle");
+        if (v) s += t(M - 7, sy(v) + 6, num(v, 0), "end");
+      }
+      s += `<text x="${SIZE - M + 12}" y="${SIZE - M + 6}" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">x</text>`;
+      s += `<text x="${M}" y="${M - 14}" text-anchor="middle" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">y</text>`;
     }
-    s += `<text x="${SIZE - M + 12}" y="${ay + 6}" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">x</text>`;
-    s += `<text x="${ax}" y="${M - 14}" text-anchor="middle" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">y</text>`;
+    // Scale bar in the top margin, like the scale on a printed plan.
+    const x0 = SIZE - M - 2 * U, yb = 24;
+    s += `<rect x="${x0}" y="${yb}" width="${U}" height="8" fill="${C.cyan}" stroke="${C.cyan}" stroke-width="1.5"/><rect x="${x0 + U}" y="${yb}" width="${U}" height="8" fill="${C.bg}" stroke="${C.cyan}" stroke-width="1.5"/>`;
+    s += [0, 1, 2].map(k => `<text x="${x0 + k * U}" y="${yb - 5}" text-anchor="middle" font-size="13" font-weight="700" fill="${C.tick}">${k ? k + " m" : "0"}</text>`).join("");
+    s += `<text x="${x0 - 14}" y="${yb + 9}" text-anchor="end" font-size="16" font-weight="700" fill="${C.cyan}">Scale: 1 square = 1 m</text>`;
     return `<g font-family="${FONT}">${s}</g>`;
   }
   const ptsAttr = P => P.map(p => sx(p[0]) + "," + sy(p[1])).join(" ");
@@ -603,7 +609,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
         s += pill(sx((a[0] + b[0]) / 2 + nx * 0.5), sy((a[1] + b[1]) / 2 + ny * 0.5), sideLen(L), m.c);
       }
       const mm = measure(sh), c = labelSpot(P);
-      s += label(sx(c[0]), sy(c[1]) + 8, mm.crossing ? "sides cross" : num(mm.area, 3) + " u²", C.ink, mm.crossing ? 20 : 28);
+      s += label(sx(c[0]), sy(c[1]) + 8, mm.crossing ? "sides cross" : num(mm.area, 3) + " m²", C.ink, mm.crossing ? 20 : 28);
     }
     if (sel && sh.kind !== "line") s += angleSVG(P);
     return s;
@@ -638,20 +644,20 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       if (L > 1e-9) {
         // Angle with the horizontal, 0° to 90°, the way a grade 6 student would measure it with a protractor.
         const deg = Math.atan2(Math.abs(g[1] - D.a[1]), Math.abs(g[0] - D.a[0])) * 180 / Math.PI;
-        s += pill(sx((D.a[0] + g[0]) / 2), sy((D.a[1] + g[1]) / 2) - 26, approx(L, 1) + " u · " + num(deg, 0) + "°", C.amber, true);
+        s += pill(sx((D.a[0] + g[0]) / 2), sy((D.a[1] + g[1]) / 2) - 26, approx(L, 1) + " m · " + num(deg, 0) + "°", C.amber, true);
       }
     }
     if (D.type === "rect" && g) {
       const x = Math.min(D.a[0], g[0]), y = Math.max(D.a[1], g[1]), w = Math.abs(g[0] - D.a[0]), h = Math.abs(g[1] - D.a[1]);
       s += `<rect x="${sx(x)}" y="${sy(y)}" width="${w * U}" height="${h * U}" ${dash} fill-opacity="0.1"/>`;
-      if (w > 0 && h > 0) s += pill(sx(x + w / 2), sy(y - h / 2), num(w, 1) + " × " + num(h, 1) + " = " + num(w * h, 2) + " u²", C.amber, true);
+      if (w > 0 && h > 0) s += pill(sx(x + w / 2), sy(y - h / 2), num(w, 1) + " × " + num(h, 1) + " = " + num(w * h, 2) + " m²", C.amber, true);
     }
     if (D.type === "poly") {
       s += `<polyline points="${ptsAttr(D.pts)}" fill="none" stroke="${C.amber}" stroke-width="3.5" stroke-linejoin="round"/>`;
       const last = D.pts[D.pts.length - 1];
       if (g && !eq(g, last)) {
         s += `<line x1="${sx(last[0])}" y1="${sy(last[1])}" x2="${sx(g[0])}" y2="${sy(g[1])}" ${dash}/>`;
-        s += pill(sx((last[0] + g[0]) / 2), sy((last[1] + g[1]) / 2) - 24, approx(dist(last, g), 1) + " u", C.amber, true);
+        s += pill(sx((last[0] + g[0]) / 2), sy((last[1] + g[1]) / 2) - 24, approx(dist(last, g), 1) + " m", C.amber, true);
       }
       const closing = g && D.pts.length >= 3 && eq(g, D.pts[0]);
       s += `<circle cx="${sx(D.pts[0][0])}" cy="${sy(D.pts[0][1])}" r="${closing ? 13 : 10}" fill="${closing ? C.amber : C.bg}" stroke="${C.amber}" stroke-width="3"/>`;
@@ -662,7 +668,6 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     return s;
   }
   function pivotPt(sh) {
-    if (S.pivot === "origin") return [0, 0];
     const b = bbox(sh.pts), st = step();
     return [Math.round((b[0] + b[2]) / 2 / st) * st, Math.round((b[1] + b[3]) / 2 / st) * st];
   }
@@ -694,8 +699,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     $("tx").textContent = S.cursor ? num(S.cursor[0], 1) : "–";
     $("ty").textContent = S.cursor ? num(S.cursor[1], 1) : "–";
     const T = totals();
-    $("totA").textContent = num(T.area, 3) + " u²";
-    $("totP").textContent = approx(T.per, 1) + " u";
+    $("totA").textContent = num(T.area, 3) + " m²";
+    $("totP").textContent = approx(T.per, 1) + " m";
     $("totC").textContent = money(T.cost);
     renderHowto(); renderInspector();
   }
@@ -731,16 +736,16 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
 
   function inspHTML(sh) {
     const line = sh.kind === "line";
-    const mats = ["room", "garden", "pool"].map(k => {
-      const c = k === "room" ? "var(--pt)" : k === "garden" ? "var(--green)" : "var(--pool)";
+    const mats = ["room", "garden"].map(k => {
+      const c = k === "room" ? "var(--pt)" : "var(--green)";
       return `<button type="button" data-mat="${k}" style="--c: ${c}" aria-pressed="${sh.mat === k}"><span class="sw" style="--c: ${c}"></span><span>${MAT[k].name}</span><small>${MAT[k].price}</small></button>`;
     }).join("");
-    const swc = sh.mat === "garden" ? "var(--green)" : sh.mat === "pool" ? "var(--pool)" : "var(--pt)";
+    const swc = sh.mat === "garden" ? "var(--green)" : "var(--pt)";
     const tabs = line ? "" : `<div class="tabs" role="group" aria-label="Inspector"><button type="button" data-tab="shape" aria-pressed="${S.tab === "shape"}">Measure</button><button type="button" data-tab="move" aria-pressed="${S.tab === "move"}">Transform</button></div>`;
     const st = step();
     const verts = sh.pts.map((p, i) => `<div class="vrow"><b>${LET(i)}</b><span>(</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vx="${i}" aria-label="${LET(i)} x"><span>,</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vy="${i}" aria-label="${LET(i)} y"><span>)</span></div>`).join("");
     const shapePane = `<div data-pane="shape"${!line && S.tab !== "shape" ? " hidden" : ""}>
-      ${line ? `<p class="note" style="margin:0 0 10px">A line is a wall. Walls cost $25 per unit of length.</p>` : `<p class="label">Material</p><div class="mats">${mats}</div>`}
+      ${line ? `<p class="note" style="margin:0 0 10px">A line is a wall or fence. It costs $300 per metre.</p>` : `<p class="label">Material</p><div class="mats">${mats}</div>`}
       <div class="meas" id="iMeas"></div>
       <div class="work" id="iWork"></div>
       <p class="label">${line ? "End points (x, y)" : "Corners (x, y)"}</p>
@@ -751,9 +756,8 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       <p class="label">Slide (translate)</p>
       <div class="slide"><label>Δx <input type="number" id="sdx" value="0" step="${st}"></label><label>Δy <input type="number" id="sdy" value="0" step="${st}"></label><button type="button" class="go" data-act="slide">Apply Slide</button></div>
       <p class="label">Flip (reflect)</p>
-      <div class="btns"><button type="button" data-act="flipx"><i>↕</i><span>Flip across x-axis</span></button><button type="button" data-act="flipy"><i>↔</i><span>Flip across y-axis</span></button><button type="button" data-act="flipc"><i>⇹</i><span>Flip across center of shape</span></button></div>
-      <p class="label">Turn (rotate)</p>
-      <div class="seg" role="group" aria-label="Turn around"><span>Around</span><button type="button" data-pivot="origin" aria-pressed="${S.pivot === "origin"}">Origin (0, 0)</button><button type="button" data-pivot="center" aria-pressed="${S.pivot === "center"}">Center of shape</button></div>
+      <div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="flipc"><i>↔</i><span>Flip left to right</span></button><button type="button" data-act="flipv"><i>↕</i><span>Flip top to bottom</span></button></div>
+      <p class="label">Turn (rotate) around the amber center</p>
       <div class="btns"><button type="button" data-act="cw"><i>↻</i><span>90° clockwise</span></button><button type="button" data-act="ccw"><i>↺</i><span>90° counter&shy;clockwise</span></button><button type="button" data-act="half"><i>⟲</i><span>180°</span></button></div>
       <p class="label">Copy</p>
       <button type="button" data-act="dup">Duplicate shape</button>
@@ -761,6 +765,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     </div>`;
     return `<div class="insp-head"><span class="sw${line ? " wall" : ""}" style="--c: ${swc}"></span><h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>${tabs}${shapePane}${movePane}`;
   }
+  const big = n => n.toLocaleString("en-US");
   function workRow(e, v, n, tot) { return `<span class="e${tot ? " tot" : ""}">${e}</span><span class="${tot ? "tot" : ""}">= ${v}</span><span class="n">${n}</span>`; }
   function renderInspector() {
     const sh = cur();
@@ -771,31 +776,32 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       if (k !== inspKey) {
         $("insp").innerHTML = `<div class="insp-head">${iconSVG(sh.type).replace("<svg", '<svg style="width:40px;height:32px;color:var(--ink)"')}<h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>` +
           `<div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="iturn"><i>↺</i><span>Turn 90°</span></button><button type="button" data-act="dup"><i>⧉</i><span>Duplicate</span></button></div>` +
-          `<p class="note">Drag it to move it. Furniture does not change the area, perimeter or cost.</p>`;
+          `<div class="meas" style="grid-template-columns:1fr"><div><span>Cost</span><b>${money(ITEMS[sh.type].cost)}</b></div></div>` +
+          `<p class="note">Drag it to move it. It adds to the project cost but not to the area or perimeter.</p>`;
         inspKey = k;
       }
       $("iName").textContent = shapeName(sh);
       return;
     }
-    const key = [sh.id, sh.kind, sh.pts.length, sh.mat, S.tab, S.pivot, S.half, S.quad4].join("|");
+    const key = [sh.id, sh.kind, sh.pts.length, sh.mat, S.tab, S.pivot, S.half].join("|");
     if (key !== inspKey) { $("insp").innerHTML = inspHTML(sh); inspKey = key; }
     $("iName").textContent = shapeName(sh);
     const m = measure(sh);
     if (sh.kind === "line") {
-      $("iMeas").innerHTML = `<div><span>Length</span><b>${approx(m.len, 1)} u</b></div>`;
-      $("iWork").innerHTML = workRow("25 × " + num(m.len, 1), money(m.cost), "wall cost", true);
+      $("iMeas").innerHTML = `<div><span>Length</span><b>${approx(m.len, 1)} m</b></div>`;
+      $("iWork").innerHTML = workRow(big(PRICE.wall) + " × " + num(m.len, 1), money(m.cost), "wall cost", true);
     } else {
-      $("iMeas").innerHTML = `<div><span>Area</span><b>${m.crossing ? "–" : num(m.area, 3) + " u²"}</b></div><div><span>Perimeter</span><b>${approx(m.per, 1)} u</b></div><div><span>Cost</span><b>${money(m.cost)}</b></div>`;
+      $("iMeas").innerHTML = `<div><span>Area</span><b>${m.crossing ? "–" : num(m.area, 3) + " m²"}</b></div><div><span>Perimeter</span><b>${approx(m.per, 1)} m</b></div><div><span>Cost</span><b>${money(m.cost)}</b></div>`;
       const A = num(m.area, 3);
       $("iWork").innerHTML = sh.mat === "room"
-        ? workRow("25 × " + num(m.per, 1), money(25 * r1(m.per)), "walls (perimeter)") + workRow("10 × " + A, money(10 * m.area), "floor (area)") + workRow(money(25 * r1(m.per)) + " + " + money(10 * m.area), money(m.cost), "total", true)
-        : workRow((sh.mat === "garden" ? "5" : "20") + " × " + A, money(m.cost), sh.mat === "garden" ? "garden (area)" : "pool (area)", true);
+        ? workRow(big(PRICE.wall) + " × " + num(m.per, 1), money(PRICE.wall * r1(m.per)), "walls (perimeter)") + workRow(big(PRICE.floor) + " × " + A, money(PRICE.floor * m.area), "floor (area)") + workRow(money(PRICE.wall * r1(m.per)) + " + " + money(PRICE.floor * m.area), money(m.cost), "total", true)
+        : workRow(big(PRICE.garden) + " × " + A, money(m.cost), "garden (area)", true);
     }
     $("insp").querySelectorAll("[data-vx]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vx][0], 1).replace("−", "-"); });
     $("insp").querySelectorAll("[data-vy]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vy][1], 1).replace("−", "-"); });
     const w = $("iWarn");
     const warn = m.crossing ? "The sides cross each other, so the area cannot be found. Drag a corner to fix it."
-      : offGrid(sh.pts) ? (S.quad4 ? "Part of this shape is off the grid. Press Undo or move it back." : "Part of this shape is off the grid. Switch to 4 Quadrants to see all of it.") : "";
+      : offGrid(sh.pts) ? "Part of this shape is off the grid. Press Undo or move it back." : "";
     w.hidden = !warn; w.textContent = warn;
   }
 
@@ -904,7 +910,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   function animate(sh, to, rot) {
     const from = sh.pts.map(p => p.slice());
     const done = () => { sh.pts = to.map(p => [clean(p[0]), clean(p[1])]); anim = false; render();
-      if (offGrid(sh.pts)) say(S.quad4 ? "Part of the image is off the grid." : "Part of the image is off the grid. Switch to 4 Quadrants to see it."); };
+      if (offGrid(sh.pts)) say("Part of the image is off the grid. Press Undo or move it back."); };
     if (reduce) { done(); return; }
     anim = true;
     const t0 = performance.now(), D = rot ? 700 : 500;
@@ -954,8 +960,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
       if (!dx && !dy) { say("Type how far to slide in Δx or Δy first."); return; }
       to = P.map(p => [p[0] + dx, p[1] + dy]);
     }
-    if (a === "flipx") to = P.map(p => [p[0], -p[1]]);
-    if (a === "flipy") to = P.map(p => [-p[0], p[1]]);
+    if (a === "flipv") { const b = bbox(P); to = P.map(p => [p[0], b[1] + b[3] - p[1]]); }
     if (a === "flipc") { const b = bbox(P); to = P.map(p => [b[0] + b[2] - p[0], p[1]]); }
     if (a === "cw" || a === "ccw" || a === "half") {
       const deg = a === "cw" ? -90 : a === "ccw" ? 90 : 180, pv = pivotPt(sh);
@@ -977,7 +982,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tool) setTool(b.dataset.tool);
     if (b.dataset.mode) {
-      S.quad4 = b.dataset.mode === "4"; S.draft = null;
+      S.axes = b.dataset.mode === "axes"; S.draft = null;
       document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
       renderGrid(); render();
     }
@@ -992,7 +997,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
   });
   $("finishBtn").addEventListener("click", () => { if (S.draft && S.draft.pts && S.draft.pts.length >= 3) closePoly(); });
   $("cancelBtn").addEventListener("click", cancelDraft);
-  $("palette").innerHTML = Object.keys(ITEMS).map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span></button>`).join("");
+  $("palette").innerHTML = Object.keys(ITEMS).map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span><small>${money(ITEMS[k].cost)}</small></button>`).join("");
   $("palette").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { S.item = b.dataset.item; S.itemRot = 0; render(); } });
   $("turnGhost").addEventListener("click", () => { S.itemRot = (S.itemRot + 90) % 360; render(); });
 
@@ -1032,7 +1037,7 @@ input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); 
     const T = totals(), H = SIZE + 56;
     const strip = `<rect x="0" y="${SIZE}" width="${SIZE}" height="56" fill="${C.pill}"/>` +
       `<text x="24" y="${SIZE + 36}" font-size="22" font-weight="700" fill="${C.cyan}">GridCraft CAD</text>` +
-      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="19" font-weight="700" fill="${C.ink}">Area ${num(T.area, 3)} u² · Perimeter ${approx(T.per, 1)} u · Cost ${money(T.cost)}</text>`;
+      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="19" font-weight="700" fill="${C.ink}">Scale 1 square = 1 m · Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m · Cost ${money(T.cost)}</text>`;
     const shapes = shapesSVG(null);
     const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") : "";
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${H}" width="${SIZE}" height="${H}" font-family="${FONT}">` +
@@ -1153,17 +1158,29 @@ window.I18N_COMMON = {
 /* French for GridCraft CAD (gridcraft.html). Numbers in live readouts are matched with {n}. */
 window.I18N_PAGE = {
   "Furniture": "Meubles",
-  "Free: it does not change area, perimeter or cost": "Gratuit : ne change ni l'aire, ni le périmètre, ni le coût",
   "Pick an item, then click the plan to place it.": "Choisis un objet, puis clique sur le plan pour le placer.",
   "↺ Turn {n}°": "↺ Tourner de {n}°",
   "Turn {n}°": "Tourner de {n}°",
   "or press R": "ou appuie sur R",
   "Duplicate": "Dupliquer",
-  "Drag it to move it. Furniture does not change the area, perimeter or cost.": "Fais-le glisser pour le déplacer. Les meubles ne changent ni l'aire, ni le périmètre, ni le coût.",
   "Door": "Porte", "Window": "Fenêtre", "Toilet": "Toilette", "Sink": "Lavabo", "Bathtub": "Baignoire", "Shower": "Douche",
   "Bed": "Lit", "Table": "Table", "Sofa": "Canapé", "Stove": "Cuisinière", "Fridge": "Réfrigérateur", "Tree": "Arbre",
   "Door {n}": "Porte {n}", "Window {n}": "Fenêtre {n}", "Toilet {n}": "Toilette {n}", "Sink {n}": "Lavabo {n}", "Bathtub {n}": "Baignoire {n}", "Shower {n}": "Douche {n}",
   "Bed {n}": "Lit {n}", "Table {n}": "Table {n}", "Sofa {n}": "Canapé {n}", "Stove {n}": "Cuisinière {n}", "Fridge {n}": "Réfrigérateur {n}", "Tree {n}": "Arbre {n}",
+  "Plain grid": "Quadrillage simple",
+  "Materials and prices ({n} square = {n} m)": "Matériaux et prix ({n} carré = {n} m)",
+  "Scale: {n} square = {n} m": "Échelle : {n} carré = {n} m",
+  "${n} per metre of wall + ${n} per m² of floor": "{n} $ par mètre de mur + {n} $ par m² de plancher",
+  "${n} per m²": "{n} $ par m²",
+  "${n} per metre": "{n} $ par mètre",
+  "Doors and furniture": "Portes et meubles",
+  "Each item has its own price": "Chaque objet a son propre prix",
+  "A line is a wall or fence. It costs ${n} per metre.": "Une ligne est un mur ou une clôture. Elle coûte {n} $ par mètre.",
+  "Flip left to right": "Réflexion gauche-droite",
+  "Flip top to bottom": "Réflexion haut-bas",
+  "Turn (rotate) around the amber center": "Tourner (rotation) autour du centre orange",
+  "Part of the image is off the grid. Press Undo or move it back.": "Une partie de l'image est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
+  "Drag it to move it. It adds to the project cost but not to the area or perimeter.": "Fais-le glisser pour le déplacer. Il s'ajoute au coût du projet, mais pas à l'aire ni au périmètre.",
   "Cursor position": "Position du curseur",
   "Total area": "Aire totale",
   "Total perimeter": "Périmètre total",
@@ -1175,7 +1192,6 @@ window.I18N_PAGE = {
   "Rectangle": "Rectangle",
   "Polygon": "Polygone",
   "Eraser": "Gomme",
-  "4 Quadrants": "4 quadrants",
   "Quadrant I": "Quadrant I",
   "Half-Snap": "Demi-pas",
   "Show Dimensions": "Afficher les mesures",
@@ -1186,14 +1202,10 @@ window.I18N_PAGE = {
   "How to use this tool": "Comment utiliser cet outil",
   "Finish shape": "Terminer la figure",
   "Cancel": "Annuler",
-  "Materials and prices": "Matériaux et prix",
   "Room": "Pièce",
   "Garden": "Jardin",
   "Pool": "Piscine",
   "Wall (line)": "Mur (ligne)",
-  "${n} per unit of perimeter + ${n} per u² of area": "{n} $ par unité de périmètre + {n} $ par u² d'aire",
-  "${n} per u² of area": "{n} $ par u² d'aire",
-  "${n} per unit of length": "{n} $ par unité de longueur",
   "Pick {0} and click a shape to see its measures and move it.": "Choisis {0} et clique sur une figure pour voir ses mesures et la déplacer.",
   "Click a shape to select it. Drag a corner to reshape it, or drag the inside to slide it.": "Clique sur une figure pour la sélectionner. Fais glisser un sommet pour changer sa forme, ou l'intérieur pour la déplacer.",
   "Click point A, then point B.": "Clique sur le point A, puis sur le point B.",
@@ -1209,7 +1221,6 @@ window.I18N_PAGE = {
   "Measure": "Mesurer",
   "Transform": "Transformer",
   "Material": "Matériau",
-  "A line is a wall. Walls cost ${n} per unit of length.": "Une ligne est un mur. Les murs coûtent {n} $ par unité de longueur.",
   "End points (x, y)": "Extrémités (x, y)",
   "Corners (x, y)": "Sommets (x, y)",
   "Length": "Longueur",
@@ -1227,14 +1238,7 @@ window.I18N_PAGE = {
   "Slide (translate)": "Glisser (translation)",
   "Apply Slide": "Appliquer la translation",
   "Flip (reflect)": "Retourner (réflexion)",
-  "Flip across x-axis": "Réflexion sur l'axe des x",
-  "Flip across y-axis": "Réflexion sur l'axe des y",
-  "Flip across center of shape": "Réflexion au centre de la figure",
   "Turn (rotate)": "Tourner (rotation)",
-  "Turn around": "Centre de rotation",
-  "Around": "Autour de",
-  "Origin ({n}, {n})": "l'origine ({n}, {n})",
-  "Center of shape": "Centre de la figure",
   "{n}° clockwise": "{n}° sens horaire",
   "{n}° counter­clockwise": "{n}° sens anti­horaire",
   "Copy": "Copie",
@@ -1242,14 +1246,11 @@ window.I18N_PAGE = {
   "Make a copy, then move the copy. The original stays put, so you can compare the pre-image with its image.": "Fais une copie, puis déplace la copie. L'original reste en place pour comparer la figure initiale et son image.",
   "The sides cross each other, so the area cannot be found. Drag a corner to fix it.": "Les côtés se croisent, donc on ne peut pas trouver l'aire. Fais glisser un sommet pour corriger.",
   "Part of this shape is off the grid. Press Undo or move it back.": "Une partie de la figure est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
-  "Part of this shape is off the grid. Switch to 4 Quadrants to see all of it.": "Une partie de la figure est hors du quadrillage. Passe à 4 quadrants pour tout voir.",
   "sides cross": "côtés croisés",
   "Nothing to undo.": "Rien à annuler.",
   "A rectangle needs width and height. Try again.": "Un rectangle a besoin d'une largeur et d'une hauteur. Essaie encore.",
   "That shape has no area. Try again.": "Cette figure n'a pas d'aire. Essaie encore.",
   "The sides cross each other. Drag a corner so they don't.": "Les côtés se croisent. Fais glisser un sommet pour les séparer.",
-  "Part of the image is off the grid.": "Une partie de l'image est hors du quadrillage.",
-  "Part of the image is off the grid. Switch to 4 Quadrants to see it.": "Une partie de l'image est hors du quadrillage. Passe à 4 quadrants pour la voir.",
   "Copy made on top of the original. Slide, flip or turn the copy to compare.": "Copie faite par-dessus l'original. Fais glisser, retourne ou tourne la copie pour comparer.",
   "Type how far to slide in Δx or Δy first.": "Écris d'abord la distance de la translation dans Δx ou Δy.",
   "Canvas cleared. Press Undo to bring it back.": "Tout est effacé. Appuie sur Annuler pour le ravoir."
