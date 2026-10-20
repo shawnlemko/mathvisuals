@@ -228,6 +228,14 @@ body.scroll .concepts { flex: none; grid-template-rows: none; grid-auto-rows: 25
 @media (min-width: 861px) and (min-height: 520px) { .cats { margin-top: 8px; } .cats button { min-height: 40px; padding: 4px 12px; } }
 /* Credit line (Shawn): very small text at the very bottom of the page. */
 .credit { margin: 8px 0 4px; text-align: center; font-size: 0.72rem; color: var(--muted); }
+/* Search (Shawn): a quiet box at the end of the topic row; filters tiles by name and note, with the grade and topic tabs. */
+.cats .search { margin-left: auto; position: relative; display: flex; align-items: center; }
+.search input { font: inherit; font-size: 0.95rem; width: 200px; min-height: 40px; padding: 6px 32px 6px 12px; border: 1.5px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+.search input::placeholder { color: var(--muted); }
+.search input:focus { outline: none; border-color: var(--pt); }
+.search input::-webkit-search-cancel-button { display: none; }
+.search button { position: absolute; right: 4px; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--muted); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.search button:hover { color: var(--ink); background: var(--paper); }
 </style>
 
 <div class="wrap">
@@ -251,6 +259,7 @@ body.scroll .concepts { flex: none; grid-template-rows: none; grid-auto-rows: 25
     <button type="button" role="tab" data-cat="geo" aria-selected="false"><span class="dot" aria-hidden="true"></span>Geometry</button>
     <button type="button" role="tab" data-cat="mea" aria-selected="false"><span class="dot" aria-hidden="true"></span>Measurement/Time</button>
     <button type="button" role="tab" data-cat="sta" aria-selected="false"><span class="dot" aria-hidden="true"></span>Stats/Probability</button>
+    <div class="search"><input type="search" id="q" placeholder="Search tools" aria-label="Search tools" autocomplete="off"><button type="button" id="qClear" aria-label="Clear search" hidden>×</button></div>
   </div>
 
   <ul class="concepts">
@@ -1503,6 +1512,7 @@ body.scroll .concepts { flex: none; grid-template-rows: none; grid-auto-rows: 25
   const tabs = [...document.querySelectorAll(".tabs [data-band]")];
   const cats = [...document.querySelectorAll(".cats [data-cat]")];
   const empty = document.querySelector(".empty");
+  const qBox = document.getElementById("q"), qClear = document.getElementById("qClear");
   const tiles = [...document.querySelectorAll(".concepts > li")];
   const grid = document.querySelector(".concepts");
   const fits = matchMedia("(min-width: 861px) and (min-height: 520px)");
@@ -1534,11 +1544,18 @@ body.scroll .concepts { flex: none; grid-template-rows: none; grid-auto-rows: 25
     cat = cats.some(t => t.dataset.cat === c) ? c : "all";
     tabs.forEach(t => t.setAttribute("aria-selected", t.dataset.band === band));
     cats.forEach(t => t.setAttribute("aria-selected", t.dataset.cat === cat));
-    tiles.forEach(li => { li.hidden = (band !== "all" && !li.dataset.bands.split(" ").includes(band)) || (cat !== "all" && li.dataset.cat !== cat); });
+    const words = qBox.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    qClear.hidden = !qBox.value;
+    tiles.forEach(li => {
+      const txt = (li.querySelector(".name").textContent + " " + li.querySelector(".what").textContent).toLowerCase();
+      li.hidden = (band !== "all" && !li.dataset.bands.split(" ").includes(band)) || (cat !== "all" && li.dataset.cat !== cat) || !words.every(w => txt.includes(w));
+    });
     empty.hidden = tiles.some(li => !li.hidden);
     try { localStorage.setItem("vmc-band", band); localStorage.setItem("vmc-cat", cat); } catch (e) {}
     size();
   };
+  qBox.addEventListener("input", () => show(band, cat));
+  qClear.addEventListener("click", () => { qBox.value = ""; show(band, cat); qBox.focus(); });
   tabs.forEach(t => t.addEventListener("click", () => show(t.dataset.band, cat)));
   cats.forEach(t => t.addEventListener("click", () => show(band, t.dataset.cat)));
   addEventListener("resize", size);
@@ -1810,7 +1827,9 @@ window.I18N_PAGE = {
  "Sequences and Series": "Suites et séries",
  "Arithmetic and geometric terms and sums": "Termes et sommes arithmétiques et géométriques",
  "Patterns to y = mx + b": "Des régularités à y = mx + b",
- "Grow tile patterns into y = mx + b.": "Fais grandir des régularités de tuiles jusqu’à y = mx + b."
+ "Grow tile patterns into y = mx + b.": "Fais grandir des régularités de tuiles jusqu’à y = mx + b.",
+ "Search tools": "Chercher un outil",
+ "Clear search": "Effacer la recherche"
 };
 </script>
 <script>
