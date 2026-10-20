@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Unit Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Unit Analysis (grades 7-12, Measurement; Shawn 2026-10-20: "converting units like km/hr into m/s can be a challenge").
+   The amount is written as a fraction (72 km over 1 hr), then multiplied by conversion fractions that equal 1
+   (1000 m over 1 km, 1 hr over 3600 s). A unit on the top and the bottom cancels: both are struck out in the
+   same colour (1st pair orange, 2nd blue, 3rd purple). Then multiply across and simplify to 20 m/s.
+   Work goes down the board with = lined up and step names in a right column. Never the ÷ sign.
+   Levels: 1, 2 or 3 conversion fractions. Learn: Next step reveals. Practice: tap or drag a conversion fraction
+   from the tray into the chain (Flip turns it over); wrong picks slide in, show why, and go back; then type the answer. */
+:root { --purple: #7b3fb3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #c79bff; } }
+:root[data-theme="dark"] { --purple: #c79bff; }
+.main { grid-template-columns: minmax(0, 2.2fr) minmax(290px, 1fr); }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 12px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.lv { width: 100%; }
+.lv button { flex: 1 1 auto; font-size: 1.05rem; }
+.lvnote { margin: 6px 0 0; color: var(--muted); font-size: 0.95rem; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; }
+.rule { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; line-height: 1.3; }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.say { font-size: 1.2rem; margin: 0; min-height: 3em; line-height: 1.45; }
+.say > span { display: block; }
+.say > span + span { margin-top: 4px; }
+.say b, .ansrow b { font-family: var(--font-num); white-space: nowrap; }
+.say b.k0 { color: var(--orange); } .say b.k1 { color: var(--pt); } .say b.k2 { color: var(--purple); }
+.say b.g { color: var(--green); } .say b.bad { color: var(--warn); }
+.say.ok { color: var(--green); } .say.no { color: var(--warn); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.ansrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; margin-bottom: 10px; }
+.ansrow input { font: inherit; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 54px; width: 6.5ch; text-align: center; padding: 0 4px; }
+.ansrow input.bad { border-color: var(--warn); }
+.ansrow input.ok { border-color: var(--green); color: var(--green); }
+.score { font-size: 1.05rem; color: var(--muted); margin: 8px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+
+/* Board */
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.tx.un { font-weight: 500; }
+.tx.op { fill: var(--muted); }
+.tx.o { fill: var(--orange); } .tx.g { fill: var(--green); }
+.tx.k0 { fill: var(--orange); } .tx.k1 { fill: var(--pt); } .tx.k2 { fill: var(--purple); }
+.tx.bad { fill: var(--warn); }
+.bar { stroke: var(--ink); stroke-linecap: round; }
+.bar.g { stroke: var(--green); }
+.eqs { font-family: var(--font-num); font-weight: 700; fill: var(--muted); }
+.sname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.sname.now { fill: var(--ink); }
+.strike { fill: none; stroke-width: 5; stroke-linecap: round; }
+.strike.k0 { stroke: var(--orange); } .strike.k1 { stroke: var(--pt); } .strike.k2 { stroke: var(--purple); }
+.slot { fill: none; stroke: var(--muted); stroke-width: 3; stroke-dasharray: 10 8; }
+.slot.hot { stroke: var(--pt); stroke-width: 4; }
+.tx.q { fill: var(--muted); }
+.hl { fill: none; stroke: var(--orange); stroke-width: 4; stroke-dasharray: 8 6; }
+.badbox { fill: none; stroke: var(--warn); stroke-width: 4; }
+.tray { fill: var(--chip); }
+.trayname { font-family: var(--font-body); font-weight: 700; fill: var(--muted); }
+.cardg { cursor: grab; outline: none; }
+.cardg.dragging { cursor: grabbing; }
+.cardr { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 3; }
+.cardg:hover .cardr, .cardg:focus-visible .cardr, .cardg.dragging .cardr { stroke: var(--pt); stroke-width: 4; }
+.flipb { cursor: pointer; outline: none; }
+.flipb rect { fill: var(--pt); }
+.flipb:focus-visible rect { stroke: var(--ink); stroke-width: 4; }
+.flipb text { fill: var(--sheet); font-family: var(--font-body); font-weight: 700; }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+.flipping { animation: flip 0.4s ease-out both; transform-box: fill-box; transform-origin: center; }
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.45s ease-out forwards; }
+.shake { animation: shake 0.5s ease-in-out both; }
+@keyframes pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes flip { from { transform: scaleY(-1); } to { transform: none; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes shake { 0%, 100% { transform: none; } 20%, 60% { transform: translateX(-12px); } 40%, 80% { transform: translateX(12px); } }
+@media (prefers-reduced-motion: reduce) { .pop, .flipping, .shake { animation: none; } .draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Unit Analysis</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 600" role="img" aria-label="An amount multiplied by conversion fractions. Units on the top and bottom cancel."></svg></div>
+
+    <div class="panel" id="learn">
+      <section class="card">
+        <div class="seg-btns lv" role="group" aria-label="Level" id="llv">
+          <button type="button" data-lv="1" class="on">Level 1</button><button type="button" data-lv="2">Level 2</button><button type="button" data-lv="3">Level 3</button>
+        </div>
+        <p class="lvnote" id="llvnote"></p>
+      </section>
+      <section class="card">
+        <p class="rule">Multiply by fractions that equal 1. A unit on the top and the bottom cancels.</p>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+        <button type="button" id="rand">New example</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <div class="seg-btns lv" role="group" aria-label="Level" id="plv">
+          <button type="button" data-lv="1" class="on">Level 1</button><button type="button" data-lv="2">Level 2</button><button type="button" data-lv="3">Level 3</button>
+        </div>
+        <p class="lvnote" id="plvnote"></p>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card">
+        <p class="say" id="fb" aria-live="polite"></p>
+      </section>
+      <section class="card" id="anscard" hidden>
+        <p class="label">Your answer</p>
+        <div class="ansrow"><span id="given"></span><span>=</span><input id="ans" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer"><span id="ansunit"></span></div>
+        <div class="btns"><button type="button" class="go" id="check">Check</button></div>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+        <button type="button" id="newq">New question</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const r2 = x => Math.round(x * 100) / 100;
+  // 72000 → "72 000" (a space only from five digits on), 2.5 stays 2.5.
+  function fmt(x) {
+    const s = String(r2(x)), [i, d] = s.split(".");
+    const ii = i.length >= 5 ? i.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : i;
+    return d ? ii + "." + d : ii;
+  }
+
+  // ---------- units and facts ----------
+  // Unit names are written in the page's language here (not by the EN/FR switch) so their widths are right on the board.
+  const NAMES = { day: ["day", "days"], wk: ["week", "weeks"] };
+  const NAMES_FR = { hr: "h", day: ["jour", "jours"], wk: ["semaine", "semaines"], in: "po", ft: "pi", yd: "vg" };
+  function label(u, n) {
+    const x = (document.documentElement.lang === "fr" && NAMES_FR[u]) || NAMES[u] || u;
+    return Array.isArray(x) ? x[n === 1 ? 0 : 1] : x;
+  }
+  // 1 a = n b
+  const FACTS = [["km", 1000, "m"], ["m", 100, "cm"], ["cm", 10, "mm"], ["hr", 60, "min"], ["min", 60, "s"], ["hr", 3600, "s"],
+    ["day", 24, "hr"], ["wk", 7, "day"], ["L", 1000, "mL"], ["kg", 1000, "g"], ["mi", 5280, "ft"], ["ft", 12, "in"], ["yd", 3, "ft"]];
+  const factOf = (a, b) => FACTS.find(f => (f[0] === a && f[2] === b) || (f[0] === b && f[2] === a));
+  const WRONG = { 1000: 100, 100: 10, 10: 100, 60: 100, 3600: 360, 24: 12, 7: 5, 5280: 1000, 12: 10, 3: 12 };
+  const factText = f => [`1 ${label(f[0], 1)}`, `${fmt(f[1])} ${label(f[2], f[1])}`];
+
+  // A fraction is { tn, tu, bn, bu }: top number and unit, bottom number and unit (a unit may be null).
+  const flipF = f => ({ tn: f.bn, tu: f.bu, bn: f.tn, bu: f.tu });
+  // Unit count: +1 for each time a unit is on the top, −1 on the bottom.
+  function exps(fr) {
+    const m = {};
+    fr.forEach(f => { if (f.tu) m[f.tu] = (m[f.tu] || 0) + 1; if (f.bu) m[f.bu] = (m[f.bu] || 0) - 1; });
+    for (const k in m) if (!m[k]) delete m[k];
+    return m;
+  }
+  const sameExps = (a, b) => Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => a[k] === b[k]);
+  // The fraction that changes unit u into w, with u on the other level from where it sits now (e > 0: on top).
+  function convFrac(u, w, e) {
+    const f = factOf(u, w), un = f[0] === u ? 1 : f[1], wn = f[0] === u ? f[1] : 1;
+    return e > 0 ? { tn: wn, tu: w, bn: un, bu: u } : { tn: un, tu: u, bn: wn, bu: w };
+  }
+  // Which units cancel, pair by pair, in order. Keys are "<fraction index>t" or "<fraction index>b".
+  function pairsOf(fr) {
+    const open = [], pairs = [];
+    fr.forEach((f, i) => {
+      [["t", f.tu], ["b", f.bu]].forEach(([lv, u]) => {
+        if (!u) return;
+        const o = open.find(x => !x.done && x.u === u && x.lv !== lv);
+        if (o) { o.done = true; pairs.push({ a: o.key, b: i + lv, u, c: pairs.length }); }
+        else open.push({ u, lv, key: i + lv });
+      });
+    });
+    return pairs;
+  }
+
+  // ---------- questions ----------
+  // [from, to, path]: the path lists each change "a>b" in the order the Learn example does them.
+  const BANK = {
+    1: [["km", "m", "km>m"], ["m", "cm", "m>cm"], ["cm", "mm", "cm>mm"], ["m", "km", "m>km"], ["cm", "m", "cm>m"],
+      ["hr", "min", "hr>min"], ["min", "s", "min>s"], ["min", "hr", "min>hr"], ["s", "min", "s>min"], ["day", "hr", "day>hr"],
+      ["hr", "day", "hr>day"], ["wk", "day", "wk>day"], ["L", "mL", "L>mL"], ["mL", "L", "mL>L"], ["kg", "g", "kg>g"],
+      ["g", "kg", "g>kg"], ["ft", "in", "ft>in"], ["in", "ft", "in>ft"], ["yd", "ft", "yd>ft"], ["m/s", "m/min", "s>min"],
+      ["km/hr", "km/min", "hr>min"]],
+    2: [["km/hr", "m/s", "km>m hr>s"], ["m/s", "km/hr", "m>km s>hr"], ["hr", "s", "hr>min min>s"], ["day", "min", "day>hr hr>min"],
+      ["km", "cm", "km>m m>cm"], ["m", "mm", "m>cm cm>mm"], ["wk", "hr", "wk>day day>hr"], ["yd", "in", "yd>ft ft>in"],
+      ["L/min", "mL/s", "L>mL min>s"], ["mi/hr", "ft/min", "mi>ft hr>min"], ["kg/L", "g/mL", "kg>g L>mL"], ["m/min", "cm/s", "m>cm min>s"]],
+    3: [["m/s", "km/hr", "m>km s>min min>hr"], ["km/hr", "m/s", "km>m hr>min min>s"], ["mi/hr", "ft/s", "mi>ft hr>min min>s"],
+      ["day", "s", "day>hr hr>min min>s"], ["km", "mm", "km>m m>cm cm>mm"], ["wk", "min", "wk>day day>hr hr>min"],
+      ["km/hr", "cm/s", "km>m m>cm hr>s"], ["L/hr", "mL/s", "L>mL hr>min min>s"]],
+  };
+  const EXAMPLES = { 1: [BANK[1][0], 5], 2: [BANK[2][0], 72], 3: [BANK[3][0], 15] };
+  const VALS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 18, 20, 24, 25, 30, 36, 40, 45, 48, 50, 54, 60, 72, 75, 90, 96, 100, 108, 120,
+    144, 150, 180, 200, 240, 250, 300, 360, 450, 500, 600, 720, 750, 900, 1200, 1500, 1800, 2400, 2500, 3000, 3600, 4500, 5000,
+    7200, 0.5, 1.5, 2.5, 3.5, 4.5, 7.5];
+  const parseU = s => { const [t, b] = s.split("/"); return { t, b: b || null }; };
+
+  function build(tpl, v) {
+    const from = parseU(tpl[0]), to = parseU(tpl[1]);
+    const path = tpl[2].split(" ").map(s => s.split(">"));
+    const fr = [{ tn: v, tu: from.t, bn: 1, bu: from.b }];
+    path.forEach(([u, w]) => fr.push(convFrac(u, w, exps(fr)[u])));
+    const goal = exps([{ tu: to.t, bu: to.b }]);
+    const conv = fr.slice(1);
+    const topNums = [v, ...conv.map(f => f.tn).filter(n => n !== 1)];
+    const botNums = conv.map(f => f.bn).filter(n => n !== 1);
+    // Exact: v has at most one decimal place.
+    let T = Math.round(v * 10), B = 10;
+    conv.forEach(f => { T *= f.tn; B *= f.bn; });
+    const g = gcd(T, B);
+    const ans = T / B;
+    return { tpl, from, to, path, v, fr, goal, topNums, botNums, ans,
+      topProd: r2(topNums.reduce((p, n) => p * n, 1)), botProd: botNums.reduce((p, n) => p * n, 1),
+      nice: 100 % (B / g) === 0 && ans >= 0.1 && ans < 1e7 && sameExps(exps(fr), goal) };
+  }
+  function gen(lv, prev) {
+    for (let t = 0; t < 300; t++) {
+      const tpl = pick(BANK[lv]);
+      if (prev && tpl === prev.tpl) continue;
+      for (const v of shuffle(VALS).slice(0, 12)) { const p = build(tpl, v); if (p.nice) return p; }
+    }
+    return build(...EXAMPLES[lv]);
+  }
+  const unitStr = (u, n) => u.b ? `${label(u.t, n)}/${label(u.b, 1)}` : label(u.t, n);
+  const qText = p => `${fmt(p.v)} ${unitStr(p.from, p.v)}`;
+  const ansText = p => `${fmt(p.ans)} ${unitStr(p.to, p.ans)}`;
+
+  // ---------- layout: pieces that know their size ----------
+  const CW = 0.62; // character width of the number font, in em
+  const FS = 50, QFS = 54, NFS = 28, TFS = 48;
+  const EQX = 46, X0 = 96;
+  let boxes = {};
+  function T(s, fs, cls, key) {
+    s = String(s);
+    return { w: s.length * CW * fs, up: fs * 0.5, dn: fs * 0.5,
+      draw(g, x, y) {
+        const el = E("text", { x: x + this.w / 2, y: y + fs * 0.36, class: "tx " + (cls || ""), "text-anchor": "middle", "font-size": fs }, g, s);
+        if (key) boxes[key] = { x, y, w: this.w, fs, el };
+      } };
+  }
+  function R(items, sp) {
+    items = items.filter(Boolean);
+    const w = items.reduce((t, i) => t + i.w, 0) + sp * (items.length - 1);
+    return { w, up: Math.max(...items.map(i => i.up)), dn: Math.max(...items.map(i => i.dn)),
+      draw(g, x, y) { for (const i of items) { i.draw(g, x, y); x += i.w + sp; } } };
+  }
+  function F(top, bot, fs, o = {}) {
+    const pad = fs * 0.25, gap = fs * 0.2, sw = Math.max(3, fs * 0.07);
+    const w = Math.max(top.w, bot.w) + 2 * pad;
+    return { w, up: top.up + top.dn + gap, dn: bot.up + bot.dn + gap,
+      draw(g, x, y) {
+        const h = o.wrap ? E("g", o.wrap, g) : g;
+        E("line", { x1: x, x2: x + w, y1: y, y2: y, class: "bar " + (o.cls || ""), "stroke-width": sw }, h);
+        top.draw(h, x + (w - top.w) / 2, y - gap - top.dn);
+        bot.draw(h, x + (w - bot.w) / 2, y + gap + bot.up);
+      } };
+  }
+  const SP = 0.3; // space between a number and its unit, in em
+  // One level of a fraction: "1000 m". cls colours the number, ucls the unit.
+  const level = (n, u, fs, key, cls) => u ? R([T(fmt(n), fs, cls), T(label(u, n), fs, "un " + (cls || ""), key)], fs * SP) : T(fmt(n), fs, cls);
+  const fracNode = (f, i, fs, o) => F(level(f.tn, f.tu, fs, i == null ? null : i + "t"), level(f.bn, f.bu, fs, i == null ? null : i + "b"), fs, o);
+  const unitsNode = (u, n, fs, cls) => u.b ? R([T(label(u.t, n), fs, "un " + (cls || "")), T("/", fs, "op"), T(label(u.b, 1), fs, "un " + (cls || ""))], 2) : T(label(u.t, n), fs, "un " + (cls || ""));
+  function slotNode(fs) {
+    const w = 5 * CW * fs + fs * 0.5, h = fs * 1.15;
+    return { w, up: h, dn: h, draw(g, x, y) {
+      boxes.slot = { x, y, w, h };
+      E("rect", { x, y: y - h, width: w, height: 2 * h, rx: 12, class: "slot" + (slotHot ? " hot" : "") }, g);
+      E("text", { x: x + w / 2, y: y + fs * 0.36, class: "tx q", "text-anchor": "middle", "font-size": fs }, g, "?");
+    } };
+  }
+  // Line 0: "72 km/hr = ? m/s"
+  const qNode = p => R([R([T(fmt(p.v), QFS), unitsNode(p.from, p.v, QFS)], QFS * SP), T("=", QFS, "op"), R([T("?", QFS, "o"), unitsNode(p.to, 2, QFS)], QFS * SP)], 22);
+  // The chain: fraction × fraction × ..., with the newest one popping in and an optional empty slot at the end.
+  function chainNode(fr, o = {}) {
+    const items = [];
+    fr.forEach((f, i) => {
+      if (i) items.push(T("×", FS, "op"));
+      const cls = i === o.newIdx ? "pop" : i === o.badIdx ? "shake" : "";
+      items.push(fracNode(f, i, FS, { wrap: { class: cls } }));
+    });
+    if (o.slot) { items.push(T("×", FS, "op")); items.push(slotNode(FS)); }
+    return R(items, 22);
+  }
+  // Numbers to multiply on one level: "72 × 1000 m"
+  function prodNode(nums, u, fs) {
+    const items = [];
+    nums.forEach((n, i) => { if (i) items.push(T("×", fs, "op")); items.push(T(fmt(n), fs)); });
+    const r = R(items, 14);
+    return u ? R([r, T(label(u, 2), fs, "un")], fs * SP) : r;
+  }
+  // The lines under the chain: Multiply across, Multiply, Simplify (only the ones this question needs).
+  function tailLines(p) {
+    const out = [];
+    const bot = p.botNums.length ? p.botNums : [1];
+    const isFrac = p.to.b || bot.length > 1 || bot[0] !== 1;
+    const needMult = p.topNums.length > 1 || bot.length > 1;
+    const needSimp = p.botProd !== 1;
+    out.push({ k: "across", name: "Multiply across", node: isFrac ? F(prodNode(p.topNums, p.to.t, FS), prodNode(bot, p.to.b, FS), FS) : prodNode(p.topNums, p.to.t, FS) });
+    if (needMult) {
+      const last = !needSimp;
+      const c = last ? "g" : "";
+      out.push({ k: "mult", name: "Multiply", node: isFrac
+        ? F(level(p.topProd, p.to.t, FS, null, c), level(p.botProd, p.to.b, FS, null, c), FS, { cls: c })
+        : R([T(fmt(p.topProd), FS, c), unitsNode(p.to, p.topProd, FS, c)], FS * SP) });
+    }
+    if (needSimp) out.push({ k: "simp", name: "Simplify", node: R([T(fmt(p.ans), FS, "g"), unitsNode(p.to, p.ans, FS, "g")], FS * SP) });
+    return out;
+  }
+
+  // ---------- drawing ----------
+  let timers = [];
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+  let slotHot = false;
+
+  // Lines: [{ node, name, show, now, anim, k }]. reserve: the widest chain this question can have (keeps the name column still).
+  function drawWork(lines, reserveW, extraH) {
+    svg.innerHTML = ""; boxes = {};
+    let y = 28; const ys = [];
+    lines.forEach((l, i) => { y += l.node.up; ys.push(y); y += l.node.dn + (i ? 36 : 40); });
+    const maxW = Math.max(reserveW, ...lines.map(l => l.node.w));
+    const NX = X0 + maxW + 56;
+    const chars = l => Math.max((l.name || "").length, typeof l.nameW === "number" ? l.nameW : (l.nameW || "").length);
+    const nameW = Math.max(...lines.map(chars)) * NFS * 0.52;
+    const W = Math.max(980, NX + nameW + 24);
+    lines.forEach((l, i) => {
+      if (!l.show) return;
+      const g = E("g", { class: l.anim ? "pop" : "" });
+      if (l.anim) g.style.transformOrigin = "left center";
+      if (i) E("text", { x: EQX, y: ys[i] + FS * 0.36, class: "eqs", "text-anchor": "middle", "font-size": FS }, g, "=");
+      l.node.draw(g, X0, ys[i]);
+      if (l.name) E("text", { x: NX, y: ys[i] + NFS * 0.36, class: "sname" + (l.now ? " now" : ""), "font-size": NFS }, g, l.name);
+    });
+    return { W, bottom: y, ys };
+  }
+  // Strike out each cancelled pair in its colour; the newest pair draws in after its fraction pops in.
+  function drawStrikes(fr, animPair) {
+    pairsOf(fr).forEach(pr => {
+      [pr.a, pr.b].forEach(key => {
+        const b = boxes[key]; if (!b) return;
+        b.el.classList.add("k" + (pr.c % 3));
+        const h = b.fs * 0.34;
+        const d = `M${b.x - 6} ${b.y + h} L${b.x + b.w + 6} ${b.y - h}`;
+        const s = E("path", { d, class: "strike k" + (pr.c % 3) });
+        if (pr.c === animPair && !reduced()) { s.setAttribute("pathLength", 1); s.classList.add("draw"); s.style.animationDelay = "450ms"; }
+      });
+    });
+  }
+  // Width of the full solution chain, plus the slot while building.
+  const reserveOf = p => Math.max(chainNode(p.fr).w, chainNode(p.fr.slice(0, -1), { slot: true }).w);
+
+  // ---------- words ----------
+  const b = (x, c) => `<b${c ? ` class="${c}"` : ""}>${x}</b>`;
+  const lines = arr => arr.filter(Boolean).map(s => `<span>${s}</span>`).join("");
+  const goalTxt = p => unitStr(p.to, 2);
+  function convWords(p, k) { // k: 1-based index of the conversion fraction
+    const fr = p.fr.slice(0, k + 1), f = p.fr[k];
+    const pr = pairsOf(fr).find(x => x.b.startsWith(k + "")), c = "k" + (pr.c % 3), u = label(pr.u, 2);
+    const onTop = pr.a.endsWith("t");
+    const fct = factOf(f.tu, f.bu), [l, r] = factText(fct);
+    return [`Get rid of ${b(u, c)}.`,
+      onTop ? `It is on the top, so put ${b(u, c)} on the bottom.` : `It is on the bottom, so put ${b(u, c)} on the top.`,
+      `${b(l)} = ${b(r)}, so this fraction equals 1.`,
+      `${b(u, c)} cancels.`];
+  }
+  function sayLearn(p, st) {
+    if (st.k === "q") return [`Change ${b(qText(p))} into ${b(goalTxt(p))}.`];
+    if (st.k === "frac") return p.from.b
+      ? [`${b(qText(p))} means ${b(fmt(p.v) + " " + label(p.from.t, p.v))} in ${b("1 " + label(p.from.b, 1))}.`, "Write it as a fraction."]
+      : ["Write it as a fraction over 1.", "Over 1, the amount stays the same."];
+    if (st.k === "conv") return convWords(p, st.i);
+    if (st.k === "across") return [p.to.b ? `The units left are ${b(goalTxt(p))}.` : `The unit left is ${b(goalTxt(p))}.`,
+      "Multiply the tops. Multiply the bottoms.",
+      p.fr.slice(1).some(f => f.tn === 1 || f.bn === 1) ? "Skip the 1s. Multiplying by 1 changes nothing." : null];
+    if (st.k === "mult") return ["Multiply the top numbers and the bottom numbers.", st.last ? `The answer is ${b(ansText(p), "g")}.` : null];
+    return [`${b(fmt(p.topProd))} over ${b(fmt(p.botProd))} is ${b(fmt(p.ans))}.`, `The answer is ${b(ansText(p), "g")}.`];
+  }
+  const NOTES = { 1: "Level 1: one conversion fraction", 2: "Level 2: two conversion fractions", 3: "Level 3: three conversion fractions" };
+
+  // ---------- Learn ----------
+  let mode = "learn", llv = 1, lq = build(...EXAMPLES[1]), step = 0;
+  function learnSteps(p) {
+    const s = [{ k: "q" }, { k: "frac" }];
+    for (let i = 1; i < p.fr.length; i++) s.push({ k: "conv", i });
+    const tl = tailLines(p);
+    tl.forEach((t, j) => s.push({ k: t.k, last: j === tl.length - 1 }));
+    return s;
+  }
+  function changeName(p, i) { const [u, w] = p.path[i - 1]; return `Change ${label(u, 2)} to ${label(w, 2)}`; }
+  function showLearn(anim) {
+    clearTimers();
+    const p = lq, S = learnSteps(p), st = S[step];
+    const nConv = st.k === "q" ? -1 : st.k === "frac" ? 0 : st.k === "conv" ? st.i : p.fr.length - 1;
+    const fr = p.fr.slice(0, Math.max(1, nConv + 1));
+    const chainName = st.k === "frac" ? "Write as a fraction" : st.k === "conv" ? changeName(p, st.i) : "Cancel units";
+    const tl = tailLines(p);
+    const L = [{ node: qNode(p), name: "Question", show: true, now: st.k === "q" },
+      { node: chainNode(fr, { newIdx: anim && st.k === "conv" ? st.i : -1 }), name: chainName, nameW: "Write as a fraction", show: nConv >= 0, now: st.k === "frac" || st.k === "conv", anim: anim && st.k === "frac" }];
+    tl.forEach(t => {
+      const at = S.findIndex(s => s.k === t.k);
+      L.push({ node: t.node, name: t.name, show: step >= at, now: step === at, anim: anim && step === at });
+    });
+    // Longest step name this example can show, so the column never moves.
+    L[1].nameW = Math.max(...p.path.map((_, i) => changeName(p, i + 1).length), 19);
+    const r = drawWork(L, reserveOf(p));
+    drawStrikes(fr, anim && st.k === "conv" ? st.i - 1 : -1);
+    svg.setAttribute("viewBox", `0 0 ${r.W} ${Math.max(r.bottom + 10, r.W * 0.5)}`);
+    $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
+    $("#say").innerHTML = lines(sayLearn(p, st));
+    $("#next").disabled = step >= S.length - 1;
+    $("#back").disabled = step === 0;
+  }
+  function setLearnLevel(lv, fresh) {
+    llv = lv;
+    document.querySelectorAll("#llv [data-lv]").forEach(x => x.classList.toggle("on", +x.dataset.lv === lv));
+    $("#llvnote").textContent = NOTES[lv];
+    lq = fresh ? gen(lv, lq) : build(...EXAMPLES[lv]); step = 0; showLearn(false);
+  }
+  $("#llv").addEventListener("click", e => { const x = e.target.closest("button"); if (x) setLearnLevel(+x.dataset.lv); });
+  $("#next").onclick = () => { if (step < learnSteps(lq).length - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = () => { step = 0; showLearn(false); };
+  $("#rand").onclick = () => setLearnLevel(llv, true);
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  // Cards: the fractions the question needs (in a random way up), one with a wrong number, one with units that don't belong.
+  let plv = 1, pq = null, chain = [], cards = [], temp = null, hintKey = null, done = false, answered = false;
+  let tried = false, counted = false, busy = false, right = 0, total = 0, newIdx = -1, animPair = -1;
+  const fb = $("#fb"), ansIn = $("#ans");
+  function say(arr, cls) { fb.className = "say " + (cls || ""); fb.innerHTML = lines(arr); }
+  function makeCards(p) {
+    const used = new Set(p.fr.flatMap(f => [f.tu, f.bu]).filter(Boolean));
+    const good = p.fr.slice(1).map(f => ({ f: Math.random() < 0.5 ? flipF(f) : f }));
+    const src = pick(p.fr.slice(1)), big = src.tn === 1 ? "bn" : "tn";
+    const bad = Object.assign({}, src, { [big]: WRONG[src[big]] });
+    const other = pick(FACTS.filter(f => !used.has(f[0]) && !used.has(f[2])));
+    const odd = { tn: other[1], tu: other[2], bn: 1, bu: other[0] };
+    const all = [...good, { f: Math.random() < 0.5 ? flipF(bad) : bad, wrong: src }, { f: Math.random() < 0.5 ? flipF(odd) : odd }];
+    return shuffle(all).map((c, id) => Object.assign(c, { id, used: false }));
+  }
+  // The unit to get rid of next (in the example's order), and where it sits.
+  function nextUnit() {
+    const st = exps(chain);
+    for (const [u] of pq.path) if (st[u] && st[u] !== (pq.goal[u] || 0)) return { u, top: st[u] > 0 };
+    return null;
+  }
+  function evaluate(f, card) {
+    if (card.wrong) { const [l, r] = factText(factOf(card.wrong.tu, card.wrong.bu)); return { ok: false, msg: ["Check the numbers.", `${b(l)} = ${b(r)}.`], bad: ["t", "b"] }; }
+    const before = exps(chain), after = exps([...chain, f]);
+    const cancels = [f.tu, f.bu].filter(u => u && Math.abs(after[u] || 0) < Math.abs(before[u] || 0));
+    if (!cancels.length) {
+      const same = [["t", f.tu, 1], ["b", f.bu, -1]].find(([, u, s]) => u && (before[u] || 0) * s > 0);
+      if (same) {
+        const u = label(same[1], 2);
+        return { ok: false, bad: [same[0]], clash: same, msg: [same[0] === "t" ? `${b(u, "bad")} would be on the top two times, so it can't cancel.` : `${b(u, "bad")} would be on the bottom two times, so it can't cancel.`, "Flip the fraction."] };
+      }
+      const nu = nextUnit();
+      return { ok: false, bad: ["t", "b"], msg: ["Nothing cancels.", nu ? `Look for a fraction with ${b(label(nu.u, 2))}.` : null] };
+    }
+    const lost = Object.keys(pq.goal).find(u => (before[u] || 0) * pq.goal[u] >= 1 && (after[u] || 0) * pq.goal[u] < 1);
+    if (lost) return { ok: false, bad: ["t", "b"], msg: [`We want ${b(label(lost, 2))} in the answer, so keep it.`] };
+    return { ok: true };
+  }
+  function newQuestion() {
+    clearTimers();
+    pq = gen(plv, pq); chain = [pq.fr[0]]; cards = makeCards(pq);
+    temp = null; hintKey = null; done = answered = tried = counted = busy = false; newIdx = animPair = -1;
+    $("#anscard").hidden = true; ansIn.value = ""; ansIn.className = "";
+    $("#given").textContent = qText(pq); $("#ansunit").textContent = goalTxt(pq);
+    say([`Change ${b(qText(pq))} into ${b(goalTxt(pq))}.`, "Tap a fraction to multiply it in, or drag it up.", "Tap Flip to turn it over."]);
+    renderPractice();
+  }
+  let trayTop = 0;
+  function renderPractice() {
+    const p = pq, tl = tailLines(p);
+    const fr = temp ? [...chain, temp.f] : chain;
+    const L = [{ node: qNode(p), name: "Question", show: true },
+      { node: chainNode(fr, { newIdx, badIdx: temp ? fr.length - 1 : -1, slot: !done && !temp }), name: temp ? "" : "Cancel units", nameW: "Cancel units", show: true, now: !done }];
+    tl.forEach(t => L.push({ node: t.node, name: t.name, show: t.k === "across" ? done : answered, now: t.k === "across" && done && !answered }));
+    const r = drawWork(L, reserveOf(p));
+    drawStrikes(chain, animPair);
+    if (temp) {
+      temp.bad.forEach(lv => { const x = boxes[(fr.length - 1) + lv]; if (x) x.el.classList.add("bad"); });
+      // The unit it would double up with, already in the chain.
+      if (temp.clash) {
+        const gone = new Set(pairsOf(chain).flatMap(x => [x.a, x.b]));
+        chain.forEach((f, i) => { const k = i + temp.clash[0]; if (f[temp.clash[0] + "u"] === temp.clash[1] && !gone.has(k) && boxes[k]) boxes[k].el.classList.add("bad"); });
+      }
+    }
+    if (hintKey && boxes[hintKey]) { const x = boxes[hintKey]; E("rect", { x: x.x - 5, y: x.y - x.fs * 0.62, width: x.w + 10, height: x.fs * 1.24, rx: 10, class: "hl" }); }
+    // Tray of conversion fractions under the work.
+    trayTop = r.bottom + 6;
+    const open = cards.filter(c => !c.used && !(temp && temp.card === c));
+    const nodes = open.map(c => fracNode(c.f, null, TFS));
+    const cw = nodes.map(n => Math.max(n.w + 36, 190)), ch = Math.max(...nodes.map(n => n.up + n.dn), TFS * 2.4) + 28 + 58;
+    const W = r.W, gapX = 24;
+    let rows = [[]], rw = 0;
+    open.forEach((c, i) => { if (rw + cw[i] > W - 60 && rows[rows.length - 1].length) { rows.push([]); rw = 0; } rows[rows.length - 1].push(i); rw += cw[i] + gapX; });
+    const trayH = done ? 0 : 56 + rows.length * (ch + 18);
+    if (!done) {
+      E("rect", { x: 10, y: trayTop, width: W - 20, height: trayH, rx: 16, class: "tray" });
+      E("text", { x: 34, y: trayTop + 38, class: "trayname", "font-size": 26 }, svg, "Conversion fractions");
+      rows.forEach((row, ri) => {
+        const tot = row.reduce((t, i) => t + cw[i], 0) + gapX * (row.length - 1);
+        let x = (W - tot) / 2;
+        const y = trayTop + 56 + ri * (ch + 18);
+        row.forEach(i => {
+          const c = open[i], n = nodes[i];
+          const outer = E("g", { class: "cardg", transform: `translate(${x},${y})`, "data-id": c.id, "data-x": x, "data-y": y, tabindex: 0, role: "button", "aria-label": `${fmt(c.f.tn)} ${c.f.tu || ""} over ${fmt(c.f.bn)} ${c.f.bu || ""}` });
+          const inner = E("g", { class: c.flipped ? "flipping" : "" }, outer);
+          E("rect", { x: 0, y: 0, width: cw[i], height: ch - 70, rx: 12, class: "cardr" }, inner);
+          n.draw(inner, (cw[i] - n.w) / 2, (ch - 70) / 2);
+          const fbtn = E("g", { class: "flipb", "data-id": c.id, tabindex: 0, role: "button", "aria-label": "Flip" }, outer);
+          E("rect", { x: cw[i] / 2 - 85, y: ch - 58, width: 170, height: 52, rx: 12 }, fbtn);
+          E("text", { x: cw[i] / 2, y: ch - 23, "text-anchor": "middle", "font-size": 26 }, fbtn, "⇅ Flip");
+          c.flipped = false;
+          x += cw[i] + gapX;
+        });
+      });
+    }
+    // The tray goes away once the chain is done; keep the height so the board does not jump.
+    p.vbH = Math.max(p.vbH || 0, trayTop + trayH + 10, W * 0.5);
+    svg.setAttribute("viewBox", `0 0 ${W} ${p.vbH}`);
+    newIdx = -1; animPair = -1;
+    $("#check").disabled = $("#hint").disabled = $("#showme").disabled = answered;
+    $("#newq").classList.toggle("go", answered);
+  }
+  function place(id) {
+    const card = cards.find(c => c.id === id);
+    if (!card || card.used || busy || done) return;
+    hintKey = null;
+    const res = evaluate(card.f, card);
+    if (res.ok) {
+      chain.push(card.f); card.used = true;
+      newIdx = chain.length - 1; animPair = pairsOf(chain).length - 1;
+      const pr = pairsOf(chain).filter(x => x.b.startsWith(newIdx + ""));
+      done = sameExps(exps(chain), pq.goal);
+      renderPractice();
+      const cancelled = pr.map(x => `${b(label(x.u, 2), "k" + (x.c % 3))} cancels.`);
+      if (done) {
+        say([...cancelled, "Only the units you want are left.", "Multiply across. Type the answer."], "");
+        $("#anscard").hidden = false; ansIn.focus({ preventScroll: true });
+      } else say([...cancelled, "Keep going."], "");
+      return;
+    }
+    tried = true; busy = true;
+    temp = { card, f: card.f, bad: res.bad, clash: res.clash };
+    renderPractice();
+    say(res.msg, "no");
+    later(() => { temp = null; busy = false; renderPractice(); }, reduced() ? 2200 : 1900);
+  }
+  function flip(id) {
+    const c = cards.find(x => x.id === id);
+    if (!c || busy || done) return;
+    c.f = flipF(c.f); c.flipped = !reduced();
+    renderPractice();
+    const el = svg.querySelector(`.flipb[data-id="${id}"]`); if (el) el.focus({ preventScroll: true });
+  }
+  function parseNum(s) {
+    s = s.trim().replace(/\s/g, "");
+    if (/,\d{3}(?!\d)/.test(s) && !/\./.test(s) && !/,\d{1,2}$/.test(s)) s = s.replace(/,/g, "");
+    s = s.replace(",", ".");
+    return /^\d*\.?\d+$/.test(s) ? parseFloat(s) : NaN;
+  }
+  function count(ok) {
+    if (counted) return; counted = true; total++; if (ok && !tried) right++;
+    $("#right").textContent = right; $("#total").textContent = total;
+  }
+  function check() {
+    if (!done || answered) return;
+    const x = parseNum(ansIn.value);
+    if (isNaN(x)) { say(["Type a number."], "no"); return; }
+    if (Math.abs(x - pq.ans) < 1e-6 * Math.max(1, pq.ans)) {
+      count(true); answered = true; ansIn.className = "ok";
+      say([`Correct! ${b(qText(pq) + " = " + ansText(pq), "g")}`], "ok");
+      renderPractice();
+      return;
+    }
+    tried = true; ansIn.className = "bad";
+    if (Math.abs(x - pq.topProd) < 1e-6 * Math.max(1, x) && pq.botProd !== 1) say(["Not yet. That is the top.", `Now work out ${b(fmt(pq.topProd))} over ${b(fmt(pq.botProd))}.`], "no");
+    else say(["Not yet. Multiply the tops. Multiply the bottoms.", "Then work out top over bottom."], "no");
+  }
+  $("#check").onclick = check;
+  ansIn.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  $("#newq").onclick = newQuestion;
+  $("#hint").onclick = () => {
+    if (busy || answered) return;
+    if (done) { say(["Multiply the tops. Multiply the bottoms.", `Then work out ${b(fmt(pq.topProd))} over ${b(fmt(pq.botProd))}.`], ""); return; }
+    const nu = nextUnit(); if (!nu) return;
+    // Box the unit to get rid of, on the chain.
+    const gone = new Set(pairsOf(chain).flatMap(x => [x.a, x.b]));
+    let key = null;
+    chain.forEach((f, i) => { [["t", f.tu], ["b", f.bu]].forEach(([lv, u]) => { if (u === nu.u && (lv === "t") === nu.top && !gone.has(i + lv)) key = i + lv; }); });
+    hintKey = key; renderPractice();
+    const u = b(label(nu.u, 2), "k0");
+    say([`Get rid of ${u}.`, nu.top ? `It is on the top, so find a fraction with ${u} on the bottom.` : `It is on the bottom, so find a fraction with ${u} on the top.`], "");
+  };
+  $("#showme").onclick = () => {
+    if (busy || answered) return;
+    tried = true; count(false); busy = true; hintKey = null;
+    const finish = () => {
+      ansIn.value = fmt(pq.ans).replace(/ /g, ""); ansIn.className = "ok"; $("#anscard").hidden = false;
+      answered = true; busy = false; renderPractice();
+      say([`${b(qText(pq) + " = " + ansText(pq), "g")}`], "ok");
+    };
+    const stepOne = () => {
+      const nu = nextUnit();
+      if (!nu) { done = true; renderPractice(); later(finish, 1300); return; }
+      const w = pq.path.find(([u]) => u === nu.u)[1];
+      const f = convFrac(nu.u, w, exps(chain)[nu.u]);
+      const card = cards.find(c => !c.used && !c.wrong && ((c.f.tu === f.tu && c.f.bu === f.bu) || (c.f.tu === f.bu && c.f.bu === f.tu)));
+      if (card) { card.f = f; card.used = true; }
+      chain.push(f); newIdx = chain.length - 1; animPair = pairsOf(chain).length - 1;
+      const pr = pairsOf(chain).filter(x => x.b.startsWith(newIdx + ""));
+      say(pr.map(x => `${b(label(x.u, 2), "k" + (x.c % 3))} cancels.`), "");
+      renderPractice();
+      later(stepOne, 1500);
+    };
+    stepOne();
+  };
+  function setPracticeLevel(lv) {
+    plv = lv;
+    document.querySelectorAll("#plv [data-lv]").forEach(x => x.classList.toggle("on", +x.dataset.lv === lv));
+    $("#plvnote").textContent = NOTES[lv];
+    newQuestion();
+  }
+  $("#plv").addEventListener("click", e => { const x = e.target.closest("button"); if (x) setPracticeLevel(+x.dataset.lv); });
+
+  // Tap a card to multiply it in; drag it up out of the tray to do the same. Flip turns it over.
+  const toSvg = e => new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  let drag = null;
+  svg.addEventListener("pointerdown", e => {
+    if (mode !== "practice" || busy || done) return;
+    const fl = e.target.closest(".flipb");
+    if (fl) { e.preventDefault(); flip(+fl.dataset.id); return; }
+    const g = e.target.closest(".cardg"); if (!g) return;
+    const p = toSvg(e);
+    drag = { id: +g.dataset.id, g, x0: +g.dataset.x, y0: +g.dataset.y, px: p.x, py: p.y, moved: false };
+    svg.setPointerCapture(e.pointerId);
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const p = toSvg(e), dx = p.x - drag.px, dy = p.y - drag.py;
+    if (!drag.moved && Math.hypot(dx, dy) > 12) { drag.moved = true; drag.g.classList.add("dragging"); svg.appendChild(drag.g); }
+    if (drag.moved) {
+      drag.g.setAttribute("transform", `translate(${drag.x0 + dx},${drag.y0 + dy})`);
+      const hot = p.y < trayTop;
+      if (hot !== slotHot) { slotHot = hot; const s = svg.querySelector(".slot"); if (s) s.classList.toggle("hot", hot); }
+    }
+  });
+  const endDrag = e => {
+    if (!drag) return;
+    const d = drag; drag = null; slotHot = false;
+    if (!d.moved || (e.type === "pointerup" && toSvg(e).y < trayTop)) place(d.id);
+    else renderPractice();
+  };
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const fl = e.target.closest(".flipb"), g = e.target.closest(".cardg");
+    if (fl) { e.preventDefault(); e.stopPropagation(); flip(+fl.dataset.id); }
+    else if (g) { e.preventDefault(); place(+g.dataset.id); }
+  });
+
+  function setMode(m) {
+    mode = m; clearTimers(); busy = false;
+    document.querySelectorAll("[data-mode]").forEach(x => x.classList.toggle("on", x.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false); else setPracticeLevel(plv);
+  }
+  document.querySelectorAll("[data-mode]").forEach(x => x.onclick = () => setMode(x.dataset.mode));
+  $("#llvnote").textContent = NOTES[1];
+  showLearn(false);
+  window.addEventListener("langchange", () => {
+    if (mode === "learn") showLearn(false);
+    else if (pq) { pq.vbH = 0; renderPractice(); $("#given").textContent = qText(pq); $("#ansunit").textContent = goalTxt(pq); }
+  });
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Unit Analysis (unitanalysis.html). Units: hr → h, day → jour, week → semaine, in → po, ft → pi, yd → vg. */
+window.I18N_PAGE = {
+ "Unit Analysis": "Analyse des unités",
+ "Learn": "Apprendre",
+ "Level": "Niveau",
+ "Level {n}": "Niveau {n}",
+ "Level 1: one conversion fraction": "Niveau 1 : une fraction de conversion",
+ "Level 2: two conversion fractions": "Niveau 2 : deux fractions de conversion",
+ "Level 3: three conversion fractions": "Niveau 3 : trois fractions de conversion",
+ "Multiply by fractions that equal 1. A unit on the top and the bottom cancels.": "Multiplie par des fractions égales à 1. Une unité en haut et en bas s'annule.",
+ "An amount multiplied by conversion fractions. Units on the top and bottom cancel.": "Une quantité multipliée par des fractions de conversion. Les unités en haut et en bas s'annulent.",
+ "Step {n} of {n}": "Étape {n} sur {n}",
+ "New example": "Nouvel exemple",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+ "Your answer": "Ta réponse",
+ "Show me": "Montre-moi",
+
+ "Question": "Question",
+ "Write as a fraction": "Écrire en fraction",
+ "Cancel units": "Annuler les unités",
+ "Multiply across": "Multiplier",
+ "Multiply": "Multiplier",
+ "Simplify": "Simplifier",
+ "~Change (.+) to (.+)": "Changer $1 en $2",
+ "Conversion fractions": "Fractions de conversion",
+ "⇅ Flip": "⇅ Retourner",
+ "Flip": "Retourner",
+
+ "Change {0} into {1}.": "Change {0} en {1}.",
+ "{0} means {1} in {2}.": "{0} veut dire {1} en {2}.",
+ "Write it as a fraction.": "Écris-le en fraction.",
+ "Write it as a fraction over 1.": "Écris-le en fraction sur 1.",
+ "Over 1, the amount stays the same.": "Sur 1, la quantité ne change pas.",
+ "Get rid of {0}.": "Élimine {0}.",
+ "It is on the top, so put {0} on the bottom.": "Il est en haut, alors mets {0} en bas.",
+ "It is on the bottom, so put {0} on the top.": "Il est en bas, alors mets {0} en haut.",
+ "{0} = {1}, so this fraction equals 1.": "{0} = {1}, alors cette fraction est égale à 1.",
+ "{0} cancels.": "{0} s'annule.",
+ "The units left are {0}.": "Il reste les unités {0}.",
+ "The unit left is {0}.": "Il reste l'unité {0}.",
+ "Multiply the tops. Multiply the bottoms.": "Multiplie les hauts. Multiplie les bas.",
+ "Skip the 1s. Multiplying by 1 changes nothing.": "Ignore les 1. Multiplier par 1 ne change rien.",
+ "Multiply the top numbers and the bottom numbers.": "Multiplie les nombres du haut et les nombres du bas.",
+ "The answer is {0}.": "La réponse est {0}.",
+ "{0} over {1} is {2}.": "{0} sur {1} donne {2}.",
+
+ "Tap a fraction to multiply it in, or drag it up.": "Touche une fraction pour la multiplier, ou glisse-la vers le haut.",
+ "Tap Flip to turn it over.": "Touche Retourner pour l'inverser.",
+ "Keep going.": "Continue.",
+ "Only the units you want are left.": "Il ne reste que les unités voulues.",
+ "Multiply across. Type the answer.": "Multiplie. Écris la réponse.",
+ "Check the numbers.": "Vérifie les nombres.",
+ "{0} would be on the top two times, so it can't cancel.": "{0} serait deux fois en haut, alors il ne peut pas s'annuler.",
+ "{0} would be on the bottom two times, so it can't cancel.": "{0} serait deux fois en bas, alors il ne peut pas s'annuler.",
+ "Flip the fraction.": "Retourne la fraction.",
+ "Nothing cancels.": "Rien ne s'annule.",
+ "Look for a fraction with {0}.": "Cherche une fraction avec {0}.",
+ "We want {0} in the answer, so keep it.": "On veut {0} dans la réponse, alors garde-le.",
+ "It is on the top, so find a fraction with {0} on the bottom.": "Il est en haut, alors trouve une fraction avec {0} en bas.",
+ "It is on the bottom, so find a fraction with {0} on the top.": "Il est en bas, alors trouve une fraction avec {0} en haut.",
+ "Type a number.": "Écris un nombre.",
+ "Correct! {0}": "Bonne réponse! {0}",
+ "Not yet. That is the top.": "Pas encore. Ça, c'est le haut.",
+ "Now work out {0} over {1}.": "Calcule maintenant {0} sur {1}.",
+ "Then work out {0} over {1}.": "Calcule ensuite {0} sur {1}.",
+ "Not yet. Multiply the tops. Multiply the bottoms.": "Pas encore. Multiplie les hauts. Multiplie les bas.",
+ "Then work out top over bottom.": "Calcule ensuite le haut sur le bas.",
+
+ "hr": "h",
+ "day": "jour",
+ "days": "jours",
+ "week": "semaine",
+ "weeks": "semaines",
+ "in": "po",
+ "ft": "pi",
+ "yd": "vg",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

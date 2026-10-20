@@ -146,7 +146,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </style>
 <style>
 /* Subitizing Flash: a card flashes a quantity (ten-frames, or dots organized in one area), then hides.
-   The student types how many they saw; the card comes back with the answer. */
+   The student types how many they saw (on-screen keypad or keyboard); the card comes back with the answer. */
 .opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
 .opt { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
 .seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
@@ -170,25 +170,46 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .timer.run { opacity: 0.6; animation: shrink var(--t, 2s) linear forwards; }
 @keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
-.panel .card { display: flex; flex-direction: column; gap: 12px; }
-.ask { font-family: var(--font-display); font-weight: 800; font-size: 2rem; margin: 0; }
-.answer-row { display: flex; gap: 12px; align-items: stretch; }
-#ans { width: 0; flex: 1 1 auto; min-width: 0; height: 96px; font-family: var(--font-num); font-weight: 700; font-size: 4rem; text-align: center;
+.panel .card { display: flex; flex-direction: column; gap: clamp(8px, 1.3vh, 12px); }
+#next { font-size: 1.5rem; min-height: clamp(52px, 8vh, 64px); background: var(--green); color: var(--sheet); border-color: var(--green); }
+/* How many? sits beside the answer box. The box is not a text field, so tablets never pop up their own keyboard. */
+.answer-row { display: flex; gap: 12px; align-items: center; }
+.ask { flex: none; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.5rem, 3.6vh, 2rem); line-height: 1.1; margin: 0; }
+#ans { flex: 1 1 auto; min-width: 0; height: clamp(64px, 11vh, 96px); display: grid; place-items: center; font-family: var(--font-num); font-weight: 700; font-size: clamp(2.8rem, 8vh, 4rem); line-height: 1;
   color: var(--ink); background: var(--paper); border: 3px solid var(--pt); border-radius: 12px; }
-#ans:disabled { border-color: var(--grid-major); color: var(--muted); }
-#check { font-size: 1.4rem; padding: 10px 22px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
-#check:disabled, #again:disabled { opacity: 0.45; cursor: default; }
-#next { font-size: 1.5rem; min-height: 64px; background: var(--green); color: var(--sheet); border-color: var(--green); }
+#ans.off { border-color: var(--grid-major); color: var(--muted); }
+/* Keypad: 1 to 5 and 6 to 0 in counting order, then Erase and Check. */
+.pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(6px, 1vh, 10px); }
+.pad button { padding: 0; height: clamp(48px, 7.6vh, 84px); border-radius: 12px; background: var(--paper); font-family: var(--font-num); font-weight: 700; font-size: clamp(1.6rem, 4.6vh, 2.6rem); touch-action: manipulation; }
+.pad button:hover { background: var(--chip); }
+.pad .erase { grid-column: span 2; font-size: clamp(1.4rem, 3.6vh, 2rem); }
+.pad .ok { grid-column: span 3; background: var(--pt); border-color: var(--pt); color: var(--sheet); font-family: var(--font-display); font-size: clamp(1.3rem, 3.4vh, 1.8rem); }
+.pad .ok:hover { background: var(--sheet); color: var(--pt); }
+.pad button:disabled, #again:disabled { opacity: 0.45; cursor: default; }
+.pad button:disabled:hover { background: var(--paper); }
+.pad .ok:disabled:hover { background: var(--pt); color: var(--sheet); }
 .row { display: flex; gap: 10px; flex-wrap: wrap; }
 .row button { flex: 1 1 auto; min-height: 48px; font-size: 1.05rem; }
-.fb { min-height: 3.4rem; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; line-height: 1.2; }
+.fb { min-height: 1.25em; margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 4vh, 2.2rem); line-height: 1.2; }
 .fb.ok { color: var(--green); }
 .fb.no { color: var(--warn); }
-.fb small { display: block; font-family: var(--font-body); font-weight: 700; font-size: 1.15rem; color: var(--muted); }
-.score { display: flex; align-items: baseline; gap: 10px; margin: 0; padding-top: 10px; border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: 2rem; }
+.fb small { margin-left: 0.5em; font-family: var(--font-body); font-weight: 700; font-size: 0.55em; color: var(--muted); }
+.score { display: flex; align-items: baseline; gap: 10px; margin: 0; padding-top: clamp(4px, 1vh, 10px); border-top: 1px dashed var(--grid-major); font-family: var(--font-num); font-weight: 700; font-size: clamp(1.5rem, 3.6vh, 2rem); }
 .score span { font-family: var(--font-body); font-size: 1.1rem; color: var(--muted); }
 .score .k { font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.85rem; }
-@media (max-width: 600px) { .ask { font-size: 1.5rem; } #ans { height: 80px; font-size: 3rem; } }
+/* Tablets held upright: card on top, answer panel below in two columns, all on one screen. */
+@media (max-width: 860px) and (min-height: 860px) {
+  body .wrap { height: calc(100vh - 40px); height: calc(100dvh - 40px); display: flex; flex-direction: column; padding-block: 12px; }
+  .wrap > * { flex: none; }
+  .wrap > .stage { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; }
+  .panel .card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; gap: 12px 20px; }
+  .panel .card > * { grid-column: 1; }
+  .panel .card > .pad { grid-column: 2; grid-row: 1 / span 5; }
+  .pad button { height: clamp(56px, 7vh, 84px); }
+}
+@media (max-width: 600px) { .ask { font-size: 1.5rem; } }
 </style>
 
 <div class="wrap">
@@ -210,11 +231,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="panel">
       <div class="card">
         <button type="button" id="next">Start</button>
-        <p class="ask">How many?</p>
         <div class="answer-row">
-          <input id="ans" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" aria-label="How many did you see?" disabled>
-          <button type="button" id="check" disabled>Check</button>
+          <p class="ask" id="askName">How many?</p>
+          <div id="ans" class="off" role="status" aria-labelledby="askName"></div>
         </div>
+        <div class="pad" id="pad" aria-label="Number keys"></div>
         <p class="fb" id="fb" aria-live="polite"></p>
         <div class="row">
           <button type="button" id="again" disabled>Flash again</button>
@@ -430,8 +451,23 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     t.style.setProperty("--t", opt.speed + "ms");
     t.classList.remove("run"); void t.offsetWidth; t.classList.add("run");
     timer = setTimeout(() => { if (state === "flash") { state = "wait"; draw("back"); } t.classList.remove("run"); }, opt.speed);
-    $("ans").disabled = false; $("check").disabled = false; $("again").disabled = false;
-    $("ans").focus();
+    typing(true);
+  }
+
+  // The answer is typed with the on-screen keypad or the keyboard; it only takes keys while a card waits for an answer.
+  let typed = "";
+  const showTyped = () => { $("ans").textContent = typed; };
+  function typing(on) {
+    $("ans").classList.toggle("off", !on);
+    for (const b of $("pad").children) b.disabled = !on;
+    $("again").disabled = !on;
+  }
+  function key(k) {
+    if (state !== "flash" && state !== "wait") return;
+    if (k === "ok") return check();
+    if (k === "back") typed = typed.slice(0, -1);
+    else if (typed.length < 2) typed = (typed === "0" ? "" : typed) + k;
+    showTyped();
   }
 
   function next() {
@@ -439,15 +475,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     do n = 4 + Math.floor(Math.random() * (opt.max - 3)); while (n === last && opt.max > 1);
     last = n;
     layout = newLayout();
-    $("ans").value = ""; $("fb").textContent = ""; $("fb").className = "fb";
+    typed = ""; showTyped(); $("fb").textContent = ""; $("fb").className = "fb";
     $("next").textContent = "Next card";
     flash();
   }
 
   function check() {
     if (state !== "flash" && state !== "wait") return;
-    const v = $("ans").value.trim();
-    if (!/^\d+$/.test(v)) { $("ans").focus(); return; }
+    const v = typed;
+    if (v === "") return;
     clearTimeout(timer); $("timer").classList.remove("run");
     tries++;
     const ok = +v === n;
@@ -457,7 +493,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     $("fb").className = "fb " + (ok ? "ok" : "no");
     $("fb").innerHTML = ok ? `Yes! ${n}` : `It was ${n}<small>You said ${v}</small>`;
     $("score").innerHTML = `${right} <span>of ${tries}</span>`;
-    $("ans").disabled = true; $("check").disabled = true; $("again").disabled = true;
+    typing(false);
     $("next").focus();
   }
 
@@ -465,7 +501,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     clearTimeout(timer); $("timer").classList.remove("run");
     state = "idle"; right = tries = 0; last = 0;
     $("score").innerHTML = `0 <span>of 0</span>`;
-    $("ans").value = ""; $("ans").disabled = true; $("check").disabled = true; $("again").disabled = true;
+    typed = ""; showTyped(); typing(false);
     $("fb").textContent = "";
     $("next").textContent = "Start";
     draw("idle");
@@ -482,11 +518,28 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     });
   }
   $("next").addEventListener("click", next);
-  $("check").addEventListener("click", check);
+  for (const k of ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "back", "ok"]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = k === "back" ? "⌫" : k === "ok" ? "Check" : k;
+    if (k === "back") { b.className = "erase"; b.setAttribute("aria-label", "Erase"); }
+    if (k === "ok") b.className = "ok";
+    b.addEventListener("click", () => key(k));
+    $("pad").append(b);
+  }
   $("again").addEventListener("click", () => { if (state === "wait" || state === "flash") flash(); });
   $("reset").addEventListener("click", reset);
-  $("ans").addEventListener("input", () => { $("ans").value = $("ans").value.replace(/\D/g, ""); });
-  $("ans").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+  // Keyboard: digits and Backspace type, Enter checks, and Enter again shows the next card.
+  document.addEventListener("keydown", e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const asking = state === "flash" || state === "wait";
+    if (/^[0-9]$/.test(e.key) && asking) key(e.key);
+    else if (e.key === "Backspace" && asking) key("back");
+    else if (e.key === "Enter" && asking) key("ok");
+    else if (e.key === "Enter" && e.target.tagName !== "BUTTON") next(); // a focused button handles Enter itself
+    else return;
+    e.preventDefault();
+  });
   reset();
 })();
 </script>
@@ -595,7 +648,12 @@ window.I18N_PAGE = {
  "Flash again": "Remontrer",
  "of {n}": "sur {n}",
  "Flash card showing a quantity": "Carte éclair qui montre une quantité",
- "Next card": "Carte suivante"
+ "Next card": "Carte suivante",
+ "Number keys": "Touches numériques",
+ "Erase": "Effacer",
+ "Yes! {n}": "Oui! {n}",
+ "It was {n}{0}": "C’était {n}{0}",
+ "You said {n}": "Tu as dit {n}"
 };
 </script>
 <script>
