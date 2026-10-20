@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Visualize Normal Distribution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a4cc2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b49cff; } }
+:root[data-theme="dark"] { --purple: #b49cff; }
+.main { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); }
+.panel { gap: 12px; }
+.panel .card { padding: 12px 16px; }
+.panel .card p { margin: 0; }
+
+/* Header toggle */
+button.ztog { font-family: var(--font-display); font-size: 1.15rem; min-height: 48px; padding: 8px 18px; border: 2px solid var(--purple); color: var(--purple); background: var(--sheet); }
+button.ztog[aria-pressed="true"] { background: var(--purple); color: var(--sheet); }
+
+/* Mean and SD */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-weight: 700; }
+.field label i { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; }
+.field input { font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.field input.bad { border-color: var(--warn); }
+.field input.bnd { border-color: var(--pt); }
+.err { color: var(--warn); font-weight: 700; min-height: 0; }
+.err:empty { display: none; }
+
+/* Shade switch */
+.seg-btns { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { flex: 1 1 0; border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 46px; padding: 6px 8px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.bounds { margin-top: 10px; }
+.bounds[hidden] { display: none; }
+
+/* Shaded area */
+.area-pct { font-family: var(--font-num); font-weight: 700; font-size: 3rem; line-height: 1.1; color: var(--pt); }
+.area-dec { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; color: var(--muted); }
+.area-say { font-size: 1.15rem; margin-top: 4px !important; }
+.muted { color: var(--muted); font-size: 1.05rem; }
+
+/* z-score work: one line per step, = aligned, step names on the right */
+.work { display: grid; grid-template-columns: auto auto auto 1fr; align-items: center; gap: 6px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; }
+.work .z { font-style: italic; font-family: var(--font-display); font-weight: 800; color: var(--purple); }
+.work .ans { color: var(--purple); }
+.work .step { font-family: var(--font-body); font-weight: 400; font-size: 0.95rem; color: var(--muted); text-align: right; }
+.work .frac > span { white-space: nowrap; }
+.zcard .label { color: var(--purple); }
+
+/* Board drawing */
+.guide { stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 6 6; }
+.guide.mid { stroke: var(--muted); stroke-dasharray: none; }
+.curve { fill: none; stroke: var(--ink); stroke-width: 4; stroke-linejoin: round; }
+.under { fill: var(--chip); }
+.shade { fill: var(--pt); fill-opacity: 0.28; }
+.ax { stroke: var(--ink); stroke-width: 2.5; }
+.tick { stroke: var(--ink); stroke-width: 2.5; }
+.xl { font-family: var(--font-num); font-weight: 700; font-size: 25px; fill: var(--ink); text-anchor: middle; }
+.zl { font-family: var(--font-num); font-weight: 700; font-size: 23px; fill: var(--purple); text-anchor: middle; }
+.rowname { font-family: var(--font-display); font-weight: 800; font-style: italic; font-size: 26px; text-anchor: middle; }
+.bline { stroke: var(--pt); stroke-width: 4; }
+.bhandle { fill: var(--pt); stroke: var(--sheet); stroke-width: 4; }
+.bhit { fill: transparent; cursor: ew-resize; }
+.bgrp { cursor: ew-resize; outline: none; }
+.bgrp:focus-visible .bhandle { stroke: var(--ink); stroke-width: 5; }
+.chip { fill: var(--sheet); stroke: var(--pt); stroke-width: 2.5; }
+.chipx { font-family: var(--font-num); font-weight: 700; font-size: 28px; fill: var(--pt); }
+.chipz { font-family: var(--font-num); font-weight: 700; font-size: 22px; fill: var(--purple); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Visualize Normal Distribution</h1></div>
+    <button type="button" class="ztog" id="zTog" aria-pressed="false">Show z-scores</button>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="bell" viewBox="0 0 1000 540" role="img" aria-label="Bell curve with the mean and 1, 2 and 3 standard deviations marked"></svg></div>
+    <div class="panel">
+      <div class="card">
+        <p class="label">Your data</p>
+        <div class="pair">
+          <div class="field"><label for="mu">Mean <i>μ</i></label><input id="mu" type="number" inputmode="decimal" step="any" value="70"></div>
+          <div class="field"><label for="sd">Standard deviation <i>σ</i></label><input id="sd" type="number" inputmode="decimal" step="any" min="0" value="10"></div>
+        </div>
+        <p class="err" id="err" aria-live="polite"></p>
+      </div>
+      <div class="card">
+        <p class="label">Shade an area</p>
+        <div class="seg-btns" role="group" aria-label="Shade an area">
+          <button type="button" data-mode="off" class="on" aria-pressed="true">Off</button>
+          <button type="button" data-mode="left" aria-pressed="false">Left of</button>
+          <button type="button" data-mode="between" aria-pressed="false">Between</button>
+          <button type="button" data-mode="right" aria-pressed="false">Right of</button>
+        </div>
+        <div class="bounds pair" id="bounds" hidden>
+          <div class="field" id="fa"><label for="ba" id="la">From</label><input class="bnd" id="ba" type="number" inputmode="decimal" step="any"></div>
+          <div class="field" id="fb"><label for="bb" id="lb">To</label><input class="bnd" id="bb" type="number" inputmode="decimal" step="any"></div>
+        </div>
+      </div>
+      <div class="card" aria-live="polite">
+        <p class="label">Shaded area</p>
+        <div id="areaOn" hidden>
+          <p class="area-pct" id="pct"></p>
+          <p class="area-dec" id="dec"></p>
+          <p class="area-say" id="say"></p>
+        </div>
+        <p class="muted" id="areaOff">Choose Left of, Between or Right of. Then drag the blue line on the curve, or type a value.</p>
+      </div>
+      <div class="card zcard" id="zCard" hidden>
+        <p class="label" id="zTitle">z-score</p>
+        <div class="work" id="work"></div>
+        <p class="muted" id="zNote" style="margin-top:8px">z tells how many standard deviations a value is from the mean.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  // The curve is always drawn from 4 SDs below the mean to 4 SDs above, so every normal curve has the same shape;
+  // the mean and SD only change the numbers on the axis.
+  const CX = 500, PX = 110, BASE = 420, HT = 300, TOP = 8, ZMAX = 4;
+  const sx = z => CX + PX * z;
+  const sy = z => BASE - HT * Math.exp(-z * z / 2);
+
+  // Standard normal area to the left of z (erfc, Numerical Recipes, error under 1.2e-7).
+  function phi(z) {
+    const x = Math.abs(z) / Math.SQRT2, t = 1 / (1 + 0.5 * x);
+    const r = t * Math.exp(-x * x - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 + t * (-0.18628806 +
+      t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+    return z >= 0 ? 1 - r / 2 : r / 2;
+  }
+
+  // Numbers: up to 4 decimals, true minus sign.
+  const fmt = v => { const r = Math.round(v * 1e4) / 1e4; const s = String(Math.abs(r)); return (r < 0 ? "−" : "") + s; };
+  const fmtIn = v => String(Math.round(v * 1e4) / 1e4);
+  const z2 = z => (z < 0 ? "−" : "") + Math.abs(z).toFixed(2);
+
+  const S = { mu: 70, sd: 10, mode: "off", a: 60, b: 80, showZ: false, active: "a" };
+
+  // Dragging snaps to a friendly step: 1, 2 or 5 times a power of ten, at most a tenth of an SD.
+  const stepOf = () => { const t = S.sd / 10, p = Math.pow(10, Math.floor(Math.log10(t))); return [5, 2, 1].map(m => m * p).find(s => s <= t + 1e-12); };
+  const snap = x => { const s = stepOf(); return S.mu + Math.round((x - S.mu) / s) * s; };
+  const zOf = x => (x - S.mu) / S.sd;
+  const clampZ = z => Math.max(-ZMAX, Math.min(ZMAX, z));
+  const used = () => S.mode === "between" ? ["a", "b"] : S.mode === "left" ? ["b"] : S.mode === "right" ? ["a"] : [];
+
+  const svg = $("bell");
+  const gUnder = el("g", {}, svg), gShade = el("g", {}, svg), gGuide = el("g", {}, svg), gCurve = el("g", {}, svg),
+    gAxis = el("g", {}, svg), gZ = el("g", {}, svg), gB = el("g", {}, svg);
+
+  // Fixed drawing: curve, guide lines at the mean and 1, 2, 3 SDs, axis.
+  const curvePts = (z0, z1, n) => { const p = []; for (let i = 0; i <= n; i++) { const z = z0 + (z1 - z0) * i / n; p.push(sx(z).toFixed(1) + "," + sy(z).toFixed(1)); } return p; };
+  el("path", { class: "under", d: "M" + sx(-ZMAX) + "," + BASE + " L" + curvePts(-ZMAX, ZMAX, 240).join(" L") + " L" + sx(ZMAX) + "," + BASE + " Z" }, gUnder);
+  for (let k = -3; k <= 3; k++) el("line", { class: "guide" + (k === 0 ? " mid" : ""), x1: sx(k), x2: sx(k), y1: BASE, y2: sy(k) }, gGuide);
+  el("path", { class: "curve", d: "M" + curvePts(-ZMAX, ZMAX, 240).join(" L") }, gCurve);
+  el("line", { class: "ax", x1: sx(-ZMAX) - 10, x2: sx(ZMAX) + 10, y1: BASE, y2: BASE }, gAxis);
+  const xLabels = [];
+  for (let k = -3; k <= 3; k++) {
+    el("line", { class: "tick", x1: sx(k), x2: sx(k), y1: BASE, y2: BASE + 12 }, gAxis);
+    xLabels.push(el("text", { class: "xl", x: sx(k), y: BASE + 42 }, gAxis));
+  }
+  el("text", { class: "rowname", x: 26, y: BASE + 42, style: "fill: var(--ink)" }, gAxis, "x");
+  el("text", { class: "rowname", x: 26, y: BASE + 86, style: "fill: var(--purple)" }, gZ, "z");
+  for (let k = -3; k <= 3; k++) el("text", { class: "zl", x: sx(k), y: BASE + 86 }, gZ, k < 0 ? "−" + -k : String(k));
+
+  // Boundaries: a blue line with a round handle on the axis and a value chip at the top.
+  const B = {};
+  for (const key of ["a", "b"]) {
+    const g = el("g", { class: "bgrp", tabindex: "0", role: "slider", "aria-label": "Boundary" }, gB);
+    const hit = el("rect", { class: "bhit", y: TOP, width: 48, height: BASE + 20 - TOP }, g);
+    const line = el("line", { class: "bline", y1: TOP + 40, y2: BASE }, g);
+    const chip = el("rect", { class: "chip", rx: 10, height: 44 }, g);
+    const tx = el("text", { class: "chipx" }, g);
+    const tz = el("text", { class: "chipz" }, g);
+    const handle = el("circle", { class: "bhandle", cy: BASE, r: 16 }, g);
+    B[key] = { g, hit, line, chip, tx, tz, handle };
+    g.addEventListener("pointerdown", e => { e.stopPropagation(); startDrag(key, e); });
+    g.addEventListener("focus", () => { S.active = key; drawZ(); });
+    g.addEventListener("keydown", e => {
+      const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      setBound(key, snap(S[key]) + d * stepOf());
+    });
+  }
+
+  function setBound(key, x) {
+    x = Math.max(S.mu - ZMAX * S.sd, Math.min(S.mu + ZMAX * S.sd, x));
+    if (S.mode === "between") { if (key === "a") x = Math.min(x, S.b); else x = Math.max(x, S.a); }
+    S[key] = Math.round(x * 1e6) / 1e6;
+    S.active = key;
+    render();
+  }
+
+  // Drag a line, or press anywhere on the board to bring the nearest line there.
+  let dragKey = null;
+  const svgZ = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return (q.x - CX) / PX; };
+  function startDrag(key, e) {
+    if (!used().includes(key)) return;
+    dragKey = key; S.active = key;
+    svg.setPointerCapture(e.pointerId);
+    B[key].g.focus({ preventScroll: true });
+    setBound(key, snap(S.mu + svgZ(e) * S.sd));
+  }
+  svg.addEventListener("pointerdown", e => {
+    const keys = used();
+    if (!keys.length) return;
+    const x = S.mu + svgZ(e) * S.sd;
+    const key = keys.length === 1 ? keys[0] : (Math.abs(x - S.a) <= Math.abs(x - S.b) ? "a" : "b");
+    startDrag(key, e);
+  });
+  svg.addEventListener("pointermove", e => { if (dragKey) setBound(dragKey, snap(S.mu + svgZ(e) * S.sd)); });
+  const stop = () => { dragKey = null; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+
+  function drawBounds() {
+    const keys = used();
+    for (const key of ["a", "b"]) {
+      const o = B[key], on = keys.includes(key);
+      o.g.style.display = on ? "" : "none";
+      if (!on) continue;
+      const z = zOf(S[key]), X = sx(clampZ(z));
+      o.hit.setAttribute("x", X - 24);
+      o.line.setAttribute("x1", X); o.line.setAttribute("x2", X);
+      o.handle.setAttribute("cx", X);
+      o.tx.textContent = fmt(S[key]);
+      o.tz.textContent = "z = " + z2(z);
+      o.tz.style.display = S.showZ ? "" : "none";
+      const w = Math.max(o.tx.getComputedTextLength(), S.showZ ? o.tz.getComputedTextLength() : 0) + 28;
+      const hgt = S.showZ ? 72 : 44;
+      // Between: the left chip sits left of its line and the right chip right of its line, so they never overlap.
+      let left = S.mode === "between" ? (key === "a" ? X - w + 14 : X - 14) : X - w / 2;
+      left = Math.max(4, Math.min(996 - w, left));
+      o.chip.setAttribute("x", left); o.chip.setAttribute("y", TOP); o.chip.setAttribute("width", w); o.chip.setAttribute("height", hgt);
+      o.tx.setAttribute("x", left + 14); o.tx.setAttribute("y", TOP + 33);
+      o.tz.setAttribute("x", left + 14); o.tz.setAttribute("y", TOP + 62);
+      o.line.setAttribute("y1", TOP + hgt);
+      o.g.setAttribute("aria-valuenow", S[key]);
+      o.g.setAttribute("aria-valuetext", fmt(S[key]));
+    }
+  }
+
+  function drawShade() {
+    gShade.replaceChildren();
+    if (S.mode === "off") return;
+    const z0 = S.mode === "left" ? -ZMAX : clampZ(zOf(S.a));
+    const z1 = S.mode === "right" ? ZMAX : clampZ(zOf(S.b));
+    if (z1 <= z0) return;
+    el("path", { class: "shade", d: "M" + sx(z0) + "," + BASE + " L" + curvePts(z0, z1, 160).join(" L") + " L" + sx(z1) + "," + BASE + " Z" }, gShade);
+  }
+
+  function drawArea() {
+    const off = S.mode === "off";
+    $("areaOn").hidden = off; $("areaOff").hidden = !off;
+    if (off) return;
+    const pa = phi(zOf(S.a)), pb = phi(zOf(S.b));
+    const area = S.mode === "left" ? pb : S.mode === "right" ? 1 - pa : Math.max(0, pb - pa);
+    $("pct").textContent = (area * 100).toFixed(2) + "%";
+    $("dec").textContent = "= " + area.toFixed(4);
+    const p = (area * 100).toFixed(2);
+    $("say").textContent = S.mode === "left" ? p + "% of the data is less than " + fmt(S.b) + "."
+      : S.mode === "right" ? p + "% of the data is greater than " + fmt(S.a) + "."
+      : p + "% of the data is between " + fmt(S.a) + " and " + fmt(S.b) + ".";
+  }
+
+  // z = (x − μ) over σ, one line per step.
+  const frac = (top, bot) => { const f = h("span", "frac"); f.append(h("span", null, top), h("span", null, bot)); return f; };
+  const wrapNeg = v => v < 0 ? "(" + fmt(v) + ")" : fmt(v);
+  function drawZ() {
+    $("zCard").hidden = !S.showZ;
+    if (!S.showZ) return;
+    const work = $("work");
+    work.replaceChildren();
+    const row = (lhs, eq, rhs, step, ansCls) => {
+      const l = h("span", "z", lhs), e = h("span", null, eq), r = h("span", ansCls || null), s = h("span", "step", step);
+      typeof rhs === "string" ? r.textContent = rhs : r.append(rhs);
+      work.append(l, e, r, s);
+    };
+    const keys = used();
+    if (!keys.length) {
+      $("zTitle").textContent = "z-score";
+      row("z", "=", frac("x − μ", "σ"), "Formula");
+      $("zNote").hidden = false;
+      return;
+    }
+    $("zNote").hidden = true;
+    const key = keys.includes(S.active) ? S.active : keys[0];
+    const x = S[key], diff = Math.round((x - S.mu) * 1e6) / 1e6, z = diff / S.sd;
+    $("zTitle").textContent = "z-score for " + fmt(x);
+    row("z", "=", frac("x − μ", "σ"), "Formula");
+    row("", "=", frac(fmt(x) + " − " + wrapNeg(S.mu), fmt(S.sd)), "Fill in");
+    row("", "=", frac(fmt(diff), fmt(S.sd)), "Subtract");
+    row("", Math.abs(z * 100 - Math.round(z * 100)) < 1e-9 ? "=" : "≈", z2(z), "Divide", "ans");
+  }
+
+  function drawAxis() {
+    for (let k = -3; k <= 3; k++) xLabels[k + 3].textContent = fmt(S.mu + k * S.sd);
+    gZ.style.display = S.showZ ? "" : "none";
+  }
+
+  function syncInputs() {
+    const keys = used();
+    $("bounds").hidden = !keys.length;
+    $("fa").hidden = !keys.includes("a");
+    $("fb").hidden = !keys.includes("b");
+    if (S.mode === "between") { $("la").textContent = "From"; $("lb").textContent = "To"; }
+    else if (S.mode === "left") $("lb").textContent = "Less than";
+    else if (S.mode === "right") $("la").textContent = "Greater than";
+    $("bounds").style.gridTemplateColumns = keys.length === 2 ? "" : "1fr";
+    for (const key of ["a", "b"]) {
+      const inp = $("b" + key);
+      if (document.activeElement !== inp) inp.value = fmtIn(S[key]);
+    }
+  }
+
+  function render() { drawAxis(); drawShade(); drawBounds(); drawArea(); drawZ(); syncInputs(); }
+
+  // Mean and SD: the lines keep their z-score, so they move with the curve.
+  function readData() {
+    const mu = parseFloat($("mu").value), sd = parseFloat($("sd").value);
+    const okMu = isFinite(mu), okSd = isFinite(sd) && sd > 0;
+    $("mu").classList.toggle("bad", !okMu); $("sd").classList.toggle("bad", !okSd);
+    $("err").textContent = !okSd && $("sd").value !== "" ? "The standard deviation must be more than 0." : "";
+    if (!okMu || !okSd) return;
+    const za = zOf(S.a), zb = zOf(S.b);
+    S.mu = mu; S.sd = sd;
+    S.a = Math.round(snap(mu + za * sd) * 1e6) / 1e6;
+    S.b = Math.round(snap(mu + zb * sd) * 1e6) / 1e6;
+    render();
+  }
+  $("mu").addEventListener("input", readData);
+  $("sd").addEventListener("input", readData);
+
+  // Typed boundary values are used exactly (no snapping).
+  for (const key of ["a", "b"]) {
+    const inp = $("b" + key);
+    inp.addEventListener("input", () => {
+      const v = parseFloat(inp.value);
+      if (!isFinite(v)) return;
+      S[key] = v; S.active = key;
+      if (S.mode === "between" && S.a > S.b) { if (key === "a") S.b = v; else S.a = v; }
+      render();
+    });
+    inp.addEventListener("focus", () => { S.active = key; drawZ(); });
+    inp.addEventListener("blur", () => syncInputs());
+  }
+
+  document.querySelectorAll(".seg-btns button").forEach(btn => btn.addEventListener("click", () => {
+    S.mode = btn.dataset.mode;
+    document.querySelectorAll(".seg-btns button").forEach(b => { b.classList.toggle("on", b === btn); b.setAttribute("aria-pressed", String(b === btn)); });
+    // Each mode starts from a friendly spot: 1 SD from the mean.
+    if (S.mode === "left") S.b = S.mu + S.sd;
+    if (S.mode === "right") S.a = S.mu + S.sd;
+    if (S.mode === "between") { S.a = S.mu - S.sd; S.b = S.mu + S.sd; }
+    S.active = S.mode === "left" ? "b" : "a";
+    render();
+  }));
+
+  $("zTog").addEventListener("click", () => {
+    S.showZ = !S.showZ;
+    $("zTog").setAttribute("aria-pressed", String(S.showZ));
+    $("zTog").textContent = S.showZ ? "Hide z-scores" : "Show z-scores";
+    render();
+  });
+
+  window.addEventListener("langchange", render);
+  document.fonts && document.fonts.ready.then(render);
+  render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Visualize Normal Distribution (normal.html). */
+window.I18N_PAGE = {
+ "Visualize Normal Distribution": "Visualiser la loi normale",
+ "Show z-scores": "Afficher les cotes z",
+ "Hide z-scores": "Masquer les cotes z",
+ "Bell curve with the mean and 1, 2 and 3 standard deviations marked": "Courbe en cloche avec la moyenne et 1, 2 et 3 écarts types marqués",
+ "Your data": "Tes données",
+ "Mean {0}": "Moyenne {0}",
+ "Standard deviation {0}": "Écart type {0}",
+ "The standard deviation must be more than 0.": "L’écart type doit être plus grand que 0.",
+ "Shade an area": "Ombrer une aire",
+ "Off": "Aucune",
+ "Left of": "À gauche de",
+ "Between": "Entre",
+ "Right of": "À droite de",
+ "From": "De",
+ "To": "À",
+ "Less than": "Moins que",
+ "Greater than": "Plus que",
+ "Shaded area": "Aire ombrée",
+ "Choose Left of, Between or Right of. Then drag the blue line on the curve, or type a value.": "Choisis À gauche de, Entre ou À droite de. Ensuite, glisse la ligne bleue sur la courbe ou tape une valeur.",
+ "{n}% of the data is less than {n}.": "{n} % des données sont inférieures à {n}.",
+ "{n}% of the data is greater than {n}.": "{n} % des données sont supérieures à {n}.",
+ "{n}% of the data is between {n} and {n}.": "{n} % des données sont entre {n} et {n}.",
+ "z-score": "Cote z",
+ "z-score for {n}": "Cote z pour {n}",
+ "z tells how many standard deviations a value is from the mean.": "La cote z indique à combien d’écarts types une valeur se trouve de la moyenne.",
+ "Formula": "Formule",
+ "Fill in": "Remplacer",
+ "Subtract": "Soustraire",
+ "Divide": "Diviser",
+ "Boundary": "Limite"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
