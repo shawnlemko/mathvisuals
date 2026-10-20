@@ -1,0 +1,1514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>GridCraft CAD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* GridCraft CAD: a blueprint drafting studio. Draw walls, rooms and polygons on a snapping grid,
+   read side lengths, area (shoelace formula), perimeter and interior angles, then slide, flip and turn shapes.
+   Shapes are rooms (cyan) or gardens (green); the header sums area and perimeter. 1 square = 1 m.
+   The Furniture tool places doors, windows and fixtures (toilet, bed, sofa...) that can be dragged, turned and copied.
+   The page always uses the dark blueprint look (Shawn's spec), in light and dark mode alike. */
+:root:not(#gc) {
+  --paper: #061a33; --sheet: #0a2342; --grid: #1a4170; --grid-major: #2b5a90;
+  --ink: #e6f1ff; --muted: #93b4da; --line: #e6f1ff;
+  --pt: #22d3ee; --pt-ring: #0a2342; --green: #34d399; --orange: #fbbf24; --pool: #7c9bff;
+  --chip: #10325c; --warn: #ff8a9b; color-scheme: dark;
+}
+.wrap { max-width: 1500px; }
+header { margin-bottom: 10px; }
+h1 { letter-spacing: 0.01em; font-size: clamp(1.5rem, 2.2vw, 2.1rem); }
+@media (min-width: 861px) {
+  header { flex-wrap: nowrap; }
+  header > div:first-child { flex-wrap: nowrap; flex: none; }
+  h1 { white-space: nowrap; }
+  header .hud { flex-wrap: nowrap; min-width: 0; }
+  header .hud > * { min-width: 0; }
+}
+h1 em { font-style: normal; color: var(--pt); }
+
+/* Top HUD: cursor position and project totals. */
+.hud { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.hud > * { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 3px 10px; display: flex; flex-direction: column; justify-content: center; }
+.hud .k { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; line-height: 1.2; }
+.hud b { font-family: var(--font-num); font-size: 1.25rem; line-height: 1.25; white-space: nowrap; }
+.ptitle input { font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); background: transparent; border: 0; border-bottom: 2px dashed var(--grid-major); padding: 0 2px; width: 12rem; min-width: 0; }
+.ptitle input:focus { outline: none; border-bottom-color: var(--pt); }
+.tele { flex-direction: row !important; align-items: center; gap: 6px; font-family: var(--font-num); border-color: var(--pt) !important; }
+.tele span { color: var(--muted); font-weight: 700; }
+.tele b { color: var(--pt); min-width: 3.2ch; display: inline-block; }
+#totC { color: var(--orange); }
+
+/* Work area: tools | blueprint | inspector. */
+.stage { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(300px, 370px); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.board { background: var(--sheet); padding: 6px; border-color: var(--grid-major); }
+#cad.t-line, #cad.t-rect, #cad.t-poly { cursor: crosshair; }
+#cad.t-erase { cursor: not-allowed; }
+#cad.t-erase .sh:hover > * { stroke: #ff6b81 !important; }
+#cad.t-select .sh { cursor: move; }
+#cad .handle { cursor: grab; }
+
+.tools { display: flex; flex-direction: column; gap: 3px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; width: 9.2rem; }
+@media (max-width: 860px) { .tools { flex-direction: row; flex-wrap: wrap; width: auto; } }
+.tools .label { margin: 6px 2px 0; font-size: 0.66rem; }
+.tools .label:first-child { margin-top: 0; }
+.tools button { display: flex; align-items: center; gap: 8px; padding: 5px 8px; min-height: 36px; background: transparent; border-color: transparent; text-align: left; line-height: 1.1; font-size: 0.92rem; }
+.tools button svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tools button:hover { border-color: var(--pt); }
+.tools button[aria-pressed="true"] { background: var(--pt); color: var(--paper); border-color: var(--pt); }
+.tools .tog[aria-pressed="true"] { background: var(--chip); color: var(--pt); border-color: var(--pt); }
+.tools .export { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.tools .export button { justify-content: center; border-color: var(--grid-major); min-height: 36px; font-family: var(--font-num); }
+
+/* Inspector panel. */
+.panel { gap: 10px; }
+.card { padding: 12px 14px; border-color: var(--grid-major); }
+.label { margin-bottom: 6px; }
+.howto { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.howto b { color: var(--pt); }
+.msg { margin: 8px 0 0; color: var(--orange); font-weight: 700; }
+.drawbtns { display: flex; gap: 8px; margin-top: 10px; }
+.go { background: var(--pt); color: var(--paper); border-color: var(--pt); }
+.go:hover { background: var(--sheet); color: var(--pt); }
+.palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
+.palette button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px; background: var(--sheet); font-size: 0.8rem; line-height: 1.1; }
+.palette button svg { width: 40px; height: 32px; }
+.palette button small { font-family: var(--font-num); font-size: 0.72rem; color: var(--muted); }
+.palette button[aria-pressed="true"] { background: var(--chip); border: 2px solid var(--orange); color: var(--orange); }
+.palrow { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.danger { background: transparent; color: var(--warn); border-color: var(--warn); padding: 4px 10px; }
+
+.kseg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.kseg button { font-family: var(--font-num); font-size: 1.15rem; padding: 6px 4px; background: var(--sheet); }
+.kseg button[data-k="1"] { font-family: var(--font-body); font-size: 0.95rem; }
+.kseg button[aria-pressed="true"] { background: var(--orange); color: var(--paper); border-color: var(--orange); }
+.cmp { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px 10px; margin-top: 10px; align-items: baseline; }
+.cmp .h { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+.cmp b { font-family: var(--font-num); font-size: 1.15rem; white-space: nowrap; }
+.cmp b.sc { color: var(--orange); }
+.krule { margin: 8px 0 0; font-weight: 700; }
+.krule b { color: var(--orange); font-family: var(--font-num); }
+.legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: center; }
+.legend b { display: block; }
+.legend small { color: var(--muted); font-size: 0.85rem; }
+.sw { width: 22px; height: 22px; border-radius: 5px; border: 3px solid var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
+.sw.wall { height: 6px; border-width: 3px 0 0; border-radius: 0; background: none; }
+
+.insp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.insp-head h2 { margin: 0; flex: 1; font-family: var(--font-display); font-size: 1.35rem; }
+.insp-head .sw { flex: none; }
+.tabs { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.tabs button { flex: 1; border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.05rem; padding: 8px 6px; }
+.tabs button + button { border-left: 2px solid var(--grid-major); }
+.tabs button[aria-pressed="true"] { background: var(--pt); color: var(--paper); }
+
+.mats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.mats button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 4px; background: var(--sheet); }
+.mats button small { font-weight: 400; font-size: 0.72rem; color: var(--muted); line-height: 1.2; text-align: center; }
+.mats button[aria-pressed="true"] { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 18%, var(--sheet)); }
+
+.meas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.meas div { background: var(--chip); border-radius: 8px; padding: 4px 8px; }
+.meas span { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 700; }
+.meas b { font-family: var(--font-num); font-size: 1.25rem; white-space: nowrap; }
+.verts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+.vrow { display: flex; align-items: center; gap: 3px; font-family: var(--font-num); font-size: 1.1rem; }
+.vrow b { color: var(--orange); width: 1.4ch; }
+input[type=number] { width: 3.1em; font: inherit; font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--ink); background: var(--paper); border: 1px solid var(--grid-major); border-radius: 6px; padding: 3px 4px; text-align: center; }
+.warn { color: var(--warn); font-weight: 700; margin: 10px 0 0; }
+.note { color: var(--muted); margin: 6px 0 0; font-size: 0.9rem; }
+
+.mv .label { margin-top: 12px; }
+.mv .label:first-child { margin-top: 0; }
+.slide { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.slide label { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-num); font-weight: 700; font-size: 1.1rem; }
+.btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.btns button { padding: 8px 4px; line-height: 1.15; }
+.btns button i { display: block; font-style: normal; font-size: 1.3rem; }
+.seg { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.seg span { color: var(--muted); font-weight: 700; font-size: 0.9rem; }
+.seg button { padding: 5px 10px; background: var(--sheet); }
+.seg button[aria-pressed="true"] { background: var(--orange); color: var(--paper); border-color: var(--orange); }
+
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>GridCraft <em>CAD</em></h1></div>
+    <div class="hud">
+      <div class="ptitle"><label class="k" for="planName">Plan name</label><input id="planName" type="text" maxlength="40" value="My House Plan"></div>
+      <div class="tele" aria-label="Cursor position"><span>X:</span><b id="tx">–</b><span>Y:</span><b id="ty">–</b></div>
+      <div><span class="k">Total area</span><b id="totA">0 m²</b></div>
+      <div><span class="k">Total perimeter</span><b id="totP">0 m</b></div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <nav class="tools" id="tools" aria-label="Drawing tools">
+      <p class="label">Draw</p>
+      <button type="button" data-tool="select" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3l6.5 17 2.4-7.1L21 10.5z"/></svg><span>Select</span></button>
+      <button type="button" data-tool="line" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.5 17.5l11-11"/></svg><span>Line / Wall</span></button>
+      <button type="button" data-tool="rect" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/></svg><span>Rectangle</span></button>
+      <button type="button" data-tool="poly" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3l9 6.5-3.5 10.5h-11L3 9.5z"/></svg><span>Polygon</span></button>
+      <button type="button" data-tool="erase" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M8 20h12"/><path d="M4.6 14.6l9.2-9.2a2 2 0 0 1 2.8 0l2.9 2.9a2 2 0 0 1 0 2.8L11.6 19H8.9z"/><path d="M9 10l5 5"/></svg><span>Eraser</span></button>
+      <button type="button" data-tool="furn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/></svg><span>Furniture</span></button>
+
+      <p class="label">Grid</p>
+      <button type="button" data-mode="axes" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M5 3v16h16"/></svg><span>Quadrant I</span></button>
+      <button type="button" data-mode="plain" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/></svg><span>Plain grid</span></button>
+      <button type="button" class="tog" id="halfBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></svg><span>Half-Snap</span></button>
+      <button type="button" class="tog" id="dimBtn" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21z"/><path d="M7.5 12.5l2 2M10.5 9.5l2 2M13.5 6.5l2 2"/></svg><span>Show Dimensions</span></button>
+
+      <p class="label">Edit</p>
+      <button type="button" id="undoBtn"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span>Undo</span></button>
+      <button type="button" id="clearBtn"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>Clear Canvas</span></button>
+
+      <p class="label">Export my plan</p>
+      <div class="export"><button type="button" id="pngBtn">PNG</button><button type="button" id="svgBtn">SVG</button></div>
+    </nav>
+
+    <div class="board">
+      <svg id="cad" class="t-select" viewBox="0 0 880 880" role="img" aria-label="Blueprint grid with shapes">
+        <defs>
+          <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+          <clipPath id="gridClip"><rect x="34" y="34" width="812" height="812"/></clipPath>
+          <clipPath id="dimClip"><rect x="14" y="14" width="852" height="852"/></clipPath>
+        </defs>
+        <g id="gGrid"></g>
+        <g id="gShapes" clip-path="url(#gridClip)"></g>
+        <g id="gDims" pointer-events="none" clip-path="url(#dimClip)"></g>
+        <g id="gTop"></g>
+      </svg>
+    </div>
+
+    <aside class="panel">
+      <section class="card" id="scaleCard">
+        <p class="label">Scale factor</p>
+        <div class="kseg" id="kSeg" role="group" aria-label="Scale factor"><button type="button" data-k="1" aria-pressed="true">None</button><button type="button" data-k="0.5" aria-pressed="false">×½</button><button type="button" data-k="2" aria-pressed="false">×2</button><button type="button" data-k="3" aria-pressed="false">×3</button></div>
+        <div id="kOut" hidden></div>
+      </section>
+
+      <section class="card" aria-live="polite">
+        <p class="label">How to use this tool</p>
+        <p class="howto" id="howto"></p>
+        <div id="furnBox" hidden>
+          <div class="palette" id="palette" role="group" aria-label="Furniture"></div>
+          <div class="palrow"><button type="button" id="turnGhost">↺ Turn 90°</button><span class="note" style="margin:0">or press R</span></div>
+        </div>
+        <div class="drawbtns" id="drawBtns" hidden><button type="button" class="go" id="finishBtn">Finish shape</button><button type="button" id="cancelBtn">Cancel</button></div>
+        <p class="msg" id="msg" hidden></p>
+      </section>
+
+      <section class="card" id="emptyCard">
+        <p class="label">Key (1 square = 1 m)</p>
+        <ul class="legend">
+          <li><span class="sw" style="--c: var(--pt)"></span><span><b>Room</b><small>Area and perimeter count</small></span></li>
+          <li><span class="sw" style="--c: var(--green)"></span><span><b>Garden</b><small>Area and perimeter count</small></span></li>
+          <li><span class="sw wall" style="--c: var(--pt)"></span><span><b>Wall (line)</b><small>Shows its length</small></span></li>
+          <li><span class="sw" style="--c: var(--ink)"></span><span><b>Doors and furniture</b><small>Placed on the plan; not measured</small></span></li>
+        </ul>
+        <p class="note">Pick <b>Select</b> and click a shape to see its measures and move it.</p>
+      </section>
+
+      <section class="card" id="insp" hidden></section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  const U = 40, M = 40, SIZE = 880;                 // grid square size, margin, viewBox size (20 squares across)
+  // Fixed blueprint colours, written straight into the SVG so exported blueprints look the same.
+  const C = { bg: "#0a2342", minor: "#18406d", major: "#2b5d96", axis: "#a8cdf5", tick: "#d6e8ff",
+    cyan: "#22d3ee", amber: "#fbbf24", emerald: "#34d399", pool: "#7c9bff", ink: "#eef6ff", pill: "#06182f" };
+  const MAT = {
+    room: { name: "Room", c: C.cyan, op: 0.16 },
+    garden: { name: "Garden", c: C.emerald, op: 0.22 },
+    wall: { name: "Wall", c: C.cyan }
+  };
+  // Doors, windows and fixtures. Each is drawn in its own box from (0, 0) to (w, h) in grid units, y up;
+  // a door's hinge is at (0, 0) and its threshold lies on the bottom edge, a window lies along y = 0.
+  const R = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r || 0}"/>`;
+  const O = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+  const E = (x, y, rx, ry) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}"/>`;
+  const L = (a, b, c, d) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
+  const ITEMS = {
+    door: { name: "Door", w: 1, h: 1, draw: `<line x1="0.04" y1="0" x2="0.96" y2="0" stroke="${C.bg}" stroke-width="0.2"/>` + L(0, 0, 0, 1) + `<path d="M1 0A1 1 0 0 1 0 1" fill="none" stroke-dasharray="0.12 0.08"/>` },
+    window: { name: "Window", w: 2, h: 0, draw: `<rect x="0" y="-0.15" width="2" height="0.3" fill="${C.bg}"/>` + L(0, 0, 2, 0) },
+    toilet: { name: "Toilet", w: 1, h: 1, draw: R(0.15, 0.72, 0.7, 0.24, 0.05) + E(0.5, 0.4, 0.3, 0.33) },
+    sink: { name: "Sink", w: 1, h: 1, draw: R(0.08, 0.12, 0.84, 0.76, 0.12) + E(0.5, 0.46, 0.28, 0.2) + O(0.5, 0.76, 0.05) },
+    bathtub: { name: "Bathtub", w: 2, h: 1, draw: R(0, 0, 2, 1, 0.15) + R(0.12, 0.12, 1.76, 0.76, 0.3) + O(0.32, 0.5, 0.06) },
+    shower: { name: "Shower", w: 1, h: 1, draw: R(0, 0, 1, 1) + L(0, 0, 1, 1) + L(0, 1, 1, 0) + `<circle cx="0.5" cy="0.5" r="0.1" fill="${C.bg}"/>` },
+    bed: { name: "Bed", w: 2, h: 3, draw: R(0, 0, 2, 3, 0.08) + R(0.2, 2.4, 0.7, 0.4, 0.1) + R(1.1, 2.4, 0.7, 0.4, 0.1) + L(0, 2.1, 2, 2.1) + L(0, 2.1, 0.5, 1.6) },
+    table: { name: "Table", w: 2, h: 2, draw: O(1, 1, 0.55) + R(0.8, 0.05, 0.4, 0.3, 0.06) + R(0.8, 1.65, 0.4, 0.3, 0.06) + R(0.05, 0.8, 0.3, 0.4, 0.06) + R(1.65, 0.8, 0.3, 0.4, 0.06) },
+    sofa: { name: "Sofa", w: 3, h: 1, draw: R(0, 0, 3, 1, 0.15) + R(0, 0.7, 3, 0.3, 0.1) + R(0, 0, 0.3, 0.85, 0.1) + R(2.7, 0, 0.3, 0.85, 0.1) + L(1.5, 0.1, 1.5, 0.7) },
+    stove: { name: "Stove", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.05) + O(0.3, 0.3, 0.14) + O(0.7, 0.3, 0.14) + O(0.3, 0.7, 0.14) + O(0.7, 0.7, 0.14) },
+    fridge: { name: "Fridge", w: 1, h: 1, draw: R(0, 0, 1, 1, 0.06) + L(0, 0.35, 1, 0.35) + L(0.82, 0.45, 0.82, 0.8) },
+    tree: { name: "Tree", w: 1, h: 1, c: C.emerald, draw: O(0.5, 0.5, 0.46) + O(0.5, 0.5, 0.2) + L(0.5, 0.04, 0.5, 0.96) + L(0.04, 0.5, 0.96, 0.5) }
+  };
+  const FONT = "'Spline Sans Mono', ui-monospace, Menlo, monospace";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const S = { shapes: [], selId: null, tool: "select", axes: true, half: false, dims: true, item: "door", itemRot: 0,
+    tab: "shape", pivot: "center", k: 1, draft: null, cursor: null, nextId: 1 };
+  const history = [];
+  let drag = null, anim = false, inspKey = "";
+
+  const $ = id => document.getElementById(id);
+  const svg = $("cad");
+  const lo = () => 0, hi = () => 20;
+  const step = () => (S.half ? 0.5 : 1);
+  const sx = x => M + (x - lo()) * U, sy = y => M + (hi() - y) * U;
+  const clean = v => Math.round(v * 1000) / 1000 + 0;
+  const eq = (a, b) => Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9;
+  const cur = () => S.shapes.find(s => s.id === S.selId) || null;
+  const LET = i => String.fromCharCode(65 + (i % 26)) + (i >= 26 ? "₁" : "");
+
+  // ---- Number formatting: true minus sign, trimmed decimals, ≈ when rounded.
+  function num(v, d) {
+    const r = Math.round(v * 10 ** d) / 10 ** d;
+    const s = Math.abs(r).toFixed(d).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+    return (r < 0 && s !== "0" ? "−" : "") + s;
+  }
+  const isRound = (v, d) => Math.abs(v - Math.round(v * 10 ** d) / 10 ** d) < 1e-9;
+  const approx = (v, d) => (isRound(v, d) ? "" : "≈ ") + num(v, d);
+  const r1 = v => Math.round(v * 10) / 10;
+
+  // ---- Geometry engine.
+  const dist = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  function signedArea(P) {                           // shoelace formula; positive when the corners go counterclockwise
+    let s = 0;
+    for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; s += a[0] * b[1] - b[0] * a[1]; }
+    return s / 2;
+  }
+  function centroid(P) {
+    const A = signedArea(P);
+    if (Math.abs(A) < 1e-9) return [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length];
+    let cx = 0, cy = 0;
+    for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], k = a[0] * b[1] - b[0] * a[1]; cx += (a[0] + b[0]) * k; cy += (a[1] + b[1]) * k; }
+    return [cx / (6 * A), cy / (6 * A)];
+  }
+  function inside(P, x, y) {
+    let r = false;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const [xi, yi] = P[i], [xj, yj] = P[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) r = !r;
+    }
+    return r;
+  }
+  function edgeDist(P, x, y) {
+    let d = Infinity;
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i], b = P[(i + 1) % P.length], vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy;
+      const t = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / L2)) : 0;
+      d = Math.min(d, Math.hypot(x - a[0] - t * vx, y - a[1] - t * vy));
+    }
+    return d;
+  }
+  // Where the area label goes: the centroid when it sits well inside, otherwise the roomiest point inside the shape.
+  function labelSpot(P) {
+    const c = centroid(P), b = bbox(P);
+    let best = c, bd = inside(P, ...c) ? edgeDist(P, ...c) : -1;
+    const cd = bd;
+    for (let i = 1; i < 16; i++) for (let j = 1; j < 16; j++) {
+      const x = b[0] + (b[2] - b[0]) * i / 16, y = b[1] + (b[3] - b[1]) * j / 16;
+      if (!inside(P, x, y)) continue;
+      const d = edgeDist(P, x, y);
+      if (d > bd) { bd = d; best = [x, y]; }
+    }
+    return cd >= 0.8 * bd && cd > 0.6 ? c : best;
+  }
+  function segCross(a, b, c, d) {
+    const o = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+  }
+  function selfCrossing(P) {
+    const n = P.length;
+    for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) {
+      if (i === 0 && j === n - 1) continue;
+      if (segCross(P[i], P[(i + 1) % n], P[j], P[(j + 1) % n])) return true;
+    }
+    return false;
+  }
+  function angles(P) {                               // interior angle at each corner, in degrees
+    const s = Math.sign(signedArea(P)) || 1;
+    return P.map((c, i) => {
+      const p = P[(i - 1 + P.length) % P.length], n = P[(i + 1) % P.length];
+      const d1 = [c[0] - p[0], c[1] - p[1]], d2 = [n[0] - c[0], n[1] - c[1]];
+      if (Math.hypot(...d1) < 1e-9 || Math.hypot(...d2) < 1e-9) return null;
+      const turn = Math.atan2(d1[0] * d2[1] - d1[1] * d2[0], d1[0] * d2[0] + d1[1] * d2[1]) * 180 / Math.PI;
+      return 180 - s * turn;
+    });
+  }
+  function measure(sh) {
+    if (sh.kind === "line") { const L = dist(sh.pts[0], sh.pts[1]); return { len: L }; }
+    const P = sh.pts, crossing = selfCrossing(P);
+    const A = crossing ? 0 : Math.abs(signedArea(P));
+    let per = 0; for (let i = 0; i < P.length; i++) per += dist(P[i], P[(i + 1) % P.length]);
+    return { area: A, per, crossing };
+  }
+  function totals() {
+    let area = 0, per = 0;
+    S.shapes.forEach(sh => { if (sh.kind !== "poly") return; const m = measure(sh); area += m.area; per += m.per; });
+    return { area, per };
+  }
+  const bbox = P => { const xs = P.map(p => p[0]), ys = P.map(p => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
+  const offGrid = P => P.some(p => p[0] < lo() - 1e-9 || p[0] > hi() + 1e-9 || p[1] < lo() - 1e-9 || p[1] > hi() + 1e-9);
+  function shapeName(sh) {
+    if (sh.kind === "item") return ITEMS[sh.type].name + " " + (S.shapes.filter(s => s.type === sh.type).indexOf(sh) + 1);
+    const same = S.shapes.filter(s => s.kind !== "item" && s.mat === sh.mat);
+    return MAT[sh.mat].name + " " + (same.indexOf(sh) + 1);
+  }
+
+  // ---- Furniture: an item is stored by the grid point of its box's (0, 0) corner and a quarter-turn angle.
+  function itemBox(type, rot) {                     // the turned box around (0, 0): [minx, miny, maxx, maxy]
+    const it = ITEMS[type], a = rot * Math.PI / 180, c = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
+    const P = [[0, 0], [it.w, 0], [it.w, it.h], [0, it.h]].map(([x, y]) => [x * c - y * sn, x * sn + y * c]);
+    return bbox(P);
+  }
+  function itemBounds(sh) { const b = itemBox(sh.type, sh.rot); return [sh.x + b[0], sh.y + b[1], sh.x + b[2], sh.y + b[3]]; }
+  // Where an item goes when the cursor is at g: its box is centred on the cursor and its corners land on grid points.
+  function itemAt(type, rot, g) {
+    const b = itemBox(type, rot), w = b[2] - b[0], h = b[3] - b[1];
+    const mx = Math.min(hi() - w, Math.max(lo(), Math.round(g[0] - w / 2))), my = Math.min(hi() - h, Math.max(lo(), Math.round(g[1] - h / 2)));
+    return { x: clean(mx - b[0]), y: clean(my - b[1]) };
+  }
+  // Furniture whose middle is inside a room travels with the room when it is dragged.
+  function innerItems(room) {
+    return S.shapes.filter(s => s.kind === "item").filter(s => { const b = itemBounds(s); return inside(room.pts, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2); })
+      .map(s => [s, s.x, s.y]);
+  }
+  function itemSVG(sh, sel, ghost, k = 1) {
+    const it = ITEMS[sh.type], col = ghost ? C.amber : it.c || C.ink;
+    const pad = it.h ? 0 : 0.25;
+    return `<g class="sh"${ghost ? "" : ` data-id="${sh.id}"`} transform="translate(${sx(sh.x)} ${sy(sh.y)}) rotate(${-sh.rot}) scale(${U * k} ${-U * k})"` +
+      ` fill="${C.bg}" fill-opacity="${ghost ? 0.4 : 0.85}" stroke="${col}" stroke-width="${2.5 / (U * k)}" stroke-linejoin="round" stroke-linecap="round"${ghost ? ' opacity="0.85"' : ""}>` +
+      (sel ? `<rect x="-0.08" y="${-pad - 0.08}" width="${it.w + 0.16}" height="${it.h + 2 * pad + 0.16}" fill="none" stroke="${C.amber}" stroke-width="${10 / U}" opacity="0.4"/>` : "") +
+      `<rect x="0" y="${-pad}" width="${it.w}" height="${it.h + 2 * pad}" fill="transparent" stroke="none"/>` +
+      (ghost ? it.draw.split(`stroke="${C.bg}"`).length > 1 ? it.draw.replace(/<line[^>]*stroke="#0a2342"[^>]*\/>/, "") : it.draw : it.draw) + `</g>`;
+  }
+  function iconSVG(type) {
+    const it = ITEMS[type], y0 = it.h ? 0 : -0.15, y1 = it.h ? it.h : 0.15, pad = 0.12;
+    return `<svg viewBox="${-pad} ${-y1 - pad} ${it.w + 2 * pad} ${y1 - y0 + 2 * pad}" aria-hidden="true"><g transform="scale(1 -1)" fill="${C.bg}" stroke="${it.c || "currentColor"}" stroke-width="${Math.max(it.w, it.h) / 14}" stroke-linejoin="round" stroke-linecap="round">${it.draw}</g></svg>`;
+  }
+
+  // ---- Undo.
+  const snap = () => JSON.stringify({ shapes: S.shapes, nextId: S.nextId, selId: S.selId });
+  function pushUndo(s) { history.push(s || snap()); if (history.length > 100) history.shift(); }
+  function undo() {
+    if (anim) return;
+    if (S.draft) { cancelDraft(); return; }
+    const s = history.pop();
+    if (!s) { say("Nothing to undo."); return; }
+    const o = JSON.parse(s);
+    S.shapes = o.shapes; S.nextId = o.nextId; S.selId = S.shapes.some(x => x.id === o.selId) ? o.selId : null;
+    say(""); render();
+  }
+
+  // ---- Drawing the blueprint.
+  function gridSVG() {
+    let s = `<rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="${C.bg}"/>`;
+    for (let i = 0; i <= 20; i++) {
+      const v = lo() + i, p = M + i * U, col = v % 5 === 0 ? C.major : C.minor;
+      s += `<line x1="${p}" y1="${M}" x2="${p}" y2="${SIZE - M}" stroke="${col}" stroke-width="1"/>`;
+      s += `<line x1="${M}" y1="${p}" x2="${SIZE - M}" y2="${p}" stroke="${col}" stroke-width="1"/>`;
+    }
+    if (S.axes) {                                   // Quadrant I: axes on the left and bottom, every line labeled
+      s += `<line x1="${M}" y1="${SIZE - M}" x2="${SIZE - M + 6}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      s += `<line x1="${M}" y1="${M - 6}" x2="${M}" y2="${SIZE - M}" stroke="${C.axis}" stroke-width="2.5"/>`;
+      const t = (x, y, txt, anchor) => `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="19" font-weight="700" fill="${C.tick}" stroke="${C.bg}" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
+      for (let v = 0; v <= 20; v++) {
+        s += t(sx(v), SIZE - M + 22, num(v, 0), "middle");
+        if (v) s += t(M - 7, sy(v) + 6, num(v, 0), "end");
+      }
+      s += `<text x="${SIZE - M + 12}" y="${SIZE - M + 6}" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">x</text>`;
+      s += `<text x="${M}" y="${M - 14}" text-anchor="middle" font-size="20" font-style="italic" font-weight="700" fill="${C.axis}">y</text>`;
+    }
+    // Scale bar in the top margin, like the scale on a printed plan.
+    const x0 = SIZE - M - 2 * U, yb = 24;
+    s += `<rect x="${x0}" y="${yb}" width="${U}" height="8" fill="${C.cyan}" stroke="${C.cyan}" stroke-width="1.5"/><rect x="${x0 + U}" y="${yb}" width="${U}" height="8" fill="${C.bg}" stroke="${C.cyan}" stroke-width="1.5"/>`;
+    s += [0, 1, 2].map(k => `<text x="${x0 + k * U}" y="${yb - 5}" text-anchor="middle" font-size="13" font-weight="700" fill="${C.tick}">${k ? k + " m" : "0"}</text>`).join("");
+    s += `<text x="${x0 - 14}" y="${yb + 9}" text-anchor="end" font-size="16" font-weight="700" fill="${C.cyan}">Scale: 1 square = 1 m</text>`;
+    return `<g font-family="${FONT}">${s}</g>`;
+  }
+  const ptsAttr = P => P.map(p => sx(p[0]) + "," + sy(p[1])).join(" ");
+  function shapeSVG(sh, sel) {
+    const m = MAT[sh.mat];
+    if (sh.kind === "line") {
+      const [a, b] = sh.pts, L = `x1="${sx(a[0])}" y1="${sy(a[1])}" x2="${sx(b[0])}" y2="${sy(b[1])}"`;
+      return `<g class="sh" data-id="${sh.id}">` +
+        (sel ? `<line ${L} stroke="${C.amber}" stroke-width="14" stroke-linecap="round" opacity="0.35"/>` : "") +
+        `<line ${L} stroke="${m.c}" stroke-width="5" stroke-linecap="round"/>` +
+        `<line ${L} stroke="transparent" stroke-width="24" stroke-linecap="round"/>` +
+        sh.pts.map(p => `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="5" fill="${m.c}"/>`).join("") + `</g>`;
+    }
+    const pa = ptsAttr(sh.pts);
+    return `<g class="sh" data-id="${sh.id}">` +
+      (sel ? `<polygon points="${pa}" fill="none" stroke="${C.amber}" stroke-width="12" stroke-linejoin="round" opacity="0.35"/>` : "") +
+      `<polygon points="${pa}" fill="${m.c}" fill-opacity="${m.op}" stroke="${m.c}" stroke-width="3.5" stroke-linejoin="round"/></g>`;
+  }
+  function pill(x, y, txt, col, big) {
+    const fs = big ? 21 : 19, w = txt.length * fs * 0.62 + 14, h = fs + 9;
+    return `<g><rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="${h / 2}" fill="${C.pill}" stroke="${col}" stroke-width="1.6"/>` +
+      `<text x="${x}" y="${y + fs * 0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${C.ink}">${txt}</text></g>`;
+  }
+  const label = (x, y, txt, col, fs) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${col}" stroke="${C.bg}" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${txt}</text>`;
+  function sideLen(L) { return num(L, 1); }
+  function dimsSVG(sh, sel, col) {
+    let s = "";
+    const m = { c: col || MAT[sh.mat].c }, P = sh.pts;
+    if (sh.kind === "line") {
+      const [a, b] = P, L = dist(a, b); if (L < 1e-9) return "";
+      const nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+      s += pill(sx((a[0] + b[0]) / 2 + nx * 0.55), sy((a[1] + b[1]) / 2 + ny * 0.55), sideLen(L), m.c);
+    } else {
+      const o = Math.sign(signedArea(P)) || 1;
+      for (let i = 0; i < P.length; i++) {
+        const a = P[i], b = P[(i + 1) % P.length], L = dist(a, b); if (L < 1e-9) continue;
+        const nx = o * (b[1] - a[1]) / L, ny = -o * (b[0] - a[0]) / L;   // points away from the inside
+        s += pill(sx((a[0] + b[0]) / 2 + nx * 0.5), sy((a[1] + b[1]) / 2 + ny * 0.5), sideLen(L), m.c);
+      }
+      const mm = measure(sh), c = labelSpot(P);
+      s += label(sx(c[0]), sy(c[1]) + 8, mm.crossing ? "sides cross" : num(mm.area, 3) + " m²", col || C.ink, mm.crossing ? 20 : 28);
+    }
+    if (sel && sh.kind !== "line") s += angleSVG(P);
+    return s;
+  }
+  function angleSVG(P) {
+    let s = "";
+    angles(P).forEach((ang, i) => {
+      if (ang == null) return;
+      const c = P[i], p = P[(i - 1 + P.length) % P.length], n = P[(i + 1) % P.length];
+      const u1 = [(p[0] - c[0]) / dist(p, c), (p[1] - c[1]) / dist(p, c)], u2 = [(n[0] - c[0]) / dist(n, c), (n[1] - c[1]) / dist(n, c)];
+      let bx = u1[0] + u2[0], by = u1[1] + u2[1], bl = Math.hypot(bx, by);
+      if (bl < 1e-6) { const o = Math.sign(signedArea(P)) || 1; bx = -o * u2[1]; by = o * u2[0]; bl = 1; }
+      bx /= bl; by /= bl;
+      if (ang > 180) { bx = -bx; by = -by; }
+      if (Math.abs(ang - 90) < 0.05) {
+        const k = 0.42, q = [c[0] + u1[0] * k, c[1] + u1[1] * k], r = [c[0] + (u1[0] + u2[0]) * k, c[1] + (u1[1] + u2[1]) * k], t = [c[0] + u2[0] * k, c[1] + u2[1] * k];
+        s += `<polyline points="${ptsAttr([q, r, t])}" fill="none" stroke="${C.amber}" stroke-width="2.5"/>`;
+      }
+      const d = Math.abs(ang - 90) < 0.05 ? 1.05 : 0.95;
+      s += label(sx(c[0] + bx * d), sy(c[1] + by * d) + 6, num(ang, 0) + "°", C.amber, 18);
+      // The corner's letter sits just outside the shape.
+      s += label(sx(c[0] - bx * 0.55), sy(c[1] - by * 0.55) + 7, LET(i), C.amber, 21);
+    });
+    return s;
+  }
+  function draftSVG() {
+    const D = S.draft, g = S.cursor; let s = "";
+    const dash = `stroke="${C.amber}" stroke-width="3" stroke-dasharray="10 7" fill="none"`;
+    if (D.type === "line" && g) {
+      s += `<line x1="${sx(D.a[0])}" y1="${sy(D.a[1])}" x2="${sx(g[0])}" y2="${sy(g[1])}" ${dash}/>`;
+      const L = dist(D.a, g);
+      if (L > 1e-9) {
+        // Angle with the horizontal, 0° to 90°, the way a grade 6 student would measure it with a protractor.
+        const deg = Math.atan2(Math.abs(g[1] - D.a[1]), Math.abs(g[0] - D.a[0])) * 180 / Math.PI;
+        s += pill(sx((D.a[0] + g[0]) / 2), sy((D.a[1] + g[1]) / 2) - 26, approx(L, 1) + " m · " + num(deg, 0) + "°", C.amber, true);
+      }
+    }
+    if (D.type === "rect" && g) {
+      const x = Math.min(D.a[0], g[0]), y = Math.max(D.a[1], g[1]), w = Math.abs(g[0] - D.a[0]), h = Math.abs(g[1] - D.a[1]);
+      s += `<rect x="${sx(x)}" y="${sy(y)}" width="${w * U}" height="${h * U}" ${dash} fill-opacity="0.1"/>`;
+      if (w > 0 && h > 0) s += pill(sx(x + w / 2), sy(y - h / 2), num(w, 1) + " × " + num(h, 1) + " = " + num(w * h, 2) + " m²", C.amber, true);
+    }
+    if (D.type === "poly") {
+      s += `<polyline points="${ptsAttr(D.pts)}" fill="none" stroke="${C.amber}" stroke-width="3.5" stroke-linejoin="round"/>`;
+      const last = D.pts[D.pts.length - 1];
+      if (g && !eq(g, last)) {
+        s += `<line x1="${sx(last[0])}" y1="${sy(last[1])}" x2="${sx(g[0])}" y2="${sy(g[1])}" ${dash}/>`;
+        s += pill(sx((last[0] + g[0]) / 2), sy((last[1] + g[1]) / 2) - 24, approx(dist(last, g), 1) + " m", C.amber, true);
+      }
+      const closing = g && D.pts.length >= 3 && eq(g, D.pts[0]);
+      s += `<circle cx="${sx(D.pts[0][0])}" cy="${sy(D.pts[0][1])}" r="${closing ? 13 : 10}" fill="${closing ? C.amber : C.bg}" stroke="${C.amber}" stroke-width="3"/>`;
+      D.pts.slice(1).forEach(p => { s += `<circle cx="${sx(p[0])}" cy="${sy(p[1])}" r="6" fill="${C.amber}"/>`; });
+      D.pts.forEach((p, i) => { s += label(sx(p[0]) + 16, sy(p[1]) - 12, LET(i), C.amber, 18); });
+    }
+    if (D.a) s += `<circle cx="${sx(D.a[0])}" cy="${sy(D.a[1])}" r="7" fill="${C.amber}"/>`;
+    return s;
+  }
+  function pivotPt(sh) {
+    const b = bbox(sh.pts), st = step();
+    return [Math.round((b[0] + b[2]) / 2 / st) * st, Math.round((b[1] + b[3]) / 2 / st) * st];
+  }
+
+  // Scale factor: the plan dilated from the origin (0, 0), drawn as an amber dashed copy.
+  const scaled = sh => ({ ...sh, pts: sh.pts.map(p => [p[0] * S.k, p[1] * S.k]) });
+  function scaledSVG() {
+    if (S.k === 1) return "";
+    const dash = `fill="none" stroke="${C.amber}" stroke-width="3" stroke-dasharray="10 6" stroke-linejoin="round"`;
+    return `<g pointer-events="none">` + S.shapes.map(sh => {
+      if (sh.kind === "item") return itemSVG({ ...sh, x: sh.x * S.k, y: sh.y * S.k }, false, true, S.k);
+      const P = scaled(sh).pts;
+      return sh.kind === "line" ? `<line x1="${sx(P[0][0])}" y1="${sy(P[0][1])}" x2="${sx(P[1][0])}" y2="${sy(P[1][1])}" ${dash}/>` : `<polygon points="${ptsAttr(P)}" ${dash}/>`;
+    }).join("") + `</g>`;
+  }
+  const scaledDims = () => S.k === 1 ? "" : S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(scaled(s), false, C.amber)).join("");
+  const kTxt = k => k === 0.5 ? "½" : num(k, 2);
+  function renderScale() {
+    document.querySelectorAll("[data-k]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.k === S.k)));
+    const out = $("kOut"); out.hidden = S.k === 1;
+    if (S.k === 1) return;
+    const sel = cur(), one = sel && sel.kind === "poly";
+    const m = one ? measure(sel) : totals(), k = S.k;
+    const html = `<div class="cmp"><span></span><span class="h">${one ? shapeName(sel) : "Whole plan"}</span><span class="h">Scaled ×${kTxt(k)}</span>` +
+      `<span>Perimeter</span><b>${approx(m.per, 1)} m</b><b class="sc">${approx(m.per * k, 1)} m</b>` +
+      `<span>Area</span><b>${num(m.area, 3)} m²</b><b class="sc">${num(m.area * k * k, 3)} m²</b></div>` +
+      `<p class="krule">Lengths ×<b>${kTxt(k)}</b>. Area ×<b>${kTxt(k)}</b> × <b>${kTxt(k)}</b> = ×<b>${num(k * k, 2)}</b></p>` +
+      (S.shapes.some(sh => sh.kind !== "item" && offGrid(scaled(sh).pts)) ? `<p class="note">Part of the scaled plan goes past the edge of the grid.</p>` : "");
+    if (out.__html !== html) { out.innerHTML = html; out.__html = html; }
+  }
+  // Shapes first (the selected one on top of them), then furniture so it stays clickable inside rooms.
+  function shapesSVG(sel) {
+    const plain = S.shapes.filter(s => s.kind !== "item"), items = S.shapes.filter(s => s.kind === "item");
+    return plain.filter(s => s !== sel).map(s => shapeSVG(s, false)).join("") + (sel && sel.kind !== "item" ? shapeSVG(sel, true) : "") +
+      items.map(s => itemSVG(s, s === sel)).join("");
+  }
+  function render() {
+    const sel = cur();
+    $("gShapes").innerHTML = shapesSVG(sel) + scaledSVG();
+    $("gDims").innerHTML = S.dims ? `<g font-family="${FONT}">${S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, s === sel)).join("")}${scaledDims()}</g>` : "";
+    let top = "";
+    if (S.tool === "furn" && S.cursor) top += `<g pointer-events="none">${itemSVG({ type: S.item, rot: S.itemRot, ...itemAt(S.item, S.itemRot, S.cursor) }, false, true)}</g>`;
+    if (sel && sel.kind !== "item" && S.tab === "move" && S.tool === "select") {
+      const pv = pivotPt(sel);
+      top += `<g pointer-events="none"><circle cx="${sx(pv[0])}" cy="${sy(pv[1])}" r="9" fill="none" stroke="${C.amber}" stroke-width="3"/><circle cx="${sx(pv[0])}" cy="${sy(pv[1])}" r="3" fill="${C.amber}"/></g>`;
+    }
+    if (sel && sel.kind !== "item" && S.tool === "select" && !anim)
+      top += sel.pts.map((p, i) => `<circle class="handle" data-v="${i}" cx="${sx(p[0])}" cy="${sy(p[1])}" r="10" fill="${C.bg}" stroke="${C.amber}" stroke-width="3.5"/>`).join("");
+    if (S.draft) top += `<g pointer-events="none" font-family="${FONT}">${draftSVG()}</g>`;
+    if (S.cursor && S.tool !== "select" && S.tool !== "erase" && S.tool !== "furn") {
+      const [x, y] = [sx(S.cursor[0]), sy(S.cursor[1])];
+      top += `<g pointer-events="none"><circle cx="${x}" cy="${y}" r="10" fill="${C.cyan}" opacity="0.8" filter="url(#glow)"/><circle cx="${x}" cy="${y}" r="5" fill="${C.cyan}"/><circle cx="${x}" cy="${y}" r="2" fill="#fff"/></g>`;
+    }
+    $("gTop").innerHTML = top;
+    $("tx").textContent = S.cursor ? num(S.cursor[0], 1) : "–";
+    $("ty").textContent = S.cursor ? num(S.cursor[1], 1) : "–";
+    const T = totals();
+    $("totA").textContent = num(T.area, 3) + " m²";
+    $("totP").textContent = approx(T.per, 1) + " m";
+    renderHowto(); renderInspector(); renderScale();
+  }
+  function renderGrid() { $("gGrid").innerHTML = gridSVG(); }
+
+  // ---- Panel: how-to and inspector.
+  const HOW = {
+    select: "Click a shape to select it. Drag a corner to reshape it, or drag the inside to slide it.",
+    line: "Click point A, then point B.",
+    rect: "Click one corner, then the opposite corner.",
+    poly: "Click grid points to place the corners.",
+    erase: "Click a shape to remove it.",
+    furn: "Pick an item, then click the plan to place it."
+  };
+  function renderHowto() {
+    const D = S.draft;
+    let h = HOW[S.tool];
+    if (D && D.type === "line") h = "Now click point B.";
+    if (D && D.type === "rect") h = "Now click the opposite corner.";
+    if (D && D.type === "poly") h = D.pts.length < 3 ? "Keep clicking to place the corners." : "Click A again, or double-click, to close the shape.";
+    $("howto").textContent = h;
+    $("drawBtns").hidden = !(D && D.type === "poly");
+    $("furnBox").hidden = S.tool !== "furn";
+    $("palette").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.item === S.item)));
+    $("finishBtn").disabled = !(D && D.pts && D.pts.length >= 3);
+  }
+  let msgTimer = 0;
+  function say(t) {
+    const el = $("msg"); clearTimeout(msgTimer);
+    el.hidden = !t; el.textContent = t;
+    if (t) msgTimer = setTimeout(() => { el.hidden = true; }, 6000);
+  }
+
+  function inspHTML(sh) {
+    const line = sh.kind === "line";
+    const mats = ["room", "garden"].map(k => {
+      const c = k === "room" ? "var(--pt)" : "var(--green)";
+      return `<button type="button" data-mat="${k}" style="--c: ${c}" aria-pressed="${sh.mat === k}"><span class="sw" style="--c: ${c}"></span><span>${MAT[k].name}</span></button>`;
+    }).join("");
+    const swc = sh.mat === "garden" ? "var(--green)" : "var(--pt)";
+    const tabs = line ? "" : `<div class="tabs" role="group" aria-label="Inspector"><button type="button" data-tab="shape" aria-pressed="${S.tab === "shape"}">Measure</button><button type="button" data-tab="move" aria-pressed="${S.tab === "move"}">Transform</button></div>`;
+    const st = step();
+    const verts = sh.pts.map((p, i) => `<div class="vrow"><b>${LET(i)}</b><span>(</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vx="${i}" aria-label="${LET(i)} x"><span>,</span><input type="number" step="${st}" min="${lo()}" max="${hi()}" data-vy="${i}" aria-label="${LET(i)} y"><span>)</span></div>`).join("");
+    const shapePane = `<div data-pane="shape"${!line && S.tab !== "shape" ? " hidden" : ""}>
+      ${line ? `<p class="note" style="margin:0 0 10px">A line is a wall or fence.</p>` : `<p class="label">Type</p><div class="mats">${mats}</div>`}
+      <div class="meas" id="iMeas"></div>
+      <p class="label">${line ? "End points (x, y)" : "Corners (x, y)"}</p>
+      <div class="verts">${verts}</div>
+      <p class="warn" id="iWarn" hidden></p>
+    </div>`;
+    const movePane = line ? "" : `<div data-pane="move" class="mv"${S.tab !== "move" ? " hidden" : ""}>
+      <p class="label">Slide (translate)</p>
+      <div class="slide"><label>Δx <input type="number" id="sdx" value="0" step="${st}"></label><label>Δy <input type="number" id="sdy" value="0" step="${st}"></label><button type="button" class="go" data-act="slide">Apply Slide</button></div>
+      <p class="label">Flip (reflect)</p>
+      <div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="flipc"><i>↔</i><span>Flip left to right</span></button><button type="button" data-act="flipv"><i>↕</i><span>Flip top to bottom</span></button></div>
+      <p class="label">Turn (rotate) around the amber center</p>
+      <div class="btns"><button type="button" data-act="cw"><i>↻</i><span>90° clockwise</span></button><button type="button" data-act="ccw"><i>↺</i><span>90° counter&shy;clockwise</span></button><button type="button" data-act="half"><i>⟲</i><span>180°</span></button></div>
+      <p class="label">Copy</p>
+      <button type="button" data-act="dup">Duplicate shape</button>
+      <p class="note">Make a copy, then move the copy. The original stays put, so you can compare the pre-image with its image.</p>
+    </div>`;
+    return `<div class="insp-head"><span class="sw${line ? " wall" : ""}" style="--c: ${swc}"></span><h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>${tabs}${shapePane}${movePane}`;
+  }
+  function renderInspector() {
+    const sh = cur();
+    $("insp").hidden = !sh; $("emptyCard").hidden = !!sh;
+    if (!sh) { inspKey = ""; return; }
+    if (sh.kind === "item") {
+      const k = "item|" + sh.id;
+      if (k !== inspKey) {
+        $("insp").innerHTML = `<div class="insp-head">${iconSVG(sh.type).replace("<svg", '<svg style="width:40px;height:32px;color:var(--ink)"')}<h2 id="iName"></h2><button type="button" class="danger" data-act="delete">Delete</button></div>` +
+          `<div class="btns" style="grid-template-columns:1fr 1fr"><button type="button" data-act="iturn"><i>↺</i><span>Turn 90°</span></button><button type="button" data-act="dup"><i>⧉</i><span>Duplicate</span></button></div>` +
+          `<p class="note">Drag it to move it. Furniture does not change the area or perimeter.</p>`;
+        inspKey = k;
+      }
+      $("iName").textContent = shapeName(sh);
+      return;
+    }
+    const key = [sh.id, sh.kind, sh.pts.length, sh.mat, S.tab, S.pivot, S.half].join("|");
+    if (key !== inspKey) { $("insp").innerHTML = inspHTML(sh); inspKey = key; }
+    $("iName").textContent = shapeName(sh);
+    const m = measure(sh);
+    if (sh.kind === "line") {
+      $("iMeas").innerHTML = `<div><span>Length</span><b>${approx(m.len, 1)} m</b></div>`;
+    } else {
+      $("iMeas").innerHTML = `<div><span>Area</span><b>${m.crossing ? "–" : num(m.area, 3) + " m²"}</b></div><div><span>Perimeter</span><b>${approx(m.per, 1)} m</b></div>`;
+    }
+    $("insp").querySelectorAll("[data-vx]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vx][0], 1).replace("−", "-"); });
+    $("insp").querySelectorAll("[data-vy]").forEach(inp => { if (inp !== document.activeElement) inp.value = num(sh.pts[+inp.dataset.vy][1], 1).replace("−", "-"); });
+    const w = $("iWarn");
+    const warn = m.crossing ? "The sides cross each other, so the area cannot be found. Drag a corner to fix it."
+      : offGrid(sh.pts) ? "Part of this shape is off the grid. Press Undo or move it back." : "";
+    w.hidden = !warn; w.textContent = warn;
+  }
+
+  // ---- Pointer: screen pixels to snapped grid coordinates through getScreenCTM.
+  function gridPt(e) {
+    const ctm = svg.getScreenCTM(); if (!ctm) return null;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+    const st = step();
+    const gx = Math.round((lo() + (p.x - M) / U) / st) * st, gy = Math.round((hi() - (p.y - M) / U) / st) * st;
+    return [clean(Math.min(hi(), Math.max(lo(), gx))), clean(Math.min(hi(), Math.max(lo(), gy)))];
+  }
+  function select(id) { S.selId = id; }
+  function addShape(kind, pts, mat) {
+    pushUndo();
+    const sh = { id: S.nextId++, kind, pts, mat };
+    S.shapes.push(sh); S.selId = sh.id; S.tab = "shape";
+    return sh;
+  }
+  function commitTwo(b) {
+    const a = S.draft.a, type = S.draft.type;
+    S.draft = null;
+    if (type === "line") { addShape("line", [a, b], "wall"); return; }
+    const x1 = Math.min(a[0], b[0]), x2 = Math.max(a[0], b[0]), y1 = Math.min(a[1], b[1]), y2 = Math.max(a[1], b[1]);
+    if (x1 === x2 || y1 === y2) { say("A rectangle needs width and height. Try again."); return; }
+    addShape("poly", [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], "room");
+  }
+  function closePoly() {
+    const P = S.draft.pts; S.draft = null;
+    if (P.length < 3 || Math.abs(signedArea(P)) < 1e-9) { say("That shape has no area. Try again."); render(); return; }
+    addShape("poly", P, "room");
+    if (selfCrossing(P)) say("The sides cross each other. Drag a corner so they don't.");
+    render();
+  }
+  function cancelDraft() { S.draft = null; render(); }
+
+  svg.addEventListener("pointerdown", e => {
+    if (anim || e.button > 0) return;
+    const g = gridPt(e); if (!g) return;
+    S.cursor = g;
+    const t = e.target.closest("[data-id],[data-v]");
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    if (S.tool === "select") {
+      const sh = cur();
+      if (t && t.dataset.v != null && sh) drag = { kind: "vertex", i: +t.dataset.v, before: snap(), moved: false };
+      else if (t && t.dataset.id) {
+        select(+t.dataset.id);
+        const s2 = cur();
+        drag = s2.kind === "item" ? { kind: "move", start: g, ox: s2.x, oy: s2.y, b: itemBounds(s2), before: snap(), moved: false }
+          : { kind: "move", start: g, orig: s2.pts.map(p => p.slice()), before: snap(), moved: false, inner: s2.kind === "poly" ? innerItems(s2) : [] };
+      } else select(null);
+    } else if (S.tool === "erase") {
+      if (t && t.dataset.id) { pushUndo(); S.shapes = S.shapes.filter(s => s.id !== +t.dataset.id); }
+    } else if (S.tool === "furn") {
+      pushUndo();
+      const it = { id: S.nextId++, kind: "item", type: S.item, rot: S.itemRot, ...itemAt(S.item, S.itemRot, g) };
+      S.shapes.push(it); S.selId = it.id;
+    } else if (S.tool === "line" || S.tool === "rect") {
+      if (!S.draft) { S.draft = { type: S.tool, a: g }; drag = { kind: "draw" }; }
+      else if (!eq(g, S.draft.a)) commitTwo(g);
+    } else if (S.tool === "poly") {
+      if (!S.draft) S.draft = { type: "poly", pts: [g] };
+      else {
+        const P = S.draft.pts;
+        if (P.length >= 3 && eq(g, P[0])) { closePoly(); return; }
+        if (!eq(g, P[P.length - 1])) P.push(g);
+      }
+    }
+    render();
+  });
+  svg.addEventListener("pointermove", e => {
+    const g = gridPt(e); if (!g) return;
+    const same = S.cursor && eq(S.cursor, g);
+    S.cursor = g;
+    if (drag && !anim) {
+      const sh = cur();
+      if (drag.kind === "vertex" && sh && !eq(sh.pts[drag.i], g)) { sh.pts[drag.i] = g; drag.moved = true; }
+      if (drag.kind === "move" && sh && sh.kind === "item") {
+        const b = drag.b;
+        const dx = Math.min(hi() - b[2], Math.max(lo() - b[0], Math.round(g[0] - drag.start[0])));
+        const dy = Math.min(hi() - b[3], Math.max(lo() - b[1], Math.round(g[1] - drag.start[1])));
+        sh.x = clean(drag.ox + dx); sh.y = clean(drag.oy + dy);
+        if (dx || dy) drag.moved = true;
+      } else if (drag.kind === "move" && sh) {
+        const b = bbox(drag.orig);
+        const dx = Math.min(hi() - b[2], Math.max(lo() - b[0], g[0] - drag.start[0]));
+        const dy = Math.min(hi() - b[3], Math.max(lo() - b[1], g[1] - drag.start[1]));
+        sh.pts = drag.orig.map(p => [clean(p[0] + dx), clean(p[1] + dy)]);
+        drag.inner.forEach(([it, x, y]) => { it.x = clean(x + dx); it.y = clean(y + dy); });
+        if (dx || dy) drag.moved = true;
+      }
+    }
+    if (!same) render();
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    if ((drag.kind === "vertex" || drag.kind === "move") && drag.moved) pushUndo(drag.before);
+    if (drag.kind === "draw" && S.draft && S.draft.a) { const g = gridPt(e); if (g && !eq(g, S.draft.a)) commitTwo(g); }
+    drag = null; render();
+  }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("pointerleave", () => { if (!drag) { S.cursor = null; render(); } });
+  svg.addEventListener("dblclick", () => { if (S.draft && S.draft.type === "poly" && S.draft.pts.length >= 3) closePoly(); });
+
+  // ---- Transformations, animated so students see the slide, flip or turn happen.
+  function animate(sh, to, rot) {
+    const from = sh.pts.map(p => p.slice());
+    const done = () => { sh.pts = to.map(p => [clean(p[0]), clean(p[1])]); anim = false; render();
+      if (offGrid(sh.pts)) say("Part of the image is off the grid. Press Undo or move it back."); };
+    if (reduce) { done(); return; }
+    anim = true;
+    const t0 = performance.now(), D = rot ? 700 : 500;
+    (function frame(now) {
+      const k = Math.min(1, (now - t0) / D), e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      if (rot) { const a = rot.deg * e * Math.PI / 180, [px, py] = rot.p;
+        sh.pts = from.map(([x, y]) => [px + (x - px) * Math.cos(a) - (y - py) * Math.sin(a), py + (x - px) * Math.sin(a) + (y - py) * Math.cos(a)]);
+      } else sh.pts = from.map((p, i) => [p[0] + (to[i][0] - p[0]) * e, p[1] + (to[i][1] - p[1]) * e]);
+      render();
+      if (k < 1) requestAnimationFrame(frame); else done();
+    })(t0);
+  }
+  function rotatePts(P, deg, [px, py]) {
+    const a = deg * Math.PI / 180, c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
+    return P.map(([x, y]) => [px + (x - px) * c - (y - py) * s, py + (x - px) * s + (y - py) * c]);
+  }
+  function act(a) {
+    const sh = cur(); if (!sh || anim) return;
+    if (a === "delete") { pushUndo(); S.shapes = S.shapes.filter(s => s !== sh); S.selId = null; render(); return; }
+    if (sh.kind === "item") {
+      if (a !== "iturn" && a !== "dup") return;
+      pushUndo();
+      if (a === "iturn") {                          // turn in place: the box keeps its lower-left corner
+        const b0 = itemBounds(sh), r = (sh.rot + 90) % 360, nb = itemBox(sh.type, r);
+        sh.rot = r; sh.x = b0[0] - nb[0]; sh.y = b0[1] - nb[1];
+        const fit = itemAt(sh.type, r, [b0[0] + (nb[2] - nb[0]) / 2, b0[1] + (nb[3] - nb[1]) / 2]);
+        sh.x = fit.x; sh.y = fit.y;
+      } else {                                      // the copy goes beside the original when there is room
+        const b = itemBounds(sh), w = b[2] - b[0];
+        const dx = b[2] + w <= hi() ? w : b[0] - w >= lo() ? -w : 0;
+        const copy = { ...sh, id: S.nextId++, x: sh.x + dx };
+        S.shapes.push(copy); S.selId = copy.id;
+      }
+      render(); return;
+    }
+    if (a === "dup") {
+      pushUndo();
+      const copy = { id: S.nextId++, kind: sh.kind, pts: sh.pts.map(p => p.slice()), mat: sh.mat };
+      S.shapes.push(copy); S.selId = copy.id; S.tab = "move";
+      say("Copy made on top of the original. Slide, flip or turn the copy to compare."); render(); return;
+    }
+    const P = sh.pts;
+    let to = null, rot = null;
+    if (a === "slide") {
+      const st = step(), rd = v => Math.round((parseFloat(v) || 0) / st) * st;
+      const dx = rd($("sdx").value), dy = rd($("sdy").value);
+      if (!dx && !dy) { say("Type how far to slide in Δx or Δy first."); return; }
+      to = P.map(p => [p[0] + dx, p[1] + dy]);
+    }
+    if (a === "flipv") { const b = bbox(P); to = P.map(p => [p[0], b[1] + b[3] - p[1]]); }
+    if (a === "flipc") { const b = bbox(P); to = P.map(p => [b[0] + b[2] - p[0], p[1]]); }
+    if (a === "cw" || a === "ccw" || a === "half") {
+      const deg = a === "cw" ? -90 : a === "ccw" ? 90 : 180, pv = pivotPt(sh);
+      to = rotatePts(P, deg, pv); rot = { deg, p: pv };
+    }
+    if (!to) return;
+    pushUndo(); say("");
+    animate(sh, to, rot);
+  }
+
+  // ---- Controls.
+  function setTool(t) {
+    S.tool = t; S.draft = null;
+    document.querySelectorAll("[data-tool]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tool === t)));
+    svg.setAttribute("class", "t-" + t);
+    say(""); render();
+  }
+  $("tools").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.tool) setTool(b.dataset.tool);
+    if (b.dataset.mode) {
+      S.axes = b.dataset.mode === "axes"; S.draft = null;
+      document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+      renderGrid(); render();
+    }
+  });
+  $("halfBtn").addEventListener("click", () => { S.half = !S.half; $("halfBtn").setAttribute("aria-pressed", String(S.half)); render(); });
+  $("dimBtn").addEventListener("click", () => { S.dims = !S.dims; $("dimBtn").setAttribute("aria-pressed", String(S.dims)); render(); });
+  $("undoBtn").addEventListener("click", undo);
+  $("clearBtn").addEventListener("click", () => {
+    if (!S.shapes.length) return;
+    pushUndo(); S.shapes = []; S.selId = null; S.draft = null;
+    say("Canvas cleared. Press Undo to bring it back."); render();
+  });
+  $("finishBtn").addEventListener("click", () => { if (S.draft && S.draft.pts && S.draft.pts.length >= 3) closePoly(); });
+  $("cancelBtn").addEventListener("click", cancelDraft);
+  $("kSeg").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) { S.k = +b.dataset.k; render(); } });
+  $("palette").innerHTML = Object.keys(ITEMS).map(k => `<button type="button" data-item="${k}">${iconSVG(k)}<span>${ITEMS[k].name}</span></button>`).join("");
+  $("palette").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { S.item = b.dataset.item; S.itemRot = 0; render(); } });
+  $("turnGhost").addEventListener("click", () => { S.itemRot = (S.itemRot + 90) % 360; render(); });
+
+  $("insp").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const sh = cur(); if (!sh) return;
+    if (b.dataset.tab) { S.tab = b.dataset.tab; render(); }
+    else if (b.dataset.pivot) { S.pivot = b.dataset.pivot; render(); }
+    else if (b.dataset.mat && b.dataset.mat !== sh.mat) { pushUndo(); sh.mat = b.dataset.mat; render(); }
+    else if (b.dataset.act) act(b.dataset.act);
+  });
+  $("insp").addEventListener("change", e => {
+    const inp = e.target, sh = cur(); if (!sh) return;
+    const ix = inp.dataset.vx, iy = inp.dataset.vy; if (ix == null && iy == null) return;
+    const st = step(), v = parseFloat(inp.value);
+    const i = +(ix ?? iy), k = ix != null ? 0 : 1;
+    if (isNaN(v)) { inp.value = sh.pts[i][k]; return; }
+    const nv = clean(Math.min(hi(), Math.max(lo(), Math.round(v / st) * st)));
+    inp.value = nv;
+    if (nv === sh.pts[i][k]) return;
+    pushUndo(); sh.pts[i] = k === 0 ? [nv, sh.pts[i][1]] : [sh.pts[i][0], nv]; render();
+  });
+  $("insp").addEventListener("keydown", e => { if (e.key === "Enter" && (e.target.id === "sdx" || e.target.id === "sdy")) act("slide"); });
+
+  document.addEventListener("keydown", e => {
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) { e.preventDefault(); undo(); return; }
+    if (typing) return;
+    if ((e.key === "r" || e.key === "R") && S.tool === "furn") { S.itemRot = (S.itemRot + 90) % 360; render(); }
+    if (e.key === "Escape") { if (S.draft) cancelDraft(); else { S.selId = null; render(); } }
+    if (e.key === "Enter" && S.draft && S.draft.type === "poly" && S.draft.pts.length >= 3) closePoly();
+    if ((e.key === "Delete" || e.key === "Backspace") && cur()) { e.preventDefault(); act("delete"); }
+  });
+
+  // ---- Export: a clean blueprint (no cursor, handles or selection) with a title strip.
+  function blueprintSVG() {
+    const T = totals(), k = S.k, H = SIZE + (k === 1 ? 60 : 96);
+    const title = esc($("planName").value.trim() || "My House Plan");
+    let strip = `<rect x="0" y="${SIZE}" width="${SIZE}" height="${H - SIZE}" fill="${C.pill}"/>` +
+      `<text x="24" y="${SIZE + 38}" font-size="26" font-weight="700" fill="${C.cyan}" font-family="'Bricolage Grotesque', system-ui, sans-serif">${title}</text>` +
+      `<text x="${SIZE - 24}" y="${SIZE + 36}" text-anchor="end" font-size="18" font-weight="700" fill="${C.ink}">Area ${num(T.area, 3)} m² · Perimeter ${approx(T.per, 1)} m</text>`;
+    if (k !== 1) strip += `<text x="24" y="${SIZE + 76}" font-size="18" font-weight="700" fill="${C.amber}">Scale factor ×${kTxt(k)} (dashed): perimeter ${approx(T.per * k, 1)} m · area ${num(T.area * k * k, 3)} m²</text>`;
+    const shapes = shapesSVG(null) + scaledSVG();
+    const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") + scaledDims() : "";
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${H}" width="${SIZE}" height="${H}" font-family="${FONT}">` +
+      `<defs><clipPath id="c"><rect x="34" y="34" width="812" height="812"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)">${shapes}</g><g>${dims}</g>${strip}</svg>`;
+  }
+  const esc = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const fileName = ext => (($("planName").value.trim() || "My House Plan").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "plan") + "." + ext;
+  // In the claude.ai viewer the save goes through its downloads capability (the viewer confirms);
+  // on the website it is an ordinary browser download.
+  let dlP = null;
+  async function download(blob, name) {
+    if (window.claude && typeof window.claude.use === "function") {
+      dlP = dlP || window.claude.use("downloads").catch(() => null);
+      const dl = await dlP;
+      if (dl) { try { await dl.save({ filename: name, data: blob }); } catch (e) { if (e && e.code !== "declined") say("The file could not be saved here."); } return; }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  $("svgBtn").addEventListener("click", () => download(new Blob([blueprintSVG()], { type: "image/svg+xml" }), fileName("svg")));
+  $("pngBtn").addEventListener("click", () => {
+    const img = new Image(), src = blueprintSVG();
+    img.onload = () => {
+      const cv = document.createElement("canvas"); cv.width = img.width * 2; cv.height = img.height * 2;
+      const cx = cv.getContext("2d"); cx.scale(2, 2); cx.drawImage(img, 0, 0);
+      cv.toBlob(b => b && download(b, fileName("png")), "image/png");
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(src);
+  });
+
+  // ---- Start with one L-shaped room so the labels show right away.
+  S.shapes.push({ id: S.nextId++, kind: "poly", pts: [[2, 2], [8, 2], [8, 5], [5, 5], [5, 8], [2, 8]], mat: "room" });
+  S.shapes.push({ id: S.nextId++, kind: "item", type: "door", x: 4, y: 2, rot: 0 });
+  renderGrid(); render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for GridCraft CAD (gridcraft.html). Numbers in live readouts are matched with {n}. */
+window.I18N_PAGE = {
+  "Furniture": "Meubles",
+  "Pick an item, then click the plan to place it.": "Choisis un objet, puis clique sur le plan pour le placer.",
+  "↺ Turn {n}°": "↺ Tourner de {n}°",
+  "Turn {n}°": "Tourner de {n}°",
+  "or press R": "ou appuie sur R",
+  "Duplicate": "Dupliquer",
+  "Door": "Porte", "Window": "Fenêtre", "Toilet": "Toilette", "Sink": "Lavabo", "Bathtub": "Baignoire", "Shower": "Douche",
+  "Bed": "Lit", "Table": "Table", "Sofa": "Canapé", "Stove": "Cuisinière", "Fridge": "Réfrigérateur", "Tree": "Arbre",
+  "Door {n}": "Porte {n}", "Window {n}": "Fenêtre {n}", "Toilet {n}": "Toilette {n}", "Sink {n}": "Lavabo {n}", "Bathtub {n}": "Baignoire {n}", "Shower {n}": "Douche {n}",
+  "Bed {n}": "Lit {n}", "Table {n}": "Table {n}", "Sofa {n}": "Canapé {n}", "Stove {n}": "Cuisinière {n}", "Fridge {n}": "Réfrigérateur {n}", "Tree {n}": "Arbre {n}",
+  "Plain grid": "Quadrillage simple",
+  "Scale: {n} square = {n} m": "Échelle : {n} carré = {n} m",
+  "Doors and furniture": "Portes et meubles",
+  "Flip left to right": "Réflexion gauche-droite",
+  "Flip top to bottom": "Réflexion haut-bas",
+  "Turn (rotate) around the amber center": "Tourner (rotation) autour du centre orange",
+  "Part of the image is off the grid. Press Undo or move it back.": "Une partie de l'image est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
+  "Key ({n} square = {n} m)": "Légende ({n} carré = {n} m)",
+  "Area and perimeter count": "L'aire et le périmètre comptent",
+  "Shows its length": "Montre sa longueur",
+  "Placed on the plan; not measured": "Placés sur le plan; non mesurés",
+  "A line is a wall or fence.": "Une ligne est un mur ou une clôture.",
+  "Type": "Type",
+  "Drag it to move it. Furniture does not change the area or perimeter.": "Fais-le glisser pour le déplacer. Les meubles ne changent ni l'aire ni le périmètre.",
+  "Plan name": "Nom du plan",
+  "Export my plan": "Exporter mon plan",
+  "Scale factor": "Facteur d'échelle",
+  "None": "Aucun",
+  "Whole plan": "Plan entier",
+  "Scaled ×{n}": "Agrandi ×{n}",
+  "Scaled ×½": "Réduit ×½",
+  "Lengths ×{0}. Area ×{1} × {2} = ×{3}": "Longueurs ×{0}. Aire ×{1} × {2} = ×{3}",
+  "Part of the scaled plan goes past the edge of the grid.": "Une partie du plan à l'échelle dépasse le bord du quadrillage.",
+  "The file could not be saved here.": "Le fichier n'a pas pu être enregistré ici.",
+  "Cursor position": "Position du curseur",
+  "Total area": "Aire totale",
+  "Total perimeter": "Périmètre total",
+  "Drawing tools": "Outils de dessin",
+  "Draw": "Dessiner",
+  "Select": "Sélectionner",
+  "Line / Wall": "Ligne / Mur",
+  "Rectangle": "Rectangle",
+  "Polygon": "Polygone",
+  "Eraser": "Gomme",
+  "Quadrant I": "Quadrant I",
+  "Half-Snap": "Demi-pas",
+  "Show Dimensions": "Afficher les mesures",
+  "Edit": "Modifier",
+  "Clear Canvas": "Tout effacer",
+  "Blueprint grid with shapes": "Plan quadrillé avec des figures",
+  "How to use this tool": "Comment utiliser cet outil",
+  "Finish shape": "Terminer la figure",
+  "Cancel": "Annuler",
+  "Room": "Pièce",
+  "Garden": "Jardin",
+  "Wall (line)": "Mur (ligne)",
+  "Pick {0} and click a shape to see its measures and move it.": "Choisis {0} et clique sur une figure pour voir ses mesures et la déplacer.",
+  "Click a shape to select it. Drag a corner to reshape it, or drag the inside to slide it.": "Clique sur une figure pour la sélectionner. Fais glisser un sommet pour changer sa forme, ou l'intérieur pour la déplacer.",
+  "Click point A, then point B.": "Clique sur le point A, puis sur le point B.",
+  "Click one corner, then the opposite corner.": "Clique sur un coin, puis sur le coin opposé.",
+  "Click grid points to place the corners.": "Clique sur des points du quadrillage pour placer les sommets.",
+  "Click a shape to remove it.": "Clique sur une figure pour l'effacer.",
+  "Now click point B.": "Clique maintenant sur le point B.",
+  "Now click the opposite corner.": "Clique maintenant sur le coin opposé.",
+  "Keep clicking to place the corners.": "Continue de cliquer pour placer les sommets.",
+  "Click A again, or double-click, to close the shape.": "Clique encore sur A, ou double-clique, pour fermer la figure.",
+  "Delete": "Supprimer",
+  "Inspector": "Inspecteur",
+  "Measure": "Mesurer",
+  "Transform": "Transformer",
+  "End points (x, y)": "Extrémités (x, y)",
+  "Corners (x, y)": "Sommets (x, y)",
+  "Length": "Longueur",
+  "Room {n}": "Pièce {n}",
+  "Garden {n}": "Jardin {n}",
+  "Wall {n}": "Mur {n}",
+  "Slide (translate)": "Glisser (translation)",
+  "Apply Slide": "Appliquer la translation",
+  "Flip (reflect)": "Retourner (réflexion)",
+  "Turn (rotate)": "Tourner (rotation)",
+  "{n}° clockwise": "{n}° sens horaire",
+  "{n}° counter­clockwise": "{n}° sens anti­horaire",
+  "Copy": "Copie",
+  "Duplicate shape": "Dupliquer la figure",
+  "Make a copy, then move the copy. The original stays put, so you can compare the pre-image with its image.": "Fais une copie, puis déplace la copie. L'original reste en place pour comparer la figure initiale et son image.",
+  "The sides cross each other, so the area cannot be found. Drag a corner to fix it.": "Les côtés se croisent, donc on ne peut pas trouver l'aire. Fais glisser un sommet pour corriger.",
+  "Part of this shape is off the grid. Press Undo or move it back.": "Une partie de la figure est hors du quadrillage. Appuie sur Annuler ou ramène-la.",
+  "sides cross": "côtés croisés",
+  "Nothing to undo.": "Rien à annuler.",
+  "A rectangle needs width and height. Try again.": "Un rectangle a besoin d'une largeur et d'une hauteur. Essaie encore.",
+  "That shape has no area. Try again.": "Cette figure n'a pas d'aire. Essaie encore.",
+  "The sides cross each other. Drag a corner so they don't.": "Les côtés se croisent. Fais glisser un sommet pour les séparer.",
+  "Copy made on top of the original. Slide, flip or turn the copy to compare.": "Copie faite par-dessus l'original. Fais glisser, retourne ou tourne la copie pour comparer.",
+  "Type how far to slide in Δx or Δy first.": "Écris d'abord la distance de la translation dans Δx ou Δy.",
+  "Canvas cleared. Press Undo to bring it back.": "Tout est effacé. Appuie sur Annuler pour le ravoir."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
