@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Whiteboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Whiteboard (All grades; Shawn 2026-10-20).
+   Pen, eraser, and simple shapes (line, arrow, rectangle, circle) on a choice of background:
+   blank, square grid, the -10 to 10 coordinate grid (every line labeled), or a number line.
+   On any background but Blank, shape corners and ends snap to the grid points. Undo and Clear (Clear can be undone).
+   Everything is stored in grid units around the board's centre, so resizing the window keeps drawings on the grid.
+   Works with mouse, touch and stylus (pointer events). Nothing is saved after the page closes.
+   Equation (Shawn 2026-10-20, "keep it simple"): a small box with Fraction, Exponent, Square root, π, × and ± buttons
+   and a live typeset preview. Typing follows a/b, x^2, √(x); brackets group and are hidden in the typeset form.
+   Placed equations sit on the board, drag to move; with the Eraser, tap one to remove it. No ÷ button: use a fraction. */
+.wbg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.wbg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 14px; }
+.wbg button + button { border-left: 2px solid var(--grid-major); }
+.wbg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+
+.stage { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } .board { height: 66vh; min-height: 380px; } }
+
+.tools { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; padding: 12px; }
+.tools .label { margin: 0 0 -4px; }
+.tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tool { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 62px; padding: 6px 4px; background: var(--sheet); border: 2px solid var(--grid-major); font-size: 0.9rem; line-height: 1.15; }
+.tool svg { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.tool[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.swatches, .sizes { display: flex; gap: 8px; }
+.sw { flex: 1; height: 44px; padding: 0; border: 3px solid var(--sheet); outline: 2px solid var(--grid-major); border-radius: 50%; max-width: 44px; }
+.sw[aria-pressed="true"] { outline: 4px solid var(--pt); }
+.size { flex: 1; display: grid; place-items: center; min-height: 44px; padding: 0; background: var(--sheet); border: 2px solid var(--grid-major); }
+.size span { display: block; border-radius: 50%; background: currentColor; }
+.size[aria-pressed="true"] { border-color: var(--pt); outline: 2px solid var(--pt); }
+.acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: auto; padding-top: 4px; }
+.acts button { min-height: 50px; font-size: 1.05rem; }
+.acts button:disabled { opacity: 0.45; cursor: default; }
+#clear { color: var(--warn); }
+.tool.wide { grid-column: span 2; flex-direction: row; justify-content: center; gap: 8px; min-height: 50px; font-size: 1rem; }
+
+/* Typeset equations (preview and on the board) */
+.m { font-family: var(--font-num); font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; line-height: 1.1; }
+.m i { font-family: var(--font-display); font-weight: 800; padding: 0 0.04em; }
+.m .op { padding: 0 0.22em; }
+.m .fr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 0.12em; font-size: 0.86em; }
+.m .fr > span { display: inline-flex; align-items: center; padding: 0 0.15em; }
+.m .fr > span:first-child { border-bottom: 0.09em solid currentColor; padding-bottom: 0.06em; }
+.m .fr > span:last-child { padding-top: 0.06em; }
+.m sup { font-size: 0.62em; display: inline-flex; align-items: center; transform: translateY(-0.6em); }
+.m .rt { display: inline-flex; align-items: stretch; }
+.m .rt > b { font-weight: 700; font-size: 1.15em; line-height: 1; display: inline-flex; align-items: center; }
+.m .rt > span { display: inline-flex; align-items: center; border-top: 0.08em solid currentColor; padding: 0.06em 0.12em 0; }
+
+#eqs { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.eq-item { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; padding: 0.1em 0.2em; border-radius: 0.2em; }
+.eq-item:hover { outline: 2px dashed var(--grid-major); }
+.eq-item.drag { cursor: grabbing; outline: 2px dashed var(--pt); }
+.erase-mode .eq-item { cursor: cell; }
+.erase-mode .eq-item:hover { outline: 2px dashed var(--warn); }
+
+.eqbox { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; width: min(560px, 94%); display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25); border: 2px solid var(--pt); }
+.eqbox .keys { display: flex; flex-wrap: wrap; gap: 6px; }
+.eqbox .keys button { min-height: 48px; min-width: 52px; font-size: 1.05rem; background: var(--sheet); border: 2px solid var(--grid-major); }
+.eqbox .keys .m { font-size: 1.1rem; }
+.eqbox input { font: 700 1.4rem var(--font-num); padding: 8px 12px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); width: 100%; }
+.eqbox input:focus { outline: 3px solid var(--pt); outline-offset: 1px; }
+.eqbox .preview { min-height: 96px; display: grid; place-items: center; background: var(--chip); border-radius: 8px; padding: 8px; overflow-x: auto; }
+.eqbox .preview .m { font-size: 2.2rem; }
+.eqbox .preview .empty { color: var(--muted); }
+.eqbox .row { display: flex; gap: 8px; justify-content: flex-end; }
+.eqbox .row button { min-height: 48px; font-size: 1.05rem; padding: 8px 18px; }
+#eqplace { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+#eqplace:disabled { opacity: 0.45; cursor: default; }
+
+.board { position: relative; padding: 0; overflow: hidden; height: 100%; }
+.board canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
+#ink { cursor: crosshair; }
+#ink.erase { cursor: cell; }
+.snapnote { position: absolute; right: 10px; bottom: 8px; margin: 0; font-size: 0.85rem; color: var(--muted); background: var(--sheet); padding: 2px 8px; border-radius: 6px; pointer-events: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+      <h1>Whiteboard</h1>
+    </div>
+    <div class="wbg" id="bgs" role="group" aria-label="Background">
+      <button type="button" data-bg="blank">Blank</button>
+      <button type="button" data-bg="grid" aria-pressed="true">Grid</button>
+      <button type="button" data-bg="coord">Coordinate grid</button>
+      <button type="button" data-bg="line">Number line</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="card tools">
+      <p class="label">Draw</p>
+      <div class="tgrid" id="toolset">
+        <button type="button" class="tool" data-tool="pen" aria-pressed="true"><svg viewBox="0 0 28 28"><path d="M5 23l3-1 13-13-2-2L6 20z"/><path d="M17 7l2-2 4 4-2 2"/></svg>Pen</button>
+        <button type="button" class="tool" data-tool="eraser"><svg viewBox="0 0 28 28"><path d="M11 23l-6-6L16 6l7 7-8 10z"/><path d="M9 13l7 7M11 23h12"/></svg>Eraser</button>
+        <button type="button" class="tool" data-tool="line"><svg viewBox="0 0 28 28"><path d="M5 23L23 5"/></svg>Line</button>
+        <button type="button" class="tool" data-tool="arrow"><svg viewBox="0 0 28 28"><path d="M5 23L22 6M13 6h9v9"/></svg>Arrow</button>
+        <button type="button" class="tool" data-tool="rect"><svg viewBox="0 0 28 28"><rect x="4" y="7" width="20" height="14" rx="1"/></svg>Rectangle</button>
+        <button type="button" class="tool" data-tool="circle"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="9.5"/></svg>Circle</button>
+      </div>
+      <button type="button" class="tool wide" id="eqbtn"><span class="m" aria-hidden="true"><span class="fr"><span><i>x</i></span><span>2</span></span></span>Equation</button>
+      <p class="label">Colour</p>
+      <div class="swatches" id="colours">
+        <button type="button" class="sw" data-c="ink" aria-pressed="true" aria-label="Black" title="Black"></button>
+        <button type="button" class="sw" data-c="blue" aria-label="Blue" title="Blue"></button>
+        <button type="button" class="sw" data-c="red" aria-label="Red" title="Red"></button>
+        <button type="button" class="sw" data-c="green" aria-label="Green" title="Green"></button>
+      </div>
+      <p class="label">Size</p>
+      <div class="sizes" id="sizes">
+        <button type="button" class="size" data-s="0" aria-label="Thin" title="Thin"><span style="width:6px;height:6px"></span></button>
+        <button type="button" class="size" data-s="1" aria-pressed="true" aria-label="Medium" title="Medium"><span style="width:12px;height:12px"></span></button>
+        <button type="button" class="size" data-s="2" aria-label="Thick" title="Thick"><span style="width:20px;height:20px"></span></button>
+      </div>
+      <div class="acts">
+        <button type="button" id="undo" disabled>Undo</button>
+        <button type="button" id="clear" disabled>Clear</button>
+      </div>
+    </div>
+
+    <div class="board" id="board">
+      <canvas id="bg" aria-hidden="true"></canvas>
+      <canvas id="ink" aria-label="Drawing area"></canvas>
+      <div id="eqs"></div>
+      <p class="snapnote" id="snapnote">Shapes snap to the grid</p>
+      <div class="card eqbox" id="eqbox" hidden role="dialog" aria-label="Equation">
+        <p class="label">Equation</p>
+        <div class="keys" id="eqkeys">
+          <button type="button" data-k="frac" title="Fraction"><span class="m"><span class="fr"><span>□</span><span>□</span></span></span></button>
+          <button type="button" data-k="pow" title="Exponent"><span class="m">□<sup>□</sup></span></button>
+          <button type="button" data-k="sqrt" title="Square root"><span class="m"><span class="rt"><b>√</b><span>□</span></span></span></button>
+          <button type="button" data-k="π" title="Pi"><span class="m">π</span></button>
+          <button type="button" data-k="×" title="Times"><span class="m">×</span></button>
+          <button type="button" data-k="±" title="Plus or minus"><span class="m">±</span></button>
+          <button type="button" data-k="(" title="Bracket"><span class="m">( )</span></button>
+        </div>
+        <input id="eqin" type="text" autocomplete="off" spellcheck="false" aria-label="Type the equation" placeholder="Type: 3/4 + x^2 = √(16)">
+        <div class="preview" id="eqprev"></div>
+        <div class="row">
+          <button type="button" id="eqcancel">Cancel</button>
+          <button type="button" id="eqplace" disabled>Place on board</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const board = document.getElementById("board");
+  const bgC = document.getElementById("bg"), inkC = document.getElementById("ink");
+  const bgX = bgC.getContext("2d"), inkX = inkC.getContext("2d");
+
+  // Pen widths in grid units (one grid square = 1). The eraser is wider.
+  const WIDTHS = [0.09, 0.18, 0.36];
+  const ERASER = [0.6, 1.1, 2];
+  // Colours in light and dark mode. Black becomes white on a dark board.
+  const COLOURS = {
+    ink: ["#1b2733", "#e6edf3"], blue: ["#2f5fd0", "#7aa2ff"],
+    red: ["#c62828", "#ff7d7d"], green: ["#1f7a3a", "#4cc47a"]
+  };
+
+  const state = { tool: "pen", colour: "ink", size: 1, bg: "grid" };
+  let items = [];        // drawn objects, in grid units from the board centre (y down)
+  const history = [];    // earlier copies of items, for Undo
+  let live = null;       // the stroke or shape being drawn
+  let activeId = null;   // only one pointer draws at a time (a resting palm is ignored)
+  let W = 0, H = 0, U = 30, dpr = 1;
+
+  const dark = () => {
+    const t = document.documentElement.dataset.theme;
+    return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  };
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const colourOf = k => COLOURS[k][dark() ? 1 : 0];
+  const snaps = () => state.bg !== "blank";
+
+  // Screen <-> grid units. The origin is the board centre; 22 squares fit the short side so -10 to 10 shows with room for labels.
+  const toPx = p => [W / 2 + p[0] * U, H / 2 + p[1] * U];
+  const toUnits = (x, y) => [(x - W / 2) / U, (y - H / 2) / U];
+
+  function resize() {
+    const r = board.getBoundingClientRect();
+    W = r.width; H = r.height; dpr = window.devicePixelRatio || 1;
+    U = Math.min(W, H) / 22;
+    for (const c of [bgC, inkC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    drawBg(); drawInk();
+  }
+
+  /* Backgrounds */
+  function drawBg() {
+    const g = bgX;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = css("--sheet"); g.fillRect(0, 0, W, H);
+    const minor = css("--grid"), major = css("--grid-major"), axis = css("--muted"), ink = css("--ink"), sheet = css("--sheet");
+    const nx = Math.ceil(W / 2 / U), ny = Math.ceil(H / 2 / U);
+    const vline = (i, y0, y1) => { const x = Math.round(W / 2 + i * U) + 0.5; g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.stroke(); };
+    const hline = (j, x0, x1) => { const y = Math.round(H / 2 + j * U) + 0.5; g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); };
+    const label = (t, x, y, align, base, size) => {
+      g.font = `700 ${size}px ${css("--font-num")}`; g.textAlign = align; g.textBaseline = base;
+      g.lineWidth = 4; g.strokeStyle = sheet; g.lineJoin = "round"; g.strokeText(t, x, y);
+      g.fillStyle = ink; g.fillText(t, x, y);
+    };
+
+    if (state.bg === "grid") {
+      g.lineWidth = 1; g.strokeStyle = major;
+      for (let i = -nx; i <= nx; i++) vline(i, 0, H);
+      for (let j = -ny; j <= ny; j++) hline(j, 0, W);
+    } else if (state.bg === "coord") {
+      const e = 10 * U;
+      g.lineWidth = 1;
+      for (let i = -10; i <= 10; i++) { g.strokeStyle = i % 5 ? minor : major; vline(i, H / 2 - e, H / 2 + e); hline(i, W / 2 - e, W / 2 + e); }
+      g.strokeStyle = axis; g.lineWidth = 2.5;
+      vline(0, H / 2 - e - U * 0.6, H / 2 + e + U * 0.6); hline(0, W / 2 - e - U * 0.6, W / 2 + e + U * 0.6);
+      arrowHead(g, [W / 2, H / 2 - e - U * 0.6], -Math.PI / 2, U * 0.45, axis);
+      arrowHead(g, [W / 2, H / 2 + e + U * 0.6], Math.PI / 2, U * 0.45, axis);
+      arrowHead(g, [W / 2 + e + U * 0.6, H / 2], 0, U * 0.45, axis);
+      arrowHead(g, [W / 2 - e - U * 0.6, H / 2], Math.PI, U * 0.45, axis);
+      const fs = Math.max(11, Math.min(20, U * 0.5));
+      for (let i = -10; i <= 10; i++) {
+        if (!i) continue;
+        label(String(i).replace("-", "−"), W / 2 + i * U, H / 2 + U * 0.18, "center", "top", fs);
+        label(String(-i).replace("-", "−"), W / 2 - U * 0.18, H / 2 + i * U, "right", "middle", fs);
+      }
+      label("0", W / 2 - U * 0.18, H / 2 + U * 0.18, "right", "top", fs);
+      g.font = `italic 800 ${fs * 1.3}px ${css("--font-display")}`; g.fillStyle = ink; g.textBaseline = "middle";
+      g.textAlign = "left"; g.fillText("x", W / 2 + e + U * 0.9, H / 2);
+      g.fillText("y", W / 2 + U * 0.6, H / 2 - e - U * 0.3);
+    } else if (state.bg === "line") {
+      // A faint grid keeps snapping visible; the number line runs −10 to 10 across the middle, counting by 1, every tick labeled.
+      g.lineWidth = 1; g.strokeStyle = minor;
+      for (let i = -nx; i <= nx; i++) vline(i, 0, H);
+      for (let j = -ny; j <= ny; j++) hline(j, 0, W);
+      const n = Math.max(1, Math.min(10, Math.floor(W / 2 / U - 1)));
+      g.strokeStyle = ink; g.lineWidth = 3;
+      hline(0, W / 2 - (n + 0.6) * U, W / 2 + (n + 0.6) * U);
+      arrowHead(g, [W / 2 + (n + 0.6) * U, H / 2], 0, U * 0.5, ink);
+      arrowHead(g, [W / 2 - (n + 0.6) * U, H / 2], Math.PI, U * 0.5, ink);
+      const fs = Math.max(12, Math.min(24, U * 0.62));
+      g.lineWidth = 2.5;
+      for (let i = -n; i <= n; i++) {
+        g.strokeStyle = ink;
+        const x = Math.round(W / 2 + i * U) + 0.5, t = i === 0 ? U * 0.45 : U * 0.3;
+        g.beginPath(); g.moveTo(x, H / 2 - t); g.lineTo(x, H / 2 + t); g.stroke();
+        label(String(i).replace("-", "−"), x, H / 2 + U * 0.5, "center", "top", fs);
+      }
+    }
+  }
+
+  function arrowHead(g, tip, ang, size, colour) {
+    g.save(); g.translate(tip[0], tip[1]); g.rotate(ang);
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(-size * 1.4, -size * 0.75); g.lineTo(-size * 1.4, size * 0.75); g.closePath();
+    g.fillStyle = colour; g.fill(); g.restore();
+  }
+
+  /* Drawing */
+  function drawItem(g, it) {
+    g.lineCap = "round"; g.lineJoin = "round";
+    if (it.type === "pen" || it.type === "eraser") {
+      g.globalCompositeOperation = it.type === "eraser" ? "destination-out" : "source-over";
+      g.strokeStyle = it.type === "eraser" ? "#000" : colourOf(it.c);
+      g.fillStyle = g.strokeStyle;
+      g.lineWidth = it.w * U;
+      const p = it.pts.map(toPx);
+      if (p.length === 1) { g.beginPath(); g.arc(p[0][0], p[0][1], it.w * U / 2, 0, Math.PI * 2); g.fill(); }
+      else {
+        // Smooth the stroke through the midpoints between samples.
+        g.beginPath(); g.moveTo(p[0][0], p[0][1]);
+        for (let i = 1; i < p.length - 1; i++) g.quadraticCurveTo(p[i][0], p[i][1], (p[i][0] + p[i + 1][0]) / 2, (p[i][1] + p[i + 1][1]) / 2);
+        g.lineTo(p[p.length - 1][0], p[p.length - 1][1]);
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+      return;
+    }
+    const a = toPx(it.a), b = toPx(it.b), col = colourOf(it.c), lw = it.w * U;
+    g.strokeStyle = col; g.lineWidth = lw; g.beginPath();
+    if (it.type === "line" || it.type === "arrow") {
+      let end = b;
+      const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), hs = Math.max(lw * 1.6, U * 0.32);
+      if (it.type === "arrow") end = [b[0] - Math.cos(ang) * hs, b[1] - Math.sin(ang) * hs];
+      g.moveTo(a[0], a[1]); g.lineTo(end[0], end[1]); g.stroke();
+      if (it.type === "arrow") arrowHead(g, b, ang, hs / 1.4, col);
+    } else if (it.type === "rect") {
+      g.rect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1])); g.stroke();
+    } else if (it.type === "circle") {
+      g.arc(a[0], a[1], Math.hypot(b[0] - a[0], b[1] - a[1]), 0, Math.PI * 2); g.stroke();
+    }
+  }
+
+  function drawInk() {
+    drawEqs();
+    inkX.setTransform(dpr, 0, 0, dpr, 0, 0);
+    inkX.clearRect(0, 0, W, H);
+    for (const it of items) if (it.type !== "eq") drawItem(inkX, it);
+    if (live) {
+      drawItem(inkX, live);
+      if (live.a && snaps()) for (const p of [live.a, live.b]) { // show the snapped points while drawing a shape
+        const q = toPx(p); inkX.beginPath(); inkX.arc(q[0], q[1], Math.max(5, U * 0.16), 0, Math.PI * 2);
+        inkX.fillStyle = css("--pt"); inkX.fill();
+      }
+    }
+  }
+
+  const snap = p => snaps() ? [Math.round(p[0]), Math.round(p[1])] : p;
+  const pos = e => { const r = inkC.getBoundingClientRect(); return toUnits(e.clientX - r.left, e.clientY - r.top); };
+
+  inkC.addEventListener("pointerdown", e => {
+    if (activeId !== null || (e.pointerType === "mouse" && e.button !== 0)) return;
+    activeId = e.pointerId;
+    inkC.setPointerCapture(e.pointerId);
+    const p = pos(e);
+    if (state.tool === "pen") live = { type: "pen", c: state.colour, w: WIDTHS[state.size], pts: [p] };
+    else if (state.tool === "eraser") live = { type: "eraser", w: ERASER[state.size], pts: [p] };
+    else { const s = snap(p); live = { type: state.tool, c: state.colour, w: WIDTHS[state.size], a: s, b: s }; }
+    drawInk();
+    e.preventDefault();
+  });
+  inkC.addEventListener("pointermove", e => {
+    if (e.pointerId !== activeId || !live) return;
+    if (live.pts) {
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      for (const ev of (evs.length ? evs : [e])) live.pts.push(pos(ev));
+    } else live.b = snap(pos(e));
+    drawInk();
+  });
+  const finish = e => {
+    if (e.pointerId !== activeId) return;
+    activeId = null;
+    if (!live) return;
+    const it = live; live = null;
+    const tiny = it.a && Math.hypot(it.b[0] - it.a[0], it.b[1] - it.a[1]) < (snaps() ? 0.5 : 0.15);
+    if (!tiny) commit([...items, it]); else drawInk();
+  };
+  inkC.addEventListener("pointerup", finish);
+  inkC.addEventListener("pointercancel", finish);
+
+  function commit(next) {
+    history.push(items); items = next;
+    if (history.length > 200) history.shift();
+    drawInk(); syncActs();
+  }
+  function syncActs() {
+    document.getElementById("undo").disabled = !history.length;
+    document.getElementById("clear").disabled = !items.length;
+  }
+  document.getElementById("undo").addEventListener("click", () => {
+    if (!history.length) return;
+    items = history.pop(); drawInk(); syncActs();
+  });
+  document.getElementById("clear").addEventListener("click", () => { if (items.length) commit([]); });
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && e.target.tagName !== "INPUT") { e.preventDefault(); document.getElementById("undo").click(); }
+  });
+
+  /* Equations: typed text becomes typeset HTML. a/b is a fraction, x^2 an exponent, √x or √(x+1) a root;
+     brackets group the parts of a fraction, exponent or root and are hidden there. * becomes ×, - becomes −. */
+  const esc = c => c.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  function typeset(src) {
+    let i = 0;
+    const peek = () => src[i];
+    function seq(stop) {
+      let out = "";
+      while (i < src.length && peek() !== stop) {
+        let a = item();
+        if (a === null) continue;
+        while (peek() === "/") { i++; const b = item(true); a = { h: `<span class="fr"><span>${bare(a)}</span><span>${bare(b)}</span></span>` }; }
+        out += a.h;
+      }
+      return out;
+    }
+    const bare = a => (a ? (a.g != null ? a.g : a.h) : "&#8203;"); // a group's inside, without its brackets
+    function atom() {
+      while (peek() === " ") i++;
+      const c = peek();
+      if (c == null || c === ")") return null;
+      if (c === "(") { i++; const g = seq(")"); if (peek() === ")") i++; return { h: `(${g})`, g }; }
+      if (c === "√") { i++; const a = atom(); return { h: `<span class="rt"><b>√</b><span>${bare(a)}</span></span>` }; }
+      if (/[0-9.]/.test(c)) { let n = ""; while (/[0-9.]/.test(peek() || "")) n += src[i++]; return { h: n }; }
+      if (/[A-Za-z]/.test(c)) { i++; return { h: `<i>${c}</i>` }; }
+      i++;
+      if (c === "*" || c === "×") return { h: '<span class="op">×</span>' };
+      if (c === "-" || c === "−") return { h: '<span class="op">−</span>' };
+      if ("+=±<>≤≥".includes(c)) return { h: `<span class="op">${esc(c)}</span>` };
+      return { h: esc(c) };
+    }
+    function item() {
+      const a = atom();
+      if (!a) { if (peek() === ")") i++; return null; }
+      while (peek() === "^") { i++; const e = atom(); a.h = `${a.h}<sup>${bare(e)}</sup>`; a.g = null; }
+      return a;
+    }
+    return seq(null);
+  }
+
+  const eqLayer = document.getElementById("eqs");
+  function drawEqs() {
+    const fs = Math.max(14, U * 0.95);
+    const els = [];
+    for (const it of items) {
+      if (it.type !== "eq") continue;
+      let el = it.el;
+      if (!el) {
+        el = it.el = document.createElement("div");
+        el.className = "eq-item";
+        el.innerHTML = `<span class="m">${typeset(it.text)}</span>`;
+        el.__item = it;
+      }
+      const q = toPx(it.p);
+      el.style.left = q[0] + "px"; el.style.top = q[1] + "px";
+      el.style.fontSize = fs + "px"; el.style.color = colourOf(it.c);
+      els.push(el);
+    }
+    // Keep only the equations in the current list (Undo and Clear can take them away or bring them back).
+    for (const el of [...eqLayer.children]) if (!els.includes(el)) el.remove();
+    for (const el of els) if (el.parentNode !== eqLayer) eqLayer.appendChild(el);
+  }
+
+  // Drag a placed equation; with the Eraser, tap it to remove it.
+  let eqDrag = null;
+  eqLayer.addEventListener("pointerdown", e => {
+    const el = e.target.closest(".eq-item"); if (!el || activeId !== null) return;
+    const it = el.__item;
+    e.preventDefault();
+    if (state.tool === "eraser") { commit(items.filter(x => x !== it)); return; }
+    const r = inkC.getBoundingClientRect();
+    const start = toUnits(e.clientX - r.left, e.clientY - r.top);
+    eqDrag = { id: e.pointerId, it, el, start, p0: it.p, moved: false };
+    el.setPointerCapture(e.pointerId); el.classList.add("drag");
+  });
+  eqLayer.addEventListener("pointermove", e => {
+    if (!eqDrag || e.pointerId !== eqDrag.id) return;
+    const r = inkC.getBoundingClientRect(), p = toUnits(e.clientX - r.left, e.clientY - r.top);
+    const np = [eqDrag.p0[0] + p[0] - eqDrag.start[0], eqDrag.p0[1] + p[1] - eqDrag.start[1]];
+    eqDrag.moved = true;
+    const q = toPx(np); eqDrag.el.style.left = q[0] + "px"; eqDrag.el.style.top = q[1] + "px"; eqDrag.np = np;
+  });
+  const eqUp = e => {
+    if (!eqDrag || e.pointerId !== eqDrag.id) return;
+    const d = eqDrag; eqDrag = null; d.el.classList.remove("drag");
+    if (d.moved && d.np) {
+      const moved = Object.assign({}, d.it, { p: d.np, el: d.el });
+      d.it.el = null; d.el.__item = moved;
+      commit(items.map(x => (x === d.it ? moved : x)));
+    }
+  };
+  eqLayer.addEventListener("pointerup", eqUp);
+  eqLayer.addEventListener("pointercancel", eqUp);
+
+  // The equation box
+  const box = document.getElementById("eqbox"), input = document.getElementById("eqin"), prev = document.getElementById("eqprev"), place = document.getElementById("eqplace");
+  function preview() {
+    const t = input.value.trim();
+    prev.innerHTML = t ? `<span class="m">${typeset(t)}</span>` : '<span class="empty">Your equation shows here</span>';
+    place.disabled = !t;
+  }
+  function openBox() { box.hidden = false; input.value = ""; preview(); input.focus(); }
+  function closeBox() { box.hidden = true; }
+  document.getElementById("eqbtn").addEventListener("click", () => (box.hidden ? openBox() : closeBox()));
+  document.getElementById("eqcancel").addEventListener("click", closeBox);
+  input.addEventListener("input", preview);
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !place.disabled) place.click();
+    if (e.key === "Escape") closeBox();
+  });
+  // Each button types its piece at the cursor. Fraction, exponent and root leave the cursor inside the first bracket.
+  const KEYS = { frac: ["()/()", 1], pow: ["^()", 2], sqrt: ["√()", 2], "(": ["()", 1] };
+  document.getElementById("eqkeys").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const [txt, at] = KEYS[b.dataset.k] || [b.dataset.k, b.dataset.k.length];
+    const s = input.selectionStart ?? input.value.length, en = input.selectionEnd ?? s;
+    let ins = txt, caret = at;
+    // With text selected, Fraction and Root wrap it: the selection becomes the top or the inside.
+    const sel = input.value.slice(s, en);
+    if (sel && b.dataset.k === "frac") { ins = `(${sel})/()`; caret = ins.length - 1; }
+    else if (sel && (b.dataset.k === "sqrt" || b.dataset.k === "(")) { ins = txt.replace("()", `(${sel})`); caret = ins.length; }
+    input.value = input.value.slice(0, s) + ins + input.value.slice(en);
+    input.focus(); input.setSelectionRange(s + caret, s + caret);
+    preview();
+  });
+  place.addEventListener("click", () => {
+    const text = input.value.trim(); if (!text) return;
+    // New equations land near the middle, a little lower each time so they do not stack exactly.
+    const n = items.filter(x => x.type === "eq").length % 6;
+    commit([...items, { type: "eq", text, c: state.colour, p: [0, -6 + n * 2.2] }]);
+    closeBox();
+  });
+
+  /* Controls */
+  function group(id, attr, key, after) {
+    const el = document.getElementById(id);
+    el.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      for (const x of el.querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b));
+      state[key] = key === "size" ? +b.dataset[attr] : b.dataset[attr];
+      after && after();
+    });
+  }
+  group("toolset", "tool", "tool", () => { inkC.classList.toggle("erase", state.tool === "eraser"); board.classList.toggle("erase-mode", state.tool === "eraser"); });
+  group("colours", "c", "colour");
+  group("sizes", "s", "size");
+  group("bgs", "bg", "bg", () => { document.getElementById("snapnote").hidden = !snaps(); drawBg(); drawInk(); });
+
+  function paintSwatches() {
+    for (const b of document.querySelectorAll(".sw")) b.style.background = colourOf(b.dataset.c);
+  }
+  const theme = () => { paintSwatches(); drawBg(); drawInk(); };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", theme);
+  new MutationObserver(theme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  paintSwatches();
+  new ResizeObserver(resize).observe(board);
+  document.fonts && document.fonts.ready.then(drawBg);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Whiteboard (whiteboard.html). */
+window.I18N_PAGE = {
+  "Whiteboard": "Tableau blanc",
+  "Background": "Arrière-plan",
+  "Blank": "Vide",
+  "Coordinate grid": "Plan cartésien",
+  "Number line": "Droite numérique",
+  "Draw": "Dessiner",
+  "Pen": "Crayon",
+  "Eraser": "Efface",
+  "Line": "Droite",
+  "Arrow": "Flèche",
+  "Rectangle": "Rectangle",
+  "Circle": "Cercle",
+  "Equation": "Équation",
+  "Colour": "Couleur",
+  "Black": "Noir",
+  "Blue": "Bleu",
+  "Red": "Rouge",
+  "Green": "Vert",
+  "Size": "Taille",
+  "Thin": "Mince",
+  "Medium": "Moyen",
+  "Thick": "Épais",
+  "Drawing area": "Zone de dessin",
+  "Shapes snap to the grid": "Les formes s'alignent sur le quadrillage",
+  "Fraction": "Fraction",
+  "Exponent": "Exposant",
+  "Square root": "Racine carrée",
+  "Pi": "Pi",
+  "Times": "Fois",
+  "Plus or minus": "Plus ou moins",
+  "Bracket": "Parenthèses",
+  "Type the equation": "Écris l'équation",
+  "Type: 3/4 + x^2 = √(16)": "Écris : 3/4 + x^2 = √(16)",
+  "Your equation shows here": "Ton équation s'affiche ici",
+  "Cancel": "Annuler",
+  "Place on board": "Placer sur le tableau"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
