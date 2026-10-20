@@ -263,6 +263,7 @@ h1 em { font-style: normal; color: var(--pt); }
             <clipPath id="dimClip"><rect id="dimClipR" x="14" y="14" width="852" height="852"/></clipPath>
           </defs>
           <g id="gGrid"></g>
+          <g id="gOther" clip-path="url(#gridClip)" pointer-events="none" opacity="0.3"></g>
           <g id="gShapes" clip-path="url(#gridClip)"></g>
           <g id="gDims" pointer-events="none" clip-path="url(#dimClip)"></g>
           <g id="gTop"></g>
@@ -396,7 +397,7 @@ h1 em { font-style: normal; color: var(--pt); }
   const FONT = "'Spline Sans Mono', ui-monospace, Menlo, monospace";
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const S = { shapes: [], selId: null, tool: "select", out: false, axes: true, half: false, dims: true, item: "door", itemRot: 0, group: 0,
+  const S = { shapes: [], selId: null, tool: "select", out: false, other: [], otherHist: [], axes: true, half: false, dims: true, item: "door", itemRot: 0, group: 0,
     draft: null, cursor: null, nextId: 1 };
   const history = [];
   let drag = null, anim = false;
@@ -662,14 +663,15 @@ h1 em { font-style: normal; color: var(--pt); }
   }
 
   // Shapes first (the selected one on top of them), then furniture so it stays clickable inside rooms.
-  function shapesSVG(sel) {
-    const plain = S.shapes.filter(s => s.kind !== "item"), items = S.shapes.filter(s => s.kind === "item");
+  function shapesSVG(sel, list = S.shapes) {
+    const plain = list.filter(s => s.kind !== "item"), items = list.filter(s => s.kind === "item");
     return plain.filter(s => s !== sel).map(s => shapeSVG(s, false)).join("") + (sel && sel.kind !== "item" ? shapeSVG(sel, true) : "") +
       items.map(s => itemSVG(s, s === sel)).join("");
   }
   function render() {
     const sel = cur();
     $("gShapes").innerHTML = shapesSVG(sel);
+    $("gOther").innerHTML = shapesSVG(null, S.other);
     $("gDims").innerHTML = S.dims ? `<g font-family="${FONT}">${S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, s === sel)).join("")}</g>` : "";
     let top = "";
     if (S.tool === "furn" && S.cursor) top += `<g pointer-events="none">${itemSVG({ type: S.item, rot: S.itemRot, ...itemAt(S.item, S.itemRot, S.cursor) }, false, true)}</g>`;
@@ -929,7 +931,14 @@ h1 em { font-style: normal; color: var(--pt); }
   $("turnGhost").addEventListener("click", () => { if (S.tool === "furn") { S.itemRot = (S.itemRot + 90) % 360; render(); } else act("turn"); });
   $("io").addEventListener("click", e => {
     const b = e.target.closest("[data-io]"); if (!b) return;
-    S.out = b.dataset.io === "out"; GROUPS = S.out ? OUT : IN; S.group = 0;
+    const out = b.dataset.io === "out";
+    if (out === S.out) return;
+    // Indoor and Outdoor are two plans on the same grid: each keeps its own shapes and undo steps,
+    // and the other one shows faintly underneath so the yard can be planned around the house.
+    if (S.draft) cancelDraft();
+    [S.shapes, S.other] = [S.other, S.shapes];
+    const h = history.splice(0); history.push(...S.otherHist); S.otherHist = h;
+    S.selId = null; S.out = out; GROUPS = S.out ? OUT : IN; S.group = 0;
     document.querySelectorAll("[data-io]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
     $("lineLbl").textContent = S.out ? "Line / Fence" : "Line / Wall";
     $("rectLbl").textContent = S.out ? "Yard" : "Rectangle";
@@ -957,7 +966,7 @@ h1 em { font-style: normal; color: var(--pt); }
     const shapes = shapesSVG(null);
     const dims = S.dims ? S.shapes.filter(s => s.kind !== "item").map(s => dimsSVG(s, false)).join("") : "";
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WD} ${H}" width="${WD}" height="${H}" font-family="${FONT}">` +
-      `<style>.sh *{vector-effect:non-scaling-stroke}.dash{stroke-dasharray:6 4}.cut{stroke-width:8px}</style><defs><clipPath id="c"><rect x="34" y="34" width="${WD - 68}" height="${HGT - 68}"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)">${shapes}</g><g>${dims}</g>${strip}</svg>`;
+      `<style>.sh *{vector-effect:non-scaling-stroke}.dash{stroke-dasharray:6 4}.cut{stroke-width:8px}</style><defs><clipPath id="c"><rect x="34" y="34" width="${WD - 68}" height="${HGT - 68}"/></clipPath></defs>${gridSVG()}<g clip-path="url(#c)"><g opacity="0.3">${shapesSVG(null, S.other)}</g>${shapes}</g><g>${dims}</g>${strip}</svg>`;
   }
   const esc = t => t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const fileName = ext => (($("planName").value.trim() || "My House Plan").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").toLowerCase() || "plan") + "." + ext;
