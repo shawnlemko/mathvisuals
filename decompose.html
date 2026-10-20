@@ -147,7 +147,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 <style>
 /* Decomposing Numbers (grade 1): a whole in a grey box on top, two parts under it, as in Shawn's sketch.
    Box widths follow the size of each number, so a part that is too small leaves a gap and too big sticks out.
-   "Picture it" fills every box with unit cubes (and tens rods for Up to 20 and 100). */
+   "Picture it" fills every box with ten-frames of cubes in groups of 5 (tens as rods for Up to 100). */
 .opts { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
 .opt { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
 .seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
@@ -185,6 +185,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .cube { stroke: var(--ink); stroke-width: 0.07; }
 .cube.w { fill: var(--pt); } .cube.a { fill: var(--green); } .cube.b { fill: var(--orange); }
 .rod-line { stroke: var(--ink); stroke-width: 0.05; opacity: 0.6; }
+.frame { fill: var(--sheet); stroke: var(--ink); stroke-width: 0.1; }
+.slot { fill: none; stroke: var(--grid-major); stroke-width: 0.06; stroke-dasharray: 0.15 0.12; }
 
 .panel .card { display: flex; flex-direction: column; gap: 12px; }
 #make { font-size: 1.6rem; min-height: 68px; background: var(--green); color: var(--sheet); border-color: var(--green); font-family: var(--font-display); font-weight: 800; }
@@ -256,40 +258,56 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const st = { range: 10, pic: false, given: null, last: 0, ways: [], stars: 0, done: false };
 
   const num = inp => (inp.value === "" ? null : +inp.value);
-  const rods = () => st.range >= 20; // Up to 5 and 10 use cubes only; 20 and 100 bundle tens into rods.
   const rand = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
 
-  // Block footprint in cube units. Cubes only: rows of 5, like a ten-frame. With rods: rods, then cubes in columns of 5.
-  const G = 0.15, RG = 0.3, GG = 0.7;
-  function foot(n) {
-    if (!n) return { w: 0, h: 0 };
-    if (!rods()) { const c = Math.min(n, 5), r = Math.ceil(n / 5); return { w: c + (c - 1) * G, h: r + (r - 1) * G }; }
-    const t = Math.floor(n / 10), u = n % 10, uc = Math.ceil(u / 5), ur = Math.min(u, 5);
-    const w = (t ? t + (t - 1) * RG : 0) + (t && uc ? GG : 0) + (uc ? uc + (uc - 1) * G : 0);
-    return { w, h: t ? 10 : ur + (ur - 1) * G };
+  // Blocks, in cube units, so every amount can be read at a glance in groups of 5.
+  // Ones always sit in a ten-frame standing up (2 columns of 5; a five-frame for Up to 5), filled down the
+  // left column first, with empty slots showing what is missing. Up to 20 shows each ten as a full ten-frame,
+  // Up to 100 as a rod split into two 5s. Tens come first, then the ones.
+  const G = 0.15, P = 0.18, FG = 0.5, RG = 0.35, MID = 0.35;
+  const FH = 5 + 4 * G + 2 * P;                      // frame height
+  const fw = cols => cols + (cols - 1) * G + 2 * P;  // frame width
+  function plan(n) {
+    const items = [];
+    let x = 0, h = 0;
+    const frame = (fill, cols) => { items.push({ k: "frame", x, fill, cols }); x += fw(cols) + FG; h = Math.max(h, FH); };
+    if (st.range === 100) {
+      const t = Math.floor(n / 10), u = n % 10;
+      for (let i = 0; i < t; i++) { items.push({ k: "rod", x }); x += 1 + RG; }
+      h = t ? 10 + MID : 0;
+      if (t && u) x += FG - RG;
+      if (u) frame(u, 2);
+    } else {
+      const cap = st.range === 5 ? 5 : 10, cols = cap / 5;
+      for (let left = n; left > 0; left -= cap) frame(Math.min(left, cap), cols);
+    }
+    x -= items.length && items[items.length - 1].k === "frame" ? FG : RG;
+    return { w: Math.max(x, 0), h, items };
   }
+  function foot(n) { if (!n) return { w: 0, h: 0 }; const p = plan(n); return { w: p.w, h: p.h }; }
   function drawBlocks(svg, n, cls, s) {
     svg.replaceChildren();
     if (!st.pic || !n || !s) { svg.style.display = "none"; return; }
-    const f = foot(n);
+    const pl = plan(n);
     svg.style.display = "";
-    svg.setAttribute("viewBox", `-0.1 -0.1 ${f.w + 0.2} ${f.h + 0.2}`);
-    svg.style.width = (f.w + 0.2) * s + "px"; svg.style.height = (f.h + 0.2) * s + "px";
+    svg.setAttribute("viewBox", `-0.1 -0.1 ${pl.w + 0.2} ${pl.h + 0.2}`);
+    svg.style.width = (pl.w + 0.2) * s + "px"; svg.style.height = (pl.h + 0.2) * s + "px";
     const add = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); };
-    const cube = (x, y) => add("rect", { class: `cube ${cls}`, x, y, width: 1, height: 1, rx: 0.12 });
-    let x = 0;
-    if (rods()) {
-      const t = Math.floor(n / 10), u = n % 10;
-      for (let i = 0; i < t; i++) {
-        add("rect", { class: `cube ${cls}`, x, y: 0, width: 1, height: 10, rx: 0.12 });
-        for (let k = 1; k < 10; k++) add("line", { class: "rod-line", x1: x, x2: x + 1, y1: k, y2: k });
-        x += 1 + RG;
+    for (const it of pl.items) {
+      if (it.k === "rod") {
+        // Two solid halves of 5 with a small gap, so a ten reads as 5 and 5.
+        for (const y0 of [0, 5 + MID]) {
+          add("rect", { class: `cube ${cls}`, x: it.x, y: y0, width: 1, height: 5, rx: 0.12 });
+          for (let k = 1; k < 5; k++) add("line", { class: "rod-line", x1: it.x, x2: it.x + 1, y1: y0 + k, y2: y0 + k });
+        }
+      } else {
+        const y = pl.h - FH; // frames stand on the same floor as the rods
+        add("rect", { class: "frame", x: it.x, y, width: fw(it.cols), height: FH, rx: 0.2 });
+        for (let i = 0; i < it.cols * 5; i++) {
+          const cx = it.x + P + Math.floor(i / 5) * (1 + G), cy = y + P + (i % 5) * (1 + G);
+          add("rect", { class: i < it.fill ? `cube ${cls}` : "slot", x: cx, y: cy, width: 1, height: 1, rx: 0.12 });
+        }
       }
-      if (t && u) x += GG - RG;
-      const top = t ? 10 - Math.min(u, 5) - (Math.min(u, 5) - 1) * G : 0; // cubes sit on the same floor as the rods
-      for (let i = 0; i < u; i++) cube(x + Math.floor(i / 5) * (1 + G), top + (i % 5) * (1 + G));
-    } else {
-      for (let i = 0; i < n; i++) cube((i % 5) * (1 + G), Math.floor(i / 5) * (1 + G));
     }
   }
 
