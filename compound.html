@@ -146,15 +146,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
-/* Composite Shapes: one shape stacked on another. Surface Area / Volume switch at the top; the calculation
-   runs across the bottom, and clicking any part of it lights up the part of the solid it calculates.
+/* Composite Shapes: one shape stacked on another. Three columns: the calculation on the left (reading straight down,
+   one block per shape), the picture in the middle, and the controls stacked on the right (Surface Area / Volume, then
+   the Top and Bottom shapes). Clicking any part of the calculation lights up the part of the solid it calculates.
    Flat faces where the shapes join are hidden (not counted); that step lifts the top shape to show them. */
 :root { --c-bot: #4f7fd9; --c-top: #9a63d6; --hl: #e08a00; --hide: #d23a3a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; } }
 :root[data-theme="dark"] { --c-bot: #7aa2ff; --c-top: #bb91f2; --hl: #ffb84d; --hide: #ff6b6b; }
 .wrap { max-width: 1500px; }
-.main { grid-template-columns: minmax(0, 1fr) minmax(0, 340px); }
-@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.main { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 260px); gap: 12px; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } .main > .board { order: 1; } .main > .panel { order: 2; } .main > .calc { order: 3; } }
+.panel { gap: 10px; }
 .board { padding: 0; overflow: hidden; position: relative; }
 #view { display: block; width: 100%; height: min(70vh, 720px); min-height: 360px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 #view.drag { cursor: grabbing; }
@@ -162,8 +164,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .turn { position: absolute; left: 14px; bottom: 10px; margin: 0; color: var(--muted); font-size: 0.95rem; pointer-events: none; }
 
 /* Surface Area / Volume switch */
-.master { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 14px; }
-.master button { min-height: 54px; min-width: 8.5em; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; border-radius: 10px; }
+.master { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 6px; background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 14px; }
+.master button { min-height: 50px; font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; border-radius: 10px; }
 .master button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 
 /* Shape pickers */
@@ -173,16 +175,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .pick .who { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; min-width: 0; display: inline-flex; align-items: center; gap: 8px; }
 .pick .who i, .step i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; flex: none; }
 .pick select { flex: 1 1 0; min-width: 0; min-height: 40px; font: inherit; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 6px 4px 6px 8px; }
-.dims { display: flex; flex-wrap: wrap; gap: 6px 12px; width: 100%; }
-.dim { display: inline-flex; align-items: center; gap: 4px; }
+.dims { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.dim { display: flex; align-items: center; gap: 6px; }
+.dim .dk { margin-right: auto; }
 .dim .dk { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 1.4rem; min-width: 1em; text-align: center; }
 .dim button { width: 34px; height: 34px; padding: 0; font-size: 1.4rem; line-height: 1; }
 .dim output { font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; min-width: 1.6em; text-align: center; }
 
 /* Calculation: one line per step, one column per face, so every number sits under its formula. */
-.calc { margin-top: 12px; padding: 8px 14px; overflow-x: auto; --fs: 1.3rem; }
-.eqn { display: grid; justify-content: start; align-items: center; row-gap: 2px; font-family: var(--font-num); font-size: var(--fs); }
-.c { font: inherit; color: var(--ink); background: none; border: 2px solid transparent; border-radius: 8px; padding: 1px 6px; text-align: center; white-space: nowrap; line-height: 1.38; }
+.calc { padding: 10px 12px; display: flex; flex-direction: column; overflow: hidden; --fs: 1.4rem; }
+.eqn { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; justify-content: start; align-content: start; align-items: center; row-gap: 2px; font-family: var(--font-num); font-size: var(--fs); }
+.blk { display: grid; grid-template-rows: subgrid; justify-content: start; align-items: center; }
+.c { font: inherit; color: var(--ink); background: none; border: 2px solid transparent; border-radius: 8px; padding: 1px 4px; text-align: center; white-space: nowrap; line-height: 1.38; }
 button.c { cursor: pointer; }
 button.c:hover { border-color: var(--grid-major); }
 button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 22%, var(--sheet)); }
@@ -192,9 +196,12 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
 .c.hdr { border-bottom: 3px solid currentColor; border-radius: 8px 8px 0 0; }
 .c s { color: var(--hide); text-decoration-thickness: 3px; }
 .c .red { color: var(--hide); }
-.c.why { color: var(--hide); font-family: var(--font-body); font-weight: 700; font-size: 0.75em; text-align: left; padding-left: 14px; white-space: normal; max-width: 13em; line-height: 1.2; }
+.c.why { color: var(--hide); font-family: var(--font-body); font-weight: 700; font-size: 0.8em; text-align: left; padding-left: 6px; white-space: normal; line-height: 1.2; }
+.c.gap { margin-top: 12px; }
 .c.tot { text-align: left; padding-left: 14px; }
+.c.sub { text-align: left; }
 .c.tot b { background: var(--chip); border-radius: 8px; padding: 0 10px; font-size: 1.2em; }
+.c.why, .c.warn { width: 0; min-width: 100%; }   /* a long note wraps instead of widening the columns */
 .c.warn { color: var(--warn); font-family: var(--font-body); font-weight: 700; text-align: left; white-space: normal; }
 .c.help { display: inline-flex; align-items: center; gap: 8px; border-color: var(--grid); }
 .c.help i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
@@ -231,26 +238,26 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Composite Shapes</h1></div>
-    <div class="master" role="group" aria-label="Surface area or volume">
-      <button type="button" data-mode="sa" aria-pressed="true">Surface Area</button>
-      <button type="button" data-mode="vol" aria-pressed="false">Volume</button>
-    </div>
   </header>
   <div class="main">
+    <div class="card calc" id="calc" aria-live="polite"><div class="eqn" id="eqn"></div>
+      <div class="stepbar" id="stepbar">
+        <button type="button" id="back">◀ Back</button>
+        <button type="button" id="next">Next step ▶</button>
+        <button type="button" id="all">Show all</button>
+      </div>
+    </div>
     <div class="board"><canvas id="view" role="img" aria-label="Composite shape. Drag to turn it."></canvas><p class="turn">Drag to turn</p>
       <button type="button" class="py-btn" id="py-btn" aria-pressed="false" hidden>Show Pythagoras</button><div class="py" id="py" hidden></div></div>
     <div class="panel">
+      <div class="master" role="group" aria-label="Surface area or volume">
+        <button type="button" data-mode="sa" aria-pressed="true">Surface Area</button>
+        <button type="button" data-mode="vol" aria-pressed="false">Volume</button>
+      </div>
       <div class="card shapes">
         <div class="pick"><span class="who"><i style="background:var(--c-top)"></i>Top</span><select id="sel-top" aria-label="Top shape"></select><div class="dims" id="dims-top"></div></div>
         <div class="pick"><span class="who"><i style="background:var(--c-bot)"></i>Bottom</span><select id="sel-bot" aria-label="Bottom shape"></select><div class="dims" id="dims-bot"></div></div>
       </div>
-    </div>
-  </div>
-  <div class="card calc" id="calc" aria-live="polite"><div class="eqn" id="eqn"></div>
-    <div class="stepbar" id="stepbar">
-      <button type="button" id="back">◀ Back</button>
-      <button type="button" id="next">Next step ▶</button>
-      <button type="button" id="all">Show all</button>
     </div>
   </div>
 </div>
@@ -401,12 +408,15 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     }
     return o;
   }
-  // The calculation is written the way it is on the board, in one line per step:
-  //   SA(total) = SA(cone) + SA(cylinder)
-  //             = (πrs + πr²) + (πr² + πr² + 2πrh)      formulas, one column per face
-  //             = (πrs + π̶r̶²) + (π̶r̶² + πr² + 2πrh)      covered faces struck out in red, and why
-  //             = (3.14 × 3 × 5) + (3.14 × 3² + ...)    numbers under each formula
-  //             = (47.1) + (28.26 + 94.2)  = 169.56     values, then the total
+  // The calculation is written the way it is on the board, one line per step, straight down:
+  //   SA(total)    = SA(cone) + SA(cylinder)
+  //   SA(cone)     = πrs + πr²                 formulas, one column per face
+  //                = πrs + π̶r̶²                 covered faces struck out in red, and why
+  //                = 3.14 × 3 × 5             numbers under each formula
+  //                = 47.1                     values
+  //   SA(cylinder) = ...                      the same for the other shape
+  //   SA(total)    = 47.1 + 122.46
+  //                = 169.56 units²
   // Every cell is a button; clicking it lights up the face (or solid) that column calculates.
   const SHORT = { cyl: "cylinder", cone: "cone", prism: "prism", sqpyr: "pyramid", tripyr: "pyramid", sphere: "sphere", hemi: "hemisphere" };
   const NAME = role => TYPES[shapes[role].type].name;
@@ -450,11 +460,11 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     }
   }
   // Pythagoras, worked out in the picture: the base triangle's height t (triangular pyramid), and the slant height s
-  // (Surface Area, when h is given) or the vertical height h (Volume, when s is given). Each is one block of rows.
+  // (when h is given) or the vertical height h (when s is given), in either mode. Each is one block of rows.
   function pyth(role) {
     const sh = shapes[role];
     if (!sh || !POINT[sh.type]) return null;
-    const d = sh.d, o = derived(sh), sa = mode === "sa", blocks = [];
+    const d = sh.d, o = derived(sh), blocks = [];
     const root = (lhs, form, a, b, minus, res) => {
       const op = minus ? "−" : "+";
       return [[lhs, `√(${form})`], ["", `√(${sq(a)} ${op} ${sq(b)})`], ["", `√(${f(a * a)} ${op} ${f(b * b)})`], ["", `<b>${f(res)}</b>`]];
@@ -463,8 +473,9 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     let tri = false, slant = null;
     if (sh.type === "tripyr") { tri = true; blocks.push(root("t", `b² − (${fr("b", 2)})²`, d.b, d.b / 2, true, o.t)); }
     const first = sh.type === "tripyr" ? [[fr("t", 3), `${fr(f(o.t), 3)} = <b>${f(o.in)}</b>`]] : [];
-    if (sa && !usesS(sh)) { slant = "s"; blocks.push([...first, ...root("s", `h² + ${legSq}`, o.h, o.leg, false, o.s)]); }
-    if (!sa && usesS(sh)) { slant = "h"; blocks.push([...first, ...root("h", `s² − ${legSq}`, o.s, o.leg, true, o.h)]); }
+    // Always the one that was not given, in both Surface Area and Volume (Shawn 2026-10-20).
+    if (!usesS(sh)) { slant = "s"; blocks.push([...first, ...root("s", `h² + ${legSq}`, o.h, o.leg, false, o.s)]); }
+    else { slant = "h"; blocks.push([...first, ...root("h", `s² − ${legSq}`, o.s, o.leg, true, o.h)]); }
     return blocks.length ? { role, blocks, tri, slant } : null;
   }
   const pyAll = () => ["top", "bot"].map(pyth).filter(Boolean);
@@ -511,73 +522,81 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     const totalItem = item({ focus: null, ...lit(all) });
     const total = r2(all.filter(counted).reduce((m, t) => m + value(t), 0));
 
-    // Columns: label | = | ( t + t ) | + | ( t + t + t ) | end
+    // Columns: label | = | t | + | t | + | t | + | t | end. Each shape gets its own block of lines, one under the other,
+    // so the work reads straight down and fits in a column beside the picture.
+    const most = Math.max(...groups.map(g => g.terms.length), solo ? 1 : groups.length);
     let n = 0;
-    const LBL = ++n, EQ = ++n;
-    groups.forEach((g, gi) => {
-      if (gi) g.op = ++n;
-      const paren = !solo && g.terms.length > 1;
-      if (paren) g.open = ++n;
-      g.terms.forEach((t, ti) => { if (ti) t.op = ++n; t.col = ++n; });
-      if (paren) g.close = ++n;
-      g.first = g.open || g.terms[0].col; g.last = g.close || g.terms[g.terms.length - 1].col;
-    });
+    const LBL = ++n, EQ = ++n, TC = [], OPC = [];
+    for (let i = 0; i < most; i++) { if (i) OPC[i] = ++n; TC[i] = ++n; }
     const END = ++n;
+    groups.forEach(g => g.terms.forEach((t, ti) => { t.col = TC[ti]; t.op = OPC[ti]; }));
 
     const cells = [];
-    let row = 0;
-    const cell = (col, html, x = {}) => cells.push({ row, col, html, ...x });
-    const frame = (show) => {   // "=", brackets and + signs, skipping signs next to blank cells
+    let row = 0, step = 0, blk = 0;
+    const cell = (col, html, x = {}) => cells.push({ row, step, blk, col, html, ...x });
+    const line = (newStep = true, gap = false) => { row++; if (newStep) step++; if (gap) { blk++; cells.push({ row, step, gap: true }); } };
+    const pluses = (terms, show) => {   // "=" and the + signs, skipping signs next to blank cells
       cell(EQ, "=", { cls: "op" });
-      groups.forEach((g, gi) => {
-        if (gi) cell(g.op, "+", { cls: "op" });
-        if (g.open) { cell(g.open, "(", { cls: "op" }); cell(g.close, ")", { cls: "op" }); }
-        let seen = false;
-        g.terms.forEach(t => { if (!show(t)) return; if (seen) cell(t.op, "+", { cls: "op" }); seen = true; });
-      });
+      let seen = false;
+      terms.forEach(t => { if (!show(t)) return; if (seen) cell(t.op, "+", { cls: "op" }); seen = true; });
     };
     const name = g => `${P}(${shortName(g.role)})`;
+    const units = sa ? "units²" : "units³";
 
-    // 1. SA(total) = SA(cone) + SA(cylinder)   (one shape: SA(cone) = its formulas)
+    // SA(total) = SA(cone) + SA(cylinder)
     if (!solo) {
-      row++;
+      line();
       cell(LBL, `${P}(total)`, { item: totalItem, cls: "lbl" });
       cell(EQ, "=", { cls: "op" });
-      groups.forEach((g, gi) => {
-        if (gi) cell(g.op, "+", { cls: "op" });
-        cell(g.first, name(g), { item: g.item, span: g.last - g.first + 1, cls: "hdr " + g.role });
-      });
+      groups.forEach((g, gi) => { if (gi) cell(OPC[gi], "+", { cls: "op" }); cell(TC[gi], name(g), { item: g.item, cls: "hdr " + g.role }); });
     }
-    // 2. formulas
-    row++; frame(() => true);
-    if (solo) cell(LBL, name(groups[0]), { item: totalItem, cls: "lbl hdr " + groups[0].role });
-    groups.forEach(g => g.terms.forEach(t => cell(t.col, t.sym, { item: t.item, cls: "sym" })));
-    // 3. cancel what is covered
-    if (J.warn) {
-      row++;
-      cell(EQ, "", {}); cell(groups[0].first, "The top hangs over the edge. Make the top smaller or the bottom bigger.", { span: END - groups[0].first + 1, cls: "warn" });
-    } else if (J.hidden) {
-      row++; frame(() => true);
-      groups.forEach(g => g.terms.forEach(t => {
-        const html = t.cancel === "full" ? `<s>${t.sym}</s>` : t.cancel === "part" ? `${t.sym} <span class="red">− ${t.minus.sym}</span>` : t.sym;
-        cell(t.col, html, { item: t.item2, cls: "sym" + (t.cancel ? " cut" : "") });
-      }));
-      cell(END, J.why, { item: item(J.hidden), cls: "why" });
-    }
-    if (!J.warn) {
-      // 4. numbers under each formula
-      row++; frame(counted);
-      groups.forEach(g => g.terms.forEach(t => { if (counted(t)) cell(t.col, t.cancel === "part" ? `${t.sub} − ${t.minus.sub}` : t.sub, { item: t.item2, cls: "num" }); }));
-      // 5. values and the total
-      row++; frame(counted);
-      const units = sa ? "units²" : "units³", left = all.filter(counted);
-      if (left.length === 1) cell(left[0].col, `<b>${f(total)}</b> ${units}`, { item: totalItem, cls: "tot", span: END - left[0].col + 1 });
+    // One block per shape: formulas, covered faces struck out, numbers, values.
+    groups.forEach((g, gi) => {
+      line(true, !solo);
+      cell(LBL, name(g), { item: g.item, cls: "lbl hdr " + g.role });
+      pluses(g.terms, () => true);
+      g.terms.forEach(t => cell(t.col, t.sym, { item: t.item, cls: "sym" }));
+      if (J.warn) {
+        if (gi === groups.length - 1) { line(); cell(EQ, ""); cell(TC[0], "The top hangs over the edge. Make the top smaller or the bottom bigger.", { span: END - TC[0] + 1, cls: "warn" }); }
+        return;
+      }
+      if (J.hidden && g.terms.some(t => t.cancel)) {
+        line();
+        pluses(g.terms, () => true);
+        g.terms.forEach(t => {
+          const html = t.cancel === "full" ? `<s>${t.sym}</s>` : t.cancel === "part" ? `${t.sym} <span class="red">− ${t.minus.sym}</span>` : t.sym;
+          cell(t.col, html, { item: t.item2, cls: "sym" + (t.cancel ? " cut" : "") });
+        });
+        line(false);
+        cell(TC[0], J.why, { item: item(J.hidden), span: END - TC[0] + 1, cls: "why" });
+      }
+      const left = g.terms.filter(counted);
+      line();
+      pluses(g.terms, counted);
+      left.forEach(t => cell(t.col, t.cancel === "part" ? `${t.sub} − ${t.minus.sub}` : t.sub, { item: t.item2, cls: "num" }));
+      line();
+      pluses(g.terms, counted);
+      const sub = r2(left.reduce((m, t) => m + value(t), 0));
+      if (solo && left.length === 1) cell(left[0].col, `<b>${f(sub)}</b> ${units}`, { item: totalItem, cls: "tot", span: END - left[0].col + 1 });
       else {
         left.forEach(t => cell(t.col, f(value(t)), { item: t.item2, cls: "val" }));
-        cell(END, `= <b>${f(total)}</b> ${units}`, { item: totalItem, cls: "tot" });
+        if (solo) cell(END, `= <b>${f(sub)}</b> ${units}`, { item: totalItem, cls: "tot" });
+        else if (left.length > 1) { line(false); cell(EQ, "=", { cls: "op" }); cell(TC[0], f(sub), { item: g.item, cls: "sub", span: END - TC[0] + 1 }); }
       }
+      g.sub = sub;
+    });
+    // SA(total) = 47.1 + 122.46
+    //           = 169.56 units²
+    if (!solo && !J.warn) {
+      line(true, true);
+      cell(LBL, `${P}(total)`, { item: totalItem, cls: "lbl" });
+      cell(EQ, "=", { cls: "op" });
+      groups.forEach((g, gi) => { if (gi) cell(OPC[gi], "+", { cls: "op" }); cell(TC[gi], f(g.sub), { item: g.item, cls: "val" }); });
+      line(false);
+      cell(EQ, "=", { cls: "op" });
+      cell(TC[0], `<b>${f(total)}</b> ${units}`, { item: totalItem, cls: "tot", span: END - TC[0] + 1 });
     }
-    return { cells, cols: n, rows: row };
+    return { cells, cols: n, rows: step };
   }
 
   // ---------- drawing ----------
@@ -626,11 +645,14 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     let R = 0.5;
     BOT.forEach(fc => fc.P.forEach(p => { R = Math.max(R, Math.hypot(p[0], p[1] - cy, p[2])); }));
     TOP.forEach(fc => fc.P.forEach(p => { R = Math.max(R, Math.hypot(p[0], p[1] + lift - cy, p[2])); }));
-    // The Pythagoras card sits in the top-left corner; move the solid over to the space beside it.
-    let ox = pyOn && !pyEl.hidden ? pyEl.offsetWidth + 16 : 0;
+    // The Pythagoras card sits in the top-left corner; move the solid beside it or under it, whichever leaves it bigger.
+    const card = pyOn && !pyEl.hidden;
+    let ox = card ? pyEl.offsetWidth + 16 : 0, oy = card ? pyEl.offsetTop + pyEl.offsetHeight + 8 : 0;
     if (ox > W * 0.62) ox = 0;
-    const k = Math.min((W - ox) * 0.34, H * 0.43) / R, cx = ox + (W - ox) / 2;
-    const scr = p => { const q = rot([p[0], p[1] - cy, p[2]]); return [cx + q[0] * k, H / 2 - q[1] * k]; };
+    const kSide = Math.min((W - ox) * 0.34, H * 0.43), kUnder = Math.min(W * 0.34, (H - oy) * 0.43);
+    if (kUnder > kSide) ox = 0; else oy = 0;
+    const k = Math.max(kSide, kUnder) / R, cx = ox + (W - ox) / 2, my = oy + (H - oy) / 2;
+    const scr = p => { const q = rot([p[0], p[1] - cy, p[2]]); return [cx + q[0] * k, my - q[1] * k]; };
     const depth = p => rot(p)[2];
     const lists = { bot: BOT, top: TOP };
     for (const role of ["bot", "top"]) {
@@ -846,15 +868,32 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
     eqEl.innerHTML = "";
     $("stepbar").hidden = !rows;
     if (!rows) { eqEl.style.gridTemplateColumns = ""; eqEl.innerHTML = `<p class="empty">Pick a shape for the top, the bottom, or both.</p>`; return; }
-    eqEl.style.gridTemplateColumns = `repeat(${C.cols}, auto)`;
+    // Label and "=" are columns of the whole calculation, so every "=" lines up. Each block (a shape, or the total)
+    // has its own columns for the faces, so a number sits under its own formula without spreading the other blocks.
+    eqEl.style.gridTemplateColumns = "auto auto auto";
+    const gaps = new Set(C.cells.filter(c => c.gap).map(c => c.row));   // a little space above each shape's block
+    const blocks = {};
     C.cells.forEach(c => {
+      if (c.gap || c.col <= 2) return;
+      const b = blocks[c.blk] || (blocks[c.blk] = { from: c.row, to: c.row });
+      b.from = Math.min(b.from, c.row); b.to = Math.max(b.to, c.row);
+    });
+    Object.entries(blocks).forEach(([k, b]) => {
+      const e = document.createElement("div");
+      e.className = "blk";
+      e.style.gridColumn = "3"; e.style.gridRow = `${b.from} / ${b.to + 1}`;
+      e.style.gridTemplateColumns = `repeat(${C.cols - 2}, auto)`;
+      eqEl.appendChild(e); b.el = e;
+    });
+    C.cells.forEach(c => {
+      if (c.gap) return;
       const e = document.createElement(c.item === undefined ? "span" : "button");
       if (c.item !== undefined) { e.type = "button"; e.dataset.item = c.item; }
-      e.className = "c " + (c.cls || "");
-      e.dataset.row = c.row;
-      e.style.gridRow = c.row; e.style.gridColumn = `${c.col} / span ${c.span || 1}`;
+      e.className = "c " + (c.cls || "") + (gaps.has(c.row) ? " gap" : "");
+      e.dataset.row = c.step;
       e.innerHTML = c.html;
-      eqEl.appendChild(e);
+      if (c.col <= 2) { e.style.gridRow = c.row; e.style.gridColumn = `${c.col} / span ${c.span || 1}`; eqEl.appendChild(e); }
+      else { const b = blocks[c.blk]; e.style.gridRow = c.row - b.from + 1; e.style.gridColumn = `${c.col - 2} / span ${c.span || 1}`; b.el.appendChild(e); }
     });
     showRows();
     fitCalc();
@@ -875,11 +914,11 @@ button.c.on { border-color: var(--hl); background: color-mix(in srgb, var(--hl) 
   $("next").addEventListener("click", () => { shown = shown >= rows ? 1 : shown + 1; showRows(); });
   $("back").addEventListener("click", () => { shown--; showRows(); });
   $("all").addEventListener("click", () => { shown = rows; showRows(); });
-  // Shrink the writing until the longest line fits across the screen.
+  // Shrink the writing until the longest line fits across its column and every line fits above the step buttons.
   function fitCalc() {
-    let fs = 1.3;
+    let fs = 1.6;
     calcEl.style.setProperty("--fs", fs + "rem");
-    while (calcEl.scrollWidth > calcEl.clientWidth + 1 && fs > 0.75) { fs -= 0.05; calcEl.style.setProperty("--fs", fs.toFixed(2) + "rem"); }
+    while ((eqEl.scrollWidth > eqEl.clientWidth + 1 || eqEl.scrollHeight > eqEl.clientHeight + 1) && fs > 0.75) { fs -= 0.05; calcEl.style.setProperty("--fs", fs.toFixed(2) + "rem"); }
   }
   calcEl.addEventListener("click", ev => { const b = ev.target.closest("[data-item]"); if (b) select(+b.dataset.item); });
 
