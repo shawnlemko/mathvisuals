@@ -249,10 +249,15 @@ i { font-family: var(--font-display); font-weight: 800; font-style: italic; }
 .acell { display: grid; place-items: center; text-align: center; min-width: 4.5em; min-height: 3.2em; padding: 6px 10px; border: 2px solid var(--k); border-radius: 8px; background: color-mix(in srgb, var(--k) 12%, var(--sheet)); }
 .acell small { display: block; font-size: 0.6em; color: var(--muted); font-weight: 500; }
 .acell.cut { opacity: 0.35; text-decoration: line-through; }
-.dist { display: flex; flex-direction: column; gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.2rem, 1.2vw + 0.6rem, 2rem); }
-.dtop { margin-bottom: 6px; }
-.drow { display: grid; grid-template-columns: auto auto auto; gap: 14px; justify-content: start; padding: 2px 10px; border-left: 4px solid var(--grid-major); }
-.drow.cut > span:last-child { text-decoration: line-through; opacity: 0.4; }
+.work { display: grid; grid-template-columns: auto auto auto auto; column-gap: 14px; row-gap: 2px; align-items: center; font-family: var(--font-num); font-weight: 700; font-size: clamp(1.15rem, 1.1vw + 0.6rem, 1.9rem); }
+.work > .wh { grid-column: 1 / -1; font-size: 0.8em; color: var(--muted); padding: 4px 0 6px; }
+.work > .wh b { font-family: var(--font-body); }
+.work > .wl { justify-self: end; white-space: nowrap; }
+.work > .wr { white-space: nowrap; }
+.work > .wn { font-family: var(--font-body); font-size: 0.6em; color: var(--muted); padding-left: 12px; border-left: 3px solid var(--grid-major); }
+.work > .wr.cut { justify-self: start; color: var(--muted); background: linear-gradient(transparent calc(50% - 2px), var(--orange) 0 calc(50% + 2px), transparent 0); }
+.work > .wn.cut { color: var(--orange); }
+.work > .new { color: var(--green); }
 .tiles { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .tgrp { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .tcount { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; min-width: 4.2em; color: var(--k); }
@@ -875,12 +880,20 @@ function genMult(ctx, useVars) {
       steps: [ST(`${coefH(ab)}${rad(radiH(p * q, vp))}`, "Multiply outside by outside, inside by inside.", lanes), ...rs.steps.slice(1)] };
   }
 }
-/* distributive property: each term of the first bracket times each term of the second, one line per product */
-function distH(A, B, cells, res, note) {
-  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"];
-  const top = `<div class="dtop">(${A.map((t, i) => C("c" + cA[i % 2], (i && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})(${B.map((t, j) => C("c" + cB[j % 2], (j && t.c > 0 ? "+ " : "") + tH(t))).join(" ")})</div>`;
-  const rows = A.map((a, i) => B.map((b, j) => { const c = cells[i][j]; return `<div class="drow ${c.s || ""}"><span>${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}</span><span>=</span><span>${c.sub ? c.sub.replace(/^\+/, "") + " = " : ""}${c.h.replace(/^\+/, "")}</span></div>`; }).join("")).join("");
-  return { t: "html", h: `<div class="dist">${top}${rows}</div>` + (res ? resH(res) : "") + (note ? `<p class="note">${note}</p>` : "") };
+/* vertical work: one line per step, = aligned, step name in the right column.
+   rows: { head } or { l, r, n, s } where s "cut" crosses a line out and "new" marks the line just added */
+function workH(rows) {
+  const h = rows.map(w => w.head ? `<div class="wh">${w.head}</div>` : `<span class="wl ${w.s || ""}">${w.l || ""}</span><span>=</span><span class="wr ${w.s || ""}">${w.r}</span><span class="wn ${w.s || ""}">${w.n || ""}</span>`).join("");
+  return { t: "html", h: `<div class="work">${h}</div>` };
+}
+/* product lines for (A)(B): First, Outside, Inside, Last for two binomials */
+function prodRows(A, B, cut) {
+  const tH = t => rxSignedH(t).replace(/^\+/, ""), cA = ["b", "p"], cB = ["o", "g"], foil = [["First", "Outside"], ["Inside", "Last"]];
+  return A.flatMap((a, i) => B.map((b, j) => {
+    const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r), cancel = cut && cut(i, j);
+    const n = A.length === 2 && B.length === 2 ? foil[i][j] : ["First term", "Second term", "Third term"][j];
+    return { l: `${C("c" + cA[i % 2], tH(a))} × ${C("c" + cB[j % 2], b.c < 0 ? `(${tH(b)})` : tH(b))}`, r: (raw.r !== sm.r ? tH(raw) + " = " : "") + tH(sm), n: cancel ? `${n}: cancels` : n, s: cancel ? "cut" : "" };
+  }));
 }
 function genDist() {
   for (;;) {
@@ -896,13 +909,16 @@ function genDist() {
     if (A.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1) || B.some(t => t.r !== 1 && splitRoot(t.r, 2)[0] > 1)) continue;
     const prods = rxMul(A, B), fin = rxCombine(prods);
     if (!fin.length || (form === "mono" && A[0].r === B[1].r && B[1].r === 1)) continue;
-    const cells = A.map(a => B.map(b => { const raw = { c: a.c * b.c, r: a.r * b.r }, sm = rx(raw.c, raw.r); return { h: rxSignedH(sm), sub: raw.r !== sm.r ? rxSignedH(raw) : "", k: sm.r === 1 ? "p" : "b" }; }));
     const sumOpp = prods.length === 4 && prods[1].r === prods[2].r && prods[1].c === -prods[2].c && prods[1].r !== 1;
-    const cut = cells.map((row, i) => row.map((c, j) => sumOpp && i + j === 1 ? { ...c, s: "cut" } : c));
-    const area = cs => distH(A, B, cs);
-    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", area(cells)),
-      ST(rxH(prods), "Write all the products. Simplify each radical.", area(cells)),
-      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : "Combine like terms.", distH(A, B, cut, rxH(fin)))];
+    const head = { head: `${qh}${form === "sq" ? ` = ${grp(A)}${grp(A)}` : ""}` };
+    const work = [head, ...prodRows(A, B)];
+    const last = [head, ...prodRows(A, B, (i, j) => sumOpp && i + j === 1)];
+    if (sumOpp) last.push({ l: rxH([prods[1], prods[2]]), r: "0", n: "Opposites cancel" });
+    const left = sumOpp ? [prods[0], prods[3]] : prods;
+    if (rxH(left) !== rxH(fin)) last.push({ l: rxH(left), r: C("res", rxH(fin)), n: "Combine like terms", s: "new" });
+    const steps = [ST("", "Distribute: multiply each term in the first bracket by each term in the second.", workH(work)),
+      ST(rxH(prods), "Write all the products. Simplify each radical.", workH(work)),
+      ST(C("res", rxH(fin)), sumOpp ? "The middle terms are opposites: they cancel. Combine what is left." : rxH(prods) === rxH(fin) ? "No like terms to combine." : "Combine like terms.", workH(last))];
     return { ask: "Expand and simplify.", q: qh, a: rxT(fin), kind: "rad", val: () => rxVal(fin), hint: "Multiply every term by every term, simplify each radical, then combine like terms.", steps };
   }
 }
@@ -950,13 +966,21 @@ function genRatBin() {
     if (d < 0) { d = -d; top = top.map(t => ({ c: -t.c, r: t.r })); }
     if (top.length > 3) continue;
     const topH = rxH(top), fin = d === 1 ? topH : fr(topH, d), finT = d === 1 ? rxT(top) : `(${rxT(top)})/${d}`;
-    const cells = [den, conj].length && den.map((a, i) => conj.map((b, j) => { const sm = rx(a.c * b.c, a.r * b.r); return { h: rxSignedH(sm), k: sm.r === 1 ? "p" : "b", s: i !== j ? "cut" : "" }; }));
-    const area = distH(den, conj, cells, M(D), "The middle terms are opposites, so the radicals cancel.");
-    const rawTop = rxCombine(rxMul(numer, conj));
+    const bp = rxMul(den, conj), opp = [bp[1], bp[2]], left = [bp[0], bp[3]];
+    const pr = X => X.length > 1 ? `(${rxH(X)})` : rxH(X);
+    const topE = rxH(numer) === "1" ? rxH(conj) : `${rxH(numer)}${pr(conj)}`, botE = `${pr(den)}${pr(conj)}`;
+    const bHead = { head: `<b>Bottom:</b> ${botE}` }, cutRows = prodRows(den, conj, (i, j) => i !== j);
+    const oppRow = s => ({ l: rxH(opp), r: "0", n: "Opposites cancel", s });
+    const rawTop = rxMul(numer, conj), topC = rxCombine(rawTop);
+    const topWork = [{ head: `<b>Top:</b> ${topE}` }, ...prodRows(numer, conj)];
+    if (topC.length < rawTop.length) topWork.push({ l: rxH(rawTop), r: rxH(topC), n: "Combine like terms", s: "new" });
+    const topShow = topC.length < rawTop.length ? topC : rawTop;
     const steps = [ST(`${fr(rxH(numer), rxH(den))} × ${fr(C("cg", rxH(conj)), C("cg", rxH(conj)))}`, `Multiply the top and bottom by the conjugate ${rxH(conj)} (change the sign between the terms).`, null),
-      ST(fr(`${rxH(numer)}(${rxH(conj)})`, M(D)), "Bottom: the conjugates multiply to a whole number.", area),
-      ST(fr(rxH(rawTop), M(D)), "Top: distribute.", area)];
-    if (g > 1 || D < 0 || d === 1) steps.push(ST(C("res", fin), g > 1 ? `Divide every term by ${D < 0 ? -g : g}.` : D < 0 ? "Move the negative to the top." : "Simplify.", null)); else steps[2].e = C("res", fin);
+      ST(fr(topE, botE), "Bottom: multiply each term by each term.", workH([bHead, ...prodRows(den, conj)])),
+      ST(fr(topE, botE), "The middle terms are opposites, so they cancel to 0.", workH([bHead, ...cutRows, oppRow("new")])),
+      ST(fr(topE, M(D)), `Combine what is left: ${rxH(left)} = ${M(D)}. No radical left in the bottom.`, workH([bHead, ...cutRows, oppRow(""), { l: rxH(left), r: M(D), n: "Combine", s: "new" }])),
+      ST(fr(rxH(topShow), M(D)), "Top: distribute.", workH(topWork))];
+    if (g > 1 || D < 0 || d === 1) steps.push(ST(C("res", fin), g > 1 ? `Divide every term by ${D < 0 ? -g : g}.` : D < 0 ? "Move the negative to the top." : "Simplify.", null)); else steps[steps.length - 1].e = C("res", fin);
     return { ask: "Rationalize the denominator and simplify.", q: fr(rxH(numer), rxH(den)), a: finT, kind: "rad", val: () => rxVal(numer) / rxVal(den), hint: `Multiply the top and bottom by the conjugate ${rxH(conj)}.`, steps };
   }
 }
