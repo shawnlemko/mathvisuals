@@ -608,21 +608,23 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   });
 
   // ---------- Practice ----------
-  // Cards: the fractions the question needs (in a random way up), one with a wrong number, one with units that don't belong.
+  // Cards (Shawn 2026-10-20): 4 choices for the next unit to cancel. The right fraction (a random way up), the same
+  // fraction with its numbers switched, with its units switched, and with a wrong number (1 hr = 100 min).
   let plv = 1, pq = null, chain = [], cards = [], temp = null, hintKey = null, done = false, answered = false;
   let tried = false, counted = false, busy = false, right = 0, total = 0, newIdx = -1, animPair = -1;
   const fb = $("#fb"), ansIn = $("#ans");
   function say(arr, cls) { fb.className = "say " + (cls || ""); fb.innerHTML = lines(arr); }
-  function makeCards(p) {
-    const used = new Set(p.fr.flatMap(f => [f.tu, f.bu]).filter(Boolean));
-    const good = p.fr.slice(1).map(f => ({ f: Math.random() < 0.5 ? flipF(f) : f }));
-    const src = pick(p.fr.slice(1)), big = src.tn === 1 ? "bn" : "tn";
-    const bad = Object.assign({}, src, { [big]: WRONG[src[big]] });
-    const other = pick(FACTS.filter(f => !used.has(f[0]) && !used.has(f[2])));
-    const odd = { tn: other[1], tu: other[2], bn: 1, bu: other[0] };
-    const all = [...good, { f: Math.random() < 0.5 ? flipF(bad) : bad, wrong: src }, { f: Math.random() < 0.5 ? flipF(odd) : odd }];
-    return shuffle(all).map((c, id) => Object.assign(c, { id, used: false }));
+  function makeCards() {
+    const nu = nextUnit(); if (!nu) return [];
+    const good = convFrac(nu.u, pq.path.find(([u]) => u === nu.u)[1], exps(chain)[nu.u]);
+    const d = Math.random() < 0.5 ? flipF(good) : good, big = d.tn === 1 ? "bn" : "tn";
+    const all = [{ f: d },
+      { f: { tn: d.bn, tu: d.tu, bn: d.tn, bu: d.bu }, wrong: good },
+      { f: { tn: d.tn, tu: d.bu, bn: d.bn, bu: d.tu }, wrong: good },
+      { f: Object.assign({}, d, { [big]: WRONG[d[big]] }), wrong: good }];
+    return shuffle(all).map((c, id) => Object.assign(c, { id: cardId++, used: false }));
   }
+  let cardId = 0;
   // The unit to get rid of next (in the example's order), and where it sits.
   function nextUnit() {
     const st = exps(chain);
@@ -648,7 +650,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   }
   function newQuestion() {
     clearTimers();
-    pq = gen(plv, pq); chain = [pq.fr[0]]; cards = makeCards(pq);
+    pq = gen(plv, pq); chain = [pq.fr[0]]; cards = makeCards();
     temp = null; hintKey = null; done = answered = tried = counted = busy = false; newIdx = animPair = -1;
     $("#anscard").hidden = true; ansIn.value = ""; ansIn.className = "";
     $("#given").textContent = qText(pq); $("#ansunit").textContent = goalTxt(pq);
@@ -720,6 +722,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       newIdx = chain.length - 1; animPair = pairsOf(chain).length - 1;
       const pr = pairsOf(chain).filter(x => x.b.startsWith(newIdx + ""));
       done = sameExps(exps(chain), pq.goal);
+      cards = makeCards();
       renderPractice();
       const cancelled = pr.map(x => `${b(label(x.u, 2), "k" + (x.c % 3))} cancels.`);
       if (done) {
@@ -793,9 +796,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       if (!nu) { done = true; renderPractice(); later(finish, 1300); return; }
       const w = pq.path.find(([u]) => u === nu.u)[1];
       const f = convFrac(nu.u, w, exps(chain)[nu.u]);
-      const card = cards.find(c => !c.used && !c.wrong && ((c.f.tu === f.tu && c.f.bu === f.bu) || (c.f.tu === f.bu && c.f.bu === f.tu)));
-      if (card) { card.f = f; card.used = true; }
-      chain.push(f); newIdx = chain.length - 1; animPair = pairsOf(chain).length - 1;
+      chain.push(f); cards = makeCards(); newIdx = chain.length - 1; animPair = pairsOf(chain).length - 1;
       const pr = pairsOf(chain).filter(x => x.b.startsWith(newIdx + ""));
       say(pr.map(x => `${b(label(x.u, 2), "k" + (x.c % 3))} cancels.`), "");
       renderPractice();
