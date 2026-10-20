@@ -167,6 +167,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .tabs button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; min-height: 50px; padding: 8px 14px; }
 .tabs button + button { border-left: 2px solid var(--grid-major); }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+#part { display: flex; }
+#part button { flex: 1; font-size: 1.3rem; }
+#part button[data-p="gcf"][aria-pressed="true"] { background: var(--green); }
+#part button[data-p="lcm"][aria-pressed="true"] { background: var(--orange); }
 .tabs button:disabled { color: var(--muted); opacity: 0.55; cursor: not-allowed; }
 
 .main { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
@@ -304,6 +308,13 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
   <div class="main">
     <div class="board"><svg id="svg" viewBox="0 0 1200 860" role="img" aria-label="GCF and LCM steps"></svg><div class="practice" id="prac" hidden></div></div>
     <div class="panel">
+      <section class="card" id="partCard" hidden>
+        <p class="label">Find</p>
+        <div class="tabs" id="part" role="group" aria-label="Find">
+          <button type="button" data-p="gcf" aria-pressed="true">GCF</button>
+          <button type="button" data-p="lcm" aria-pressed="false">LCM</button>
+        </div>
+      </section>
       <section class="card">
         <p class="label">Numbers</p>
         <div class="nums">
@@ -320,8 +331,8 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
       </section>
       <section class="card steps" id="stepsCard"><p class="label">Steps</p><ol id="say"></ol></section>
       <section class="card" id="ansCard">
-        <div class="arow"><span class="alab g">GCF</span><span class="aval" id="gcf"></span></div>
-        <div class="arow"><span class="alab l">LCM</span><span class="aval" id="lcm"></span></div>
+        <div class="arow" id="gcfRow"><span class="alab g">GCF</span><span class="aval" id="gcf"></span></div>
+        <div class="arow" id="lcmRow"><span class="alab l">LCM</span><span class="aval" id="lcm"></span></div>
         <button type="button" id="hide" aria-pressed="false">Hide answers</button>
       </section>
     </div>
@@ -334,6 +345,7 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg");
   const W = 1200, H = 860;
+  let logicPart = "gcf";
   let mode = "tree", nums = [], plan = null, step = 0, fwd = false;
   let hideAns = false, shown = { gcf: false, lcm: false };
 
@@ -596,16 +608,21 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     const pairsOf = v => { const ps = []; for (let d = 1; d * d <= v; d++) if (v % d === 0) ps.push([d, v / d]); return ps; };
     const PCOL = ["p2", "p3", "p5", "p7", "p11", "p13"];
     const both = n === 2 ? "both" : "all the";
+    // Shawn: GCF or LCM, one at a time (the switch in the panel). The other part's step numbers are Infinity.
     const steps = [{ say: () => `Start with ${list(ns)}.` }];
-    ns.forEach(v => steps.push({ say: () => `Factors of ${v}: ${m(pairsOf(v).map(([a, b]) => `${a} × ${b}`).join(", "))}` }));
-    const C = steps.length;
-    steps.push({ say: () => `Circle the factors in common: ${m(list(common))}` });
-    const G = steps.length;
-    steps.push({ say: () => `GCF: the greatest factor in common. ${m(`GCF = ${A("gcf", g)}`)}` });
-    const M = steps.length;
-    ns.forEach(v => steps.push({ say: () => `Count by ${v}s: ${m(skip(v, L))}` }));
-    const LC = steps.length;
-    steps.push({ say: () => `LCM: the first number in ${n === 2 ? "both lists" : "every list"}. ${m(`LCM = ${A("lcm", L)}`)}` });
+    let C = Infinity, G = Infinity, M = Infinity, LC = Infinity;
+    if (logicPart === "gcf") {
+      ns.forEach(v => steps.push({ say: () => `Factors of ${v}: ${m(pairsOf(v).map(([a, b]) => `${a} × ${b}`).join(", "))}` }));
+      C = steps.length;
+      steps.push({ say: () => `Circle the factors in common: ${m(list(common))}` });
+      G = steps.length;
+      steps.push({ say: () => `GCF: the greatest factor in common. ${m(`GCF = ${A("gcf", g)}`)}` });
+    } else {
+      M = steps.length;
+      ns.forEach(v => steps.push({ say: () => `Count by ${v}s: ${m(skip(v, L))}` }));
+      LC = steps.length;
+      steps.push({ say: () => `LCM: the first number in ${n === 2 ? "both lists" : "every list"}. ${m(`LCM = ${A("lcm", L)}`)}` });
+    }
 
     const BOT = 600; // rows above, coaching below
     function drawFactors(k) {
@@ -654,7 +671,7 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
       const rings = [];
       ns.forEach((v, r) => {
         const top = 10 + r * rowH, yHead = top + 20, yN = top + rowH - 50;
-        txt(`Count by ${v}s`, { class: "head", x: 24, y: yHead, "font-size": 30 }, svg, M);
+        txt(`Count by ${v}s`, { class: "head", x: 24, y: yHead, "font-size": 30 }, svg, 0);
         if (k < M + r) return;
         // Every multiple up to one past the LCM; a long list keeps the start, then …, the LCM and one more.
         const items = [];
@@ -679,16 +696,20 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
       if (lined && lcmX) for (let r = 1; r < rings.length; r++) el("line", { class: "lline", x1: lcmX, y1: rings[r - 1][1] + 6, x2: lcmX, y2: rings[r][0] - 6 }, svg, LC);
     }
     const coachAt = k => {
-      if (k === 0) return { q: `What pairs of numbers multiply to make ${ns[0]}?<small>Start with 1 × ${ns[0]}.</small>` };
-      if (k < C) return k < n ? { q: `Now find the factor pairs of ${ns[k]}.` } : { q: `Which factors are in ${both} lists?<small>Look for the greatest factor in common.</small>` };
-      if (k === C) return { a: `In common: <b>${list(common)}</b>`, q: "Which factor in common is the greatest?" };
-      if (k === G) return { q: `Now the LCM. Count by ${ns[0]}s.` };
+      if (logicPart === "gcf") {
+        if (k === 0) return { q: `What pairs of numbers multiply to make ${ns[0]}?<small>Start with 1 × ${ns[0]}.</small>` };
+        if (k < n) return { q: `Now find the factor pairs of ${ns[k]}.` };
+        if (k < C) return { q: `Which factors are in ${both} lists?<small>Look for the greatest factor in common.</small>` };
+        if (k === C) return { a: `In common: <b>${list(common)}</b>`, q: "Which factor in common is the greatest?" };
+        return {};
+      }
+      if (k === 0) return { q: `Count by ${ns[0]}s.<small>Add ${ns[0]} each time.</small>` };
       if (k < LC) return k - M < n - 1 ? { q: `Now count by ${ns[k - M + 1]}s.` } :
         { q: n === 2 ? "Look through both lists. What is the first number in both?" : "Look through all the lists. What is the first number in all of them?" };
       return {};
     };
     function draw(k) {
-      if (k < M) drawFactors(k); else drawMultiples(k);
+      if (logicPart === "gcf") drawFactors(k); else drawMultiples(k);
       el("line", { class: "sep", x1: 20, y1: BOT + 14, x2: 1180, y2: BOT + 14 });
       const c = coachAt(k);
       let html = (c.a ? `<div class="a${fr(k)}">${c.a}</div>` : "") + (c.q ? `<div class="q${fr(k)}">${c.q}</div>` : "") + '<div class="boxes">';
@@ -917,7 +938,10 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     if (r.err) { plan = null; nums = []; }
     else nums = r.ns;
     const L = nums.length ? nums.reduce(lcm) : 0, g = nums.length ? nums.reduce(gcd) : 0;
-    const prac = mode === "practice";
+    const prac = mode === "practice", logic = mode === "logic";
+    $("partCard").hidden = !logic;
+    $("gcfRow").hidden = logic && logicPart !== "gcf";
+    $("lcmRow").hidden = logic && logicPart !== "lcm";
     document.body.classList.toggle("practicing", prac);
     svg.toggleAttribute("hidden", prac); $("prac").hidden = !prac;
     if (prac) { plan = null; pracStart(); return; }
@@ -979,6 +1003,12 @@ body.practicing #back, body.practicing #next, body.practicing #stepsCard, body.p
     $("hide").setAttribute("aria-pressed", String(hideAns));
         fwd = false; render();
   };
+  $("part").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    logicPart = b.dataset.p;
+    $("part").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    update();
+  });
   $("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b && !b.disabled) setMode(b.dataset.m); });
   ["n1", "n2", "n3"].forEach(id => $(id).addEventListener("input", update));
   document.addEventListener("keydown", e => {
@@ -1140,14 +1170,16 @@ window.I18N_PAGE = {
  "Look for the greatest factor in common.": "Cherche le plus grand facteur en commun.",
  "In common: {0}": "En commun : {0}",
  "Which factor in common is the greatest?": "Quel facteur en commun est le plus grand?",
- "Now the LCM. Count by {n}s.": "Maintenant le PPCM. Compte par bonds de {n}.",
  "Now count by {n}s.": "Compte maintenant par bonds de {n}.",
  "Look through both lists. What is the first number in both?": "Regarde les deux listes. Quel est le premier nombre qui est dans les deux?",
  "Look through all the lists. What is the first number in all of them?": "Regarde toutes les listes. Quel est le premier nombre qui est dans toutes?",
  "~The GCF is the greatest factor that (.+) have in common\\.": "Le PGFC est le plus grand facteur que $1 ont en commun.",
  "both lists": "les deux listes",
  "every list": "chaque liste",
- "~The LCM is the lowest number in (both lists|every list): the first one you reach when you count by (.+)\\.": "Le PPCM est le plus petit nombre dans $1 : le premier que tu atteins en comptant par bonds de $2."
+ "~The LCM is the lowest number in (both lists|every list): the first one you reach when you count by (.+)\\.": "Le PPCM est le plus petit nombre dans $1 : le premier que tu atteins en comptant par bonds de $2.",
+ "Find": "Trouver",
+ "Count by {n}s.{0}": "Compte par bonds de {n}.{0}",
+ "Add {n} each time.": "Ajoute {n} chaque fois."
 };
 </script>
 <script>
