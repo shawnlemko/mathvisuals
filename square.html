@@ -215,6 +215,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 #dims { font-size: 1.35rem; padding: 14px 8px; color: var(--sheet); background: var(--green); border: 2px solid var(--green); }
 #dims:hover { background: var(--sheet); color: var(--green); }
 .dim-brace { stroke: var(--ink); stroke-width: 3; fill: none; pointer-events: none; }
+/* Frame lines (Shawn 2026-10-20): one line keeps the length and one keeps the width apart from the area. */
+.dim-line { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
 .dim-text { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 34px; dominant-baseline: central; pointer-events: none; }
 @media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
 </style>
@@ -469,7 +471,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const h = p.b / (2 * p.a), S = matSize(h);
     layout(p.a === 1 ? 1080 : Math.max(1080, p.a * (S + MGAP) + MGAP));
     split = p.a === 1;
-    mats = split ? [makeMat(40, MY, h)] : [];
+    mats = split ? [makeMat(MGAP, MY, h)] : [];
     drawMats();
     splitBtn.hidden = split;
     const list = [];
@@ -587,20 +589,29 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (!ms.length) dimsOn = false;
     dimsBtn.textContent = dimsOn ? "Hide dimensions" : "Show dimensions";
     if (!dimsOn) return;
-    ms.forEach(m => drawBraces(m, side(...m.len), side(...m.wid), mats.length > 1));
+    ms.forEach(m => drawBraces(m, side(...m.len), side(...m.wid)));
   }
   // Braces with the length above (or below) and the width left (or right) of the rectangle.
-  // Beside several area models the width label stands upright on the left so it fits between them.
-  function drawBraces(m, lenLbl, widLbl, upright) {
-    const up = m.y0 >= 50, lt = upright || m.x0 >= 30 + widLbl.length * 21;
-    const by = up ? m.y0 - 12 : m.y1 + 12, bx = lt ? m.x0 - 12 : m.x1 + 12, d = up ? -12 : 12, e = lt ? -12 : 12;
-    el("path", { class: "dim-brace", d: `M${m.x0 + 3},${by - d} v${d} H${m.x1 - 3} v${-d}` }, dimLayer);
-    el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + d * 2, "text-anchor": "middle" }, dimLayer).textContent = lenLbl;
-    el("path", { class: "dim-brace", d: `M${bx - e},${m.y0 + 3} h${e} V${m.y1 - 3} h${-e}` }, dimLayer);
+  // Inside an area model they sit on its bold top and left lines (Shawn 2026-10-20), the width
+  // label standing upright so it fits beside the model. Elsewhere two frame lines cross at the
+  // corner and keep the dimensions apart from the area (Shawn 2026-10-20).
+  function drawBraces(m, lenLbl, widLbl) {
+    const mt = mats.find(k => m.x0 >= k.x - EPS && m.y0 >= k.y - EPS && m.x1 <= k.x + k.w + EPS && m.y1 <= k.y + k.h + EPS);
+    const upright = !!mt, up = !!mt || m.y0 >= 56, lt = !!mt || m.x0 >= 36 + widLbl.length * 21;
+    const u = up ? -1 : 1, l = lt ? -1 : 1;
+    const hy = mt ? mt.y - 4 : up ? m.y0 - 6 : m.y1 + 6, vx = mt ? mt.x - 4 : lt ? m.x0 - 6 : m.x1 + 6, OV = 44;
+    if (!mt) {
+      el("line", { class: "dim-line", x1: lt ? vx - OV : m.x0, y1: hy, x2: lt ? m.x1 : vx + OV, y2: hy }, dimLayer);
+      el("line", { class: "dim-line", x1: vx, y1: up ? hy - OV : m.y0, x2: vx, y2: up ? m.y1 : hy + OV }, dimLayer);
+    }
+    const by = hy + u * 12, bx = vx + l * 12;
+    el("path", { class: "dim-brace", d: `M${m.x0 + 3},${hy + u * 3} V${by} H${m.x1 - 3} V${hy + u * 3}` }, dimLayer);
+    el("text", { class: "dim-text", x: (m.x0 + m.x1) / 2, y: by + u * 24, "text-anchor": "middle" }, dimLayer).textContent = lenLbl;
+    el("path", { class: "dim-brace", d: `M${vx + l * 3},${m.y0 + 3} H${bx} V${m.y1 - 3} H${vx + l * 3}` }, dimLayer);
     if (upright) {
-      const tx = bx - 26, ty = (m.y0 + m.y1) / 2;
+      const tx = bx - 22, ty = (m.y0 + m.y1) / 2;
       el("text", { class: "dim-text", x: tx, y: ty, "text-anchor": "middle", transform: `rotate(-90 ${tx} ${ty})` }, dimLayer).textContent = widLbl;
-    } else el("text", { class: "dim-text", x: bx + e, y: (m.y0 + m.y1) / 2, "text-anchor": lt ? "end" : "start" }, dimLayer).textContent = widLbl;
+    } else el("text", { class: "dim-text", x: bx + l * 12, y: (m.y0 + m.y1) / 2, "text-anchor": lt ? "end" : "start" }, dimLayer).textContent = widLbl;
   }
 
   function toSvg(e) {
@@ -916,7 +927,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const { a, b } = target, h = b / (2 * a), n = Math.abs(h) + 1, at = (m, r, k) => m.cells[r * n + k];
     if (!mats.length) {
       const S = matSize(h);
-      for (let j = 0; j < a; j++) mats.push(makeMat(a > 1 ? MGAP + j * (S + MGAP) : 40, MY, h));
+      for (let j = 0; j < a; j++) mats.push(makeMat(MGAP + j * (S + MGAP), MY, h));
       drawMats(); split = true; splitBtn.hidden = true;
     }
     const big = tiles.filter(t => /x2$/.test(t.k.id)), moves = big.slice(0, a).map((t, j) => moveTo(t, at(mats[j], 0, 0)));

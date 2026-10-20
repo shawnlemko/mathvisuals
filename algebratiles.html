@@ -157,6 +157,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .thin { stroke: #1b2733; stroke-opacity: 0.28; stroke-width: 1; pointer-events: none; }
 .outline { fill: none; stroke: #1b2733; stroke-width: 3; pointer-events: none; }
 .split { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 12 8; }
+/* Frame lines (Shawn 2026-10-20): the factors along the edges stay apart from the area inside. */
+.frame { stroke: var(--ink); stroke-width: 5; stroke-linecap: round; pointer-events: none; }
 .part { font-family: var(--font-num); font-weight: 700; font-size: 30px; fill: var(--pt); text-anchor: middle; dominant-baseline: central; }
 .brace { stroke: var(--pt); stroke-width: 3; fill: none; }
 .prod-bg { fill: var(--sheet); fill-opacity: 0.94; stroke: var(--ink); stroke-width: 2; }
@@ -346,19 +348,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
     // Parts along each side, split lines, and each region's product.
     const fx = el("g", {}, svg);
+    // Two frame lines cross at the top-left corner: the width above, the height to the left, the area inside.
+    el("line", { class: "frame", x1: 8, y1: TM - 7, x2: LM + RW, y2: TM - 7 }, fx);
+    el("line", { class: "frame", x1: LM - 7, y1: 8, x2: LM - 7, y2: TM + RH }, fx);
     pa.forEach((p, i) => {
       const x = LM + p.pos;
       el("path", { class: "brace", d: `M${x + 3},${TM - 14} v-12 H${x + p.len - 3} v12` }, fx);
       el("text", { class: "part", x: x + p.len / 2, y: TM - 48 }, fx).textContent = term(p.v, p.x ? 1 : 0);
       const n = pa[i + 1];
-      if (n) { const xb = (x + p.len + LM + n.pos) / 2; el("line", { class: "split", x1: xb, y1: TM - 8, x2: xb, y2: TM + RH + 8 }, fx); }
+      if (n) { const xb = (x + p.len + LM + n.pos) / 2; el("line", { class: "split", x1: xb, y1: TM - 7, x2: xb, y2: TM + RH + 8 }, fx); }
     });
     pb.forEach((q, i) => {
       const y = TM + q.pos;
       el("path", { class: "brace", d: `M${LM - 14},${y + 3} h-12 V${y + q.len - 3} h12` }, fx);
       el("text", { class: "part", x: LM - 62, y: y + q.len / 2 }, fx).textContent = term(q.v, q.x ? 1 : 0);
       const n = pb[i + 1];
-      if (n) { const yb = (y + q.len + TM + n.pos) / 2; el("line", { class: "split", x1: LM - 8, y1: yb, x2: LM + RW + 8, y2: yb }, fx); }
+      if (n) { const yb = (y + q.len + TM + n.pos) / 2; el("line", { class: "split", x1: LM - 7, y1: yb, x2: LM + RW + 8, y2: yb }, fx); }
     });
     pb.forEach(q => pa.forEach(p => {
       const x0 = LM + p.pos, y0 = TM + q.pos, w = p.len, h = q.len;
