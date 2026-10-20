@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Scientific Notation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Scientific Notation (grades 7-9, Number; Shawn 2026-10-20).
+   The number sits in a row of boxes. The digits stay put and the orange decimal point hops one box at a time.
+   The exponent counts the hops: hops left (a big number) give a positive exponent (green),
+   hops right (a small number) give a negative exponent (purple).
+   To scientific: the point lands after the first digit that is not 0; leading and end zeros fade.
+   To standard: the exponent says how many hops and which way; empty boxes fill with 0.
+   The work is written under the boxes, one line per step with = lined up and the step name on the right.
+   Learn: Next step / Back / Start over. Practice: type the answer, Check, Hint (where to land, then the hops), Show me. */
+:root { --big: #1f7a5a; --small: #7a3fb8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --big: #4cc49a; --small: #c09bf5; } }
+:root[data-theme="dark"] { --big: #4cc49a; --small: #c09bf5; }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1.75fr) minmax(330px, 1fr); } }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.15rem; min-height: 48px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
+.hctl { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.wide { display: flex; width: 100%; }
+.wide button { flex: 1 1 0; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; font-size: 0.85rem; }
+.numrow { display: flex; gap: 10px; align-items: center; }
+.big-in { font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; height: 64px; width: 100%; min-width: 0; padding: 0 12px; text-align: center; }
+#num { font-size: 1.9rem; }
+.big-in.bad { border-color: var(--warn); }
+.big-in.ok { border-color: var(--green); color: var(--green); }
+/* a × 10 to the power b: the exponent box sits raised, like an exponent. */
+.sci { display: flex; align-items: flex-start; gap: 8px; }
+.sci .big-in { margin-top: 18px; }
+.sci .ten { font-family: var(--font-num); font-weight: 700; font-size: 2.2rem; margin-top: 22px; white-space: nowrap; }
+.sci .exp { width: 84px; flex: none; height: 54px; font-size: 1.7rem; margin-top: 0; padding: 0 6px; }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+.say { font-size: 1.35rem; margin: 0; min-height: 3em; line-height: 1.45; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.2rem; min-height: 52px; padding: 8px 16px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.fb { margin: 8px 0 0; font-size: 1.25rem; font-weight: 700; min-height: 1.45em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.1rem; color: var(--muted); margin: 10px 0 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.35rem; }
+
+/* Board */
+.cell { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 2; }
+.cell.empty { fill: none; stroke-dasharray: 8 6; }
+.cell.first { stroke: var(--pt); stroke-width: 4; }
+.dig { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.dig.fade { opacity: 0.22; }
+.dig.zf { fill: var(--orange); }
+.dot { fill: var(--orange); stroke: var(--sheet); stroke-width: 3; }
+.land { stroke: var(--pt); stroke-width: 3; stroke-dasharray: 7 6; }
+.landc { fill: var(--pt); }
+.landt { font-family: var(--font-body); font-weight: 700; font-size: 26px; fill: var(--pt); }
+.arc { fill: none; stroke-width: 5; stroke-linecap: round; }
+.arc.big { stroke: var(--big); } .arc.small { stroke: var(--small); }
+.ah.big { fill: var(--big); } .ah.small { fill: var(--small); }
+.hopn { font-family: var(--font-num); font-weight: 700; font-size: 28px; }
+.hopn.big, .ban.big, .tx.big { fill: var(--big); }
+.hopn.small, .ban.small, .tx.small { fill: var(--small); }
+.ban { font-family: var(--font-display); font-weight: 800; font-size: 40px; fill: var(--ink); }
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
+.tx.op { fill: var(--muted); }
+.tx.q { fill: var(--muted); }
+.wname { font-family: var(--font-body); font-weight: 700; font-size: 28px; fill: var(--muted); }
+.wline { stroke: var(--grid); stroke-width: 2; }
+.pop { animation: pop 0.45s ease-out both; transform-box: fill-box; transform-origin: center; }
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.55s ease-out forwards; }
+.fadein { animation: fadein 0.6s ease-out both; }
+@keyframes pop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fadein { from { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pop, .fadein { animation: none; } .draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Scientific Notation</h1></div>
+    <div class="hctl">
+      <div class="seg-btns" role="group" aria-label="Which way" id="dirs">
+        <button type="button" data-dir="sci" class="on">To scientific</button><button type="button" data-dir="std">To standard</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Mode">
+        <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 590" role="img" aria-label="The number in a row of boxes. The decimal point hops one box at a time."></svg></div>
+
+    <div class="side">
+    <div class="panel" id="learn">
+      <section class="card">
+        <p class="label">Number</p>
+        <div class="numrow" id="sciIn">
+          <input class="big-in" id="num" type="text" inputmode="decimal" autocomplete="off" aria-label="Number" value="45 000">
+          <div class="btns"><button type="button" class="rand">New example</button></div>
+        </div>
+        <div class="numrow" id="stdIn" hidden>
+          <div class="sci">
+            <input class="big-in" id="lc" type="text" inputmode="decimal" autocomplete="off" aria-label="First part" value="3.2">
+            <span class="ten">× 10</span>
+            <input class="big-in exp" id="le" type="text" autocomplete="off" aria-label="Exponent" value="5">
+          </div>
+          <div class="btns"><button type="button" class="rand">New example</button></div>
+        </div>
+      </section>
+      <section class="card">
+        <p class="steplbl" id="steplbl"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" class="go" id="next">Next step</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="again">Start over</button>
+      </div>
+    </div>
+
+    <div class="panel" id="practice" hidden>
+      <section class="card">
+        <div class="seg-btns wide" role="group" aria-label="Question type" id="kinds">
+          <button type="button" data-kind="big" class="on">Big numbers</button><button type="button" data-kind="small">Small numbers</button><button type="button" data-kind="mix">Mixed</button>
+        </div>
+        <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+      </section>
+      <section class="card">
+        <p class="label">Your answer</p>
+        <div class="sci" id="ansSci">
+          <input class="big-in" id="ac" type="text" inputmode="decimal" autocomplete="off" aria-label="First part">
+          <span class="ten">× 10</span>
+          <input class="big-in exp" id="ae" type="text" autocomplete="off" aria-label="Exponent">
+        </div>
+        <input class="big-in" id="ans" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer" hidden>
+        <div class="btns" style="margin-top:10px"><button type="button" class="go" id="check">Check</button></div>
+        <p class="fb" id="fb" aria-live="polite"></p>
+      </section>
+      <div class="btns">
+        <button type="button" id="hint">Hint</button>
+        <button type="button" id="showme">Show me</button>
+        <button type="button" id="newq">New question</button>
+      </div>
+    </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const MINUS = "−";
+
+  // ---------- numbers as digits ----------
+  // A number is { m, e }: its digits m (no leading or trailing zeros) and the place of the last digit
+  // (0 ones, 1 tens, -1 tenths ...). 45 000 = { m: "45", e: 3 }. Exact, no floating point.
+  function parse(s) {
+    s = String(s).replace(/[\s,]/g, "");
+    if (!/^\d*\.?\d*$/.test(s) || !/\d/.test(s)) return null;
+    const [i, f = ""] = s.split(".");
+    let m = (i + f).replace(/^0+/, ""), e = -f.length;
+    while (m.endsWith("0")) { m = m.slice(0, -1); e++; }
+    return { m, e: m ? e : 0 };
+  }
+  // An exponent typed by a student: a whole number, maybe with a minus sign.
+  function parseExp(s) {
+    s = String(s).replace(/\s/g, "").replace(/[−–]/g, "-");
+    return /^[-+]?\d{1,2}$/.test(s) ? +s : null;
+  }
+  const hi = n => n.e + n.m.length - 1;           // the place of the first digit = the exponent
+  const same = (a, b) => a.m === b.m && (!a.m || a.e === b.e);
+  const shifted = (n, s) => ({ m: n.m, e: n.e + s });
+  function fmt(n) {                                // plain, no spaces: 45000, 0.00045
+    if (!n.m) return "0";
+    let s = "";
+    for (let p = Math.max(hi(n), 0); p >= Math.min(n.e, 0); p--) {
+      const i = hi(n) - p;
+      s += i >= 0 && i < n.m.length ? n.m[i] : "0";
+      if (p === 0 && n.e < 0) s += ".";
+    }
+    return s;
+  }
+  // Standard form with spaces between groups of three, when a side has 5 or more digits: 45 000, 0.000 45.
+  function group(s) {
+    const [i, f] = s.split(".");
+    const gi = i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, " ") : i;
+    const gf = f == null ? "" : "." + (f.length >= 5 ? f.replace(/(\d{3})(?=\d)/g, "$1 ") : f);
+    return gi + gf;
+  }
+  const std = n => group(fmt(n));
+  const coef = n => n.m[0] + (n.m.length > 1 ? "." + n.m.slice(1) : "");
+  const expStr = k => (k < 0 ? MINUS : "") + Math.abs(k);
+
+  // ---------- the row of boxes ----------
+  // q = { dir: "sci" | "std", n }: n is the value. Both ways use the same picture:
+  // boxes (a digit, or "" for an empty box), the edge where the point starts and the edge where it lands.
+  function strip(q) {
+    const E_ = hi(q.n), H = Math.abs(E_);
+    if (q.dir === "sci") {
+      const [i, f = ""] = fmt(q.n).split(".");
+      const boxes = [...(i + f)];
+      const first = boxes.findIndex(d => d !== "0");
+      let last = boxes.length - 1;
+      while (boxes[last] === "0") last--;
+      return { boxes, start: i.length, target: first + 1, E: E_, H, first, last };
+    }
+    const m = [...q.n.m];
+    if (E_ >= 0) {
+      const boxes = m.concat(Array(Math.max(0, E_ + 1 - m.length)).fill(""));
+      return { boxes, start: 1, target: 1 + E_, E: E_, H };
+    }
+    return { boxes: Array(H).fill("").concat(m), start: H + 1, target: 1, E: E_, H };
+  }
+  const MAXBOX = 14;
+  // Steps: 0 start, 1 where to land (or which way), one per hop, then the answer.
+  const stepCount = q => strip(q).H + 3;
+
+  // ---------- drawing ----------
+  const BY = 150, BH = 150, ROW1 = 438, ROW2 = 538;
+  let timers = [], raf = 0;
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf); }
+  const later = (f, ms) => timers.push(setTimeout(f, ms));
+  const ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+
+  // One line of the work: "=" in its own column, then the math, then the step name on the right.
+  // parts: [text, class, sup?]; an exponent is written raised and smaller.
+  function row(y, eq, parts, name, anim) {
+    const g = E("g", { class: anim ? "pop" : "" });
+    if (eq) E("text", { x: 70, y, class: "tx op", "text-anchor": "middle", "font-size": 64 }, g, "=");
+    const t = E("text", { x: 118, y, class: "tx", "font-size": 64 }, g);
+    parts.forEach(([s, c, sup]) => {
+      const a = { class: "tx " + (c || "") };
+      if (sup) { a.dy = "-0.55em"; a["font-size"] = "0.62em"; }
+      E("tspan", a, t, s);
+    });
+    if (name) E("text", { x: 975, y: y - 6, class: "wname", "text-anchor": "end" }, g, name);
+  }
+  const hopsName = (H, s) => H === 0 ? "no hops" : `${H} ${H === 1 ? "hop" : "hops"} ${s > 0 ? "right" : "left"}`;
+
+  // Draws question q at step st. anim: play the newest step.
+  function render(q, st, anim) {
+    clearTimers();
+    svg.innerHTML = "";
+    E("defs", {}, svg).innerHTML = ["big", "small"].map(c => `<marker id="ah-${c}" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="3.4" markerHeight="3.4" orient="auto"><path class="ah ${c}" d="M0 0 L10 5 L0 10 z"/></marker>`).join("");
+    const S = strip(q), N = S.H + 3, last = st >= N - 1;
+    const dir = Math.sign(S.target - S.start);    // +1 the point hops right, -1 left
+    const cls = S.E > 0 ? "big" : S.E < 0 ? "small" : "";
+    const done = Math.max(0, Math.min(S.H, st - 1));
+    const edge = S.start + done * dir;
+    const nb = S.boxes.length, W = Math.min(104, 940 / nb), x0 = 500 - nb * W / 2;
+    const bx = i => x0 + i * W + W / 2, ex = k => x0 + k * W;
+    const fs = Math.min(96, W * 1.05), DY = BY + BH * 0.5 + fs * 0.36;
+
+    // The boxes and digits. To scientific: the first digit that is not 0 gets a blue box once it matters,
+    // and at the end the zeros that are not needed fade. To standard: empty boxes are dashed until they fill with 0.
+    S.boxes.forEach((d, i) => {
+      const empty = d === "", fill = empty && last;
+      E("rect", { x: x0 + i * W, y: BY, width: W, height: BH, class: "cell" + (empty && !fill ? " empty" : "") + (q.dir === "sci" && st >= 1 && i === S.first ? " first" : "") });
+      if (empty && !fill) return;
+      const fade = q.dir === "sci" && last && (i < S.first || i > S.last);
+      E("text", { x: bx(i), y: DY, class: "dig" + (fill ? " zf" + (anim ? " pop" : "") : "") + (fade ? " fade" + (anim ? " fadein" : "") : ""), "text-anchor": "middle", "font-size": fs }, svg, fill ? "0" : d);
+    });
+    // Where the point lands: a dashed blue line on that edge.
+    const showLand = q.dir === "sci" && st >= 1 && S.H > 0;
+    if (showLand) {
+      const lx = ex(S.target);
+      E("line", { x1: lx, x2: lx, y1: BY - 4, y2: BY + BH + 12, class: "land" });
+      E("path", { d: `M${lx} ${BY + BH + 14} l-12 20 h24 z`, class: "landc" });
+      E("text", { x: lx, y: BY + BH + 60, class: "landt", "text-anchor": lx < 120 ? "start" : lx > 880 ? "end" : "middle" }, svg, "land here");
+    }
+    // The hops so far: one numbered arc over the boxes for each.
+    let newest = null;
+    for (let h = 1; h <= done; h++) {
+      const a = ex(S.start + (h - 1) * dir), b = ex(S.start + h * dir), y = BY - 6, isNew = anim && h === done && st <= S.H + 1 && !reduced();
+      E("path", { d: `M${a} ${y} Q${(a + b) / 2} ${y - 62} ${b} ${y - 2}`, class: "arc " + cls + (isNew ? " draw" : ""), pathLength: 1, "marker-end": `url(#ah-${cls})` });
+      E("text", { x: (a + b) / 2, y: y - 44, class: "hopn " + cls + (isNew ? " pop" : ""), "text-anchor": "middle" }, svg, h);
+      if (isNew) newest = [a, b];
+    }
+    // The decimal point. A whole number's point is drawn at its end.
+    const dot = E("circle", { cx: ex(edge), cy: DY - fs * 0.04, r: Math.max(9, Math.min(14, W * 0.13)), class: "dot" });
+    if (newest) {
+      dot.setAttribute("cx", newest[0]);
+      const t0 = performance.now(), D = 600;
+      const tick = now => {
+        const u = Math.min(1, (now - t0) / D);
+        dot.setAttribute("cx", newest[0] + (newest[1] - newest[0]) * ease(u));
+        if (u < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }
+    // Hop counter over the boxes.
+    const side = dir > 0 ? "right" : "left";
+    let ban = null;
+    if (S.H === 0) { if (st >= 1) ban = "No hops"; }
+    else if (q.dir === "std" ? st >= 1 : st >= 2) ban = q.dir === "std" ? `Hop ${side}: ${done} of ${S.H}` : `Hop ${side}: ${done}`;
+    if (ban) E("text", { x: 500, y: 52, class: "ban " + cls, "text-anchor": "middle" }, svg, ban);
+
+    // The work: the question on line 1, the answer on line 2, = lined up.
+    E("line", { x1: 30, x2: 970, y1: ROW1 - 62, y2: ROW1 - 62, class: "wline" });
+    const ex_ = expStr(S.E);
+    if (q.dir === "sci") {
+      row(ROW1, false, [[std(q.n)]], "standard form");
+      row(ROW2, true, [[st >= 1 ? coef(q.n) : "?", st >= 1 ? "" : "q"], [" × 10", "op"], [last ? ex_ : "?", last ? cls : "q", true]],
+        last ? hopsName(S.H, dir) : "", anim && (st === 1 || last));
+    } else {
+      row(ROW1, false, [[coef(q.n)], [" × 10", "op"], [ex_, st >= 1 ? cls : "", true]], "scientific notation");
+      row(ROW2, true, [[last ? std(q.n) : "?", last ? "" : "q"]], last ? hopsName(S.H, dir) : "", anim && last);
+    }
+  }
+
+  // ---------- words ----------
+  function say(q, st) {
+    const S = strip(q), N = S.H + 3, dir = Math.sign(S.target - S.start), side = dir > 0 ? "right" : "left";
+    const hops = S.H === 1 ? "1 hop" : `${S.H} hops`, places = S.H === 1 ? "1 place" : `${S.H} places`;
+    if (st >= 2 && st <= S.H + 1) return `Hop ${st - 1}: the point moves one place ${side}.`;
+    if (q.dir === "sci") {
+      if (st === 0) return /\./.test(fmt(q.n)) ? `Here is ${std(q.n)}. Watch the orange decimal point.` : `Here is ${std(q.n)}. In a whole number, the decimal point hides at the end.`;
+      if (st === 1) return `Scientific notation has one digit before the decimal point, and it is not 0. The point lands after the ${q.n.m[0]}.` + (S.H === 0 ? " It is already there." : "");
+      const zeros = S.first > 0 || S.last < S.boxes.length - 1 ? " The grey zeros are not needed." : "";
+      if (S.E > 0) return `${hops} left, so the exponent is ${S.E}. A big number has a positive exponent.` + zeros;
+      if (S.E < 0) return `${hops} right, so the exponent is ${MINUS}${S.H}. A small number has a negative exponent.` + zeros;
+      return "No hops, so the exponent is 0." + zeros;
+    }
+    if (st === 0) return "The exponent tells how many places the decimal point hops.";
+    if (st === 1) {
+      if (S.E > 0) return `The exponent is ${S.E}. It is positive, so the number gets bigger. The point hops ${places} right.`;
+      if (S.E < 0) return `The exponent is ${MINUS}${S.H}. It is negative, so the number gets smaller. The point hops ${places} left.`;
+      return "The exponent is 0, so the point does not move.";
+    }
+    return S.boxes.includes("") ? `Fill the empty places with 0. The answer is ${std(q.n)}.` : `The answer is ${std(q.n)}.`;
+  }
+
+  // ---------- questions ----------
+  // kind "big": exponent 2 to 8. "small": exponent -1 to -7. 1 to 3 digits, none of them an end zero.
+  function gen(dir, kind, prev) {
+    for (let t = 0; t < 100; t++) {
+      const big = kind === "mix" ? Math.random() < 0.5 : kind === "big";
+      const k = big ? ri(2, 8) : -ri(1, 7), len = ri(1, 3);
+      let m = String(ri(1, 9));
+      for (let i = 1; i < len; i++) m += i === len - 1 ? ri(1, 9) : ri(0, 9);
+      const q = { dir, n: { m, e: k - (len - 1) } };
+      if (strip(q).boxes.length > MAXBOX) continue;
+      if (prev && same(prev.n, q.n)) continue;
+      return q;
+    }
+    return { dir, n: { m: "45", e: 3 } };
+  }
+
+  // ---------- Learn ----------
+  let dirMode = "sci", mode = "learn", step = 0, lok = true;
+  let lq = { dir: "sci", n: parse("45000") };
+  const numIn = $("#num"), lcIn = $("#lc"), leIn = $("#le");
+  function showLearn(anim) {
+    $("#steplbl").textContent = lok ? `Step ${step + 1} of ${stepCount(lq)}` : "";
+    if (!lok) { $("#next").disabled = $("#back").disabled = true; return; }
+    render(lq, step, anim);
+    $("#say").textContent = say(lq, step);
+    $("#next").disabled = step >= stepCount(lq) - 1;
+    $("#back").disabled = step === 0;
+  }
+  function bad(el, msg) { el.classList.add("bad"); $("#say").textContent = msg; }
+  // Read the typed number (to scientific) or the typed a × 10 to the b (to standard).
+  function readLearn() {
+    [numIn, lcIn, leIn].forEach(el => el.classList.remove("bad"));
+    lok = false;
+    if (dirMode === "sci") {
+      const n = parse(numIn.value);
+      if (!n || !n.m) bad(numIn, "Type a number like 45 000 or 0.0032.");
+      else if (strip({ dir: "sci", n }).boxes.length > MAXBOX) bad(numIn, "That number is too long for the boxes. Try a shorter one.");
+      else { lq = { dir: "sci", n }; lok = true; }
+    } else {
+      const c = parse(lcIn.value), k = parseExp(leIn.value);
+      if (!c || !c.m || hi(c) !== 0) bad(lcIn, "The first part needs one digit before the decimal point, like 3.2.");
+      else if (k == null) bad(leIn, "Type a whole number exponent, like 5 or −3.");
+      else {
+        const n = shifted(c, k);
+        if (strip({ dir: "std", n }).boxes.length > MAXBOX) bad(leIn, "That number is too long for the boxes. Try a smaller exponent.");
+        else { lq = { dir: "std", n }; lok = true; }
+      }
+    }
+    step = 0; showLearn(false);
+  }
+  [numIn, lcIn, leIn].forEach(el => el.addEventListener("input", readLearn));
+  let flip = false;
+  $$(".rand").forEach(b => b.onclick = () => {
+    flip = !flip;
+    lq = gen(dirMode, flip ? "small" : "big", lq);
+    if (dirMode === "sci") numIn.value = std(lq.n);
+    else { lcIn.value = coef(lq.n); leIn.value = expStr(hi(lq.n)); }
+    readLearn();
+  });
+  $("#next").onclick = () => { if (lok && step < stepCount(lq) - 1) { step++; showLearn(true); } };
+  $("#back").onclick = () => { if (lok && step > 0) { step--; showLearn(false); } };
+  $("#again").onclick = () => { step = 0; showLearn(false); };
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+
+  // ---------- Practice ----------
+  let kind = "big", pq = null, tried = false, solved = false, hints = 0, right = 0, total = 0;
+  const acIn = $("#ac"), aeIn = $("#ae"), ansIn = $("#ans"), fb = $("#fb");
+  const answerEls = () => dirMode === "sci" ? [acIn, aeIn] : [ansIn];
+  function feedback(text, cls) { fb.className = "fb " + (cls || ""); fb.textContent = text; }
+  function markInputs(c) { [acIn, aeIn, ansIn].forEach(el => el.className = "big-in" + (el === aeIn ? " exp" : "") + (c ? " " + c : "")); }
+  function newQuestion() {
+    pq = gen(dirMode, kind, pq); tried = false; solved = false; hints = 0;
+    acIn.value = aeIn.value = ansIn.value = ""; markInputs("");
+    feedback("");
+    render(pq, 0, false);
+    $("#hint").disabled = $("#showme").disabled = false;
+    answerEls()[0].focus({ preventScroll: true });
+  }
+  function count(ok) { if (!tried) { tried = true; total++; if (ok) right++; $("#right").textContent = right; $("#total").textContent = total; } }
+  function finish() { solved = true; $("#hint").disabled = $("#showme").disabled = true; }
+  function correct() {
+    count(true); finish(); markInputs("ok");
+    feedback("Correct!", "ok");
+    render(pq, stepCount(pq) - 1, true);
+  }
+  function check() {
+    if (solved) return;
+    const S = strip(pq);
+    if (dirMode === "sci") {
+      const c = parse(acIn.value), k = parseExp(aeIn.value);
+      if (!c || !c.m || k == null) { feedback("Fill in both boxes, like 4.5 and 3.", "mid"); return; }
+      if (same(shifted(c, k), pq.n) && hi(c) === 0) return correct();
+      count(false); markInputs("bad");
+      if (same(shifted(c, k), pq.n)) feedback("Those are equal, but scientific notation needs one digit before the decimal point, and it is not 0.", "no");
+      else if (c.m === pq.n.m && hi(c) === 0 && k === -S.E) feedback("Check the sign of the exponent. A big number has a positive exponent. A small number has a negative exponent.", "no");
+      else if (c.m === pq.n.m && hi(c) === 0) feedback("The first part is right! Count the hops again.", "no");
+      else feedback("Check the first part. Keep the same digits, with the point after the first one.", "no");
+      return;
+    }
+    const a = parse(ansIn.value);
+    if (!a) { feedback("Type a number, like 320 000 or 0.0045.", "mid"); return; }
+    if (same(a, pq.n)) return correct();
+    count(false); markInputs("bad");
+    const c = { m: pq.n.m, e: -(pq.n.m.length - 1) };
+    if (a.m === pq.n.m && S.E !== 0 && same(a, shifted(c, -S.E))) feedback("The point hopped the wrong way. A positive exponent makes the number bigger. A negative exponent makes it smaller.", "no");
+    else if (a.m === pq.n.m && Math.sign(hi(a)) === Math.sign(S.E)) feedback("Right way! Count the hops again.", "no");
+    else feedback("Not quite. Try Hint.", "no");
+  }
+  $("#check").onclick = check;
+  [acIn, aeIn, ansIn].forEach(el => {
+    el.addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+    el.addEventListener("input", () => { if (!solved) markInputs(""); });
+  });
+  $("#newq").onclick = newQuestion;
+  // Hint 1: where the point lands (or which way). Hint 2: all the hops, counted.
+  $("#hint").onclick = () => {
+    if (solved) return;
+    hints = Math.min(2, hints + 1);
+    const st = hints === 1 ? 1 : strip(pq).H + 1;
+    render(pq, st, true);
+    const S = strip(pq), side = S.target > S.start ? "right" : "left";
+    if (hints === 1) feedback(say(pq, 1), "mid");
+    else feedback(S.H === 0 ? "No hops." : `The point hops ${S.H} ${S.H === 1 ? "place" : "places"} ${side}.`, "mid");
+  };
+  // Show me: plays every step on the board, then writes the answer in the boxes.
+  $("#showme").onclick = () => {
+    if (solved) return;
+    count(false); finish();
+    const N = stepCount(pq);
+    let st = 1;
+    const run = () => {
+      render(pq, st, true);
+      feedback(say(pq, st), st === N - 1 ? "ok" : "mid");
+      if (st === N - 1) {
+        if (dirMode === "sci") { acIn.value = coef(pq.n); aeIn.value = expStr(hi(pq.n)); } else ansIn.value = std(pq.n);
+        return;
+      }
+      st++;
+      later(run, st <= 2 || st === N - 1 ? 1900 : 1000);
+    };
+    run();
+  };
+  $("#kinds").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; kind = b.dataset.kind; $$("[data-kind]").forEach(x => x.classList.toggle("on", x === b)); newQuestion(); });
+
+  // ---------- modes ----------
+  function setMode(m) {
+    mode = m; clearTimers();
+    $$("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    if (m === "learn") showLearn(false);
+    else if (!pq || pq.dir !== dirMode) newQuestion();
+    else render(pq, solved ? stepCount(pq) - 1 : hints === 0 ? 0 : hints === 1 ? 1 : strip(pq).H + 1, false);
+  }
+  $$("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  // To scientific / To standard: each way keeps its own typed example.
+  $$("[data-dir]").forEach(b => b.onclick = () => {
+    dirMode = b.dataset.dir;
+    $$("[data-dir]").forEach(x => x.classList.toggle("on", x === b));
+    $("#sciIn").hidden = dirMode !== "sci"; $("#stdIn").hidden = dirMode !== "std";
+    $("#ansSci").hidden = dirMode !== "sci"; ansIn.hidden = dirMode !== "std";
+    readLearn();
+    setMode(mode);
+  });
+  readLearn();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Scientific Notation (scinotation.html). Decimals keep the point, like the other pages. Standard form = notation décimale. */
+window.I18N_PAGE = {
+  "Scientific Notation": "Notation scientifique",
+  "Which way": "Dans quel sens",
+  "To scientific": "En notation scientifique",
+  "To standard": "En notation décimale",
+  "Learn": "Apprendre",
+  "The number in a row of boxes. The decimal point hops one box at a time.": "Le nombre dans une rangée de cases. La virgule décimale saute une case à la fois.",
+  "Number": "Nombre",
+  "New example": "Nouvel exemple",
+  "First part": "Première partie",
+  "Exponent": "Exposant",
+  "Step {n} of {n}": "Étape {n} sur {n}",
+  "Question type": "Type de question",
+  "Big numbers": "Grands nombres",
+  "Small numbers": "Petits nombres",
+  "Mixed": "Mélangé",
+  "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+  "Your answer": "Ta réponse",
+  "Show me": "Montre-moi",
+  "land here": "arrive ici",
+  "standard form": "notation décimale",
+  "scientific notation": "notation scientifique",
+  "no hops": "aucun saut",
+  "No hops": "Aucun saut",
+  "No hops.": "Aucun saut.",
+  "{n} hop left": "{n} saut à gauche",
+  "{n} hops left": "{n} sauts à gauche",
+  "{n} hop right": "{n} saut à droite",
+  "{n} hops right": "{n} sauts à droite",
+  "Hop left: {n}": "Sauts à gauche : {n}",
+  "Hop right: {n}": "Sauts à droite : {n}",
+  "Hop left: {n} of {n}": "Sauts à gauche : {n} sur {n}",
+  "Hop right: {n} of {n}": "Sauts à droite : {n} sur {n}",
+  "Hop {n}: the point moves one place left.": "Saut {n} : la virgule avance d'une position vers la gauche.",
+  "Hop {n}: the point moves one place right.": "Saut {n} : la virgule avance d'une position vers la droite.",
+  "~Here is ([\\d .]+)\\.": "Voici $1.",
+  "Watch the orange decimal point.": "Observe la virgule décimale orange.",
+  "In a whole number, the decimal point hides at the end.": "Dans un nombre entier, la virgule décimale se cache à la fin.",
+  "Scientific notation has one digit before the decimal point, and it is not 0.": "En notation scientifique, il y a un seul chiffre avant la virgule décimale, et ce n'est pas 0.",
+  "The point lands after the {n}.": "La virgule arrive après le {n}.",
+  "It is already there.": "Elle y est déjà.",
+  "The grey zeros are not needed.": "Les zéros gris ne sont pas nécessaires.",
+  "{n} hop left, so the exponent is {n}.": "{n} saut à gauche, donc l'exposant est {n}.",
+  "{n} hops left, so the exponent is {n}.": "{n} sauts à gauche, donc l'exposant est {n}.",
+  "{n} hop right, so the exponent is {n}.": "{n} saut à droite, donc l'exposant est {n}.",
+  "{n} hops right, so the exponent is {n}.": "{n} sauts à droite, donc l'exposant est {n}.",
+  "A big number has a positive exponent.": "Un grand nombre a un exposant positif.",
+  "A small number has a negative exponent.": "Un petit nombre a un exposant négatif.",
+  "No hops, so the exponent is 0.": "Aucun saut, donc l'exposant est 0.",
+  "The exponent tells how many places the decimal point hops.": "L'exposant indique de combien de positions la virgule décimale saute.",
+  "The exponent is {n}.": "L'exposant est {n}.",
+  "It is positive, so the number gets bigger.": "Il est positif, donc le nombre devient plus grand.",
+  "It is negative, so the number gets smaller.": "Il est négatif, donc le nombre devient plus petit.",
+  "The point hops {n} place right.": "La virgule saute de {n} position vers la droite.",
+  "The point hops {n} places right.": "La virgule saute de {n} positions vers la droite.",
+  "The point hops {n} place left.": "La virgule saute de {n} position vers la gauche.",
+  "The point hops {n} places left.": "La virgule saute de {n} positions vers la gauche.",
+  "The exponent is 0, so the point does not move.": "L'exposant est 0, donc la virgule ne bouge pas.",
+  "Fill the empty places with 0.": "Remplis les positions vides avec des 0.",
+  "~The answer is ([\\d .]+)\\.": "La réponse est $1.",
+  "Type a number like 45 000 or 0.0032.": "Écris un nombre comme 45 000 ou 0.0032.",
+  "That number is too long for the boxes.": "Ce nombre est trop long pour les cases.",
+  "Try a shorter one.": "Essaie un nombre plus court.",
+  "Try a smaller exponent.": "Essaie un exposant plus petit.",
+  "The first part needs one digit before the decimal point, like {n}.": "La première partie doit avoir un seul chiffre avant la virgule décimale, comme {n}.",
+  "Type a whole number exponent, like {n} or {n}.": "Écris un exposant entier, comme {n} ou {n}.",
+  "Fill in both boxes, like {n} and {n}.": "Remplis les deux cases, comme {n} et {n}.",
+  "Those are equal, but scientific notation needs one digit before the decimal point, and it is not 0.": "Ces nombres sont égaux, mais la notation scientifique demande un seul chiffre avant la virgule décimale, et ce n'est pas 0.",
+  "Check the sign of the exponent.": "Vérifie le signe de l'exposant.",
+  "The first part is right!": "La première partie est bonne!",
+  "Count the hops again.": "Compte encore les sauts.",
+  "Check the first part.": "Vérifie la première partie.",
+  "Keep the same digits, with the point after the first one.": "Garde les mêmes chiffres, avec la virgule après le premier.",
+  "Type a number, like 320 000 or 0.0045.": "Écris un nombre, comme 320 000 ou 0.0045.",
+  "The point hopped the wrong way.": "La virgule a sauté du mauvais côté.",
+  "A positive exponent makes the number bigger.": "Un exposant positif rend le nombre plus grand.",
+  "A negative exponent makes it smaller.": "Un exposant négatif le rend plus petit.",
+  "Right way!": "Bon côté!",
+  "Not quite.": "Pas tout à fait.",
+  "Try Hint.": "Essaie l'indice."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
