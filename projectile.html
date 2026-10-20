@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Projectile Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a4cc2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b49cff; } }
+:root[data-theme="dark"] { --purple: #b49cff; }
+.main { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; }
+  .kps button span { white-space: normal; font-size: 0.95rem; }
+  .srow { grid-template-columns: 7em minmax(0, 1fr) 3.6em; }
+}
+.panel { gap: 10px; }
+.panel .card { padding: 10px 16px; }
+.panel .card p { margin: 0; }
+
+/* Header buttons */
+.hbtns { display: flex; flex-wrap: wrap; gap: 10px; }
+button.tog { font-family: var(--font-display); font-size: 1.15rem; min-height: 48px; padding: 8px 18px; border: 2px solid var(--purple); color: var(--purple); background: var(--sheet); }
+button.tog[aria-pressed="true"] { background: var(--purple); color: var(--sheet); }
+button.whyb { font-family: var(--font-display); font-size: 1.15rem; min-height: 48px; padding: 8px 18px; border: 2px solid var(--pt); color: var(--pt); background: var(--sheet); }
+
+/* Equation and sliders */
+.eqin { font-family: var(--font-num); font-weight: 700; font-size: 1.55rem; width: 100%; box-sizing: border-box; padding: 6px 12px; border: 2px solid var(--pt); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.eqin.bad { border-color: var(--warn); }
+.err { color: var(--warn); font-weight: 700; margin-top: 4px !important; }
+.err:empty { display: none; }
+.srow { display: grid; grid-template-columns: 8.2em minmax(0, 1fr) 4.4em; align-items: center; gap: 4px 10px; margin-top: 8px; }
+.srow label { font-weight: 700; line-height: 1.2; }
+.srow label small { display: block; font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+.srow output { font-family: var(--font-num); font-weight: 700; font-size: 1.45rem; text-align: right; }
+.gnote { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; color: var(--muted); font-family: var(--font-num); font-weight: 700; margin-top: -4px; }
+.gnote button { font-size: 0.9rem; padding: 4px 10px; color: var(--pt); background: var(--sheet); border: 2px solid var(--pt); font-family: var(--font-body); }
+input[type=range].purple { accent-color: var(--purple); }
+
+/* Key points */
+.kps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kps button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; background: var(--sheet); border: 2px solid var(--grid-major); min-height: 56px; }
+.kps button b { font-size: 1rem; }
+.kps button span { font-family: var(--font-num); font-weight: 700; font-size: 1.05rem; color: var(--purple); white-space: nowrap; }
+.kps button.on { background: var(--purple); border-color: var(--purple); color: var(--sheet); }
+.kps button.on span { color: var(--sheet); }
+.say { font-size: 1.15rem; margin-top: 8px !important; }
+
+/* Input and output */
+.io { display: grid; grid-template-columns: auto 5.2em auto minmax(0, 1fr); align-items: center; gap: 6px 10px; padding: 6px 8px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; }
+.io + .io { margin-top: 6px; }
+.io.on { border-color: var(--orange); }
+.io .v { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 1.35rem; }
+.io input { font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.io.on input { border-color: var(--orange); }
+.io .out { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; color: var(--orange); }
+.io .out.note { font-family: var(--font-body); font-weight: 400; font-size: 1rem; color: var(--muted); }
+.unit { color: var(--muted); }
+
+/* Work: one line per step, = aligned, step names on the right */
+.work { display: grid; grid-template-columns: auto auto auto 1fr; align-items: center; gap: 4px 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; margin-top: 8px; }
+.work .frac { line-height: 1.1; }
+.work .frac > span { white-space: nowrap; }
+.work .lhs { text-align: right; white-space: nowrap; }
+.work .rhs { white-space: nowrap; }
+.work .ans { color: var(--purple); }
+.work .step { font-family: var(--font-body); font-weight: 400; font-size: 0.9rem; color: var(--muted); text-align: right; }
+.work[hidden] { display: none; }
+.iowork .ans { color: var(--orange); }
+
+/* Board */
+.bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 20px; padding: 6px 4px 2px; }
+.launch { font-family: var(--font-display); font-size: 1.15rem; min-height: 46px; padding: 6px 20px; background: var(--orange); border: 2px solid var(--orange); color: var(--sheet); }
+.bartip { color: var(--muted); }
+.gl { stroke: var(--grid); stroke-width: 1.5; }
+.ax { stroke: var(--ink); stroke-width: 3; }
+.nl { font-family: var(--font-num); font-weight: 700; font-size: 22px; fill: var(--ink); }
+.axt { font-family: var(--font-display); font-weight: 800; font-size: 25px; fill: var(--ink); }
+.curve { fill: none; stroke: var(--pt); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.kp { fill: var(--purple); stroke: var(--sheet); stroke-width: 4; }
+.kp.on { stroke: var(--purple); stroke-width: 4; fill: var(--sheet); }
+.kphit { fill: transparent; cursor: pointer; }
+.kpg { cursor: pointer; outline: none; }
+.kpg:focus-visible .kp { stroke: var(--ink); }
+.chip { fill: var(--sheet); stroke-width: 2.5; }
+.chip.p { stroke: var(--purple); }
+.chip.o { stroke: var(--orange); }
+.chipt { font-family: var(--font-num); font-weight: 700; font-size: 25px; }
+.chipt.p { fill: var(--purple); }
+.chipt.o { fill: var(--orange); }
+.iol { stroke: var(--orange); stroke-width: 3; stroke-dasharray: 8 7; }
+.iop { fill: var(--orange); stroke: var(--sheet); stroke-width: 4; }
+
+/* Why −4.9 pop-up */
+dialog.why { max-width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); border: 2px solid var(--pt); border-radius: 12px; padding: 18px 22px; background: var(--sheet); color: var(--ink); }
+dialog.why::backdrop { background: rgba(10, 20, 30, 0.45); }
+dialog.why h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; margin: 0 0 6px; }
+dialog.why p { margin: 10px 0 0; font-size: 1.1rem; }
+dialog.why .work { font-size: 1.35rem; }
+dialog.why .work .ans { color: var(--pt); }
+dialog.why .close { float: right; font-family: var(--font-display); font-size: 1.05rem; min-height: 44px; padding: 6px 16px; background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); }
+.formula { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; color: var(--pt); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Projectile Motion</h1></div>
+    <div class="hbtns">
+      <button type="button" class="whyb" id="whyBtn">Why −4.9?</button>
+      <button type="button" class="tog" id="workTog" aria-pressed="false">Show work</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="g" viewBox="0 0 1000 660" role="img" aria-label="Graph of height h in metres against time t in seconds"></svg>
+      <div class="bar">
+        <button type="button" class="launch" id="launch">Launch ▶</button>
+        <span class="bartip">Click the curve to read a point. Click a purple dot for the maximum or an intercept.</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="card">
+        <p class="label"><label for="eq">Equation</label></p>
+        <input class="eqin" id="eq" type="text" autocomplete="off" spellcheck="false" value="h = −4.9t² + 15t + 10">
+        <p class="err" id="err" aria-live="polite"></p>
+        <div class="srow">
+          <label for="sa">Gravity <small>½g, the t² number</small></label>
+          <input type="range" id="sa" class="purple" min="0.5" max="15" step="0.05">
+          <output id="oa"></output>
+          <div class="gnote"><span id="gval"></span><button type="button" id="whyBtn2">Why ½g?</button></div>
+        </div>
+        <div class="srow">
+          <label for="sb">Initial velocity <small>v₀ in m/s</small></label>
+          <input type="range" id="sb" min="-10" max="40" step="0.5">
+          <output id="ob"></output>
+        </div>
+        <div class="srow">
+          <label for="sc">Initial height <small>h₀ in m</small></label>
+          <input type="range" id="sc" class="green" min="0" max="100" step="0.5">
+          <output id="oc"></output>
+        </div>
+      </div>
+      <div class="card">
+        <p class="label">Maximum and intercepts</p>
+        <div class="kps" role="group" aria-label="Maximum and intercepts">
+          <button type="button" data-k="start"><b>h-intercept</b><span id="kStart"></span></button>
+          <button type="button" data-k="max"><b>Maximum</b><span id="kMax"></span></button>
+          <button type="button" data-k="land"><b>t-intercept</b><span id="kLand"></span></button>
+        </div>
+        <p class="say" id="kSay" aria-live="polite"></p>
+        <div class="work" id="kWork" hidden></div>
+      </div>
+      <div class="card">
+        <p class="label">Input and output</p>
+        <div class="io on" id="ioT">
+          <span class="v">t =</span><input id="tIn" type="number" inputmode="decimal" step="any" value="1" aria-label="Time t in seconds"><span class="unit">s</span><span class="out" id="tOut"></span>
+        </div>
+        <div class="io" id="ioH">
+          <span class="v">h =</span><input id="hIn" type="number" inputmode="decimal" step="any" value="" aria-label="Height h in metres"><span class="unit">m</span><span class="out" id="hOut"></span>
+        </div>
+        <div class="work iowork" id="ioWork" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog class="why" id="why" aria-labelledby="whyTitle">
+  <button type="button" class="close" id="whyClose">Close</button>
+  <h2 id="whyTitle">Why −4.9?</h2>
+  <p>Physics 20 gives the distance an object moves when it speeds up at a steady rate:</p>
+  <p class="formula">d = v₁t + ½at²</p>
+  <p>For a falling object the acceleration is gravity: <b>a = g = −9.81 m/s²</b>. It is negative because gravity pulls down.</p>
+  <div class="work" id="whyWork"></div>
+  <p>Then height = starting height + distance moved, so <b>h = −4.9t² + v₀t + h₀</b>. Here v₀ is the same as v₁: the starting (initial) velocity.</p>
+  <p>On the Moon, g = −1.62 m/s², so the t² number is −0.81.</p>
+</dialog>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  // h(t) = a t² + b t + c, where a = ½g, b = v₀ and c = h₀.
+  const S = { a: -4.9, b: 15, c: 10, key: "max", io: "t", t: 1, hv: null, work: false, focus: "key" };
+  const f = t => S.a * t * t + S.b * t + S.c;
+
+  // Numbers: up to 2 decimals, true minus sign. Typed coefficients keep up to 3.
+  const round = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
+  const fmt = (v, d = 2) => { const r = round(v, d) || 0; return (r < 0 ? "−" : "") + String(Math.abs(r)); };
+  const par = v => v < 0 ? "(" + fmt(v, 3) + ")" : fmt(v, 3);
+  const eqSign = (v, d = 2) => Math.abs(v - round(v, d)) < 1e-9 ? "=" : "≈";
+
+  // −4.9t² + 15t + 10, leaving out zero terms.
+  function poly(a, b, c) {
+    const terms = [[a, "t²"], [b, "t"], [c, ""]].filter(([v]) => v !== 0);
+    if (!terms.length) return "0";
+    return terms.map(([v, x], i) => {
+      const n = Math.abs(v) === 1 && x ? "" : fmt(Math.abs(v), 3);
+      const sign = v < 0 ? (i ? " − " : "−") : (i ? " + " : "");
+      return sign + n + x;
+    }).join("");
+  }
+
+  // Read a typed equation: h = −4.9t² + 15t + 10 (also y =, h(t) =, x for t, t^2, terms in any order).
+  function parse(str) {
+    let s = str.replace(/[−–—]/g, "-").replace(/²/g, "^2").replace(/[\s*·]/g, "").toLowerCase();
+    const sides = s.split("=");
+    if (sides.length > 2) return null;
+    if (sides.length === 2) {
+      if (!/^(h|y|d|h\(t\)|y\(t\)|f\(t\)|h\(x\)|y\(x\)|f\(x\))$/.test(sides[0])) return null;
+      s = sides[1];
+    }
+    s = s.replace(/x/g, "t");
+    if (!s) return null;
+    if (!/^[+-]/.test(s)) s = "+" + s;
+    const re = /([+-])(\d+\.?\d*|\.\d+)?(t(?:\^2)?)?/y;
+    const out = { a: 0, b: 0, c: 0 };
+    while (re.lastIndex < s.length) {
+      const at = re.lastIndex, m = re.exec(s);
+      if (!m || re.lastIndex === at || (!m[2] && !m[3])) return null;
+      const v = (m[1] === "-" ? -1 : 1) * (m[2] ? parseFloat(m[2]) : 1);
+      out[m[3] === "t^2" ? "a" : m[3] ? "b" : "c"] += v;
+    }
+    return out;
+  }
+
+  // Maximum, intercepts and the landing time.
+  function keyPts() {
+    const tv = -S.b / (2 * S.a), D = S.b * S.b - 4 * S.a * S.c;
+    const r = [(-S.b + Math.sqrt(D)) / (2 * S.a), (-S.b - Math.sqrt(D)) / (2 * S.a)].sort((p, q) => p - q);
+    const land = Math.max(0, r[1]);
+    const top = tv > 0 ? f(tv) : S.c;
+    return { tv, hv: f(tv), D, r, land, top, up: tv > 0 };
+  }
+
+  // Graph window: t from 0 and h from 0 to a nice size with every grid line labeled. It only changes when the curve no
+  // longer fits or has shrunk to under a third of it, so moving a slider shows the curve itself changing.
+  const STEPS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+  const W = { T: 0, ts: 1, H: 0, hs: 1 };
+  function fitAxis(need, max, keyMax, keyStep) {
+    need = Math.max(need, 0.5);
+    if (W[keyMax] && need <= W[keyMax] + 1e-9 && need >= W[keyMax] / 3) return;
+    const s = STEPS.find(v => need * 1.05 / v <= 12) || STEPS[STEPS.length - 1];
+    W[keyStep] = s;
+    W[keyMax] = Math.max(s, Math.ceil(need * 1.05 / s - 1e-9) * s);
+  }
+
+  const X0 = 96, X1 = 968, TOP = 40, BASE = 584;
+  const sx = t => X0 + t / W.T * (X1 - X0);
+  const sy = v => BASE - v / W.H * (BASE - TOP);
+  const tAt = X => (X - X0) / (X1 - X0) * W.T;
+
+  const svg = $("g");
+  const clip = el("clipPath", { id: "plotClip" }, el("defs", {}, svg));
+  el("rect", { x: X0 - 8, y: TOP - 8, width: X1 - X0 + 16, height: BASE - TOP + 16 }, clip);
+  const gGrid = el("g", {}, svg), gIO = el("g", { "clip-path": "url(#plotClip)" }, svg), gCurve = el("g", { "clip-path": "url(#plotClip)" }, svg),
+    gKP = el("g", {}, svg), gIOp = el("g", {}, svg), gChip = el("g", {}, svg);
+
+  function drawGrid() {
+    gGrid.replaceChildren();
+    const nT = Math.round(W.T / W.ts), nH = Math.round(W.H / W.hs);
+    for (let i = 0; i <= nT; i++) {
+      const t = round(i * W.ts, 3), X = sx(t);
+      if (i) el("line", { class: "gl", x1: X, x2: X, y1: TOP, y2: BASE }, gGrid);
+      el("text", { class: "nl", x: X, y: BASE + 32, "text-anchor": "middle" }, gGrid, fmt(t));
+    }
+    for (let i = 0; i <= nH; i++) {
+      const v = round(i * W.hs, 3), Y = sy(v);
+      if (i) el("line", { class: "gl", x1: X0, x2: X1, y1: Y, y2: Y }, gGrid);
+      if (i) el("text", { class: "nl", x: X0 - 12, y: Y + 8, "text-anchor": "end" }, gGrid, fmt(v));
+    }
+    el("line", { class: "ax", x1: X0, x2: X1 + 10, y1: BASE, y2: BASE }, gGrid);
+    el("line", { class: "ax", x1: X0, x2: X0, y1: BASE, y2: TOP - 14 }, gGrid);
+    el("text", { class: "axt", x: (X0 + X1) / 2, y: BASE + 68, "text-anchor": "middle" }, gGrid, "Time t (s)");
+    el("text", { class: "axt", x: X0 - 10, y: TOP - 18, "text-anchor": "start" }, gGrid, "Height h (m)");
+  }
+
+  function drawCurve(K) {
+    gCurve.replaceChildren();
+    const end = Math.min(K.land, W.T * 1.02), p = [];
+    if (end <= 0) return;
+    for (let i = 0; i <= 300; i++) { const t = end * i / 300; p.push(sx(t).toFixed(1) + "," + sy(f(t)).toFixed(1)); }
+    el("path", { class: "curve", d: "M" + p.join(" L") }, gCurve);
+  }
+
+  // A value chip beside a point, kept inside the board.
+  function chip(X, Y, text, cls, above) {
+    const t = el("text", { class: "chipt " + cls }, gChip, text);
+    const w = t.getComputedTextLength() + 24, ht = 40;
+    let left = X + 16, top = above ? Y - ht - 14 : Y + 14;
+    if (left + w > 996) left = X - w - 16;
+    left = Math.max(X0 + 4, left);
+    top = Math.max(2, Math.min(BASE - ht - 4, top));
+    const r = el("rect", { class: "chip " + cls, x: left, y: top, width: w, height: ht, rx: 10 }, gChip);
+    gChip.insertBefore(r, t);
+    t.setAttribute("x", left + 12); t.setAttribute("y", top + 29);
+  }
+  const pair = (t, v) => "(" + fmt(t) + ", " + fmt(v) + ")";
+
+  function kpCoords(K) {
+    return { start: [0, S.c], max: K.up ? [K.tv, K.hv] : [0, S.c], land: [K.land, 0] };
+  }
+
+  function drawKP(K) {
+    gKP.replaceChildren();
+    const P = kpCoords(K);
+    for (const k of ["start", "max", "land"]) {
+      if (k === "max" && !K.up) continue;
+      const [t, v] = P[k], X = sx(t), Y = sy(v);
+      const g = el("g", { class: "kpg", tabindex: "0", role: "button", "aria-label": { start: "h-intercept", max: "Maximum", land: "t-intercept" }[k] }, gKP);
+      el("circle", { class: "kphit", cx: X, cy: Y, r: 28 }, g);
+      el("circle", { class: "kp" + (S.key === k ? " on" : ""), cx: X, cy: Y, r: 12 }, g);
+      g.addEventListener("pointerdown", e => { e.stopPropagation(); pickKey(k); });
+      g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickKey(k); } });
+    }
+  }
+
+  // Input and output: t gives one point; h gives the times it is at that height (going up and coming down).
+  function ioPoints(K) {
+    if (S.io === "t") return S.t != null && S.t >= 0 && S.t <= K.land + 1e-9 ? [S.t] : [];
+    if (S.hv == null || S.hv < 0 || S.hv > K.top + 1e-9) return [];
+    const c = S.c - S.hv, D = Math.max(0, S.b * S.b - 4 * S.a * c);
+    const r = [(-S.b + Math.sqrt(D)) / (2 * S.a), (-S.b - Math.sqrt(D)) / (2 * S.a)].sort((p, q) => p - q);
+    const ok = r.filter(t => t >= -1e-9 && t <= K.land + 1e-9).map(t => Math.max(0, t));
+    return ok.length === 2 && Math.abs(ok[0] - ok[1]) < 1e-6 ? [ok[0]] : ok;
+  }
+
+  function drawIO(K, pts) {
+    gIO.replaceChildren(); gIOp.replaceChildren();
+    if (S.io === "h" && pts.length) el("line", { class: "iol", x1: X0, x2: X1, y1: sy(S.hv), y2: sy(S.hv) }, gIO);
+    for (const t of pts) {
+      const X = sx(t), Y = sy(f(t));
+      if (S.io === "t") {
+        el("line", { class: "iol", x1: X, x2: X, y1: BASE, y2: Y }, gIO);
+        el("line", { class: "iol", x1: X0, x2: X, y1: Y, y2: Y }, gIO);
+      } else el("line", { class: "iol", x1: X, x2: X, y1: BASE, y2: Y }, gIO);
+      el("circle", { class: "iop", cx: X, cy: Y, r: 11 }, gIOp);
+    }
+  }
+
+  function drawChips(K, pts) {
+    gChip.replaceChildren();
+    const P = kpCoords(K);
+    if (S.key && !(S.key === "max" && !K.up)) {
+      const [t, v] = P[S.key];
+      chip(sx(t), sy(v), pair(t, v), "p", S.key === "max");
+    }
+    for (const t of pts) chip(sx(t), sy(f(t)), pair(t, f(t)), "o", S.key !== "max");
+  }
+
+  // Work rows: left side, =, right side, step name.
+  function rows(box, list) {
+    box.replaceChildren();
+    for (const [l, e, r, step, ans] of list) {
+      const rr = h("span", "rhs" + (ans ? " ans" : ""));
+      typeof r === "string" ? rr.textContent = r : rr.append(r);
+      box.append(h("span", "lhs", l), h("span", null, e), rr, h("span", "step", step));
+    }
+  }
+  const frac = (top, bot) => { const x = h("span", "frac"); x.append(h("span", null, top), h("span", null, bot)); return x; };
+
+  function drawKeyCard(K) {
+    const P = kpCoords(K);
+    $("kStart").textContent = pair(0, S.c);
+    $("kMax").textContent = pair(...P.max);
+    $("kLand").textContent = pair(K.land, 0);
+    document.querySelectorAll(".kps button").forEach(b => { const on = b.dataset.k === S.key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+    const say = $("kSay"), work = $("kWork");
+    const t3 = v => fmt(v, 3);
+    let list = [];
+    if (!S.key) { say.textContent = "Pick a point to see what it means."; work.hidden = true; return; }
+    if (S.key === "start") {
+      say.textContent = "It starts " + fmt(S.c) + " m above the ground at t = 0 s.";
+      list = [["h", "=", poly(S.a, S.b, S.c).replace(/t/g, "(0)"), "Fill in t = 0"], ["", "=", fmt(S.c), "Simplify", 1]];
+    } else if (S.key === "max") {
+      if (!K.up) { say.textContent = "It is thrown down or dropped, so its highest point is the start: " + fmt(S.c) + " m at 0 s."; work.hidden = true; return; }
+      say.textContent = "It reaches its highest point, " + fmt(K.hv) + " m, at " + fmt(K.tv) + " s.";
+      list = [
+        ["t", "=", frac("−b", "2a"), "Axis of symmetry"],
+        ["", "=", frac(fmt(-S.b, 3), "2" + par(S.a)), "Fill in"],
+        ["", "=", frac(fmt(-S.b, 3), fmt(2 * S.a, 3)), "Multiply"],
+        ["", eqSign(K.tv), fmt(K.tv), "Divide", 1],
+        ["h", "=", poly(S.a, S.b, S.c).replace(/t/g, "(" + fmt(K.tv) + ")"), "Fill in t"],
+        ["", eqSign(K.hv), fmt(K.hv), "Calculate", 1],
+      ];
+    } else {
+      if (K.land <= 0) { say.textContent = "It starts on the ground and is not thrown up, so it never leaves the ground."; work.hidden = true; return; }
+      say.textContent = "It hits the ground (h = 0) at " + fmt(K.land) + " s.";
+      const sq = Math.sqrt(K.D);
+      list = [
+        ["0", "=", poly(S.a, S.b, S.c), "Set h = 0"],
+        ["t", "=", frac("−b ± √(b² − 4ac)", "2a"), "Quadratic formula"],
+        ["", "=", frac(fmt(-S.b, 3) + " ± √(" + par(S.b) + "² − 4(" + fmt(S.a, 3) + ")(" + fmt(S.c, 3) + "))", "2" + par(S.a)), "Fill in"],
+        ["", eqSign(K.D, 2) === "=" && eqSign(sq, 2) === "=" ? "=" : "≈", frac(fmt(-S.b, 3) + " ± " + fmt(sq), fmt(2 * S.a, 3)), "Square root"],
+        ["t", "≈", fmt(K.r[0]) + " or " + fmt(K.r[1]), "Two answers"],
+        ["t", eqSign(K.land), fmt(K.land), "Time can't be negative", 1],
+      ];
+      if (S.c === 0) list[5][3] = "It leaves the ground at 0";
+    }
+    rows(work, list);
+    work.hidden = !S.work || S.focus !== "key";
+  }
+
+  function drawIOCard(K, pts) {
+    $("ioT").classList.toggle("on", S.io === "t");
+    $("ioH").classList.toggle("on", S.io === "h");
+    const tOut = $("tOut"), hOut = $("hOut"), work = $("ioWork");
+    tOut.className = "out"; hOut.className = "out";
+    tOut.textContent = ""; hOut.textContent = "";
+    let list = [];
+    if (S.t != null && S.io === "t") {
+      if (S.t < 0) { tOut.textContent = "Time starts at 0."; tOut.className = "out note"; }
+      else if (S.t > K.land + 1e-9) { tOut.textContent = "It already landed at " + fmt(K.land) + " s."; tOut.className = "out note"; }
+      else {
+        const v = f(S.t);
+        tOut.textContent = "→ h " + eqSign(v) + " " + fmt(v) + " m";
+        const tt = "(" + fmt(S.t, 3) + ")";
+        const p1 = S.a * S.t * S.t, p2 = S.b * S.t;
+        list = [
+          ["h", "=", poly(S.a, S.b, S.c).replace(/t/g, tt), "Fill in t"],
+          ["", eqSign(p1) === "=" && eqSign(p2) === "=" ? "=" : "≈", [p1, p2, S.c].map((x, i) => i ? (x < 0 ? " − " : " + ") + fmt(Math.abs(x)) : fmt(x)).join(""), "Multiply"],
+          ["", eqSign(v), fmt(v), "Add", 1],
+        ];
+      }
+    }
+    if (S.hv != null && S.io === "h") {
+      if (S.hv < 0) { hOut.textContent = "Height can't be below the ground."; hOut.className = "out note"; }
+      else if (S.hv > K.top + 1e-9) { hOut.textContent = "It never gets that high. The highest is " + fmt(K.top) + " m."; hOut.className = "out note"; }
+      else if (pts.length) {
+        hOut.textContent = "→ t " + (pts.every(t => eqSign(t) === "=") ? "=" : "≈") + " " + pts.map(t => fmt(t)).join(" s or ") + " s";
+        const c = S.c - S.hv, D = S.b * S.b - 4 * S.a * c, sq = Math.sqrt(Math.max(0, D));
+        list = [
+          [fmt(S.hv, 3), "=", poly(S.a, S.b, S.c), "Fill in h"],
+          ["0", "=", poly(S.a, S.b, c), (S.hv ? "Subtract " + fmt(S.hv, 3) : "Set h = 0")],
+          ["t", "=", frac("−b ± √(b² − 4ac)", "2a"), "Quadratic formula"],
+          ["", "=", frac(fmt(-S.b, 3) + " ± √(" + par(S.b) + "² − 4(" + fmt(S.a, 3) + ")(" + fmt(c, 3) + "))", "2" + par(S.a)), "Fill in"],
+          ["", eqSign(sq) === "=" ? "=" : "≈", frac(fmt(-S.b, 3) + " ± " + fmt(sq), fmt(2 * S.a, 3)), "Square root"],
+          ["t", pts.every(t => eqSign(t) === "=") ? "=" : "≈", pts.map(t => fmt(t)).join(" or "), pts.length === 2 ? "Going up, coming down" : "Solve", 1],
+        ];
+      }
+    }
+    rows(work, list);
+    work.hidden = !S.work || S.focus !== "io" || !list.length;
+  }
+
+  function syncControls() {
+    $("sa").value = -S.a; $("oa").textContent = fmt(S.a, 3);
+    $("sb").value = S.b; $("ob").textContent = fmt(S.b, 3);
+    $("sc").value = S.c; $("oc").textContent = fmt(S.c, 3);
+    $("gval").textContent = "g = " + fmt(2 * S.a, 3) + " m/s²";
+    if (document.activeElement !== $("eq")) $("eq").value = "h = " + poly(S.a, S.b, S.c);
+  }
+
+  function render() {
+    const K = keyPts();
+    fitAxis(K.land, 0, "T", "ts");
+    fitAxis(K.top, 0, "H", "hs");
+    const pts = ioPoints(K);
+    drawGrid(); drawCurve(K); drawIO(K, pts); drawKP(K); drawChips(K, pts);
+    drawKeyCard(K); drawIOCard(K, pts); syncControls();
+  }
+
+  // Show work shows the steps for the card used last; the panel scrolls to them.
+  function showWork() {
+    const w = $(S.focus === "key" ? "kWork" : "ioWork");
+    if (S.work && !w.hidden) w.scrollIntoView({ block: "nearest" });
+  }
+  function pickKey(k) { S.key = S.key === k ? null : k; S.focus = "key"; render(); showWork(); }
+  document.querySelectorAll(".kps button").forEach(b => b.addEventListener("click", () => pickKey(b.dataset.k)));
+
+  // Typed equation: a valid one redraws at once.
+  $("eq").addEventListener("input", () => {
+    const p = parse($("eq").value), err = $("err");
+    let msg = "";
+    if (!p) msg = "Type it like h = −4.9t² + 15t + 10";
+    else if (p.a >= 0) msg = "The t² number must be negative, because gravity pulls down.";
+    else if (p.c < 0) msg = "The starting height can't be below the ground (0 or more).";
+    $("eq").classList.toggle("bad", !!msg);
+    err.textContent = msg;
+    if (msg) return;
+    stopLaunch();
+    S.a = round(p.a, 6); S.b = round(p.b, 6); S.c = round(p.c, 6);
+    render();
+  });
+  $("eq").addEventListener("blur", () => { $("eq").classList.remove("bad"); $("err").textContent = ""; syncControls(); });
+
+  // Sliders write the equation.
+  $("sa").addEventListener("input", () => { stopLaunch(); S.a = -parseFloat($("sa").value); render(); });
+  $("sb").addEventListener("input", () => { stopLaunch(); S.b = parseFloat($("sb").value); render(); });
+  $("sc").addEventListener("input", () => { stopLaunch(); S.c = parseFloat($("sc").value); render(); });
+
+  // Input boxes.
+  const num = s => { const v = parseFloat(String(s).replace(/[−–]/g, "-")); return isFinite(v) ? v : null; };
+  $("tIn").addEventListener("input", () => { stopLaunch(); S.io = "t"; S.focus = "io"; S.t = num($("tIn").value); render(); showWork(); });
+  $("hIn").addEventListener("input", () => { stopLaunch(); S.io = "h"; S.focus = "io"; S.hv = num($("hIn").value); render(); showWork(); });
+  $("tIn").addEventListener("focus", () => { S.io = "t"; S.focus = "io"; render(); });
+  $("hIn").addEventListener("focus", () => { S.io = "h"; S.focus = "io"; render(); });
+  $("ioT").addEventListener("click", e => { if (e.target.tagName !== "INPUT") $("tIn").focus(); });
+  $("ioH").addEventListener("click", e => { if (e.target.tagName !== "INPUT") $("hIn").focus(); });
+
+  // Click or drag on the board: read the curve at that time.
+  let dragging = false;
+  const snapT = t => { const s = W.ts / 10; return round(Math.round(t / s) * s, 4); };
+  function readAt(e) {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    const K = keyPts();
+    const t = Math.max(0, Math.min(K.land, snapT(tAt(p.matrixTransform(svg.getScreenCTM().inverse()).x))));
+    S.io = "t"; S.focus = "io"; S.t = t;
+    $("tIn").value = fmt(t, 4).replace("−", "-");
+    render();
+  }
+  svg.addEventListener("pointerdown", e => { stopLaunch(); dragging = true; svg.setPointerCapture(e.pointerId); readAt(e); });
+  svg.addEventListener("pointermove", e => { if (dragging) readAt(e); });
+  const stop = () => { dragging = false; };
+  svg.addEventListener("pointerup", () => { stop(); showWork(); });
+  svg.addEventListener("pointercancel", stop);
+
+  // Launch: the orange point runs along the curve in real time (sped up or slowed so it takes 2 to 6 seconds).
+  let anim = null;
+  function stopLaunch() { if (anim) { cancelAnimationFrame(anim); anim = null; $("launch").textContent = "Launch ▶"; } }
+  $("launch").addEventListener("click", () => {
+    if (anim) { stopLaunch(); return; }
+    const K = keyPts();
+    if (K.land <= 0) return;
+    const dur = Math.min(6, Math.max(2, K.land)) * 1000, t0 = performance.now();
+    $("launch").textContent = "Stop ■";
+    S.io = "t"; S.focus = "io";
+    const step = now => {
+      const k = Math.min(1, (now - t0) / dur);
+      S.t = round(K.land * k, 2);
+      if (k >= 1) S.t = round(K.land, 4);
+      $("tIn").value = fmt(S.t, 4).replace("−", "-");
+      render();
+      if (k < 1) anim = requestAnimationFrame(step); else { anim = null; $("launch").textContent = "Launch ▶"; }
+    };
+    anim = requestAnimationFrame(step);
+  });
+
+  $("workTog").addEventListener("click", () => {
+    S.work = !S.work;
+    $("workTog").setAttribute("aria-pressed", String(S.work));
+    $("workTog").textContent = S.work ? "Hide work" : "Show work";
+    render(); showWork();
+  });
+
+  // Why −4.9 pop-up.
+  rows($("whyWork"), [
+    ["½a", "=", "½(−9.81)", "Fill in g"],
+    ["", "=", "−4.905", "Multiply"],
+    ["", "≈", "−4.9", "Round", 1],
+  ]);
+  const dlg = $("why");
+  const openWhy = () => { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); };
+  $("whyBtn").addEventListener("click", openWhy);
+  $("whyBtn2").addEventListener("click", openWhy);
+  $("whyClose").addEventListener("click", () => dlg.close ? dlg.close() : dlg.removeAttribute("open"));
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+  window.addEventListener("langchange", render);
+  document.fonts && document.fonts.ready.then(render);
+  render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Projectile Motion (projectile.html). */
+window.I18N_PAGE = {
+ "Projectile Motion": "Mouvement d’un projectile",
+ "Why −4.9?": "Pourquoi −4.9 ?",
+ "Why {n}?": "Pourquoi {n} ?",
+ "Why ½g?": "Pourquoi ½g ?",
+ "Show work": "Afficher la démarche",
+ "Hide work": "Masquer la démarche",
+ "Graph of height h in metres against time t in seconds": "Graphique de la hauteur h en mètres selon le temps t en secondes",
+ "Launch ▶": "Lancer ▶",
+ "Stop ■": "Arrêter ■",
+ "Click the curve to read a point. Click a purple dot for the maximum or an intercept.": "Clique sur la courbe pour lire un point. Clique sur un point violet pour le maximum ou un point d’intersection.",
+ "Equation": "Équation",
+ "Gravity {0}": "Gravité {0}",
+ "½g, the t² number": "½g, le nombre devant t²",
+ "Initial velocity {0}": "Vitesse initiale {0}",
+ "v₀ in m/s": "v₀ en m/s",
+ "Initial height {0}": "Hauteur initiale {0}",
+ "h₀ in m": "h₀ en m",
+ "Maximum and intercepts": "Maximum et points d’intersection",
+ "h-intercept": "Ordonnée à l’origine",
+ "Maximum": "Maximum",
+ "t-intercept": "Abscisse à l’origine",
+ "Input and output": "Entrée et sortie",
+ "Time t in seconds": "Temps t en secondes",
+ "Height h in metres": "Hauteur h en mètres",
+ "Time t (s)": "Temps t (s)",
+ "Height h (m)": "Hauteur h (m)",
+ "Type it like h = −4.9t² + 15t + 10": "Écris-la comme h = −4.9t² + 15t + 10",
+ "The t² number must be negative, because gravity pulls down.": "Le nombre devant t² doit être négatif, car la gravité tire vers le bas.",
+ "The starting height can't be below the ground (0 or more).": "La hauteur de départ ne peut pas être sous le sol (0 ou plus).",
+ "Pick a point to see what it means.": "Choisis un point pour voir ce qu’il signifie.",
+ "It starts {n} m above the ground at t = {n} s.": "Il part à {n} m au-dessus du sol à t = {n} s.",
+ "It is thrown down or dropped, so its highest point is the start: {n} m at {n} s.": "Il est lancé vers le bas ou échappé, donc son point le plus haut est le départ : {n} m à {n} s.",
+ "It reaches its highest point, {n} m, at {n} s.": "Il atteint son point le plus haut, {n} m, à {n} s.",
+ "It starts on the ground and is not thrown up, so it never leaves the ground.": "Il part du sol et n’est pas lancé vers le haut, donc il ne quitte jamais le sol.",
+ "It hits the ground (h = {n}) at {n} s.": "Il touche le sol (h = {n}) à {n} s.",
+ "Time starts at {n}.": "Le temps commence à {n}.",
+ "It already landed at {n} s.": "Il a déjà touché le sol à {n} s.",
+ "Height can't be below the ground.": "La hauteur ne peut pas être sous le sol.",
+ "It never gets that high. The highest is {n} m.": "Il ne monte jamais aussi haut. Le plus haut est {n} m.",
+ "Fill in t = {n}": "Remplacer t = {n}",
+ "Fill in t": "Remplacer t",
+ "Fill in h": "Remplacer h",
+ "Fill in g": "Remplacer g",
+ "Fill in": "Remplacer",
+ "Simplify": "Simplifier",
+ "Axis of symmetry": "Axe de symétrie",
+ "Multiply": "Multiplier",
+ "Divide": "Diviser",
+ "Calculate": "Calculer",
+ "Add": "Additionner",
+ "Round": "Arrondir",
+ "Set h = {n}": "Poser h = {n}",
+ "Subtract {n}": "Soustraire {n}",
+ "Quadratic formula": "Formule quadratique",
+ "Square root": "Racine carrée",
+ "Two answers": "Deux réponses",
+ "Time can't be negative": "Le temps ne peut pas être négatif",
+ "It leaves the ground at {n}": "Il quitte le sol à {n}",
+ "Going up, coming down": "En montant, en descendant",
+ "Solve": "Résoudre",
+ "~(.+) or (.+)": "$1 ou $2",
+ "Close": "Fermer",
+ "Physics 20 gives the distance an object moves when it speeds up at a steady rate:": "En Physique 20, cette formule donne la distance parcourue par un objet qui accélère de façon constante :",
+ "For a falling object the acceleration is gravity: {0}. It is negative because gravity pulls down.": "Pour un objet qui tombe, l’accélération est la gravité : {0}. Elle est négative, car la gravité tire vers le bas.",
+ "Then height = starting height + distance moved, so {0}. Here v₀ is the same as v₁: the starting (initial) velocity.": "Ensuite, hauteur = hauteur de départ + distance parcourue, donc {0}. Ici, v₀ est la même chose que v₁ : la vitesse de départ (initiale).",
+ "On the Moon, g = {n} m/s², so the t² number is {n}.": "Sur la Lune, g = {n} m/s², donc le nombre devant t² est {n}.",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>

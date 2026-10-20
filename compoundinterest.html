@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Compound Interest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Compound Interest, Math 30-1 and Math 30-2 (grades 10-12; Shawn 2026-10-20).
+   Both courses use the formula printed on their own formula sheet, never A = P(1 + i)^n:
+     Math 30-1  y = a(b)^(t/p)  t in years, p = years in one compounding period (1, 1/2, 1/4, 1/12).
+                Time is solved with logarithms; the interest rate with a rational exponent.
+     Math 30-2  y = a(b)^x      x = number of compounding periods.
+                Time is solved by graphing both sides and reading the intersection; Read the function
+                turns a and b back into the starting amount and the yearly rate.
+   Colours tie the question to the formula: a blue, b orange, t / p / x purple, y green.
+   The board: the formula, the "what we know" chips, the work (= lined up, step names on the right)
+   and a small graph of the money growing. Learn: Next step / Back / Show all. Practice: type the answer,
+   Check (targeted feedback for the usual mistakes), Hint (the chips, then the set-up), Show me. */
+:root { --ca: #2f5fd0; --cb: #c2571a; --cx: #7a3fb8; --cy: #1f7a5a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ca: #7aa2ff; --cb: #f08a4b; --cx: #c09bf5; --cy: #4cc49a; } }
+:root[data-theme="dark"] { --ca: #7aa2ff; --cb: #f08a4b; --cx: #c09bf5; --cy: #4cc49a; }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1.9fr) minmax(320px, 1fr); } }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); color: var(--ink); font: inherit; font-size: 1.1rem; min-height: 48px; padding: 6px 14px; cursor: pointer; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); font-weight: 700; }
+header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
+.hctl { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.wide { display: flex; width: 100%; }
+.wide button { flex: 1 1 0; padding: 6px 8px; font-size: 1.02rem; }
+.side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel { gap: 12px; }
+.card { padding: 12px 14px; }
+.card .label { margin-bottom: 6px; font-size: 0.85rem; }
+.story { font-size: 1.3rem; line-height: 1.5; margin: 0; }
+.story .ask { display: block; margin-top: 6px; font-weight: 700; }
+.round { margin: 6px 0 0; color: var(--muted); font-size: 1rem; }
+.k-a { color: var(--ca); font-weight: 700; } .k-b { color: var(--cb); font-weight: 700; }
+.k-x { color: var(--cx); font-weight: 700; } .k-y { color: var(--cy); font-weight: 700; }
+.steplbl { margin: 0 0 4px; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+.say { font-size: 1.3rem; margin: 0; min-height: 3em; line-height: 1.45; }
+.say b { font-family: var(--font-num); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font: inherit; font-size: 1.15rem; min-height: 52px; padding: 8px 16px; border-radius: 10px; border: 2px solid var(--grid-major); background: var(--sheet); color: var(--ink); cursor: pointer; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-weight: 700; }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.ansrow { display: flex; align-items: center; gap: 10px; }
+.unit { font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; white-space: nowrap; }
+.big-in { font-family: var(--font-num); font-weight: 700; font-size: 2rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; height: 62px; width: 100%; min-width: 0; padding: 0 12px; text-align: center; }
+.big-in.bad { border-color: var(--warn); }
+.big-in.ok { border-color: var(--green); color: var(--green); }
+.fb { margin: 8px 0 0; font-size: 1.2rem; font-weight: 700; min-height: 1.45em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1.1rem; color: var(--muted); margin: 4px 0 0; }
+.ph { grid-column: 1 / -1; font-family: var(--font-body); font-weight: 400; font-size: 1.2rem; color: var(--muted); white-space: normal; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.35rem; }
+
+/* Board: formula banner, chips, then the work beside the graph. */
+.board { gap: 10px; padding: 12px 14px; }
+@media (min-width: 861px) and (min-height: 520px) { .board { justify-content: flex-start; } }
+.fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 18px; padding-bottom: 6px; border-bottom: 2px solid var(--grid); }
+.fbar .tag { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.fbar .fm { font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; white-space: nowrap; }
+.fbar .legend { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 0.95rem; color: var(--muted); }
+.fbar .fcol { display: flex; flex-direction: column; gap: 2px; flex: 1 1 20em; min-width: 0; }
+.fbar .legend b { font-family: var(--font-num); }
+.fbar .focus { font-size: 0.95rem; color: var(--muted); }
+.fbar .focus b { color: var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 8px; min-height: 3.2rem; }
+.chip { display: inline-flex; flex-direction: column; justify-content: center; padding: 2px 10px; border-radius: 10px; background: var(--chip); border: 2px solid currentColor; }
+.chip .cv { font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.chip small { font-family: var(--font-body); font-size: 0.78rem; line-height: 1.2; font-weight: 700; opacity: 0.85; }
+.chip.unk { border-style: dashed; }
+.chip.hid { visibility: hidden; }
+.bodyrow.long { grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr); }
+.bodyrow { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; flex: 1 1 auto; min-height: 0; }
+.work { --wf: 30px; font-size: var(--wf); display: grid; grid-template-columns: max-content max-content max-content minmax(max-content, 1fr); align-content: start; column-gap: 0.35em; row-gap: 0.4em; overflow: hidden; min-height: 0; font-family: var(--font-num); font-weight: 700; padding-top: 0.7em; }
+.work { align-items: baseline; }
+.work > div { display: block; white-space: nowrap; line-height: 1.5; }
+.work .l { text-align: right; }
+.work .e { color: var(--muted); text-align: center; }
+.work .n { font-family: var(--font-body); font-size: clamp(0.8rem, 0.56em, 1.1rem); color: var(--muted); text-align: right; padding-left: 0.8em; white-space: nowrap; }
+.work .hid { visibility: hidden; }
+.work .new { animation: pop 0.45s ease-out both; }
+.work .ans { color: var(--cy); }
+.work .rest { display: contents; }
+.chart { min-height: 0; min-width: 0; display: flex; }
+.chart svg { width: 100%; height: 100%; display: block; }
+/* Math pieces */
+.frac { display: inline-flex; flex-direction: column; align-items: stretch; text-align: center; vertical-align: middle; line-height: 1.1; }
+.frac > span:first-child { border-bottom: 0.08em solid currentColor; padding: 0 0.15em 0.06em; }
+.frac > span:last-child { padding: 0.06em 0.3em 0; }
+sup { font-size: 0.66em; line-height: 0; vertical-align: 0; position: relative; top: -0.85em; display: inline-flex; align-items: center; }
+sup .frac { font-size: 1em; }
+sup .frac .frac { font-size: 0.92em; }
+.work sup { top: -0.9em; }
+.op { color: var(--muted); padding: 0 0.15em; }
+/* Graph */
+.ax { stroke: var(--muted); stroke-width: 2; }
+.gl { stroke: var(--grid); stroke-width: 1; }
+.tk { font-family: var(--font-num); font-weight: 700; font-size: 15px; fill: var(--muted); }
+.at { font-family: var(--font-body); font-weight: 700; font-size: 16px; fill: var(--muted); }
+.curve { fill: none; stroke: var(--cb); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.target { stroke: var(--cy); stroke-width: 3; stroke-dasharray: 8 6; }
+.drop { stroke: var(--cx); stroke-width: 3; stroke-dasharray: 6 5; }
+.pa { fill: var(--ca); } .py { fill: var(--cy); } .px { fill: var(--cx); }
+.pl { font-family: var(--font-num); font-weight: 700; font-size: 19px; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.pl.a { fill: var(--ca); } .pl.y { fill: var(--cy); } .pl.x { fill: var(--cx); } .pl.b { fill: var(--cb); }
+.calc rect { fill: var(--paper); stroke: var(--grid-major); stroke-width: 2; }
+.calc text { font-family: var(--font-num); font-weight: 700; font-size: 16px; fill: var(--ink); }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .work .new { animation: none; } }
+@media (max-width: 860px), (max-height: 519px) {
+  .bodyrow { grid-template-columns: 1fr; }
+  .work { font-size: 1.25rem; overflow-x: auto; }
+  .chart { height: 280px; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Compound Interest</h1></div>
+    <div class="hctl">
+      <div class="seg-btns" role="group" aria-label="Course" id="courses">
+        <button type="button" data-course="301" class="on">Math 30-1</button><button type="button" data-course="302">Math 30-2</button>
+      </div>
+      <div class="seg-btns" role="group" aria-label="Mode" id="modes">
+        <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <div class="fbar" id="fbar"></div>
+      <div class="chips" id="chips"></div>
+      <div class="bodyrow">
+        <div class="work" id="work" aria-live="polite"></div>
+        <div class="chart"><svg id="chart" viewBox="0 0 420 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Graph of the money growing over time"></svg></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <section class="card">
+        <p class="label">What are we finding?</p>
+        <div class="seg-btns wide" role="group" aria-label="Question type" id="tasks"></div>
+      </section>
+      <section class="card">
+        <p class="label">Question</p>
+        <p class="story" id="story"></p>
+        <p class="round" id="round"></p>
+      </section>
+
+      <div class="panel" id="learn">
+        <section class="card">
+          <p class="steplbl" id="steplbl"></p>
+          <p class="say" id="say"></p>
+        </section>
+        <div class="btns">
+          <button type="button" class="go" id="next">Next step</button>
+          <button type="button" id="back">Back</button>
+          <button type="button" id="all">Show all</button>
+          <button type="button" id="newex">New example</button>
+        </div>
+      </div>
+
+      <div class="panel" id="practice" hidden>
+        <section class="card">
+          <p class="label">Your answer</p>
+          <div class="ansrow">
+            <span class="unit" id="upre"></span>
+            <input class="big-in" id="ans" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer">
+            <span class="unit" id="upost"></span>
+            <div class="btns"><button type="button" class="go" id="check">Check</button></div>
+          </div>
+          <p class="fb" id="fb" aria-live="polite"></p>
+          <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
+        </section>
+        <div class="btns">
+          <button type="button" id="hint">Hint</button>
+          <button type="button" id="showme">Show me</button>
+          <button type="button" id="newq">New question</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const isFr = () => document.documentElement.lang === "fr";
+
+  // ---------- numbers ----------
+  const trim = (v, d) => { const s = (+v).toFixed(d); return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s; };
+  // Thousands get a space once there are 5 or more digits (12 500), like the diploma exams.
+  const grp = s => { const [i, f] = s.split("."); return (i.length >= 5 ? i.replace(/\B(?=(\d{3})+$)/g, " ") : i) + (f != null ? "." + f : ""); };
+  const n6 = v => grp(trim(v, 6));
+  const moneyNum = v => grp(Number.isInteger(+(+v).toFixed(2)) ? String(Math.round(v)) : (+v).toFixed(2));
+  // Money in sentences: $3174.34, or 3 174,34 $ in French.
+  function money(v) {
+    const s = Number.isInteger(+(+v).toFixed(2)) && v >= 100 ? String(Math.round(v)) : (+v).toFixed(2);
+    if (!isFr()) return "$" + grp(s);
+    const [i, f] = s.split(".");
+    return (i.length >= 4 ? i.replace(/\B(?=(\d{3})+$)/g, " ") : i) + (f ? "," + f : "") + " $";
+  }
+  const pct = v => trim(v, 3) + "%";
+
+  // ---------- math as HTML ----------
+  const K = (k, s) => `<span class="k-${k}">${s}</span>`;
+  const fr = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+  const sup = s => `<sup>${s}</sup>`;
+  const pw = (b, e) => `(${b})${sup(e)}`;
+  const OPS = { 1: "1", 2: fr(1, 2), 4: fr(1, 4), 12: fr(1, 12) };
+  const pHtml = n => OPS[n];
+  const FORM = {
+    301: `${K("y", "y")} = ${K("a", "a")}(${K("b", "b")})${sup(fr(K("x", "t"), K("x", "p")))}`,
+    302: `${K("y", "y")} = ${K("a", "a")}(${K("b", "b")})${sup(K("x", "x"))}`
+  };
+  const FREQ = { 1: "annually", 2: "semi-annually", 4: "quarterly", 12: "monthly" };
+  const PERIODS = { 1: "years", 2: "half-years", 4: "quarters", 12: "months" };
+
+  // ---------- questions ----------
+  const NAMES = ["Maya", "Liam", "Priya", "Noah", "Aiyana", "Owen", "Sofia", "Ethan", "Amara", "Jonah", "Mei", "Cole"];
+  const RATES = { 1: [2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8], 2: [2, 3, 3.5, 4, 5, 6, 7, 8], 4: [2, 3, 4, 5, 6, 8], 12: [1.2, 2.4, 3, 3.6, 4.8, 6, 7.2] };
+  const PRINC = [500, 800, 1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 7500, 8000, 10000];
+  const TASKS = {
+    301: [["final", "Final amount"], ["initial", "Initial amount"], ["time", "Time"], ["rate", "Interest rate"]],
+    302: [["final", "Final amount"], ["initial", "Initial amount"], ["time", "Time"], ["read", "Read the function"]]
+  };
+  const pickN = () => pick([1, 2, 2, 4, 4, 12, 12]);
+
+  // q: { course, task, name, a, r (yearly %), n (periods a year), t (years), y }, plus the answer.
+  function make(course, task, demo) {
+    const q = { course, task, name: pick(NAMES) };
+    for (let tries = 0; tries < 200; tries++) {
+      const n = task === "read" ? pick([2, 4, 12]) : pickN();
+      q.n = n;
+      if (task === "rate") {
+        q.a = pick(PRINC); q.t = ri(3, n === 12 ? 8 : 12);
+        const ratio = pick([1.2, 1.25, 1.3, 1.4, 1.5, 1.6, 1.75, 2]);
+        q.y = q.a * ratio; q.ratio = ratio;
+        q.b = Math.pow(ratio, 1 / (n * q.t)); q.r = (q.b - 1) * n * 100;
+        if (q.r < 1.5 || q.r > 10) continue;
+        q.ans = +q.r.toFixed(2);
+      } else {
+        q.r = pick(RATES[n]); q.b = 1 + q.r / 100 / n;
+        if (task === "time") {
+          q.a = pick(PRINC); q.ratio = pick([1.25, 1.5, 1.6, 1.8, 2, 2.5, 3]); q.y = q.a * q.ratio;
+          q.t = Math.log(q.ratio) / (n * Math.log(q.b));
+          if (q.t < 3 || q.t > 30 || n * q.t > 160) continue;
+          q.x = n * q.t; q.ans = +q.t.toFixed(1);
+        } else if (task === "initial") {
+          q.t = ri(2, n === 12 ? 10 : 15); q.y = 500 * ri(4, 40);
+          q.a = q.y / Math.pow(q.b, n * q.t); q.ans = +q.a.toFixed(2);
+        } else if (task === "read") {
+          q.a = pick(PRINC); q.ask = demo ? "both" : pick(["rate", "rate", "a"]);
+          q.ans = q.ask === "a" ? q.a : q.r;
+        } else {
+          q.a = pick(PRINC); q.t = ri(2, n === 12 ? 10 : 15);
+          q.y = q.a * Math.pow(q.b, n * q.t); q.ans = +q.y.toFixed(2);
+        }
+      }
+      q.N = n * (q.t || 5);
+      return q;
+    }
+    return make(course, task, demo);
+  }
+  // The worked example each task opens with in Learn.
+  function demo(course, task) {
+    const D = {
+      final: { n: 4, r: 4, a: 2500, t: 6 }, initial: { n: 4, r: 8, y: 6000, t: 8 },
+      time: { n: 2, r: 3, a: 5000, ratio: 1.6 }, rate: { n: 12, a: 4000, ratio: 1.3, t: 5 }, read: { n: 4, r: 9, a: 1800 }
+    }[task];
+    const q = Object.assign({ course, task, name: "Maya" }, D);
+    if (task === "rate") { q.y = q.a * q.ratio; q.b = Math.pow(q.ratio, 1 / (q.n * q.t)); q.r = (q.b - 1) * q.n * 100; q.ans = +q.r.toFixed(2); }
+    else q.b = 1 + q.r / 100 / q.n;
+    if (task === "final") { q.y = q.a * Math.pow(q.b, q.n * q.t); q.ans = +q.y.toFixed(2); }
+    if (task === "initial") { q.a = q.y / Math.pow(q.b, q.n * q.t); q.ans = +q.a.toFixed(2); }
+    if (task === "time") { q.y = q.a * q.ratio; q.t = Math.log(q.ratio) / (q.n * Math.log(q.b)); q.x = q.n * q.t; q.ans = +q.t.toFixed(1); }
+    if (task === "read") { q.ask = "both"; q.ans = q.r; }
+    q.N = q.n * (q.t || 5);
+    return q;
+  }
+
+  // ---------- the question in words ----------
+  // Each sentence is one element; its numbers are child spans, so the French switch can reorder them.
+  function story(q) {
+    const nm = `<span>${q.name}</span>`;
+    const A = K("a", money(q.a)), Y = K("y", money(q.y)), R = K("b", pct(q.r)), F = K("b", FREQ[q.n]);
+    const T = K("x", `${trim(q.t, 0)} years`);
+    let s = "", ask = "";
+    if (q.task === "final") { s = `${nm} invests ${A} at ${R} per year, compounded ${F}.`; ask = `How much is it worth after ${T}?`; }
+    if (q.task === "initial") { s = `${nm} wants ${Y} in ${T}. The account pays ${R} per year, compounded ${F}.`; ask = "How much must be invested now?"; }
+    if (q.task === "time") { s = `${nm} invests ${A} at ${R} per year, compounded ${F}.`; ask = `How many years until it is worth ${Y}?`; }
+    if (q.task === "rate") { s = `${nm} invested ${A}. After ${T}, compounded ${F}, it was worth ${Y}.`; ask = "What was the yearly interest rate?"; }
+    if (q.task === "read") {
+      const f = `<span class="fnum">${K("y", "y")} = ${K("a", moneyNum(q.a))}(${K("b", n6(q.b))})${sup(K("x", "x"))}</span>`;
+      s = `The value of an investment is ${f}, where x is the number of ${K("x", PERIODS[q.n])}.`;
+      ask = q.ask === "a" ? "How much was invested at the start?" : q.ask === "rate" ? "What is the yearly interest rate?" : "What was invested, and what is the yearly rate?";
+    }
+    $("#story").innerHTML = `<span>${s}</span><span class="ask">${ask}</span>`;
+    const R_ = { final: "Round to the cent.", initial: "Round to the cent.", time: "Round to a tenth of a year.", rate: "Round to a hundredth of a percent.", read: "" };
+    $("#round").textContent = mode === "practice" ? R_[q.task] : "";
+  }
+
+  // ---------- chips and work ----------
+  // chips: [{ k, v (html), label, unk, g (group: 1 amounts, 2 growth factor, 3 time) }]
+  // lines: [{ l, r, name, say }] where l / r are the two sides of =; l = "" continues the line above.
+  function solve(q) {
+    const c = q.course, n = q.n, chips = [], L = [];
+    const aV = moneyNum(q.a), yV = moneyNum(q.y), bV = n6(q.b);
+    const rd = trim(q.r / 100, 5);
+    const bCalc = `1 + ${fr(rd, n)} = ${bV}`;
+    const unk = { final: "y", initial: "a", time: c === "301" ? "t" : "x", rate: "b", read: "" }[q.task];
+    chips.push({ k: "a", v: `a = ${unk === "a" ? "?" : aV}`, label: "starting amount", unk: unk === "a", g: 1 });
+    if (q.task === "read") chips.push({ k: "b", v: `b = ${bV}`, label: "growth factor", g: 2 });
+    else if (unk === "b") chips.push({ k: "b", v: "b = ?", label: "growth factor", unk: true, g: 1 });
+    else chips.push({ k: "b", v: `b = ${bCalc}`, label: "growth factor per period", g: 2 });
+    if (c === "302") {
+      if (q.task === "read") chips.push({ k: "x", v: `x = ${PERIODS[n]}`, label: `${n} periods a year`, g: 3 });
+      else if (unk === "x") chips.push({ k: "x", v: "x = ?", label: "number of periods", unk: true, g: 1 });
+      else chips.push({ k: "x", v: `x = ${n} × ${q.t} = ${n * q.t}`, label: "number of periods", g: 3 });
+    } else {
+      chips.push({ k: "x", v: `t = ${unk === "t" ? "?" : q.t}`, label: "years", unk: unk === "t", g: unk === "t" ? 1 : 3 });
+      chips.push({ k: "x", v: `p = ${pHtml(n)}`, label: "years in one period", g: 3 });
+    }
+    if (q.task !== "read") chips.push({ k: "y", v: `y = ${unk === "y" ? "?" : yV}`, label: "final amount", unk: unk === "y", g: 1 });
+
+    const line = (l, r, name, say) => L.push({ l, r, name, say });
+    const A = K("a", aV), Y = K("y", yV), B = K("b", bV);
+    const expP = tt => sup(fr(K("x", tt), K("x", pHtml(n))));   // t over p, with p written out
+    const N = n * q.t;
+    line(FORM[c].split(" = ")[0], FORM[c].split(" = ")[1], "Formula sheet", "Write the formula from the formula sheet.");
+
+    if (q.task === "final") {
+      if (c === "301") {
+        line(K("y", "y"), `${A}${pw(B, fr(K("x", q.t), K("x", pHtml(n))))}`, "Substitute", "Put the numbers in. The unknown y stays.");
+        line("", `${A}${pw(B, K("x", N))}`, "Simplify the exponent", `t over p counts the compounding periods: ${q.t} years have ${N} of them.`.replace(/(\d+) years have (\d+)/, "<b>$1</b> years have <b>$2</b>"));
+      } else line(K("y", "y"), `${A}${pw(B, K("x", N))}`, "Substitute", "Put the numbers in. The unknown y stays.");
+      line("", `≈ ${K("y", moneyNum(q.ans))}`, "Evaluate", "Use a calculator. Round to the cent.");
+    }
+
+    if (q.task === "initial") {
+      const P = c === "301" ? pw(B, K("x", N)) : pw(B, K("x", N));
+      if (c === "301") {
+        line(Y, `${K("a", "a")}${pw(B, fr(K("x", q.t), K("x", pHtml(n))))}`, "Substitute", "Put the numbers in. The unknown a stays.");
+        line(Y, `${K("a", "a")}${P}`, "Simplify the exponent", `t over p counts the compounding periods: ${q.t} years have ${N} of them.`.replace(/(\d+) years have (\d+)/, "<b>$1</b> years have <b>$2</b>"));
+      } else line(Y, `${K("a", "a")}${P}`, "Substitute", "Put the numbers in. The unknown a stays.");
+      line(fr(Y, P), K("a", "a"), "Divide both sides by the power", "Divide both sides by the power to get a alone.");
+      line(K("a", "a"), `≈ ${K("a", moneyNum(q.ans))}`, "Evaluate", "Use a calculator. Round to the cent.");
+    }
+
+    if (q.task === "time" && c === "301") {
+      const T = K("x", "t"), nt = n === 1 ? T : `${n}${T}`;
+      const ratio = trim(q.y / q.a, 4);
+      line(Y, `${A}${pw(B, fr(T, K("x", pHtml(n))))}`, "Substitute", "Put the numbers in. The unknown t stays.");
+      line(Y, `${A}${pw(B, K("x", nt))}`, "Simplify the exponent", n === 1 ? "p is 1 year, so the exponent is just t." : "Dividing by a fraction is the same as multiplying by its reciprocal.");
+      line(fr(Y, A), pw(B, K("x", nt)), "Divide both sides by a", "Divide both sides by the starting amount.");
+      line(ratio, pw(B, K("x", nt)), "Simplify", "Simplify the left side.");
+      line(`log ${ratio}`, `log ${pw(B, K("x", nt))}`, "Log of both sides", "Take the log of both sides.");
+      line(`log ${ratio}`, `${nt} log ${B}`, "Power law", "Power law: the exponent comes down in front.");
+      line(fr(`log ${ratio}`, `${n === 1 ? "" : n}log ${B}`.replace(/^(\d+)log/, "$1 log")), T, "Divide to get t alone", "Divide both sides to get t alone.");
+      line(T, `≈ ${K("x", trim(q.ans, 1))}`, "Evaluate", "Use a calculator. Round to a tenth of a year.");
+    }
+
+    if (q.task === "time" && c === "302") {
+      const X = K("x", "x");
+      line(Y, `${A}${pw(B, X)}`, "Substitute", "Put the numbers in. The unknown x stays.");
+      line("Y1", `${A}${pw(B, X)}`, "Graph the right side", "On a graphing calculator, graph the right side as Y1.");
+      line("Y2", Y, "Graph the left side", "Graph the left side as Y2, a flat line.");
+      line(X, `≈ ${K("x", trim(q.x, 2))}`, "Intersection", "Find where the graphs cross. x counts periods, not years.");
+      line(K("x", "years"), fr(K("x", trim(q.x, 2)), n), `${n} periods a year`, "Change periods to years: divide by the number of periods in a year.");
+      line("", `≈ ${K("x", trim(q.ans, 1))}`, "Round", "Round to a tenth of a year.");
+    }
+
+    if (q.task === "rate") {
+      const b = K("b", "b"), ratio = trim(q.ratio, 4);
+      line(Y, `${A}${pw(b, fr(K("x", q.t), K("x", pHtml(n))))}`, "Substitute", "Put the numbers in. The unknown b stays.");
+      line(Y, `${A}${pw(b, K("x", N))}`, "Simplify the exponent", `t over p counts the compounding periods: ${q.t} years have ${N} of them.`.replace(/(\d+) years have (\d+)/, "<b>$1</b> years have <b>$2</b>"));
+      line(fr(Y, A), pw(b, K("x", N)), "Divide both sides by a", "Divide both sides by the starting amount.");
+      line(ratio, pw(b, K("x", N)), "Simplify", "Simplify the left side.");
+      line(pw(ratio, fr(1, N)), b, `Power of ${fr(1, N)} on both sides`, "Undo the exponent: raise both sides to the reciprocal power.");
+      line(b, `≈ ${K("b", n6(q.b))}`, "Evaluate", "Use a calculator. Keep at least 6 decimals.");
+      line(`${b} − 1`, `${n6(q.b)} − 1`, "Rate per period", "The rate for one period is b minus 1.");
+      line("", trim(q.b - 1, 6), "", "The rate for one period is b minus 1.");
+      if (n > 1) {
+        line(`${n}(${b} − 1)`, `${n} × ${trim(q.b - 1, 6)}`, `${n} periods a year`, "Multiply by the number of periods in a year.");
+        line("", `≈ ${K("b", trim((q.b - 1) * n, 4))} = ${K("b", pct(q.ans))}`, "As a percent", "Write the yearly rate as a percent.");
+      } else line("", `≈ ${K("b", pct(q.ans))}`, "As a percent", "Write the yearly rate as a percent.");
+    }
+
+    if (q.task === "read") {
+      const b = K("b", "b"), per = trim((q.b - 1) * 100, 4);
+      line(K("y", "y"), `${A}${pw(B, K("x", "x"))}`, "Match the parts", "Match the function to the formula: a is the starting amount, b is the growth factor.");
+      line(`${b} − 1`, `${bV} − 1`, "Rate per period", "The rate for one period is b minus 1.");
+      line("", `${trim(q.b - 1, 6)} = ${per}%`, "", "The rate for one period is b minus 1.");
+      line(`${n}(${b} − 1)`, `${n} × ${per}%`, `${n} periods a year`, "Multiply by the number of periods in a year.");
+      line("", `${K("b", pct(q.r))}`, "Yearly rate", "This is the yearly interest rate.");
+    }
+    return { chips, lines: L };
+  }
+
+  // The answer sentence for the last step.
+  function answerSay(q) {
+    const v = x => `<b>${x}</b>`;
+    if (q.task === "final") return `<span>It is worth about ${v(money(q.ans))}.</span>`;
+    if (q.task === "initial") return `<span>Invest about ${v(money(q.ans))} now.</span>`;
+    if (q.task === "time") {
+      const full = Math.ceil(q.x - 1e-9);
+      return `<span>It takes about ${v(trim(q.ans, 1))} years.</span> <span>Interest is paid at the end of each period, so the full amount is there after ${v(full)} periods.</span>`;
+    }
+    if (q.task === "rate") return `<span>The yearly rate is about ${v(pct(q.ans))}.</span>`;
+    return `<span>The starting amount is ${v(money(q.a))}. The yearly rate is ${v(pct(q.r))}.</span>`;
+  }
+
+  // ---------- state ----------
+  let course = "301", mode = "learn", task = "final", q = null, S = null;
+  let step = 0, hintLvl = 0, shown = false, answered = false, firstTry = true, right = 0, total = 0;
+  let steps = [];   // each: { chips (groups shown), lines (count), say }
+
+  function buildSteps() {
+    S = solve(q);
+    steps = [{ chips: 0, lines: 0, say: "<span>Read the question. Which amount is missing?</span>" }];
+    const gs = [...new Set(S.chips.map(c => c.g))].sort();
+    const gsay = {
+      1: "The amounts: a is the start, y is the end. The ? is what we are finding.",
+      2: course === "302" && q.task === "read" ? "b is the growth factor. It is more than 1, so the money grows." : "Growth factor: b = 1 + the yearly rate over the number of periods in a year.",
+      3: course === "302" ? "x counts compounding periods: periods a year × years." : "t is the time in years. p is the length of one period, in years."
+    };
+    if (q.task === "read") gsay[3] = `x counts the compounding periods. There are ${q.n} periods a year.`;
+    gs.forEach(g => steps.push({ chips: g, lines: 0, say: `<span>${gsay[g]}</span>` }));
+    S.lines.forEach((ln, i) => steps.push({ chips: 9, lines: i + 1, say: `<span>${ln.say}</span>` }));
+    steps[steps.length - 1].say = answerSay(q);
+  }
+
+  function newQ(useDemo) {
+    q = useDemo ? demo(course, task) : make(course, task);
+    buildSteps();
+    step = 0; hintLvl = 0; shown = false; answered = false; firstTry = true;
+    $("#ans").value = ""; $("#ans").className = "big-in"; $("#fb").textContent = ""; $("#fb").className = "fb";
+    render(true);
+  }
+
+  // What the board shows now.
+  function view() {
+    if (mode === "learn") return steps[step];
+    if (shown) return steps[steps.length - 1];
+    if (hintLvl === 0) return { chips: 0, lines: 0 };
+    if (hintLvl === 1) return { chips: 9, lines: 0 };
+    const subLines = course === "301" && q.task !== "read" ? 3 : 2;
+    return { chips: 9, lines: Math.min(subLines, S.lines.length - 1) };
+  }
+
+  let lastLines = 0;
+  function render(fresh) {
+    const v = view();
+    // formula banner
+    const leg = course === "301"
+      ? [["y", "y", "final amount"], ["a", "a", "starting amount"], ["b", "b", "growth factor"], ["x", "t", "years"], ["x", "p", "years in one period"]]
+      : [["y", "y", "final amount"], ["a", "a", "starting amount"], ["b", "b", "growth factor"], ["x", "x", "number of periods"]];
+    const focus = course === "301"
+      ? "<span>Math 30-1: time in years, <b>t over p</b>. Solve for time with <b>logarithms</b>.</span>"
+      : "<span>Math 30-2: <b>x counts periods</b>. Solve for time by <b>graphing</b>.</span>";
+    $("#fbar").innerHTML = `<span class="tag">Formula sheet</span><span class="fm">${FORM[course]}</span>` +
+      `<span class="fcol"><span class="legend">${leg.map(([k, s, w]) => `<span><b class="k-${k}">${s}</b> <span>${w}</span></span>`).join("")}</span><span class="focus">${focus}</span></span>`;
+    // chips
+    // At the end the missing value fills its chip.
+    const done = v.lines === S.lines.length;
+    const ansTxt = { final: moneyNum(q.ans), initial: moneyNum(q.ans), time: course === "301" ? "≈ " + trim(q.ans, 1) : "≈ " + trim(q.x, 2), rate: "≈ " + n6(q.b) }[q.task];
+    $("#chips").innerHTML = S.chips.map(c => `<div class="chip k-${c.k}${c.unk && !done ? " unk" : ""}${c.g <= v.chips ? "" : " hid"}"><span class="cv">${c.unk && done ? c.v.replace("= ?", ansTxt[0] === "≈" ? ansTxt : "= " + ansTxt) : c.v}</span><small>${c.label}</small></div>`).join("");
+    // work: every line is drawn so the font fits once; lines not reached keep their space
+    const w = $("#work");
+    w.closest(".bodyrow").classList.toggle("long", S.lines.length > 6);
+    w.innerHTML = S.lines.map((ln, i) => {
+      const cls = i < v.lines ? (i >= lastLines && !fresh ? " new" : "") : " hid";
+      const last = i === S.lines.length - 1 ? " ans" : "";
+      const approx = ln.r.startsWith("≈ "), r = approx ? ln.r.slice(2) : ln.r;
+      return `<div class="l${cls}"><span>${ln.l}</span></div><div class="e${cls}">${approx ? "≈" : "="}</div><div class="r${cls}${last}"><span>${r}</span></div><div class="n${cls}"><span>${ln.name}</span></div>`;
+    }).join("");
+    lastLines = v.lines;
+    if (mode === "practice" && !shown && hintLvl === 0) w.insertAdjacentHTML("afterbegin", `<div class="ph"><span>Work it out on paper first. Hint shows what we know.</span></div>`);
+    fit();
+    chart(v);
+    story(q);
+    // panel
+    if (mode === "learn") {
+      $("#steplbl").textContent = `Step ${step} of ${steps.length - 1}`;
+      $("#say").innerHTML = steps[step].say;
+      $("#next").disabled = step >= steps.length - 1;
+      $("#back").disabled = step <= 0;
+      $("#all").disabled = step >= steps.length - 1;
+    } else {
+      const u = q.task === "time" ? "yr" : (q.task === "rate" || (q.task === "read" && q.ask !== "a")) ? "%" : "$";
+      $("#upre").textContent = u === "$" && !isFr() ? "$" : "";
+      $("#upost").textContent = u === "$" ? (isFr() ? "$" : "") : u === "%" ? "%" : "years";
+      $("#right").textContent = right; $("#total").textContent = total;
+    }
+  }
+
+  // Shrink the work font until every line fits the space.
+  function fit() {
+    const w = $("#work");
+    if (window.innerWidth <= 860 || window.innerHeight < 520) { w.style.removeProperty("--wf"); return; }
+    let f = 34;
+    w.style.setProperty("--wf", f + "px");
+    while (f > 13 && (w.scrollHeight > w.clientHeight + 1 || w.scrollWidth > w.clientWidth + 1)) {
+      f -= 1; w.style.setProperty("--wf", f + "px");
+    }
+  }
+
+  // ---------- graph ----------
+  function nice(max) {
+    const raw = max / 4, p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const m = raw / p, s = m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10;
+    return s * p;
+  }
+  function chart(v) {
+    const svg = $("#chart");
+    svg.innerHTML = "";
+    const E = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+    const n = q.n, per = course === "302";          // 30-2 counts periods on the x-axis, 30-1 years
+    const isTime = q.task === "time";
+    const endPer = isTime ? Math.ceil(q.x * 1.18) : q.N;
+    const endX = per ? endPer : endPer / n;
+    const vals = []; for (let k = 0; k <= endPer; k++) vals.push(q.a * Math.pow(q.b, k));
+    const ymax = Math.max(...vals, q.y || 0) * 1.08;
+    const ys = nice(ymax), yTop = Math.ceil(ymax / ys) * ys;
+    const xs = nice(endX), xTop = Math.ceil(endX / xs) * xs;
+    const X0 = 74, X1 = 404, Y0 = 26, Y1 = 380;
+    const px = x => X0 + (x / xTop) * (X1 - X0), py = y => Y1 - (y / yTop) * (Y1 - Y0);
+    for (let y = ys; y <= yTop + 1e-9; y += ys) {
+      E("line", { x1: X0, x2: X1, y1: py(y), y2: py(y), class: "gl" });
+      if (mode === "learn" || hintLvl > 0 || shown) E("text", { x: X0 - 8, y: py(y) + 5, "text-anchor": "end", class: "tk" }, grp(trim(y, 0)));
+    }
+    for (let x = xs; x <= xTop + 1e-9; x += xs) {
+      E("line", { x1: px(x), x2: px(x), y1: Y0, y2: Y1, class: "gl" });
+      E("text", { x: px(x), y: Y1 + 22, "text-anchor": "middle", class: "tk" }, trim(x, 1));
+    }
+    E("line", { x1: X0, x2: X1, y1: Y1, y2: Y1, class: "ax" });
+    E("line", { x1: X0, x2: X0, y1: Y0, y2: Y1, class: "ax" });
+    E("text", { x: (X0 + X1) / 2, y: Y1 + 50, "text-anchor": "middle", class: "at" }, per ? "x (number of periods)" : "t (years)");
+    E("text", { x: 14, y: (Y0 + Y1) / 2, "text-anchor": "middle", class: "at", transform: `rotate(-90 14 ${(Y0 + Y1) / 2})` }, "value ($)");
+
+    const last = mode === "learn" ? step === steps.length - 1 : shown;
+    const known = mode === "learn" || hintLvl > 0 || shown;
+    const lineIdx = name => S.lines.findIndex(l => l.name === name);
+    let showCurve = mode === "learn" || shown, showTarget = known && isTime, showX = isTime && last;
+    if (course === "302" && isTime) {
+      showCurve = mode === "learn" ? v.lines > lineIdx("Graph the right side") : shown;
+      showTarget = mode === "learn" ? v.lines > lineIdx("Graph the left side") : shown;
+      showX = mode === "learn" ? v.lines > lineIdx("Intersection") : shown;
+    }
+    if (showCurve) {
+      const pts = vals.map((y, k) => `${px(per ? k : k / n).toFixed(1)},${py(y).toFixed(1)}`).join(" ");
+      E("polyline", { points: pts, class: "curve" });
+      if (course === "302" && isTime) E("text", { x: px(endX) - 4, y: py(vals[vals.length - 1]) - 12, "text-anchor": "end", class: "pl b" }, "Y1");
+    }
+    if (showTarget) {
+      E("line", { x1: X0, x2: X1, y1: py(q.y), y2: py(q.y), class: "target" });
+      E("text", { x: X0 + 10, y: py(q.y) - 10, class: "pl y" }, course === "302" ? "Y2 = " + moneyNum(q.y) : "y = " + moneyNum(q.y));
+    }
+    if (!known) return;
+    // start point (a)
+    const aKnown = q.task !== "initial" || last;
+    E("circle", { cx: px(0), cy: py(q.a), r: 8, class: "pa" });
+    E("text", { x: px(0) + 12, y: py(q.a) - 12, class: "pl a" }, "a = " + (aKnown ? moneyNum(q.a) : "?"));
+    if (isTime) {
+      if (showX) {
+        const tx = per ? q.x : q.t;
+        E("line", { x1: px(tx), x2: px(tx), y1: py(q.y), y2: Y1, class: "drop" });
+        E("circle", { cx: px(tx), cy: py(q.y), r: 8, class: "px" });
+        E("text", { x: px(tx) - 10, y: Y1 - 12, "text-anchor": "end", class: "pl x" }, (per ? "x ≈ " + trim(q.x, 2) : "t ≈ " + trim(q.t, 1)));
+        if (per) {
+          const g = document.createElementNS(NS, "g"); g.setAttribute("class", "calc"); svg.appendChild(g);
+          const r = document.createElementNS(NS, "rect"); Object.entries({ x: X0 + 12, y: Y0 + 6, width: 190, height: 62, rx: 6 }).forEach(([k, val]) => r.setAttribute(k, val)); g.appendChild(r);
+          [["Intersection", 30], ["X=" + trim(q.x, 4), 50], ["Y=" + trim(q.y, 2), 66]].forEach(([s, dy], i) => {
+            const t = document.createElementNS(NS, "text"); t.setAttribute("x", X0 + 22); t.setAttribute("y", Y0 + dy - (i ? 4 : 6)); t.textContent = s; g.appendChild(t);
+          });
+        }
+      }
+      return;
+    }
+    if (q.task === "read") return;
+    const yKnown = q.task !== "final" || last;
+    const ex = per ? q.N : q.t;
+    E("circle", { cx: px(ex), cy: py(q.y), r: 8, class: "py" });
+    E("text", { x: px(ex) - 10, y: py(q.y) - 14, "text-anchor": "end", class: "pl y" }, "y = " + (yKnown ? moneyNum(q.y) : "?"));
+    if (q.task === "rate" && !last) { const m = Math.floor(vals.length / 2); E("text", { x: px(per ? m : m / n) + 10, y: py(vals[m]) + 32, class: "pl b" }, "b = ?"); }
+  }
+
+  // ---------- practice ----------
+  function parseNum(s) {
+    s = String(s).replace(/[$%\s  ]/g, "").replace(/years?|ans|an/gi, "");
+    if (/^\d+,\d{1,2}$/.test(s)) s = s.replace(",", ".");   // 3174,34 in French
+    s = s.replace(/,/g, "");
+    return /^-?\d*\.?\d+$/.test(s) ? +s : null;
+  }
+  function check() {
+    if (answered || shown) return;
+    const v = parseNum($("#ans").value), fb = $("#fb"), box = $("#ans");
+    if (v == null) { fb.textContent = "Type a number."; fb.className = "fb mid"; return; }
+    const near = (x, tol) => Math.abs(v - x) <= tol;
+    let ok = false, msg = "";
+    const t = q.task, n = q.n;
+    if (t === "final" || t === "initial" || (t === "read" && q.ask === "a")) {
+      ok = near(q.ans, 0.02);
+      if (!ok) {
+        if (t === "final" && near(q.y - q.a, 0.05)) msg = "That is the interest earned. The question asks for the total amount.";
+        else if (t === "final" && near(q.a * Math.pow(q.b, q.t), 0.05)) msg = course === "302" ? "Check x: count compounding periods, not years." : "Check the exponent: t over p counts the compounding periods.";
+        else if (t === "final" && near(q.a * Math.pow(1 + q.r / 100, n * q.t), 0.05)) msg = "Check b: divide the yearly rate by the number of periods in a year.";
+        else if (t === "final" && near(q.a * (1 + q.r / 100 * q.t), 0.05)) msg = "That is simple interest. Compound interest also grows on the interest.";
+        else if (t === "initial" && near(q.y * Math.pow(q.b, q.N), 0.05)) msg = "That multiplies. To get a alone, divide y by the power.";
+        else if (t === "initial" && near(q.y / Math.pow(q.b, q.t), 0.05)) msg = course === "302" ? "Check x: count compounding periods, not years." : "Check the exponent: t over p counts the compounding periods.";
+        else if (near(q.ans, 1)) msg = "Close. Round to the cent.";
+      }
+    } else if (t === "time") {
+      ok = near(q.t, 0.051) || near(Math.ceil(q.x - 1e-9) / n, 0.001);
+      if (!ok) {
+        if (n > 1 && near(q.x, 0.6)) msg = "That is the number of periods. Change it to years.";
+        else if (near(q.t, 0.3)) msg = "Close. Round to a tenth of a year.";
+      }
+    } else {
+      const r = q.task === "rate" ? q.ans : q.r;
+      ok = near(r, q.task === "rate" ? 0.011 : 0.001);
+      if (!ok) {
+        const perR = q.task === "rate" ? (q.b - 1) * 100 : q.r / n;
+        if (near(r / 100, 0.0002)) msg = "Write the rate as a percent.";
+        else if (n > 1 && near(perR, 0.011)) msg = "That is the rate for one period. Multiply by the number of periods in a year.";
+        else if (near(q.b * 100, 0.011) || near(q.b, 0.0001)) msg = "That is b. The rate for one period is b minus 1.";
+        else if (near(r, 0.06)) msg = "Close. Round to a hundredth of a percent.";
+      }
+    }
+    if (ok) {
+      answered = true;
+      if (firstTry) right++;
+      total++;
+      box.className = "big-in ok";
+      fb.textContent = "Correct!"; fb.className = "fb ok";
+      shown = true; render();
+      fb.textContent = "Correct!"; fb.className = "fb ok";
+    } else {
+      if (firstTry) { firstTry = false; }
+      box.className = "big-in bad";
+      fb.textContent = msg || "Not quite. Try again, or use Hint."; fb.className = msg.startsWith("Close") ? "fb mid" : "fb no";
+    }
+    $("#right").textContent = right; $("#total").textContent = total;
+  }
+
+  // ---------- controls ----------
+  function setTasks() {
+    $("#tasks").innerHTML = TASKS[course].map(([k, s]) => `<button type="button" data-task="${k}"${k === task ? ' class="on"' : ""}>${s}</button>`).join("");
+  }
+  $("#courses").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    course = b.dataset.course;
+    $$("#courses button").forEach(x => x.classList.toggle("on", x === b));
+    if (!TASKS[course].some(([k]) => k === task)) task = course === "301" ? "rate" : "read";
+    setTasks(); newQ(mode === "learn");
+  });
+  $("#modes").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    mode = b.dataset.mode;
+    $$("#modes button").forEach(x => x.classList.toggle("on", x === b));
+    $("#learn").hidden = mode !== "learn"; $("#practice").hidden = mode !== "practice";
+    newQ(mode === "learn");
+  });
+  $("#tasks").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    task = b.dataset.task; setTasks(); newQ(mode === "learn");
+  });
+  $("#next").addEventListener("click", () => { if (step < steps.length - 1) { step++; render(); } });
+  $("#back").addEventListener("click", () => { if (step > 0) { step--; lastLines = 99; render(); } });
+  $("#all").addEventListener("click", () => { step = steps.length - 1; render(); });
+  $("#newex").addEventListener("click", () => newQ(false));
+  $("#check").addEventListener("click", check);
+  $("#ans").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  $("#hint").addEventListener("click", () => {
+    if (answered || shown) return;
+    hintLvl = Math.min(2, hintLvl + 1); firstTry = false; render();
+  });
+  $("#showme").addEventListener("click", () => {
+    if (shown) return;
+    if (!answered) { total++; firstTry = false; }
+    shown = true; answered = true; render();
+    $("#fb").textContent = ""; $("#fb").className = "fb"; $("#ans").className = "big-in";
+  });
+  $("#newq").addEventListener("click", () => newQ(false));
+  document.addEventListener("keydown", e => {
+    if (mode !== "learn" || e.target.closest("input")) return;
+    if (e.key === "ArrowRight") $("#next").click();
+    if (e.key === "ArrowLeft") $("#back").click();
+  });
+  let rt = 0;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(fit, 80); });
+  // Money is written in each language's style, so a language change redraws the page.
+  window.addEventListener("langchange", () => { lastLines = 99; render(); });
+
+  setTasks();
+  newQ(true);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Compound Interest (compoundinterest.html). Money is written by the page itself (5 000 $); other decimals keep the point. */
+window.I18N_PAGE = {
+  "Compound Interest": "Intérêt composé",
+  "Course": "Cours",
+  "Mode": "Mode",
+  "Learn": "Apprendre",
+  "What are we finding?": "Que cherchons-nous?",
+  "Question type": "Type de question",
+  "Question": "Question",
+  "Show all": "Tout afficher",
+  "New example": "Nouvel exemple",
+  "Your answer": "Ta réponse",
+  "Show me": "Montre-moi",
+  "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+  "Step {n} of {n}": "Étape {n} sur {n}",
+  "Graph of the money growing over time": "Graphique de l'argent qui augmente avec le temps",
+  "Formula sheet": "Feuille de formules",
+
+  "Final amount": "Montant final",
+  "Initial amount": "Montant initial",
+  "Time": "Temps",
+  "Interest rate": "Taux d'intérêt",
+  "Read the function": "Lire la fonction",
+
+  "final amount": "montant final",
+  "starting amount": "montant initial",
+  "growth factor": "facteur de croissance",
+  "growth factor per period": "facteur de croissance par période",
+  "years": "années",
+  "years in one period": "années dans une période",
+  "number of periods": "nombre de périodes",
+  "{n} periods a year": "{n} périodes par année",
+  "Math 30-1: time in years, {0}. Solve for time with {1}.": "Math 30-1 : le temps en années, {0}. On trouve le temps avec les {1}.",
+  "Math 30-2: {0}. Solve for time by {1}.": "Math 30-2 : {0}. On trouve le temps avec un {1}.",
+  "t over p": "t sur p",
+  "logarithms": "logarithmes",
+  "x counts periods": "x compte les périodes",
+  "graphing": "graphique",
+
+  "{0} invests {1} at {2} per year, compounded {3}.": "{0} place {1} à {2} par année, composé {3}.",
+  "How much is it worth after {0}?": "Combien vaut le placement après {0}?",
+  "{0} wants {1} in {2}. The account pays {3} per year, compounded {4}.": "{0} veut avoir {1} dans {2}. Le compte rapporte {3} par année, composé {4}.",
+  "How much must be invested now?": "Combien faut-il placer maintenant?",
+  "How many years until it is worth {0}?": "Dans combien d'années le placement vaudra-t-il {0}?",
+  "{0} invested {1}. After {2}, compounded {3}, it was worth {4}.": "{0} a placé {1}. Après {2}, composé {3}, le placement valait {4}.",
+  "What was the yearly interest rate?": "Quel était le taux d'intérêt annuel?",
+  "The value of an investment is {0}, where x is the number of {1}.": "La valeur d'un placement est {0}, où x est le nombre de {1}.",
+  "How much was invested at the start?": "Combien a-t-on placé au départ?",
+  "What is the yearly interest rate?": "Quel est le taux d'intérêt annuel?",
+  "What was invested, and what is the yearly rate?": "Combien a-t-on placé, et quel est le taux annuel?",
+  "annually": "annuellement",
+  "semi-annually": "semestriellement",
+  "quarterly": "trimestriellement",
+  "monthly": "mensuellement",
+  "{n} years": "{n} ans",
+  "half-years": "semestres",
+  "quarters": "trimestres",
+  "months": "mois",
+  "x = half-years": "x = semestres",
+  "x = quarters": "x = trimestres",
+  "x = months": "x = mois",
+  "Round to the cent.": "Arrondis au cent près.",
+  "Round to a tenth of a year.": "Arrondis au dixième d'année près.",
+  "Round to a hundredth of a percent.": "Arrondis au centième de pour cent près.",
+
+  "Substitute": "Substituer",
+  "Simplify the exponent": "Simplifier l'exposant",
+  "Evaluate": "Calculer",
+  "Divide both sides by the power": "Diviser les deux côtés par la puissance",
+  "Divide both sides by a": "Diviser les deux côtés par a",
+  "Simplify": "Simplifier",
+  "Log of both sides": "Log des deux côtés",
+  "Power law": "Loi de la puissance",
+  "Divide to get t alone": "Diviser pour isoler t",
+  "Graph the right side": "Tracer le côté droit",
+  "Graph the left side": "Tracer le côté gauche",
+  "Intersection": "Intersection",
+  "Round": "Arrondir",
+  "Power of {0} on both sides": "Puissance {0} des deux côtés",
+  "Rate per period": "Taux par période",
+  "As a percent": "En pourcentage",
+  "Match the parts": "Associer les parties",
+  "Yearly rate": "Taux annuel",
+
+  "Read the question. Which amount is missing?": "Lis la question. Quel montant manque?",
+  "The amounts: a is the start, y is the end. The ? is what we are finding.": "Les montants : a est le départ, y est la fin. Le ? est ce que nous cherchons.",
+  "b is the growth factor. It is more than 1, so the money grows.": "b est le facteur de croissance. Il est plus grand que 1, donc l'argent augmente.",
+  "Growth factor: b = 1 + the yearly rate over the number of periods in a year.": "Facteur de croissance : b = 1 + le taux annuel sur le nombre de périodes dans une année.",
+  "x counts compounding periods: periods a year × years.": "x compte les périodes de capitalisation : périodes par année × années.",
+  "x counts the compounding periods. There are {n} periods a year.": "x compte les périodes de capitalisation. Il y a {n} périodes par année.",
+  "t is the time in years. p is the length of one period, in years.": "t est le temps en années. p est la durée d'une période, en années.",
+  "Write the formula from the formula sheet.": "Écris la formule de la feuille de formules.",
+  "Put the numbers in. The unknown y stays.": "Remplace par les nombres. L'inconnue y reste.",
+  "Put the numbers in. The unknown a stays.": "Remplace par les nombres. L'inconnue a reste.",
+  "Put the numbers in. The unknown t stays.": "Remplace par les nombres. L'inconnue t reste.",
+  "Put the numbers in. The unknown x stays.": "Remplace par les nombres. L'inconnue x reste.",
+  "Put the numbers in. The unknown b stays.": "Remplace par les nombres. L'inconnue b reste.",
+  "t over p counts the compounding periods: {0} years have {1} of them.": "t sur p compte les périodes de capitalisation : il y en a {1} en {0} ans.",
+  "Use a calculator. Round to the cent.": "Utilise une calculatrice. Arrondis au cent près.",
+  "Divide both sides by the power to get a alone.": "Divise les deux côtés par la puissance pour isoler a.",
+  "p is 1 year, so the exponent is just t.": "p vaut 1 année, donc l'exposant est simplement t.",
+  "Dividing by a fraction is the same as multiplying by its reciprocal.": "Diviser par une fraction, c'est multiplier par son inverse.",
+  "Divide both sides by the starting amount.": "Divise les deux côtés par le montant initial.",
+  "Simplify the left side.": "Simplifie le côté gauche.",
+  "Take the log of both sides.": "Prends le log des deux côtés.",
+  "Power law: the exponent comes down in front.": "Loi de la puissance : l'exposant descend devant.",
+  "Divide both sides to get t alone.": "Divise les deux côtés pour isoler t.",
+  "Use a calculator. Round to a tenth of a year.": "Utilise une calculatrice. Arrondis au dixième d'année près.",
+  "On a graphing calculator, graph the right side as Y1.": "Sur une calculatrice graphique, trace le côté droit comme Y1.",
+  "Graph the left side as Y2, a flat line.": "Trace le côté gauche comme Y2, une droite horizontale.",
+  "Find where the graphs cross. x counts periods, not years.": "Trouve où les graphiques se croisent. x compte les périodes, pas les années.",
+  "Change periods to years: divide by the number of periods in a year.": "Change les périodes en années : divise par le nombre de périodes dans une année.",
+  "Undo the exponent: raise both sides to the reciprocal power.": "Annule l'exposant : élève les deux côtés à la puissance inverse.",
+  "Use a calculator. Keep at least 6 decimals.": "Utilise une calculatrice. Garde au moins 6 décimales.",
+  "The rate for one period is b minus 1.": "Le taux pour une période est b moins 1.",
+  "Multiply by the number of periods in a year.": "Multiplie par le nombre de périodes dans une année.",
+  "Write the yearly rate as a percent.": "Écris le taux annuel en pourcentage.",
+  "Match the function to the formula: a is the starting amount, b is the growth factor.": "Associe la fonction à la formule : a est le montant initial, b est le facteur de croissance.",
+  "This is the yearly interest rate.": "C'est le taux d'intérêt annuel.",
+
+  "It is worth about {0}.": "Le placement vaut environ {0}.",
+  "Invest about {0} now.": "Place environ {0} maintenant.",
+  "It takes about {0} years.": "Il faut environ {0} ans.",
+  "Interest is paid at the end of each period, so the full amount is there after {0} periods.": "L'intérêt est versé à la fin de chaque période, donc le montant complet est atteint après {0} périodes.",
+  "The yearly rate is about {0}.": "Le taux annuel est d'environ {0}.",
+  "The starting amount is {0}. The yearly rate is {1}.": "Le montant initial est {0}. Le taux annuel est {1}.",
+
+  "Type a number.": "Écris un nombre.",
+  "Try again, or use Hint.": "Essaie encore, ou utilise Indice.",
+  "Work it out on paper first. Hint shows what we know.": "Fais le calcul sur papier d'abord. Indice montre ce que nous savons.",
+  "That is the interest earned. The question asks for the total amount.": "C'est l'intérêt gagné. La question demande le montant total.",
+  "Check x: count compounding periods, not years.": "Vérifie x : compte les périodes de capitalisation, pas les années.",
+  "Check the exponent: t over p counts the compounding periods.": "Vérifie l'exposant : t sur p compte les périodes de capitalisation.",
+  "Check b: divide the yearly rate by the number of periods in a year.": "Vérifie b : divise le taux annuel par le nombre de périodes dans une année.",
+  "That is simple interest. Compound interest also grows on the interest.": "C'est de l'intérêt simple. L'intérêt composé rapporte aussi sur l'intérêt.",
+  "That multiplies. To get a alone, divide y by the power.": "Ça multiplie. Pour isoler a, divise y par la puissance.",
+  "Close. Round to the cent.": "Presque. Arrondis au cent près.",
+  "That is the number of periods. Change it to years.": "C'est le nombre de périodes. Change-le en années.",
+  "Close. Round to a tenth of a year.": "Presque. Arrondis au dixième d'année près.",
+  "Write the rate as a percent.": "Écris le taux en pourcentage.",
+  "That is the rate for one period. Multiply by the number of periods in a year.": "C'est le taux pour une période. Multiplie par le nombre de périodes dans une année.",
+  "That is b. The rate for one period is b minus 1.": "C'est b. Le taux pour une période est b moins 1.",
+  "Close. Round to a hundredth of a percent.": "Presque. Arrondis au centième de pour cent près.",
+
+  "x (number of periods)": "x (nombre de périodes)",
+  "t (years)": "t (années)",
+  "value ($)": "valeur ($)"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
