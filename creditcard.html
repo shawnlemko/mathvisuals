@@ -149,6 +149,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 /* Credit Card Debt (grades 7-9 and 10-12; Shawn 2026-10-21: only the simplest case, very simple).
    The simplest defensible model, stated on the page:
      - interest is charged once a month on the balance at the start of the month,
+     - a payment that covers the whole balance means no interest (paid in full by the due date; Shawn 2026-10-21),
      - monthly rate = yearly rate over 12,
      - no new purchases, the same payment every month, interest rounded to the cent.
    (Real cards use the average daily balance and a minimum payment that changes; that is left out.)
@@ -289,7 +290,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       <section class="card">
         <p class="label">Question</p>
         <p class="story" id="story"></p>
-        <p class="model">Simple model: interest is charged once a month on the balance. No new purchases.</p>
+        <p class="model">Pay the full balance by the due date and there is no interest. Interest is charged only on a balance you carry over. Simple model: once a month, no new purchases.</p>
       </section>
 
       <div class="panel" id="learn">
@@ -351,6 +352,8 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   // ---------- the model ----------
   function month(bal, rate, pay) {
     const mr = rate / 12;
+    // Paid in full by the due date: no interest (the grace period). Interest is only on a balance carried over.
+    if (pay >= bal) return { bal, rate, pay, mr, int: 0, owe: bal, paid: bal, end: 0, full: true };
     const int = r2(bal * mr / 100);
     const owe = r2(bal + int);
     const paid = Math.min(pay, owe);
@@ -379,9 +382,16 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 
   // ---------- one month: the work, one step at a time ----------
   const ONE_STEPS = 5;
+  const oneSteps = m => m.full ? 2 : ONE_STEPS;
   function oneLines(m) {
     const L = [];
     const row = (l, r, n, s) => L.push({ l, r, n, s });
+    if (m.full) {
+      row("Interest", K("int", money(0)), "Paid in full: no interest", 1);
+      row("New balance", `${K("bal", money(m.bal))} <span class="op">−</span> ${K("pay", money(m.paid))}`, "Subtract the payment", 2);
+      row("", K("bal", money(0)), "", 2);
+      return L;
+    }
     row("Monthly rate", fr(K("int", pct(m.rate)), "12"), "Yearly rate over 12", 1);
     row("", K("int", pct(m.mr)), "", 1);
     row("", K("int", dec(m.mr)), "As a decimal", 2);
@@ -395,6 +405,9 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   }
   function oneSay(m, s) {
     if (s === 0) return `<span>A credit card charges interest every month on what you owe. Press Next step.</span>`;
+    if (m.full) return s === 1
+      ? `<span>The payment covers the whole balance. Pay it all by the due date and there is no interest.</span>`
+      : `<span>Paid in full. Nothing is owed and no interest was charged.</span>`;
     if (s === 1) return `<span>The rate on a card is for a whole year. Share it over the 12 months: ${B(pct(m.rate))} over 12 is ${B(pct(m.mr))} each month.</span>`;
     if (s === 2) return `<span>To multiply by a percent, write it as a decimal. Move the decimal point 2 places left: ${B(dec(m.mr))}.</span>`;
     if (s === 3) return `<span>Interest for one month is the balance times the monthly rate: ${B(money(m.int))}.</span>`;
@@ -427,6 +440,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     if (s === 0) return `<span>Each row is one month. The new balance becomes next month's balance. Press Next step.</span>`;
     if (!last) {
       const m = S.rows[s - 1];
+      if (m.full) return `<span>Month ${s}: the payment covers the whole balance, so there is no interest. Paid in full.</span>`;
       return `<span>Month ${s}: interest ${B(money(m.int))}, then the payment comes off. ${B(money(m.end))} left.</span>`;
     }
     if (S.never) return `<span>The payment is not more than the interest, so the debt never goes away.</span>`;
@@ -437,8 +451,9 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   // ---------- drawing ----------
   let warnMsg = "";
   function stepsTotal() {
-    if (mode === "practice") return ONE_STEPS;
-    return view === "one" ? ONE_STEPS : monthSteps(schedule(q.bal, q.rate, q.pay));
+    const m = month(q.bal, q.rate, q.pay);
+    if (mode === "practice") return oneSteps(m);
+    return view === "one" ? oneSteps(m) : monthSteps(schedule(q.bal, q.rate, q.pay));
   }
   function render() {
     const learn = mode === "learn";
@@ -465,8 +480,8 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
         const nw = r.s > lastShown ? " new" : "";
         return `<div class="l${nw}">${r.l}</div><div class="e${nw}">=</div><div class="r${nw}">${r.r}</div><div class="n${nw}">${r.n}</div>`;
       }).join("");
-      $("#split").hidden = step < ONE_STEPS;
-      if (step >= ONE_STEPS) $("#split").innerHTML = splitHtml(m);
+      $("#split").hidden = m.full || step < ONE_STEPS;
+      if (!m.full && step >= ONE_STEPS) $("#split").innerHTML = splitHtml(m);
       $("#say").innerHTML = oneSay(m, step);
     } else {
       const S = schedule(q.bal, q.rate, q.pay);
@@ -557,11 +572,11 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     $("#right").textContent = pr.right; $("#total").textContent = pr.total;
     $("#fb").className = "fb " + (okI && okB ? "ok" : "no");
     $("#fb").textContent = okI && okB ? "Correct!" : msg;
-    if (okI && okB) { step = ONE_STEPS; render(); }
+    if (okI && okB) { step = oneSteps(m); render(); }
   };
   ["#ansInt", "#ansBal"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") $("#check").click(); }));
   $("#hint").onclick = () => { if (step < 2) { step = 2; render(); } };
-  $("#showme").onclick = () => { if (step < ONE_STEPS) { step++; render(); } };
+  $("#showme").onclick = () => { if (step < stepsTotal()) { step++; render(); } };
   $("#newq").onclick = startPractice;
 
   window.addEventListener("resize", fit);
@@ -671,7 +686,11 @@ window.I18N_PAGE = {
   "One month": "Un mois",
   "Month by month": "Mois par mois",
   "Question": "Question",
-  "Simple model: interest is charged once a month on the balance. No new purchases.": "Modèle simple : l'intérêt est calculé une fois par mois sur le solde. Aucun nouvel achat.",
+  "Pay the full balance by the due date and there is no interest. Interest is charged only on a balance you carry over. Simple model: once a month, no new purchases.": "Si tu paies tout le solde avant la date d'échéance, il n'y a pas d'intérêt. L'intérêt est calculé seulement sur le solde que tu reportes. Modèle simple : une fois par mois, aucun nouvel achat.",
+  "Paid in full: no interest": "Payé au complet : pas d'intérêt",
+  "The payment covers the whole balance. Pay it all by the due date and there is no interest.": "Le paiement couvre tout le solde. Si tu paies tout avant la date d'échéance, il n'y a pas d'intérêt.",
+  "Paid in full. Nothing is owed and no interest was charged.": "Payé au complet. Il ne reste rien à payer et aucun intérêt n'a été calculé.",
+  "Month {n}: the payment covers the whole balance, so there is no interest. Paid in full.": "Mois {n} : le paiement couvre tout le solde, alors il n'y a pas d'intérêt. Payé au complet.",
   "Show all": "Tout afficher",
   "New example": "Nouvel exemple",
   "Show me": "Montre-moi",
