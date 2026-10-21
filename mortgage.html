@@ -152,7 +152,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    students are not expected to derive it. Everything after it is plain arithmetic, shown under Math.
    Bars: what you borrow vs what you pay back (mortgage blue + interest orange); Pin keeps one mortgage to compare.
    Below: how the first and last payments split between interest and paying down the loan.
-   Colours: down payment green, mortgage blue, interest and rate orange, years purple. */
+   Colours: down payment green, mortgage blue, interest and rate orange, years purple.
+   Playground (Shawn 2026-10-21): the same mortgage, paid faster. Like the FCAC and bank calculators: pay more each
+   month, and/or a lump sum once (end of year 1) or every year. Results: paid off how much sooner, interest saved,
+   and a graph of what you still owe (regular plan dashed, with extras green). Month by month, interest to the cent. */
 :root { --cx: #7a3fb8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cx: #c09bf5; } }
 :root[data-theme="dark"] { --cx: #c09bf5; }
@@ -218,15 +221,53 @@ dl.words dt::after { content: ": "; }
 .work .why { font-family: var(--font-body); font-weight: 400; color: var(--muted); font-size: 0.8rem; white-space: normal; padding-left: 0.6em; line-height: 1.2; }
 .work .gap { grid-column: 1 / -1; height: 0.35em; }
 .work .eq { color: var(--muted); }
+/* Basics / Playground switch in the header. */
+.views { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.views button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.15rem; min-height: 46px; padding: 6px 22px; }
+.views button + button { border-left: 2px solid var(--grid-major); }
+.views button.on { background: var(--pt); color: var(--sheet); }
+/* Playground board. */
+.sum { display: flow-root; margin: 0; padding: 6px 14px; border-radius: 12px; background: var(--chip); font-size: 1.05rem; }
+.sum b { font-family: var(--font-num); font-size: 1.2rem; }
+.sum .hint { color: var(--muted); font-size: 0.9rem; float: right; margin-left: 12px; line-height: 1.9; }
+.pg2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.when { display: inline-flex; flex: none; gap: 4px; }
+.pg2 .top { flex-wrap: wrap; }
+.when button { font-size: 0.85rem; min-height: 28px; padding: 1px 10px; border-radius: 8px; background: var(--sheet); }
+.when button.on { background: var(--green); border-color: var(--green); color: var(--sheet); }
+.fld.big { background: var(--sheet); border-color: var(--green); }
+.fld.big .val { font-size: clamp(1.4rem, min(2.6vw, 4.8vh), 2.4rem); color: var(--green); }
+.fld.big .sub { text-align: left; white-space: normal; }
+.fld.big.none { border-color: var(--grid-major); } .fld.big.none .val { color: var(--muted); }
+.chartbox { position: relative; flex: 1 1 auto; min-height: 120px; }
+.chartbox svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 1rem; font-weight: 700; }
+.legend .ln { display: inline-block; width: 28px; height: 0; vertical-align: middle; margin-right: 6px; border-top: 4px solid; }
+.ch-axis { fill: var(--muted); font-family: var(--font-num); font-size: 14px; font-weight: 700; }
+.ch-grid { stroke: var(--grid); stroke-width: 1; }
+.ch-base { stroke: var(--grid-major); stroke-width: 2; }
+.ch-old { fill: none; stroke: var(--pt); stroke-width: 3; stroke-dasharray: 8 6; opacity: 0.7; }
+.ch-new { fill: none; stroke: var(--green); stroke-width: 5; stroke-linejoin: round; }
+.ch-dot { fill: var(--green); } .ch-dot.old { fill: var(--pt); opacity: 0.7; }
+.ch-lbl { font-family: var(--font-body); font-weight: 700; font-size: 16px; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.ibars { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+.ibars .rl { font-weight: 700; line-height: 1.1; }
+.ibars .track { height: 34px; }
+.ibars .seg { justify-content: flex-start; }
+@media (max-width: 640px) { .pg2 { grid-template-columns: 1fr; } .chartbox { min-height: 260px; } }
 </style>
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Mortgage Basics</h1></div>
+    <div class="views" role="group" aria-label="Page">
+      <button type="button" id="vBasics" class="on" aria-pressed="true">Basics</button>
+      <button type="button" id="vPlay" aria-pressed="false">Playground</button>
+    </div>
   </header>
 
-  <div class="main">
+  <div class="main" id="basicsView">
     <div class="board">
       <div class="parts">
         <div class="fld">
@@ -307,6 +348,55 @@ dl.words dt::after { content: ": "; }
       </div>
     </div>
   </div>
+
+  <div class="main" id="playView" hidden>
+    <div class="board">
+      <p class="sum" id="sum"></p>
+      <div class="pg2">
+        <div class="fld">
+          <div class="top"><span class="lab k-down">Monthly payment</span><span class="sub" id="extraSub"></span></div>
+          <div class="val k-down"><span class="cur pre">$</span><input type="text" id="mpayIn" inputmode="decimal" aria-label="Monthly payment"><span class="cur post">$</span></div>
+          <input type="range" id="extra" class="green" min="0" max="1000" step="25" aria-label="Extra each month">
+        </div>
+        <div class="fld">
+          <div class="top"><span class="lab k-down">Lump sum</span>
+            <span class="when" role="group" aria-label="When"><button type="button" id="wOnce" class="on">Once</button><button type="button" id="wYear">Every year</button></span></div>
+          <div class="val k-down"><span class="cur pre">$</span><input type="text" id="lumpIn" inputmode="numeric" aria-label="Lump sum"><span class="cur post">$</span></div>
+          <input type="range" id="lump" class="green" min="0" max="50000" step="500" aria-label="Lump sum">
+        </div>
+        <div class="fld big" id="soonCard">
+          <span class="lab">Paid off in</span>
+          <div class="val" id="paidIn"></div>
+          <span class="sub" id="soonSub"></span>
+        </div>
+        <div class="fld big" id="saveCard">
+          <span class="lab">Interest saved</span>
+          <div class="val" id="saved"></div>
+          <span class="sub" id="saveSub"></span>
+        </div>
+      </div>
+      <div class="sect" style="flex: 1 1 auto;">
+        <h2>What you still owe, year by year</h2>
+        <div class="legend"><span><span class="ln" style="border-color: var(--pt); border-top-style: dashed; opacity: 0.7"></span>Regular plan</span><span class="k-down"><span class="ln" style="border-color: var(--green)"></span>With extra payments</span></div>
+        <div class="chartbox" id="chart"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="btns"><button type="button" id="noExtra">Remove extras</button></div>
+      <div class="card">
+        <div class="ibars" id="ibars"></div>
+        <p class="note" id="ibarsSay" style="border: 0; padding: 0; margin-top: 8px"></p>
+      </div>
+      <div class="card">
+        <dl class="words">
+          <div><dt class="k-down">Prepayment</dt> <dd>paying more than you have to. Every extra dollar goes straight to the loan, so less interest builds up.</dd></div>
+          <div><dt class="k-down">Lump sum</dt> <dd>one chunk of money paid on the loan, like a bonus or a tax refund.</dd></div>
+        </dl>
+        <p class="note">Real mortgages limit how much extra you can pay each year (often 10% to 20% of the loan), or charge a penalty. Here a lump sum is paid at the end of a year (year 1 for Once).</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -324,7 +414,7 @@ dl.words dt::after { content: ": "; }
   const pct = r => (Math.round(r * 100) / 100).toString();
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-  const st = { price: 500000, downPct: 20, rate: 5, years: 25, pin: null };
+  const st = { price: 500000, downPct: 20, rate: 5, years: 25, pin: null, view: "basics", extra: 0, lump: 0, every: false };
   const down = () => Math.round(st.price * st.downPct / 100);
 
   // The Canadian calculator: rate compounded semi-annually, converted to a monthly rate, rounded to the cent.
@@ -438,7 +528,82 @@ dl.words dt::after { content: ": "; }
     line("", `<span class="k-int">${money(c.interest, "auto")}</span>`);
     $("work").innerHTML = W.join("");
     $("unpinBtn").hidden = !p;
+    if (st.view === "play") renderPlay(c);
     fitSegs();
+  }
+
+  // Playground: pay the same mortgage month by month, with the extra payment and lump sums.
+  function simulate(c, extra, lump, every) {
+    let bal = c.loan, m = 0, interest = 0;
+    const pts = [[0, bal]];
+    while (bal > 0.005 && m < 1200) {
+      m++;
+      const it = Math.round(bal * c.i * 100) / 100;
+      interest += it;
+      bal = Math.round((bal + it - Math.min(bal + it, c.pay + extra)) * 100) / 100;
+      if (m % 12 === 0 && lump > 0 && (every || m === 12)) bal = Math.max(0, Math.round((bal - lump) * 100) / 100);
+      pts.push([m, bal]);
+    }
+    return { months: m, interest: Math.round(interest * 100) / 100, pts };
+  }
+  function span(months) {
+    const y = Math.floor(months / 12), mo = months % 12;
+    const ys = y ? L(`${y} ${y === 1 ? "year" : "years"}`, `${y} an${y === 1 ? "" : "s"}`) : "";
+    const ms = mo ? L(`${mo} ${mo === 1 ? "month" : "months"}`, `${mo} mois`) : "";
+    return [ys, ms].filter(Boolean).join(" ") || L("0 months", "0 mois");
+  }
+  const kshort = v => fr() ? `${Math.round(v / 1000)} k$` : `$${Math.round(v / 1000)}k`;
+
+  function renderPlay(c) {
+    const base = simulate(c, 0, 0, false), now = simulate(c, st.extra, st.lump, st.every);
+    const any = st.extra > 0 || st.lump > 0;
+    $("sum").innerHTML = L(`Your mortgage: <b class="k-loan">${money(c.loan)}</b> at <b class="k-int">${pct(st.rate)}%</b> for <b class="k-yr">${st.years} years</b>, <b>${money(c.pay, true)}</b> a month <span class="hint">Change it on Basics</span>`,
+      `Ton hypothèque : <b class="k-loan">${money(c.loan)}</b> à <b class="k-int">${pct(st.rate)} %</b> sur <b class="k-yr">${st.years} ans</b>, <b>${money(c.pay, true)}</b> par mois <span class="hint">Modifie-la dans Les bases</span>`);
+    if (document.activeElement !== $("mpayIn")) $("mpayIn").value = new Intl.NumberFormat(fr() ? "fr-CA" : "en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(c.pay + st.extra);
+    if (document.activeElement !== $("lumpIn")) $("lumpIn").value = plain(st.lump);
+    $("extra").max = Math.max(1000, Math.ceil(c.pay / 100) * 100);
+    $("extra").value = st.extra; $("lump").value = st.lump;
+    $("extraSub").textContent = st.extra > 0 ? L(`+${money(st.extra, "auto")} extra`, `+${money(st.extra, "auto")} de plus`) : L("no extra", "rien de plus");
+    $("wOnce").classList.toggle("on", !st.every); $("wYear").classList.toggle("on", st.every);
+    $("paidIn").textContent = span(now.months);
+    $("soonSub").textContent = any ? L(`${span(base.months - now.months)} sooner`, `${span(base.months - now.months)} plus tôt`) : L("the regular plan", "le plan régulier");
+    const saved = base.interest - now.interest;
+    $("saved").textContent = money(Math.max(0, saved));
+    $("saveSub").textContent = any ? L(`from ${money(base.interest)} down to ${money(now.interest)}`, `de ${money(base.interest)} à ${money(now.interest)}`) : L("add an extra payment to save", "ajoute un paiement de plus pour économiser");
+    $("soonCard").classList.toggle("none", !any); $("saveCard").classList.toggle("none", !any);
+
+    // Interest paid, side by side (panel).
+    const ib = $("ibars"); ib.replaceChildren();
+    const mx = Math.max(base.interest, 1);
+    [[L("Regular plan", "Plan régulier"), base.interest], [L("With extras", "Avec les extras"), now.interest]].forEach(([lab, v]) => {
+      const l = document.createElement("div"); l.className = "rl"; l.textContent = lab;
+      const t = document.createElement("div"); t.className = "track"; t.appendChild(seg("int", v / mx * 100, money(v)));
+      ib.append(l, t);
+    });
+    $("ibarsSay").innerHTML = L(`<b>Interest paid.</b> Extra money skips the interest and pays down the loan, so the loan shrinks faster.`,
+      `<b>Intérêts payés.</b> L’argent en plus ne va pas aux intérêts : il rembourse le prêt, qui diminue plus vite.`);
+    drawChart(c, base, now, any);
+  }
+
+  function drawChart(c, base, now, any) {
+    const box = $("chart"), W = box.clientWidth, H = box.clientHeight;
+    if (!W || !H) return;
+    const padL = 64, padR = 16, padT = 12, padB = 30;
+    const yrs = Math.ceil(base.months / 12) || 1, top = c.loan || 1;
+    const X = m => padL + m / (yrs * 12) * (W - padL - padR), Y = v => padT + (1 - v / top) * (H - padT - padB);
+    let g = "";
+    const stepY = yrs > 20 ? 5 : yrs > 10 ? 2 : 1;
+    for (let y = 0; y <= yrs; y += stepY) g += `<line class="ch-grid" x1="${X(y * 12)}" x2="${X(y * 12)}" y1="${padT}" y2="${H - padB}"/><text class="ch-axis" x="${X(y * 12)}" y="${H - 8}" text-anchor="middle">${y}</text>`;
+    for (let k = 0; k <= 4; k++) { const v = top * k / 4; g += `<line class="ch-grid" x1="${padL}" x2="${W - padR}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ch-axis" x="${padL - 8}" y="${Y(v) + 5}" text-anchor="end">${kshort(v)}</text>`; }
+    g += `<line class="ch-base" x1="${padL}" x2="${W - padR}" y1="${Y(0)}" y2="${Y(0)}"/><line class="ch-base" x1="${padL}" x2="${padL}" y1="${padT}" y2="${Y(0)}"/>`;
+    const path = pts => "M" + pts.map(([m, v]) => `${X(m).toFixed(1)},${Y(v).toFixed(1)}`).join("L");
+    g += `<path class="ch-old" d="${path(base.pts)}"/>`;
+    g += `<circle class="ch-dot old" cx="${X(base.months)}" cy="${Y(0)}" r="6"/>`;
+    if (any) {
+      g += `<path class="ch-new" d="${path(now.pts)}"/><circle class="ch-dot" cx="${X(now.months)}" cy="${Y(0)}" r="8"/>`;
+      g += `<text class="ch-lbl k-down" x="${X(now.months)}" y="${Y(0) - 14}" text-anchor="${X(now.months) > W - 150 ? "end" : "middle"}" fill="var(--green)">${L("Paid off!", "Remboursée!")}</text>`;
+    }
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${L("What you still owe, by year", "Ce qu’il reste à payer, par année")}">${g}</svg>`;
   }
   // A bar's words go if they do not fit, then its amount: the hover title keeps both.
   function fitSegs() {
@@ -477,6 +642,23 @@ dl.words dt::after { content: ": "; }
   }
   $("tabWords").addEventListener("click", () => tab(false));
   $("tabMath").addEventListener("click", () => tab(true));
+  // Playground controls.
+  $("extra").addEventListener("input", e => { st.extra = +e.target.value; render(); });
+  $("lump").addEventListener("input", e => { st.lump = +e.target.value; render(); });
+  box("mpayIn", v => { st.extra = Math.max(0, Math.round((v - calc(st).pay) * 100) / 100); });
+  box("lumpIn", v => { st.lump = clamp(Math.round(v), 0, 10000000); });
+  $("wOnce").addEventListener("click", () => { st.every = false; render(); });
+  $("wYear").addEventListener("click", () => { st.every = true; render(); });
+  $("noExtra").addEventListener("click", () => { st.extra = 0; st.lump = 0; render(); });
+  function view(v) {
+    st.view = v;
+    $("basicsView").hidden = v !== "basics"; $("playView").hidden = v !== "play";
+    $("vBasics").classList.toggle("on", v === "basics"); $("vPlay").classList.toggle("on", v === "play");
+    $("vBasics").setAttribute("aria-pressed", String(v === "basics")); $("vPlay").setAttribute("aria-pressed", String(v === "play"));
+    render();
+  }
+  $("vBasics").addEventListener("click", () => view("basics"));
+  $("vPlay").addEventListener("click", () => view("play"));
   window.addEventListener("langchange", render);
   render();
 })();
@@ -572,6 +754,24 @@ window.I18N_COMMON = {
 <script>
 /* French for Mortgage Basics (mortgage.html). Bars, sentences, money and the math are built in French by the page itself. */
 window.I18N_PAGE = {
+  "Basics": "Les bases",
+  "Playground": "Terrain de jeu",
+  "Page": "Page",
+  "Extra each month": "Montant de plus chaque mois",
+  "Lump sum": "Montant forfaitaire",
+  "When": "Quand",
+  "Once": "Une fois",
+  "Every year": "Chaque année",
+  "Paid off in": "Payé en",
+  "Interest saved": "Intérêts économisés",
+  "What you still owe, year by year": "Ce qu’il te reste à payer, année par année",
+  "Regular plan": "Plan régulier",
+  "With extra payments": "Avec les paiements en plus",
+  "Remove extras": "Retirer les extras",
+  "Prepayment": "Remboursement anticipé",
+  "paying more than you have to. Every extra dollar goes straight to the loan, so less interest builds up.": "payer plus que le montant exigé. Chaque dollar en plus va directement au prêt, donc moins d’intérêts s’accumulent.",
+  "one chunk of money paid on the loan, like a bonus or a tax refund.": "une somme d’argent versée d’un coup sur le prêt, comme une prime ou un remboursement d’impôt.",
+  "Real mortgages limit how much extra you can pay each year (often 10% to 20% of the loan), or charge a penalty. Here a lump sum is paid at the end of a year (year 1 for Once).": "Les vraies hypothèques limitent ce que tu peux payer de plus chaque année (souvent 10 % à 20 % du prêt) ou imposent une pénalité. Ici, le montant forfaitaire est versé à la fin d’une année (l’année 1 pour Une fois).",
   "Mortgage Basics": "L’hypothèque : les bases",
   "House price": "Prix de la maison",
   "Down payment": "Mise de fonds",
