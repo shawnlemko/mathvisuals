@@ -203,10 +203,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
 .seg rect { stroke: var(--ink); stroke-width: 2; }
-.seg.x rect { fill: var(--pt); } .seg.one rect { fill: var(--orange); } .seg.neg rect { fill: var(--neg); stroke-width: 2.5; }
-.seg.neg text { fill: var(--neg-ink); }
+/* Bars print well in black and white (Shawn): light fills with a pattern, dark text. x = slanted lines, ones = dots, −1s = crosshatch. */
+.seg.x rect { fill: url(#pat-x); } .seg.one rect { fill: url(#pat-one); } .seg.neg rect { fill: url(#pat-neg); stroke-width: 2.5; }
+.seg text { paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
 .zero { stroke: var(--ink); stroke-width: 3; }
-.seg text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
+.seg text { fill: #1b2733; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
 .seg.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
 .seg line { stroke: rgba(0,0,0,0.35); stroke-width: 1.5; }
 .mismatch { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 8 6; }
@@ -364,6 +365,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     gPan.L = el("g", {}, gScale);
     gPan.R = el("g", {}, gScale);
     el("circle", { cx: PX, cy: PY, r: 11, class: "pivot" }, gScale);
+    // Print-friendly bar fills: a light colour with a pattern, so the parts stay different in black and white.
+    const defs = el("defs", {});
+    const pat = (id, bg, draw) => {
+      const p = el("pattern", { id, width: 14, height: 14, patternUnits: "userSpaceOnUse" }, defs);
+      el("rect", { width: 14, height: 14, fill: bg }, p); draw(p);
+    };
+    pat("pat-x", "#e3ebfb", p => ["M-2,2 L2,-2", "M0,14 L14,0", "M12,16 L16,12"].forEach(d => el("path", { d, stroke: "#2f5fd0", "stroke-width": 2 }, p)));
+    pat("pat-one", "#fcebdf", p => el("circle", { cx: 7, cy: 7, r: 2.2, fill: "#c2571a" }, p));
+    pat("pat-neg", "#fde2e2", p => ["M0,7 L14,7", "M7,0 L7,14"].forEach(d => el("path", { d, stroke: "#c0392b", "stroke-width": 1.6 }, p)));
     gBars = el("g", {});
   }
 
