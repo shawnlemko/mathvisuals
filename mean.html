@@ -195,6 +195,19 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
 .med-line { stroke: var(--orange); stroke-width: 4; stroke-dasharray: 10 7; }
 .med-lbl { font-family: var(--font-display); font-weight: 800; font-size: 28px; fill: var(--orange); text-anchor: middle; }
 .lbl-bg { fill: var(--sheet); stroke: currentColor; stroke-width: 3; }
+.tick.minor { stroke-width: 1.5; }
+/* Number line scale: two quick choices, or type the ends */
+.scalebar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 4px 6px 0; }
+.scalebar .lbl { font-weight: 700; font-size: 1.05rem; }
+.scalebar label { font-weight: 700; }
+.scalebar input { font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; width: 4.2em; box-sizing: border-box; padding: 6px 8px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.scalebar input.bad { border-color: var(--warn); }
+.seg-btns { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; margin-right: 6px; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1.05rem; min-height: 44px; padding: 6px 14px; white-space: nowrap; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.err { margin-left: 4px; color: var(--warn); font-weight: 700; font-size: 0.95rem; }
+.err:empty { display: none; }
 </style>
 
 <div class="wrap">
@@ -205,6 +218,16 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
 
   <div class="main">
     <div class="board">
+      <div class="scalebar">
+        <span class="lbl" id="scaleLbl">Number line</span>
+        <div class="seg-btns" role="group" aria-labelledby="scaleLbl">
+          <button type="button" data-lo="0" data-hi="20">0 to 20</button>
+          <button type="button" data-lo="0" data-hi="100">0 to 100</button>
+        </div>
+        <label for="lo">from</label><input id="lo" type="number" step="1" inputmode="numeric">
+        <label for="hi">to</label><input id="hi" type="number" step="1" inputmode="numeric">
+        <span class="err" id="scaleErr"></span>
+      </div>
       <svg id="svg" viewBox="0 0 1200 600" role="img" aria-label="Seesaw number line from 0 to 20 with dots resting on it and a balance point underneath"></svg>
     </div>
     <div class="panel">
@@ -248,14 +271,20 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
     return e;
   };
 
-  const MAX = 20, X0 = 60, X1 = 1140, UNIT = (X1 - X0) / MAX;
-  const BEAM_Y = 400, BEAM_H = 16, R = 24, TRI_H = 90, TRI_W = 104;
+  const X0 = 60, X1 = 1140;
+  const BEAM_Y = 400, BEAM_H = 16, TRI_H = 90, TRI_W = 104;
   const GROUND_Y = BEAM_Y + BEAM_H / 2 + TRI_H;
   const MAX_DOTS = 60;
-  const px = v => X0 + v * UNIT;
+  // The number line runs from MIN to MAX (whole numbers). Dots shrink a little on long lines so neighbours still fit.
+  let MIN = 0, MAX = 20, SPAN = 20, UNIT = (X1 - X0) / 20, R = 24;
+  const px = v => X0 + (v - MIN) * UNIT;
 
   // Start with one outlier so the first look already shows it pulling the mean (6, or 4.7 without it) away from the median and mode (5).
   const BASE = [2, 3, 4, 4, 5, 5, 5, 6, 6, 7];
+  // Test marks out of 100: one very low mark pulls the class mean down (72.8 to 68.7) while the median and mode barely move.
+  const MARKS = [55, 62, 65, 68, 70, 72, 72, 75, 75, 75, 78, 80, 84, 88];
+  // A typical set for the current line: marks when they fit, otherwise the small set stretched to the line.
+  const example = () => (MIN <= 50 && MAX >= 90 && MAX - MIN <= 120 ? MARKS.slice() : BASE.map(v => MIN + Math.round(v * SPAN / 20)));
   let dots = BASE.concat([19]);
   let drag = null;           // { value: whole number or null (taking it away) }
   let fCur = 4.7, angle = 0;   // fulcrum position (in number-line units) and beam tilt (degrees)
@@ -270,10 +299,7 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   const meanLbl = el("text", { class: "mean-lbl", y: GROUND_Y + 62 }, svg);
   const beamG = el("g", {}, svg);
   el("rect", { class: "beam", x: X0 - 24, y: BEAM_Y - BEAM_H / 2, width: X1 - X0 + 48, height: BEAM_H, rx: 7 }, beamG);
-  for (let v = 0; v <= MAX; v++) {
-    el("line", { class: "tick", x1: px(v), y1: BEAM_Y - BEAM_H / 2, x2: px(v), y2: BEAM_Y + BEAM_H / 2 }, beamG);
-    el("text", { class: "num", x: px(v), y: BEAM_Y + 46 }, beamG).textContent = v;
-  }
+  const ticksG = el("g", {}, beamG);
   const medG = el("g", { style: "color: var(--orange)" }, beamG);
   const medLine = el("line", { class: "med-line", y1: 62, y2: BEAM_Y - BEAM_H / 2 }, medG);
   const medBg = el("rect", { class: "lbl-bg", y: 14, height: 46, rx: 10 }, medG);
@@ -281,6 +307,39 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   const dotsG = el("g", {}, beamG);
   const ghost = el("circle", { class: "ghost", r: R, visibility: "hidden" }, beamG);
   const dragDot = el("circle", { class: "dot drag", r: R + 2, visibility: "hidden" }, svg);
+
+  // Labels every 1, 2, 5, 10, ... (the smallest that leaves room for the numbers), with small ticks between when they fit.
+  function drawTicks() {
+    ticksG.replaceChildren();
+    const NICE = [1, 2, 5, 10, 20, 25, 50, 100, 200];
+    const room = Math.max(String(MIN).length, String(MAX).length) * 17 + 16;
+    const lab = NICE.find(s => s * UNIT >= room);
+    const minor = [1, 5, 10, 50, 100].find(s => lab % s === 0 && s * UNIT >= 24) || lab;
+    for (let v = Math.ceil(MIN / minor) * minor; v <= MAX; v += minor) {
+      const major = v % lab === 0;
+      el("line", { class: major ? "tick" : "tick minor", x1: px(v), y1: BEAM_Y - BEAM_H / 2, x2: px(v), y2: BEAM_Y + BEAM_H / 2 }, ticksG);
+      if (major) el("text", { class: "num", x: px(v), y: BEAM_Y + 46 }, ticksG).textContent = v;
+    }
+  }
+
+  // Change the number line. A quick choice loads its own example; typed ends keep the dots that still fit.
+  function setScale(lo, hi, load) {
+    MIN = lo; MAX = hi; SPAN = hi - lo; UNIT = (X1 - X0) / SPAN;
+    R = Math.max(13, Math.min(24, UNIT * 0.45));
+    ghost.setAttribute("r", R); dragDot.setAttribute("r", R + 2);
+    dots = load ? (lo === 0 && hi === 20 ? BASE.concat([19]) : lo === 0 && hi === 100 ? [12].concat(MARKS) : example())
+                : dots.filter(v => v >= MIN && v <= MAX);
+    fCur = dots.length ? meanOf(dots.filter(v => !isOut(v, outliersOf(dots)))) : (MIN + MAX) / 2;
+    svg.setAttribute("aria-label", `Seesaw number line from ${MIN} to ${MAX} with dots resting on it and a balance point underneath`);
+    $("lo").value = MIN; $("hi").value = MAX;
+    $("lo").classList.remove("bad"); $("hi").classList.remove("bad"); $("scaleErr").textContent = "";
+    document.querySelectorAll(".seg-btns button").forEach(b => {
+      const on = +b.dataset.lo === MIN && +b.dataset.hi === MAX;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+    });
+    drawTicks();
+    update();
+  }
 
   const live = () => dots.concat(drag && drag.value !== null ? [drag.value] : []);
   const sorted = a => a.slice().sort((p, q) => p - q);
@@ -315,18 +374,26 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   function drawDots() {
     dotsG.replaceChildren();
     const f = outliersOf(dots), modes = modesOf(dots);
-    const stacks = new Map();
-    dots.forEach((v, i) => { if (!stacks.has(v)) stacks.set(v, []); stacks.get(v).push(i); });
-    const tallest = Math.max(1, ...[...stacks.values()].map(s => s.length));
-    const step = Math.min(2 * R + 2, (BEAM_Y - BEAM_H / 2 - R - 80) / Math.max(1, tallest - 1));
-    for (const [v, idx] of stacks) {
+    const lv = levels(dots), step = stepFor(lv);
+    dots.forEach((v, i) => {
       const cls = isOut(v, f) ? "dot out" : modes.includes(v) && modes.length <= 3 ? "dot mode" : "dot";
-      idx.forEach((i, k) => {
-        const c = el("circle", { class: cls, cx: px(v), cy: BEAM_Y - BEAM_H / 2 - R - 1 - k * step, r: R }, dotsG);
-        c.dataset.i = i;
-      });
-    }
+      const c = el("circle", { class: cls, cx: px(v), cy: BEAM_Y - BEAM_H / 2 - R - 1 - lv[i] * step, r: R }, dotsG);
+      c.dataset.i = i;
+    });
   }
+  // Each dot sits on the lowest row where it does not overlap a dot already placed (same value, or a close value on a long line).
+  function levels(vals) {
+    const lv = [], placed = [];
+    vals.map((v, i) => i).sort((a, b) => vals[a] - vals[b]).forEach(i => {
+      const x = px(vals[i]);
+      let k = 0;
+      while (placed.some(p => p.k === k && Math.abs(p.x - x) < 2 * R + 1)) k++;
+      placed.push({ x, k }); lv[i] = k;
+    });
+    return lv;
+  }
+  // Tall stacks squeeze together so they stay on the board.
+  const stepFor = lv => Math.min(2 * R + 2, (BEAM_Y - BEAM_H / 2 - R - 80) / Math.max(1, Math.max(0, ...lv)));
 
   function setCell(id, text, off, moved) {
     const c = $(id);
@@ -399,7 +466,7 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
       fCur += (target - fCur) * Math.min(1, dt * 5);
       if (Math.abs(target - fCur) < 0.001) fCur = target;
       const torque = a.reduce((s, v) => s + (v - fCur), 0);
-      const want = Math.max(-12, Math.min(12, torque * 1.6));
+      const want = Math.max(-12, Math.min(12, torque * 1.6 * 20 / SPAN));
       angle += (want - angle) * Math.min(1, dt * 10);
     } else {
       angle += (0 - angle) * Math.min(1, dt * 10);
@@ -437,16 +504,16 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   };
   function track(e) {
     const root = toPt(e, svg), local = toPt(e, beamG);
-    const v = Math.round((local.x - X0) / UNIT);
-    const off = root.y > BEAM_Y + 80 || root.y < 0 || local.x < X0 - UNIT * 0.8 || local.x > X1 + UNIT * 0.8;
-    drag.value = off ? null : Math.max(0, Math.min(MAX, v));
+    const v = MIN + Math.round((local.x - X0) / UNIT), edge = Math.max(UNIT * 0.8, 40);
+    const off = root.y > BEAM_Y + 80 || root.y < 0 || local.x < X0 - edge || local.x > X1 + edge;
+    drag.value = off ? null : Math.max(MIN, Math.min(MAX, v));
     dragDot.setAttribute("cx", root.x); dragDot.setAttribute("cy", root.y);
     dragDot.classList.toggle("gone", off);
     if (off) ghost.setAttribute("visibility", "hidden");
     else {
-      const stack = dots.filter(d => d === drag.value).length;
+      const lv = levels(dots.concat([drag.value]));
       ghost.setAttribute("cx", px(drag.value));
-      ghost.setAttribute("cy", BEAM_Y - BEAM_H / 2 - R - 1 - stack * (2 * R + 2));
+      ghost.setAttribute("cy", BEAM_Y - BEAM_H / 2 - R - 1 - lv[dots.length] * stepFor(lv));
       ghost.setAttribute("visibility", "visible");
     }
     drawStats();
@@ -481,16 +548,16 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   svg.addEventListener("pointercancel", end);
 
   function outlierSpot(d) {
-    const up = medianOf(d) <= MAX / 2, tries = [];
-    for (let k = 0; k <= MAX; k++) tries.push(up ? MAX - k : k);
-    for (let k = 0; k <= MAX; k++) tries.push(up ? k : MAX - k);
+    const up = medianOf(d) <= (MIN + MAX) / 2, tries = [];
+    for (let k = 0; k <= SPAN; k++) tries.push(up ? MAX - k : MIN + k);
+    for (let k = 0; k <= SPAN; k++) tries.push(up ? MIN + k : MAX - k);
     return tries.find(t => isOut(t, outliersOf(d.concat([t]))));
   }
   // Add an outlier: a dot at the end of the line far from the middle of the data. Two dots at the same far value
   // can stop being outliers, so each spot is checked, moving inward and then trying the other end.
   $("addOut").addEventListener("click", () => {
     if (dots.length >= MAX_DOTS) return;
-    if (dots.length < 4) dots = BASE.slice();   // too few dots for the outlier rule: start from a typical set
+    if (dots.length < 4) dots = example();   // too few dots for the outlier rule: start from a typical set
     const v = outlierSpot(dots);
     if (v !== undefined) dots.push(v);
     update();
@@ -502,7 +569,19 @@ h1 .m { color: var(--pt); } h1 .md { color: var(--orange); } h1 .mo { color: var
   });
   $("clear").addEventListener("click", () => { dots = []; update(); });
 
-  update();
+  document.querySelectorAll(".seg-btns button").forEach(b => b.addEventListener("click", () => setScale(+b.dataset.lo, +b.dataset.hi, true)));
+  // Typed ends apply on Enter or when leaving the box, so a half-typed number never wipes the dots.
+  function readScale() {
+    const lo = Number($("lo").value), hi = Number($("hi").value);
+    const ok = $("lo").value !== "" && $("hi").value !== "" && Number.isInteger(lo) && Number.isInteger(hi) && hi - lo >= 5 && hi - lo <= 200 && Math.abs(lo) <= 1000 && Math.abs(hi) <= 1000;
+    if (ok) { if (lo !== MIN || hi !== MAX) setScale(lo, hi, false); else { $("lo").classList.remove("bad"); $("hi").classList.remove("bad"); $("scaleErr").textContent = ""; } return; }
+    $("lo").classList.add("bad"); $("hi").classList.add("bad");
+    $("scaleErr").textContent = "Use whole numbers. The ends must be 5 to 200 apart.";
+  }
+  $("lo").addEventListener("change", readScale);
+  $("hi").addEventListener("change", readScale);
+
+  setScale(0, 20, true);
   requestAnimationFrame(frame);
 })();
 </script>
@@ -599,7 +678,12 @@ window.I18N_COMMON = {
 window.I18N_PAGE = {
  "Mean, Median, Mode and Outliers": "Moyenne, médiane, mode et valeurs aberrantes",
  "Outliers": "Valeurs aberrantes",
- "Seesaw number line from 0 to 20 with dots resting on it and a balance point underneath": "Droite numérique en balançoire de 0 à 20 avec des points dessus et un point d’équilibre dessous",
+ "Seesaw number line from {n} to {n} with dots resting on it and a balance point underneath": "Droite numérique en balançoire de {n} à {n} avec des points dessus et un point d’équilibre dessous",
+ "Number line": "Droite numérique",
+ "{n} to {n}": "{n} à {n}",
+ "from": "de",
+ "to": "à",
+ "Use whole numbers. The ends must be 5 to 200 apart.": "Utilise des nombres entiers. L’écart entre les bouts doit être de 5 à 200.",
  "Mean = {n}": "Moyenne = {n}",
  "Mean ≈ {n}": "Moyenne ≈ {n}",
  "Median = {n}": "Médiane = {n}",
