@@ -421,7 +421,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       g.fillStyle = g.strokeStyle;
       g.lineWidth = it.w * U;
       const p = it.pts.map(toPx);
-      if (p.length === 1) { g.beginPath(); g.arc(p[0][0], p[0][1], it.w * U / 2, 0, Math.PI * 2); g.fill(); }
+      // A tap (or a stroke that barely moved) is a dot, a little wider than the pen line so it shows. Canvas skips zero-length strokes.
+      const still = it.pts.every(q => Math.hypot(q[0] - it.pts[0][0], q[1] - it.pts[0][1]) < it.w * 0.5);
+      if (still) { g.beginPath(); g.arc(p[0][0], p[0][1], Math.max(3, it.w * U * (it.type === "pen" ? 0.8 : 0.5)), 0, Math.PI * 2); g.fill(); }
       else {
         // Smooth the stroke through the midpoints between samples.
         g.beginPath(); g.moveTo(p[0][0], p[0][1]);
