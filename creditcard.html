@@ -241,6 +241,9 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 .tbl .mini { height: 0.7em; background: var(--cbal); border-radius: 4px; }
 .tbl tr.new td { animation: pop 0.45s ease-out both; }
 .tbl tr.hid td { visibility: hidden; }
+.cbars { display: flex; flex-direction: column; gap: 10px; margin-top: 0.8em; }
+.cb { display: grid; grid-template-columns: 1.4em 1fr; align-items: center; gap: 8px; font-family: var(--font-num); font-weight: 700; }
+.cb .bar { border: 0; }
 .sum { flex: none; font-size: 1.35rem; font-weight: 700; margin: 0; }
 .sum b { font-family: var(--font-num); }
 .main > * { min-width: 0; }
@@ -267,6 +270,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       <div class="inputs" id="inputs">
         <div class="fld k-bal"><label for="inBal">Balance owed</label><div class="box">$<input id="inBal" type="text" inputmode="decimal" autocomplete="off"></div></div>
         <div class="fld k-int"><label for="inRate">Yearly interest rate</label><div class="box"><input id="inRate" type="text" inputmode="decimal" autocomplete="off">%</div></div>
+        <div class="fld k-int" id="fldB" hidden><label for="inRateB">Card B yearly rate</label><div class="box"><input id="inRateB" type="text" inputmode="decimal" autocomplete="off">%</div></div>
         <div class="fld k-pay"><label for="inPay">Payment each month</label><div class="box">$<input id="inPay" type="text" inputmode="decimal" autocomplete="off"></div></div>
       </div>
       <p class="warnline" id="warn" hidden></p>
@@ -284,7 +288,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       <section class="card" id="viewCard">
         <p class="label">Show</p>
         <div class="seg-btns wide" role="group" aria-label="View" id="views">
-          <button type="button" data-view="one" class="on">One month</button><button type="button" data-view="months">Month by month</button>
+          <button type="button" data-view="one" class="on">One month</button><button type="button" data-view="months">Month by month</button><button type="button" data-view="compare">Compare cards</button>
         </div>
       </section>
       <section class="card">
@@ -362,7 +366,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 
   // ---------- state ----------
   let mode = "learn", view = "one", step = 0, lastShown = 0;
-  let q = { name: "Sam", bal: 1000, rate: 18, pay: 50 };
+  let q = { name: "Sam", bal: 1000, rate: 18, pay: 50, rateB: 12 };
   let pr = { right: 0, total: 0, done: false };
   const NAMES = ["Sam", "Maya", "Liam", "Priya", "Noah", "Aiyana", "Owen", "Sofia", "Ethan", "Amara", "Jonah", "Mei"];
   const RATES = [12, 15, 18, 21, 24];           // monthly 1%, 1.25%, 1.5%, 1.75%, 2%
@@ -375,7 +379,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       const int = bal * rate / 1200;
       const lo = Math.max(30, Math.ceil(int * 2 / 10) * 10), hi = Math.max(lo, Math.round(bal * 0.1 / 10) * 10);
       const pay = lo + 10 * Math.floor(Math.random() * ((hi - lo) / 10 + 1));
-      n = { name: pick(NAMES), bal, rate, pay };
+      n = { name: pick(NAMES), bal, rate, pay, rateB: pick(RATES.filter(r => r !== rate)) };
     } while (n.bal === q.bal && n.rate === q.rate && n.pay === q.pay);
     q = n;
   }
@@ -448,11 +452,33 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   }
   const monthSteps = S => Math.min(MONTHS_SHOWN, S.rows.length) + 1;
 
+  // ---------- compare two cards (Math 20-3, 5.4: compare credit card options) ----------
+  const CMP_STEPS = 4;
+  function cmpSay(A, Bc, s) {
+    if (s === 0) return `<span>Same balance, same payment, two different rates. Which card costs less? Press Next step.</span>`;
+    if (s === 1) return `<span>Each yearly rate over 12 gives the monthly rate.</span>`;
+    if (s === 2) return `<span>First month's interest: balance × monthly rate. The higher rate charges more right away.</span>`;
+    if (A.never || Bc.never) return `<span>On one card the payment does not cover the interest, so it is never paid off.</span>`;
+    if (s === 3) return `<span>Keep paying the same amount each month. More interest means more months to pay it off.</span>`;
+    const d = r2(Math.abs(A.total - Bc.total));
+    return d === 0 ? `<span>Both cards cost the same.</span>` : `<span>Card ${A.total < Bc.total ? "A" : "B"} saves ${B(money(d))} in interest.</span>`;
+  }
+  function cmpHtml(A, Bc) {
+    const mx = Math.max(A.total, Bc.total, 0.01);
+    const row = (name, rate, S) => {
+      const c = k => s => step >= k ? s : "";
+      return `<tr><td>${name}</td><td class="k-int">${pct(rate)}</td><td class="k-int">${c(1)(pct(rate / 12))}</td><td class="k-int">${c(2)(money(S.rows[0].int))}</td><td>${c(3)(S.never ? "never" : S.rows.length)}</td><td class="k-int">${c(4)(S.never ? "" : money(S.total))}</td></tr>`;
+    };
+    return `<table><thead><tr><th>Card</th><th>Yearly rate</th><th>Monthly rate</th><th>First month interest</th><th>Months to pay off</th><th>Total interest</th></tr></thead><tbody>${row("A", q.rate, A)}${row("B", q.rateB, Bc)}</tbody></table>${
+      step >= 4 && !A.never && !Bc.never ? `<div class="cbars">${[["A", A], ["B", Bc]].map(([n, S]) => `<div class="cb"><span>${n}</span><div class="bar"><div class="bi" style="flex:0 0 ${S.total / mx * 100}%">${money(S.total)}</div></div></div>`).join("")}</div>` : ""}`;
+  }
+
   // ---------- drawing ----------
   let warnMsg = "";
   function stepsTotal() {
     const m = month(q.bal, q.rate, q.pay);
     if (mode === "practice") return oneSteps(m);
+    if (view === "compare") return CMP_STEPS;
     return view === "one" ? oneSteps(m) : monthSteps(schedule(q.bal, q.rate, q.pay));
   }
   function render() {
@@ -469,7 +495,12 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       ? `<span><span class="who">${q.name}</span> owes ${K("bal", money(q.bal))} on a credit card that charges ${K("int", pct(q.rate))} a year. <span class="who">${q.name}</span> pays ${K("pay", money(q.pay))} this month. Find the interest and the new balance.</span>`
       : `<span><span class="who">${q.name}</span> owes ${K("bal", money(q.bal))} at ${K("int", pct(q.rate))} a year and pays ${K("pay", money(q.pay))} every month. How long until the card is paid off?</span>`;
 
-    const months = learn && view === "months";
+    const cmp = learn && view === "compare";
+    $("#fldB").hidden = !cmp;
+    $("#fldB").previousElementSibling.querySelector("label").textContent = cmp ? "Card A yearly rate" : "Yearly interest rate";
+    if (document.activeElement !== $("#inRateB")) $("#inRateB").value = trim(q.rateB, 4);
+    if (cmp) $("#story").innerHTML = `<span><span class="who">${q.name}</span> owes ${K("bal", money(q.bal))} and pays ${K("pay", money(q.pay))} every month. Card A charges ${K("int", pct(q.rate))} a year and card B charges ${K("int", pct(q.rateB))}. Which card costs less?</span>`;
+    const months = learn && (view === "months" || cmp);
     $("#oneView").hidden = months; $("#monthView").hidden = !months;
     if (warnMsg) { $("#work").innerHTML = ""; $("#split").hidden = true; $("#tbl").innerHTML = ""; $("#sum").innerHTML = ""; $("#say").innerHTML = ""; $("#steplbl").textContent = ""; return; }
 
@@ -483,6 +514,11 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       $("#split").hidden = m.full || step < ONE_STEPS;
       if (!m.full && step >= ONE_STEPS) $("#split").innerHTML = splitHtml(m);
       $("#say").innerHTML = oneSay(m, step);
+    } else if (cmp) {
+      const A = schedule(q.bal, q.rate, q.pay), Bc = schedule(q.bal, q.rateB, q.pay);
+      $("#tbl").innerHTML = cmpHtml(A, Bc);
+      $("#sum").innerHTML = step === total ? cmpSay(A, Bc, step) : "";
+      $("#say").innerHTML = cmpSay(A, Bc, step);
     } else {
       const S = schedule(q.bal, q.rate, q.pay);
       const shown = Math.min(step, MONTHS_SHOWN);
@@ -514,14 +550,15 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
 
   // ---------- Learn: typing in the boxes ----------
   function readInputs() {
-    const bal = num($("#inBal").value), rate = num($("#inRate").value), pay = num($("#inPay").value);
+    const bal = num($("#inBal").value), rate = num($("#inRate").value), pay = num($("#inPay").value), rateB = num($("#inRateB").value);
+    if (rateB > 0 && rateB <= 60) q.rateB = rateB;
     $("#inBal").classList.toggle("bad", !(bal > 0)); $("#inRate").classList.toggle("bad", !(rate > 0)); $("#inPay").classList.toggle("bad", !(pay > 0));
     if (!(bal > 0 && bal <= 100000 && rate > 0 && rate <= 60 && pay > 0)) { warnMsg = "Type a balance, a rate and a payment greater than 0."; render(); return; }
     warnMsg = "";
-    q = { name: q.name, bal: r2(bal), rate, pay: r2(pay) };
+    q = { name: q.name, bal: r2(bal), rate, pay: r2(pay), rateB: q.rateB };
     render();
   }
-  ["#inBal", "#inRate", "#inPay"].forEach(id => {
+  ["#inBal", "#inRate", "#inPay", "#inRateB"].forEach(id => {
     $(id).addEventListener("input", () => { if (mode === "learn") { lastShown = step; readInputs(); } });
     $(id).addEventListener("change", () => { if (mode === "learn" && !warnMsg) render(); });
   });
@@ -675,6 +712,23 @@ window.I18N_COMMON = {
 <script>
 /* French for Credit Card Debt (creditcard.html). Money is written by the page itself (1015,50 $). */
 window.I18N_PAGE = {
+  "Compare cards": "Comparer des cartes",
+  "Card A yearly rate": "Taux annuel carte A",
+  "Card B yearly rate": "Taux annuel carte B",
+  "Card": "Carte",
+  "First month interest": "Intérêt du premier mois",
+  "Months to pay off": "Mois pour rembourser",
+  "Total interest": "Intérêt total",
+  "never": "jamais",
+  "Same balance, same payment, two different rates. Which card costs less? Press Next step.": "Même solde, même paiement, deux taux différents. Quelle carte coûte moins cher? Appuie sur Étape suivante.",
+  "Each yearly rate over 12 gives the monthly rate.": "Chaque taux annuel sur 12 donne le taux mensuel.",
+  "First month's interest: balance × monthly rate. The higher rate charges more right away.": "Intérêt du premier mois : solde × taux mensuel. Le taux plus élevé coûte plus dès le début.",
+  "On one card the payment does not cover the interest, so it is never paid off.": "Sur une des cartes, le paiement ne couvre pas l'intérêt, alors elle n'est jamais remboursée.",
+  "Keep paying the same amount each month. More interest means more months to pay it off.": "On paie le même montant chaque mois. Plus d'intérêt veut dire plus de mois pour rembourser.",
+  "Both cards cost the same.": "Les deux cartes coûtent la même chose.",
+  "Card A saves {0} in interest.": "La carte A fait économiser {0} d'intérêt.",
+  "Card B saves {0} in interest.": "La carte B fait économiser {0} d'intérêt.",
+  "{0} owes {1} and pays {2} every month. Card A charges {3} a year and card B charges {4}. Which card costs less?": "{0} doit {1} et paie {2} chaque mois. La carte A charge {3} par année et la carte B charge {4}. Quelle carte coûte moins cher?",
   "Credit Card Debt": "Dette de carte de crédit",
   "Learn": "Apprendre",
   "Mode": "Mode",
