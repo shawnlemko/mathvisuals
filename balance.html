@@ -207,19 +207,23 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .fbar { stroke: var(--ink); stroke-width: 3; }
 .optag { animation: optag 1.6s ease-out forwards; }
 @keyframes optag { 0% { opacity: 0; transform: translateY(12px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
-.piece.leave rect, .piece.leave path, .piece.leave circle, .piece.leave .tl rect, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
+.piece.leave rect, .piece.leave path, .piece.leave circle, .piece.leave .tl rect, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect, .seg.leave.nx rect, .seg.leave.neg rect { fill: var(--warn); }
 @keyframes leave { 0%, 40% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
 .seg rect { stroke: var(--ink); stroke-width: 2; }
 /* Bars print well in black and white (Shawn): light fills with a pattern, dark text. x = slanted lines, ones = dots, −1s = crosshatch. */
-.seg.x rect { fill: url(#pat-x); } .seg.one rect { fill: url(#pat-one); } .seg.neg rect { fill: url(#pat-neg); stroke-width: 2.5; }
+/* Bars use the same fills as the pieces on the left (Shawn): solid for positive pieces, the red stripes for every negative
+   piece, so x and −x (and 1 and −1) still look different on a black and white print. */
+.seg.x rect { fill: #2f5fd0; } .seg.one rect { fill: #c2571a; }
+#board.tiles .seg.x rect, #board.tiles .seg.one rect { fill: #5cbf7a; }
+.seg.nx rect, .seg.neg rect { fill: url(#pat-tneg); stroke-width: 2.5; }
 .seg text { paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
 .zero { stroke: var(--ink); stroke-width: 3; }
 .seg text { fill: #1b2733; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
 .seg text.small { font-size: 22px; }
-.seg.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
-.seg.x text.small { font-size: 24px; }
+.seg.x text, .seg.nx text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
+.seg.x text.small, .seg.nx text.small { font-size: 24px; }
 .seg line { stroke: rgba(0,0,0,0.35); stroke-width: 1.5; }
 .mismatch { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 8 6; }
 .divider { stroke: var(--ink); stroke-width: 4; stroke-dasharray: 8 6; }
@@ -687,21 +691,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const groups = [];
       if (divN) for (let gI = 0; gI < divN; gI++) {
         const g = { plus: [], minus: [] };
-        for (let i = 0; i < s[addT] / divN; i++) g.plus.push({ t: "x", len: xa, label: lbl[addT], leave: gI > 0 });
+        for (let i = 0; i < s[addT] / divN; i++) g.plus.push({ t: addT, len: xa, label: lbl[addT], leave: gI > 0 });
         if (s.one) g.plus.push({ t: "one", len: s.one / D / divN, label: fracStr(s.one, D * divN), leave: gI > 0 });
         if (s.neg) g.minus.push({ t: "neg", len: s.neg / D / divN, label: fracStr(s.neg, D * divN), leave: gI > 0 });
-        for (let i = 0; i < s[subT] / divN; i++) g.minus.push({ t: "x", len: xa, label: lbl[subT], leave: gI > 0 });
+        for (let i = 0; i < s[subT] / divN; i++) g.minus.push({ t: subT, len: xa, label: lbl[subT], leave: gI > 0 });
         groups.push(g);
       } else {
         const g = { plus: [], minus: [] };
-        for (let i = 0; i < s[addT]; i++) g.plus.push({ t: "x", len: xa, label: lbl[addT], leave: i >= s[addT] - leave[addT] });
+        for (let i = 0; i < s[addT]; i++) g.plus.push({ t: addT, len: xa, label: lbl[addT], leave: i >= s[addT] - leave[addT] });
         const keep = s.one - leave.one * D;
         if (keep) g.plus.push({ t: "one", len: keep / D, label: fracStr(keep, D) });
         if (leave.one) g.plus.push({ t: "one", len: leave.one, label: String(leave.one), leave: true });
         const keepN = s.neg - leave.neg * D; // red −1s that are leaving sit at the far end
         if (leave.neg) g.minus.push({ t: "neg", len: leave.neg, label: String(leave.neg), leave: true });
         if (keepN) g.minus.push({ t: "neg", len: keepN / D, label: fracStr(keepN, D) });
-        for (let i = 0; i < s[subT]; i++) g.minus.push({ t: "x", len: xa, label: lbl[subT], leave: i < leave[subT] });
+        for (let i = 0; i < s[subT]; i++) g.minus.push({ t: subT, len: xa, label: lbl[subT], leave: i < leave[subT] });
         groups.push(g);
       }
       const mirror = below(s), segs = [], negs = [], cuts = [];
@@ -720,7 +724,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       negs.forEach(n => { n.a = X0 + n.at * u; n.b = X0 + (n.at + n.len) * u; });
       const block = (t, x, len, label, gone, isCover) => {
         // A cover sits in the lower part of the bar it covers, so the bar's own labels stay readable in the upper part.
-        const w = len * u, ticks = t !== "x" && u >= 7, top = isCover ? 30 : 0, bot = isCover ? 4 : 0;
+        const w = len * u, ticks = t !== "x" && t !== "nx" && u >= 7, top = isCover ? 30 : 0, bot = isCover ? 4 : 0;
         const g = el("g", { class: "seg " + t + (gone ? " leave" : "") }, gBars);
         el("rect", { x, y: y + top, width: w, height: BAR_H - top - bot }, g);
         if (ticks) for (let k = 1; k < len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - bot - 12, x2: x + k * u, y2: y + BAR_H - bot }, g);
@@ -747,6 +751,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function render() {
     const tiles = view === "tiles";
     gScale.style.display = gScaleBase.style.display = tiles ? "none" : "";
+    board.classList.toggle("tiles", tiles);
     drawTop(); drawPans(); drawTiles(); drawBars(); drawSteps(); placeScale(); setTilt(); panel();
   }
 
