@@ -152,7 +152,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    an error. A bar model under the scale shows the same two sides as bars, with removed pieces fading out in red and
    division splitting each bar into equal groups. Boxes blue, weights orange. A red −1 weight is a negative one (Shawn): it pulls
    its pan up by 1, a 1 and a −1 on the same side make a zero pair, and in the bar model it covers the end of the bar it takes
-   away from. Errors use the darker warning red. */
+   away from. Errors use the darker warning red.
+   A Scale / Algebra tiles switch in the header (Shawn 2026-10-23) swaps the balance for two tile mats: x tiles and 1 tiles in
+   the Algebra Tile Builder colours (green positive, red negative), the red ones striped so they print without colour. The bar
+   model and steps work the same in both views. x can be any fraction, negative or zero (Shawn: integer solutions); a
+   negative x is laid over the end of its bar in the bar model, like the red −1s. */
 :root { --neg: rgb(239,107,107); --neg-ink: #1b2733; } /* same red as negative algebra tiles and integer chips, both themes */
 .main { grid-template-columns: minmax(0, 1fr) clamp(220px, 18vw, 290px); }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
@@ -186,8 +190,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .piece { cursor: grab; }
 .wt.frac rect { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt.frac text { font-size: 18px; }
-.wt.neg path, .wt.neg rect { fill: var(--neg); }
-.wt.neg text { fill: var(--neg-ink); font-size: 13px; letter-spacing: -1px; }
+.wt.neg path, .wt.neg rect { fill: url(#pat-tneg); }
+.wt.neg text { fill: var(--neg-ink); font-size: 13px; letter-spacing: -1px; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
 .wt.frac.neg text { font-size: 18px; letter-spacing: 0; }
 .piece.enter > * { animation: drop 0.4s ease-out; }
 @keyframes drop { from { transform: translateY(-40px); opacity: 0; } }
@@ -198,7 +202,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .fbar { stroke: var(--ink); stroke-width: 3; }
 .optag { animation: optag 1.6s ease-out forwards; }
 @keyframes optag { 0% { opacity: 0; transform: translateY(12px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
-.piece.leave rect, .piece.leave path, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
+.piece.leave rect, .piece.leave path, .piece.leave .tl rect, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
 @keyframes leave { 0%, 40% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
@@ -243,6 +247,25 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .st.op.bad, .st.ne { fill: var(--warn); }
 .st-op.fresh { animation: fresh 0.6s ease-out; }
 @keyframes fresh { from { opacity: 0; transform: translateY(-10px); } }
+/* View switch in the header */
+.viewsw { display: inline-flex; }
+.viewsw button { border-radius: 0; font-size: 1.1rem; padding: 10px 18px; min-height: 48px; }
+.viewsw button:first-child { border-radius: 10px 0 0 10px; }
+.viewsw button:last-child { border-radius: 0 10px 10px 0; }
+.viewsw button + button { border-left: 0; }
+.viewsw button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+/* Algebra tiles: same colours as the Algebra Tile Builder in both themes; red tiles are striped for black and white printing. */
+.mat { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 3; }
+.mat.bad { stroke: var(--warn); stroke-width: 5; }
+.mateq { font-family: var(--font-num); font-weight: 700; font-size: 56px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.mateq.ne { fill: var(--warn); }
+.tl rect { stroke: #1b2733; stroke-width: 2.5; }
+.tl.pos rect { fill: #5cbf7a; }
+.tl.neg rect { fill: url(#pat-tneg); }
+.tl text { fill: #1b2733; font-family: var(--font-num); font-weight: 700; font-size: 18px; letter-spacing: -0.04em; text-anchor: middle; dominant-baseline: central; }
+.tl.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 24px; }
+.tl.neg text { font-size: 15px; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+.tl.frac text { font-size: 15px; }
 @media (prefers-reduced-motion: reduce) { .board.err, .piece.enter > *, .piece.leave > *, .seg.leave { animation-duration: 0.01s; } }
 </style>
 
@@ -250,6 +273,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Balancing Equations</h1></div>
+    <div class="viewsw" id="view" role="group" aria-label="View">
+      <button type="button" data-view="scale" aria-pressed="true">Scale</button>
+      <button type="button" data-view="tiles" aria-pressed="false">Algebra tiles</button>
+    </div>
   </header>
 
   <div class="main">
@@ -289,15 +316,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const BOX = 52, WT_W = 30, WT_H = 32, GAP = 4;
   const BAR_X = 800, BAR_W = 370, BAR_H = 58, BAR_Y = { L: 40, R: 118 }, STEP_Y = 260;
   const MAX_X = 6, MAX_ONE = 24, NOMINAL_X = 4;
-  const fmtN = v => v < 0 ? "−" + -v : String(v);
+  // Algebra tiles view: two mats side by side, an x tile is TX_W by TX_H, a 1 tile TU square.
+  const MAT = { L: 22, R: 358 }, MAT_W = 300, MAT_Y = 190, MAT_H = 325, MAT_MID = 340, TU = 28, TX_W = 28, TX_H = 96, TGAP = 4;
 
   // L and R hold the count of x boxes and the ones on each side. Ones are counted in pieces of size 1/D so dividing
   // can leave fractions (7 split 3 ways = 7/3) while every number stays a whole number. neg counts the red −1 weights the
-  // same way. xv = { p, q } is the hidden x = p/q (null while building); x can be any positive fraction (Shawn).
+  // same way. xv = { p, q } is the hidden x = p/q with q > 0 (null while building); x can be any fraction, negative or 0 (Shawn).
   let S = { L: { x: 0, one: 0, neg: 0 }, R: { x: 0, one: 0, neg: 0 }, D: 1 }, xv = null, history = [], steps = [];
   let angle = 0, target = 0, anim = null;
   let fx = null; // pending animation: { leave: {L:{x,one},R:{...}}, enter: {...}, div: {L:n,R:n} }
-  let kind = "sub", what = "one", n = 1;
+  let kind = "sub", what = "one", n = 1, view = "scale";
 
   const el = (tag, attrs, parent = svg) => {
     const e = document.createElementNS(NS, tag);
@@ -308,7 +336,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const txt = (s, attrs, parent) => { const t = el("text", attrs, parent); t.textContent = s; return t; };
   const clone = o => JSON.parse(JSON.stringify(o));
   const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
-  const fracStr = (n, d) => { const g = gcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; };
+  const fracStr = (n, d) => { if (n < 0) return "−" + fracStr(-n, d); const g = gcd(n, d); n /= g; d /= g; return d === 1 ? String(n) : `${n}/${d}`; };
   const weightPath = (x, y) => { // kettlebell-style weight, top-left at x, y
     const w = WT_W, h = WT_H;
     return `M${x + w * 0.3},${y + 9} a${w * 0.2},7 0 0 1 ${w * 0.4},0 L${x + w - 2},${y + h} L${x + 2},${y + h} Z M${x + w * 0.38},${y + 9} a${w * 0.12},4 0 0 0 ${w * 0.24},0`;
@@ -327,7 +355,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const isEmpty = s => !s.x && !s.one && !s.neg;
 
   // ---------- Drawing ----------
-  let gScale, gBeam, gPan = {}, gBars, gTop, gSteps, inp = {}, eqSign;
+  let gScale, gScaleBase, gBeam, gPan = {}, gBars, gTop, gSteps, gTray, gTiles, inp = {}, eqSign;
   function layout() {
     svg.innerHTML = "";
     // Typing boxes for each side above the balance (Shawn). Typing builds the pans; dragging rewrites the boxes.
@@ -346,19 +374,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     gTop = el("g", {});
     el("line", { x1: SPLIT, y1: 20, x2: SPLIT, y2: 680, class: "split" });
     el("line", { x1: SPLIT + 20, y1: STEP_Y - 40, x2: 1180, y2: STEP_Y - 40, class: "split" });
-    el("line", { x1: PX - 170, y1: 490, x2: PX + 170, y2: 490, class: "ground" });
-    el("path", { d: `M${PX},${PY} L${PX - 58},490 L${PX + 58},490 Z`, class: "post" });
-    // Tray right under the balance: drag these onto a pan.
-    el("rect", { x: PX - 150, y: 530, width: 300, height: 140, rx: 14, class: "tray-bg" });
-    const sx = el("g", { class: "src", "data-type": "x", transform: `translate(${PX - 128},${560})` });
-    const xb = el("g", { class: "xbox" }, sx);
-    el("rect", { x: 0, y: 0, width: 66, height: 66, rx: 6 }, xb); txt("x", { x: 33, y: 33 }, xb);
-    [["one", "1", "wt", PX - 22], ["neg", "−1", "wt neg", PX + 72]].forEach(([type, label, cls, x]) => {
-      const so = el("g", { class: "src", "data-type": type, transform: `translate(${x},${566}) scale(1.6)` });
-      const wb = el("g", { class: cls }, so);
-      el("path", { d: weightPath(0, 0) }, wb); txt(label, { x: WT_W / 2, y: 20 }, wb);
-    });
-    txt("Drag onto the scale", { x: PX, y: 658, class: "trayl" });
+    gScaleBase = el("g", {});
+    el("line", { x1: PX - 170, y1: 490, x2: PX + 170, y2: 490, class: "ground" }, gScaleBase);
+    el("path", { d: `M${PX},${PY} L${PX - 58},490 L${PX + 58},490 Z`, class: "post" }, gScaleBase);
+    gTray = el("g", {});
+    gTiles = el("g", {});
     gSteps = el("g", {});
     gScale = el("g", {});
     gBeam = el("g", {}, gScale);
@@ -374,7 +394,102 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     pat("pat-x", "#e3ebfb", p => ["M-2,2 L2,-2", "M0,14 L14,0", "M12,16 L16,12"].forEach(d => el("path", { d, stroke: "#2f5fd0", "stroke-width": 2 }, p)));
     pat("pat-one", "#fcebdf", p => el("circle", { cx: 7, cy: 7, r: 2.2, fill: "#c2571a" }, p));
     pat("pat-neg", "#fde2e2", p => ["M0,7 L14,7", "M7,0 L7,14"].forEach(d => el("path", { d, stroke: "#c0392b", "stroke-width": 1.6 }, p)));
+    // Red tiles and −1 weights: the algebra tile red with dark stripes, so they still look different from green on a black and white print.
+    const sp = el("pattern", { id: "pat-tneg", width: 9, height: 9, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+    el("rect", { width: 9, height: 9, fill: "#ef6b6b" }, sp);
+    el("rect", { width: 3.5, height: 9, fill: "#8f2424" }, sp);
     gBars = el("g", {});
+  }
+
+  // Tray right under the balance or the mats: drag these onto a side.
+  function drawTray() {
+    gTray.innerHTML = "";
+    el("rect", { x: PX - 150, y: 530, width: 300, height: 140, rx: 14, class: "tray-bg" }, gTray);
+    if (view === "tiles") {
+      [["x", PX - 118, 538, 1.05], ["one", PX - 30, 556, 1.5], ["neg", PX + 64, 556, 1.5]].forEach(([type, x, y, k]) => {
+        const so = el("g", { class: "src", "data-type": type, transform: `translate(${x},${y}) scale(${k})` }, gTray);
+        tileG(so, type);
+      });
+      txt("Drag onto a side", { x: PX, y: 658, class: "trayl" }, gTray);
+      return;
+    }
+    const sx = el("g", { class: "src", "data-type": "x", transform: `translate(${PX - 128},${560})` }, gTray);
+    const xb = el("g", { class: "xbox" }, sx);
+    el("rect", { x: 0, y: 0, width: 66, height: 66, rx: 6 }, xb); txt("x", { x: 33, y: 33 }, xb);
+    [["one", "1", "wt", PX - 22], ["neg", "−1", "wt neg", PX + 72]].forEach(([type, label, cls, x]) => {
+      const so = el("g", { class: "src", "data-type": type, transform: `translate(${x},${566}) scale(1.6)` }, gTray);
+      const wb = el("g", { class: cls }, so);
+      el("path", { d: weightPath(0, 0) }, wb); txt(label, { x: WT_W / 2, y: 20 }, wb);
+    });
+    txt("Drag onto the scale", { x: PX, y: 658, class: "trayl" }, gTray);
+  }
+
+  // One algebra tile with its top-left corner at 0, 0: an x tile (tall), a 1 or a red striped −1. frac is a piece of a 1 left by dividing.
+  function tileG(parent, type, frac) {
+    const isx = type === "x", w = frac ? 50 : isx ? TX_W : TU, h = isx ? TX_H : TU;
+    const g = el("g", { class: "tl " + (type === "neg" ? "neg" : "pos") + (isx ? " x" : "") + (frac ? " frac" : "") }, parent);
+    el("rect", { x: 0, y: 0, width: w, height: h, rx: 3 }, g);
+    txt(frac || (isx ? "x" : type === "neg" ? "−1" : "1"), { x: w / 2, y: h / 2 + 1 }, g);
+    return g;
+  }
+
+  // Lay tiles on a mat: a row of x tiles, then the 1s, then the −1s under them so zero pairs are easy to see.
+  // Positions are from the group's middle (x) and top (y), at tile size 1; rows wrap to fit the mat when drawn k times bigger.
+  function placeTiles(s, k) {
+    const whole = Math.floor(s.one / S.D), rest = s.one % S.D, wholeN = Math.floor(s.neg / S.D), restN = s.neg % S.D;
+    const groups = [
+      Array.from({ length: s.x }, (_, i) => ({ t: "x", i, w: TX_W, h: TX_H })),
+      Array.from({ length: whole }, (_, i) => ({ t: "one", i, w: TU, h: TU })).concat(rest ? [{ t: "frac", i: 0, w: 50, h: TU, label: fracStr(rest, S.D) }] : []),
+      Array.from({ length: wholeN }, (_, i) => ({ t: "neg", i, w: TU, h: TU })).concat(restN ? [{ t: "frac", neg: true, i: 0, w: 50, h: TU, label: "−" + fracStr(restN, S.D) }] : [])
+    ].filter(gp => gp.length);
+    const inner = (MAT_W - 24) / k, items = [];
+    let y = 0;
+    groups.forEach(gp => {
+      const rows = []; let row = [], used = 0;
+      gp.forEach(it => { if (row.length && used + it.w > inner) { rows.push(row); row = []; used = 0; } row.push(it); used += it.w + TGAP; });
+      rows.push(row);
+      rows.forEach(r => {
+        let x = -r.reduce((a, it) => a + it.w + TGAP, -TGAP) / 2;
+        r.forEach(it => { it.x = x; it.y = y; x += it.w + TGAP; items.push(it); });
+        y += Math.max(...r.map(it => it.h)) + TGAP;
+      });
+      y += 10;
+    });
+    return { items, h: Math.max(0, y - 10 - TGAP) };
+  }
+
+  function drawTiles() {
+    gTiles.innerHTML = "";
+    if (view !== "tiles") return;
+    const bad = !balanced();
+    // Tiles are drawn as big as both mats allow (up to 1.6 times), the same size on both sides.
+    let k = 1.6;
+    while (k > 1 && ["L", "R"].some(side => placeTiles(S[side], k).h * k > MAT_H - 30)) k -= 0.05;
+    ["L", "R"].forEach(side => {
+      const mx = MAT[side], cx = mx + MAT_W / 2;
+      const { items, h } = placeTiles(S[side], k), top = MAT_Y + (MAT_H - h * k) / 2;
+      el("rect", { x: mx, y: MAT_Y, width: MAT_W, height: MAT_H, rx: 14, class: "mat" + (bad ? " bad" : "") }, gTiles);
+      const s = S[side], enter = fx && fx.enter && fx.enter[side], divN = fx && fx.div && fx.div[side];
+      const whole = Math.floor(s.one / S.D), wholeN = Math.floor(s.neg / S.D);
+      const leave = divN ? { x: s.x - s.x / divN, one: whole - Math.floor(whole / divN), neg: wholeN - Math.floor(wholeN / divN) } : fx && fx.leave && fx.leave[side];
+      items.forEach(it => {
+        const at = `translate(${cx + it.x * k},${top + it.y * k}) scale(${k})`;
+        if (it.t === "frac") return tileG(el("g", { transform: at }, gTiles), it.neg ? "neg" : "one", it.label);
+        const count = it.t === "x" ? s.x : it.t === "neg" ? wholeN : whole;
+        let cls = "piece";
+        if (leave && it.i >= count - leave[it.t]) cls += " leave";
+        if (enter && it.i >= count - enter[it.t]) cls += " enter";
+        tileG(el("g", { class: cls, "data-side": side, "data-type": it.t, transform: at }, gTiles), it.t);
+      });
+      if (fx && fx.tag && fx.tag[side]) { // the operation pops up over each mat it is done to
+        const tg = el("g", { class: "optag" }, gTiles), t = fx.tag[side];
+        if (typeof t === "number") {
+          el("line", { x1: cx - 34, y1: MAT_Y - 44, x2: cx + 34, y2: MAT_Y - 44, class: "tagbar" }, tg);
+          txt(String(t), { x: cx, y: MAT_Y - 4 }, tg);
+        } else txt(t, { x: cx, y: MAT_Y - 10 }, tg);
+      }
+    });
+    txt(bad ? "≠" : "=", { x: MAT_MID, y: MAT_Y + MAT_H / 2, class: "mateq" + (bad ? " ne" : "") }, gTiles);
   }
 
   function drawTop() {
@@ -522,48 +637,59 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const D = S.D, shown = fx && fx.before ? [S.L, S.R, fx.before.L, fx.before.R] : [S.L, S.R];
     // While building, x is drawn long enough that red −1s cover at most a third of the x boxes.
     const xl = xv !== null ? xv.p / xv.q : Math.max(NOMINAL_X, ...shown.filter(s => s.x).map(s => 3 * s.neg / D / s.x));
-    const pos = s => s.x * xl + s.one / D, ng = s => s.neg / D;
+    // A negative x takes away, so its pieces are laid over the end of the bar like the red −1s.
+    const xa = Math.abs(xl), xNeg = xl < 0;
+    const pos = s => (xNeg ? 0 : s.x * xa) + s.one / D, ng = s => s.neg / D + (xNeg ? s.x * xa : 0);
     const over = Math.max(0, ...shown.map(s => ng(s) - pos(s)));
     const u = BAR_W / (Math.max(...shown.map(pos), 1) + over), X0 = BAR_X + over * u;
     const ends = {};
-    if (over) el("line", { x1: X0, y1: BAR_Y.L - 12, x2: X0, y2: BAR_Y.R + BAR_H + 12, class: "zero" }, gBars);
+    if (over) {
+      el("line", { x1: X0, y1: BAR_Y.L - 12, x2: X0, y2: BAR_Y.R + BAR_H + 12, class: "zero" }, gBars);
+      txt("0", { x: X0, y: BAR_Y.R + BAR_H + 26, class: "side", "text-anchor": "middle" }, gBars);
+    }
     ["L", "R"].forEach(side => {
       const y = BAR_Y[side], s = fx && fx.before ? fx.before[side] : S[side];
       txt(side === "L" ? "Left" : "Right", { x: BAR_X - 14, y: y + BAR_H / 2, class: "side" }, gBars);
       const leave = (fx && fx.leave && fx.leave[side]) || cnt(0, 0);
       const divN = (fx && fx.div && fx.div[side]) || 0;
-      const segs = [], negs = []; // negs: { end, len } along the bar, drawn over it
+      const segs = [], negs = []; // negs: { t, end, len } along the bar, drawn over it, each one ending where the one before starts
+      let end = 0;
+      const cover = (t, len, label, gone) => { negs.push({ t, end, len, label, leave: gone }); end -= len; };
       if (divN) { // equal groups, all but the first fade away
         for (let gI = 0; gI < divN; gI++) {
-          for (let i = 0; i < s.x / divN; i++) segs.push({ t: "x", len: xl, leave: gI > 0 });
+          if (!xNeg) for (let i = 0; i < s.x / divN; i++) segs.push({ t: "x", len: xa, leave: gI > 0 });
           if (s.one) segs.push({ t: "one", len: s.one / D / divN, label: fracStr(s.one, D * divN), leave: gI > 0 });
-          if (s.neg) negs.push({ end: (gI + 1) * pos(s) / divN, len: ng(s) / divN, label: fracStr(s.neg, D * divN), leave: gI > 0 });
+          end = (gI + 1) * pos(s) / divN - gI * ng(s) / divN;
+          if (s.neg) cover("neg", ng(s) / divN - (xNeg ? s.x * xa / divN : 0), fracStr(s.neg, D * divN), gI > 0);
+          if (xNeg) for (let i = 0; i < s.x / divN; i++) cover("x", xa, "x", gI > 0);
         }
       } else {
-        for (let i = 0; i < s.x; i++) segs.push({ t: "x", len: xl, leave: i >= s.x - leave.x });
+        if (!xNeg) for (let i = 0; i < s.x; i++) segs.push({ t: "x", len: xa, leave: i >= s.x - leave.x });
         const keep = s.one - leave.one * D;
         if (keep) segs.push({ t: "one", len: keep / D, label: fracStr(keep, D) });
         if (leave.one) segs.push({ t: "one", len: leave.one, label: String(leave.one), leave: true });
+        end = pos(s);
         const keepN = s.neg - leave.neg * D; // red −1s that are leaving sit at the far end
-        if (keepN) negs.push({ end: pos(s) - leave.neg, len: keepN / D, label: fracStr(keepN, D) });
-        if (leave.neg) negs.push({ end: pos(s), len: leave.neg, label: String(leave.neg), leave: true });
+        if (leave.neg) cover("neg", leave.neg, String(leave.neg), true);
+        if (keepN) cover("neg", keepN / D, fracStr(keepN, D));
+        if (xNeg) for (let i = 0; i < s.x; i++) cover("x", xa, "x", i < leave.x);
       }
       negs.forEach(n => { n.a = X0 + (n.end - n.len) * u; n.b = X0 + n.end * u; });
-      const block = (t, x, len, label, gone) => {
-        const w = len * u, ticks = t !== "x" && u >= 7, inset = t === "neg" ? 9 : 0; // red sits inside the bar it covers
+      const block = (t, x, len, label, gone, isCover) => {
+        const w = len * u, ticks = t !== "x" && u >= 7, inset = isCover ? 9 : 0; // a cover sits inside the bar it covers
         const g = el("g", { class: "seg " + t + (gone ? " leave" : "") }, gBars);
         el("rect", { x, y: y + inset, width: w, height: BAR_H - 2 * inset }, g);
         if (ticks) for (let k = 1; k < len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - inset - 14, x2: x + k * u, y2: y + BAR_H - inset }, g);
-        // A label goes in the part of the block the red −1s leave uncovered (the red blocks are drawn last, on top).
+        // A label goes in the part of the block the covers leave uncovered (the covers are drawn last, on top).
         let a = x, b = x + w;
-        if (t !== "neg") negs.forEach(n => { if (n.a < b && n.b > a) { if (n.a <= a) a = Math.max(a, n.b); else b = Math.min(b, n.a); } });
+        if (!isCover) negs.forEach(n => { if (n.a < b && n.b > a) { if (n.a <= a) a = Math.max(a, n.b); else b = Math.min(b, n.a); } });
         if (b - a >= 26) txt(t === "x" ? "x" : t === "neg" ? "−" + label : label, { x: (a + b) / 2, y: y + BAR_H / 2 - (ticks ? 5 : 0) }, g);
       };
       let x = X0;
       segs.forEach(sg => { block(sg.t, x, sg.len, sg.label, sg.leave); x += sg.len * u; });
-      negs.forEach(n => block("neg", n.a, n.len, n.label, n.leave));
+      negs.forEach(n => block(n.t, n.a, n.len, n.label, n.leave, true));
       if (divN) for (let gI = 1; gI < divN; gI++) { // group dividers
-        const gx = X0 + gI * (pos(s) / divN) * u;
+        const gx = X0 + (pos(s) ? gI * pos(s) / divN : -gI * ng(s) / divN) * u;
         el("line", { x1: gx, y1: y - 8, x2: gx, y2: y + BAR_H + 8, class: "divider" }, gBars);
       }
       ends[side] = X0 + (pos(S[side]) - ng(S[side])) * u;
@@ -577,7 +703,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   function render() {
-    drawTop(); drawPans(); drawBars(); drawSteps(); placeScale(); setTilt(); panel();
+    const tiles = view === "tiles";
+    gScale.style.display = gScaleBase.style.display = tiles ? "none" : "";
+    drawTop(); drawPans(); drawTiles(); drawBars(); drawSteps(); placeScale(); setTilt(); panel();
   }
 
   // Solving steps, right of the balance under the bar model. Only the latest lines that fit are shown.
@@ -660,7 +788,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     };
     if (opts.leave || opts.div) {
       busy = true; fx = { before: clone(S), leave: opts.leave, div: opts.div, tag: opts.tag };
-      drawPans(); drawBars();
+      drawPans(); drawTiles(); drawBars();
       setTimeout(finish, 1300);
     } else finish();
   }
@@ -732,12 +860,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   $("go").onclick = () => {
     const a = S.L.x - S.R.x, b = (S.R.one - S.R.neg) - (S.L.one - S.L.neg), bn = $("buildnote");
-    if (!S.L.x && !S.R.x) return bn.textContent = "Put at least one x box on the scale.";
+    if (!S.L.x && !S.R.x) return bn.textContent = view === "tiles" ? "Put at least one x tile on a side." : "Put at least one x box on the scale.";
     if (isEmpty(S.L) || isEmpty(S.R)) return bn.textContent = "Put something on both sides.";
     if (a === 0) return bn.textContent = b === 0 ? "Both sides are the same. Change one side." : "This scale can never balance. Change one side.";
     let p = b, q = a;
     if (q < 0) { p = -p; q = -q; }
-    if (p <= 0) return bn.textContent = "x has to be more than 0 to balance. Change a weight.";
     const g = gcd(p, q);
     xv = { p: p / g, q: q / g }; bn.textContent = ""; steps = [{ eq: eqStr() }]; history = [];
     render();
@@ -750,7 +877,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     const gh = document.createElement("div"); gh.className = "ghost";
     const scale = svg.getScreenCTM() ? svg.getScreenCTM().a : 1;
-    gh.innerHTML = type === "x"
+    const tw = type === "x" ? TX_W : TU, th = type === "x" ? TX_H : TU;
+    gh.innerHTML = view === "tiles"
+      ? `<svg width="${(tw + 4) * scale}" height="${(th + 4) * scale}" viewBox="-2 -2 ${tw + 4} ${th + 4}"><g class="tl ${type === "neg" ? "neg" : "pos"}${type === "x" ? " x" : ""}"><rect x="0" y="0" width="${tw}" height="${th}" rx="3"/><text x="${tw / 2}" y="${th / 2 + 1}">${type === "x" ? "x" : type === "neg" ? "−1" : "1"}</text></g></svg>`
+      : type === "x"
       ? `<svg width="${BOX * scale}" height="${BOX * scale}" viewBox="0 0 ${BOX} ${BOX}"><g class="xbox"><rect x="1" y="1" width="${BOX - 2}" height="${BOX - 2}" rx="5"/><text x="${BOX / 2}" y="${BOX / 2}">x</text></g></svg>`
       : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt${type === "neg" ? " neg" : ""}"><path d="${weightPath(0, 0)}"/><text x="${WT_W / 2}" y="20">${type === "neg" ? "−1" : "1"}</text></g></svg>`;
     document.body.appendChild(gh);
@@ -764,7 +894,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(svg.getScreenCTM().inverse());
     if (p.x > SPLIT || p.y > 520) return null; // off the balance
-    return p.x < PX ? "L" : "R";
+    return p.x < (view === "tiles" ? MAT_MID : PX) ? "L" : "R";
   }
   addEventListener("pointermove", moveGhost);
   addEventListener("pointerup", e => {
@@ -795,7 +925,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (p && !busy) startDrag(e, p.dataset.type, p.dataset.side || null);
   });
 
+  document.querySelectorAll("#view button").forEach(b => b.onclick = () => {
+    if (busy) return;
+    view = b.dataset.view;
+    document.querySelectorAll("#view button").forEach(o => o.setAttribute("aria-pressed", o === b));
+    drawTray(); render();
+  });
+
   layout();
+  drawTray();
   render();
 })();
 </script>
@@ -922,8 +1060,12 @@ window.I18N_PAGE = {
  "Put something on both sides.": "Mets quelque chose des deux côtés.",
  "Both sides are the same. Change one side.": "Les deux côtés sont pareils. Change un côté.",
  "This scale can never balance. Change one side.": "Cette balance ne peut jamais être en équilibre. Change un côté.",
- "x has to be more than 0 to balance. Change a weight.": "x doit être plus grand que 0 pour l’équilibre. Change un poids.",
- "That side is full.": "Ce côté est plein."
+ "That side is full.": "Ce côté est plein.",
+ "View": "Vue",
+ "Scale": "Balance",
+ "Algebra tiles": "Tuiles algébriques",
+ "Drag onto a side": "Glisse sur un côté",
+ "Put at least one x tile on a side.": "Mets au moins une tuile x d’un côté."
 };
 </script>
 <script>
