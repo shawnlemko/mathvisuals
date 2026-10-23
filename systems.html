@@ -696,38 +696,39 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       }
       return answer();
     }
-    // Pick the letter to cancel: fewest equations to multiply, no negative multiplier if we can help it.
+    // Pick the letter to cancel: fewest equations to multiply. Same signs: make them equal and subtract; opposite signs: add.
     const plans = ["y", "x"].filter(v => co(A[0], v) && co(A[1], v)).map(v => {
       const p = co(A[0], v), q = co(A[1], v), L = Math.abs(p * q) / gcd(p, q);
-      let m1 = L / Math.abs(p), m2 = L / Math.abs(q);
-      if (Math.sign(p) === Math.sign(q)) { if (m2 > 1 || m1 === 1) m2 = -m2; else m1 = -m1; }
-      const cost = (m1 !== 1) + (m2 !== 1) + (m1 < 0 || m2 < 0 ? 0.5 : 0);
+      const m1 = L / Math.abs(p), m2 = L / Math.abs(q);
+      const cost = (m1 !== 1) + (m2 !== 1);
       return { v, m: [m1, m2], cost, L };
     }).sort((p, q) => p.cost - q.cost || p.L - q.L);
     const { v, m } = force && force.m ? force : plans[0], u = other(v);
     const S = A.map((q, i) => ({ a: q.a * m[i], b: q.b * m[i], c: q.c * m[i] }));
+    // Equal letters are subtracted (① − ②), opposite letters are added.
+    const subt = co(S[0], v) === co(S[1], v), how = subt ? "match" : "are opposites";
     const tagOf = i => (m[i] === 1 ? T(i) : `${T(i)}×${m[i] < 0 ? "(" + fmt(m[i]) + ")" : m[i]}`);
     [0, 1].forEach(i => {
       if (m[i] === 1) return;
       stage = "mult" + i;
       scene({ hi: i }); sc.lab[i] = stdEq(S[i]).t;
-      push(`Multiply equation ${T(i)} by ${fmt(m[i])} so the ${v}'s are opposites.`,
+      push(`Multiply equation ${T(i)} by ${fmt(m[i])} so the ${v}'s ${how}.`,
         table([{ q: S[i], tag: tagOf(i), cls: "r" + (i + 1) }]), "On the graph it's still the same line!");
     });
-    const sum = { a: S[0].a + S[1].a, b: S[0].b + S[1].b, c: S[0].c + S[1].c };
-    info = { v, u, m, S, sum, plan: plans[0] };
+    const sg = subt ? -1 : 1, sum = { a: S[0].a + sg * S[1].a, b: S[0].b + sg * S[1].b, c: S[0].c + sg * S[1].c };
+    info = { v, u, m, S, sum, subt, how, plan: plans[0] };
     stage = "add";
     const tbl = table([{ q: S[0], tag: tagOf(0), cls: "r1", gone: D ? v : "xy" },
-                       { q: S[1], tag: tagOf(1), cls: "r2", op: "+", gone: D ? v : "xy" },
+                       { q: S[1], tag: tagOf(1), cls: "r2", op: subt ? "−" : "+", gone: D ? v : "xy" },
                        { q: sum, sum: true }]);
     if (!D) {
       scene({ hi: 2 });
-      push(`Add the equations. Everything cancels, and 0 = ${fmt(sum.c)} is ${sum.c ? "never" : "always"} true.`, tbl);
+      push(`${subt ? "Subtract" : "Add"} the equations. Everything cancels, and 0 = ${fmt(sum.c)} is ${sum.c ? "never" : "always"} true.`, tbl);
       return noAnswer(!sum.c);
     }
     const K = R(co(sum, u)), C = R(sum.c);
     scene({}); setHelp(u, div(C, K), both([[K, u]], [[C, ""]]).t);
-    push(`Add the equations. The ${v}'s cancel!`, tbl, `With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.`);
+    push(`${subt ? "Subtract the equations (① − ②)" : "Add the equations"}. The ${v}'s cancel!`, tbl, `With only ${u} left, the graph is a ${dirWord(u)} line through the crossing.`);
     stage = "solve";
     const x = finishOne(u, K, R(0), C);
     // Put it back into the equation with the simplest other letter.
@@ -1134,9 +1135,9 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       if (st === "solve") return `Solve for ${info.u}.`;
       return `Put ${info.u} = ${numT(s[info.u])} into ${info.iso} to find ${info.v}.`;
     }
-    if (st === "mult") return "Multiply so the x's or the y's are opposites.";
+    if (st === "mult") return "Multiply so the x's or the y's match or are opposites.";
     if (st === "mult0" || st === "mult1") { const i = +st[4]; return `Multiply equation ${T(i)} by ${fmt(info.m[i])}.`; }
-    if (st === "add") return "Add the equations.";
+    if (st === "add") return info.subt ? "Subtract the equations: ① − ②." : "Add the equations.";
     if (st === "solve") return `Solve for ${info.u}.`;
     return `Put ${info.u} = ${numT(s[info.u])} into equation ① or ② to find ${info.v}.`;
   }
@@ -1156,14 +1157,13 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       const m = ["m1", "m2"].map(id => { const t = $(id).value.trim().replace(/[−–—]/g, "-"); return t === "" ? 1 : /^-?\d+$/.test(t) ? +t : null; });   // blank = leave it (× 1)
       if (m.some(n => n === null || n === 0)) return "Type a whole number in each box. 1 (or blank) means leave that equation as it is.";
       const xs = [E[0].a * m[0], E[1].a * m[1]], ys = [E[0].b * m[0], E[1].b * m[1]];
-      const v = xs[0] + xs[1] === 0 ? "x" : ys[0] + ys[1] === 0 ? "y" : null;
-      if (!v) {
-        const same = xs[0] === xs[1] || ys[0] === ys[1];
-        return `That gives ${termStr([[xs[0], "x"]])} and ${termStr([[xs[1], "x"]])}, and ${termStr([[ys[0], "y"]])} and ${termStr([[ys[1], "y"]])}. ` +
-          (same ? "Those are the same, not opposites. Make one of them negative." : "Make the x's or the y's opposites, like 6y and −6y.");
-      }
+      // Equal (then subtract) or opposite (then add) both cancel a letter.
+      const hit = w => w[0] === w[1] || w[0] + w[1] === 0;
+      const v = hit(xs) ? "x" : hit(ys) ? "y" : null;
+      if (!v) return `That gives ${termStr([[xs[0], "x"]])} and ${termStr([[xs[1], "x"]])}, and ${termStr([[ys[0], "y"]])} and ${termStr([[ys[1], "y"]])}. ` +
+        "Make the x's or the y's match, like 6y and 6y, or opposites, like 6y and −6y.";
       force = { v, m }; rebuild();
-      P.done.push({ cap: `Multiply equation ① by ${fmt(m[0])} and equation ② by ${fmt(m[1])} so the ${v}'s are opposites.`, body: "" });
+      P.done.push({ cap: `Multiply equation ① by ${fmt(m[0])} and equation ② by ${fmt(m[1])} so the ${v}'s ${info.how}.`, body: "" });
       return "";
     }
     const e = readStep($("pin").value);
@@ -1184,8 +1184,11 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
       const i = +st[4];
       if (!exactly(e, info.S[i])) return `Not yet. Multiply every term of equation ${T(i)} by ${fmt(info.m[i])}, on both sides.`;
     } else if (st === "add") {
-      if (!isZ(cf(e, info.v))) return `Add the ${info.v}'s too. They should cancel to 0.`;
-      if (!exactly(e, info.sum)) return "Not yet. Add the x's, then the y's, then the numbers.";
+      const W = info.subt ? "Subtract" : "Add";
+      if (!isZ(cf(e, info.v))) return `${W} the ${info.v}'s too. They should cancel to 0.`;
+      // Subtracting the other way round (② − ①) is right too.
+      const flipped = { a: -info.sum.a, b: -info.sum.b, c: -info.sum.c };
+      if (!exactly(e, info.sum) && !(info.subt && exactly(e, flipped))) return `Not yet. ${W} the x's, then the y's, then the numbers.`;
     } else {
       const w = st === "solve" ? info.u : info.v;
       if (!solvedFor(e, w)) return `Write your answer as ${w} = a number.`;
@@ -1201,7 +1204,7 @@ header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
     if (st === "mult" || (method === "sub" && st === "iso")) { force = null; rebuild(); }
     const want = st === "mult" ? ["mult0", "mult1"] : [st];
     const got = steps.filter(x => want.includes(x.stage));
-    if (st === "mult" && !got.length) got.push({ cap: `The ${info.v}'s are already opposites.`, body: "" });
+    if (st === "mult" && !got.length) got.push({ cap: `The ${info.v}'s ${info.subt ? "already match" : "are already opposites"}.`, body: "" });
     P.done.push(...got);
     P.helped = true;
     if (st === "mult") { P.stage = "add"; return; }
@@ -1397,18 +1400,20 @@ window.I18N_COMMON = {
 /* French for Solving Linear Systems (systems.html). */
 window.I18N_PAGE = {
  "Get x or y by itself in one of the equations.": "Isole x ou y dans une des équations.",
- "Multiply so the x's or the y's are opposites.": "Multiplie pour que les x ou les y soient opposés.",
+ "Multiply so the x's or the y's match or are opposites.": "Multiplie pour que les x ou les y soient pareils ou opposés.",
  "Add the equations.": "Additionne les équations.",
+ "Subtract the equations: ① − ②.": "Soustrais les équations : ① − ②.",
  "~Solve for (.+)\\.": "Résous pour $1.",
  "~Put (.+) = (.+) into equation ① or ② to find (.+)\\.": "Remplace $1 = $2 dans l’équation ① ou ② pour trouver $3.",
  "~Put (.+) = (.+) into (.+) to find (.+)\\.": "Remplace $1 = $2 dans $3 pour trouver $4.",
  "~Multiply equation (\\S+) by ([^ .]+)\\.": "Multiplie l’équation $1 par $2.",
  "~Multiply equation ① by (.+) and equation ② by (.+) so the (.+)'s are opposites\\.": "Multiplie l’équation ① par $1 et l’équation ② par $2 pour que les $3 soient opposés.",
+ "~Multiply equation ① by (.+) and equation ② by (.+) so the (.+)'s match\\.": "Multiplie l’équation ① par $1 et l’équation ② par $2 pour que les $3 soient pareils.",
  "~The (.+)'s are already opposites\\.": "Les $1 sont déjà opposés.",
+ "~The (.+)'s already match\\.": "Les $1 sont déjà pareils.",
  "Your step": "Ton étape",
  "Type a whole number in each box. 1 (or blank) means leave that equation as it is.": "Tape un nombre entier dans chaque case. 1 (ou vide) veut dire laisser l’équation telle quelle.",
- "~That gives (.+)\\. Those are the same, not opposites\\. Make one of them negative\\.": "Ça donne $1. Ils sont pareils, pas opposés. Rends-en un négatif.",
- "~That gives (.+)\\. Make the x's or the y's opposites, like 6y and −6y\\.": "Ça donne $1. Rends les x ou les y opposés, comme 6y et −6y.",
+ "~That gives (.+)\\. Make the x's or the y's match, like 6y and 6y, or opposites, like 6y and −6y\\.": "Ça donne $1. Rends les x ou les y pareils, comme 6y et 6y, ou opposés, comme 6y et −6y.",
  "Type an equation, like 2x + 3y = 12.": "Tape une équation, comme 2x + 3y = 12.",
  "Get x or y alone on one side, like y = 2x − 1.": "Isole x ou y d’un côté, comme y = 2x − 1.",
  "Not yet. That is not the same line as equation ① or ②. Check your signs.": "Pas encore. Ce n’est pas la même droite que l’équation ① ou ②. Vérifie tes signes.",
@@ -1418,7 +1423,9 @@ window.I18N_PAGE = {
  "~Not yet\\. Check that you put \\((.+)\\) in place of (.+) in equation (.+)\\.": "Pas encore. Vérifie que tu as mis ($1) à la place de $2 dans l’équation $3.",
  "~Not yet\\. Multiply every term of equation (.+) by (.+), on both sides\\.": "Pas encore. Multiplie chaque terme de l’équation $1 par $2, des deux côtés.",
  "~Add the (.+)'s too\\. They should cancel to 0\\.": "Additionne aussi les $1. Ils devraient s’annuler.",
+ "~Subtract the (.+)'s too\\. They should cancel to 0\\.": "Soustrais aussi les $1. Ils devraient s’annuler.",
  "Not yet. Add the x's, then the y's, then the numbers.": "Pas encore. Additionne les x, puis les y, puis les nombres.",
+ "Not yet. Subtract the x's, then the y's, then the numbers.": "Pas encore. Soustrais les x, puis les y, puis les nombres.",
  "~Write your answer as (.+) = a number\\.": "Écris ta réponse sous la forme $1 = un nombre.",
  "Not yet. Work through your equation one step at a time.": "Pas encore. Résous ton équation une étape à la fois.",
  "~Not yet\\. Put (.+) = (.+) in and work it out\\.": "Pas encore. Remplace $1 = $2 et calcule.",
@@ -1431,6 +1438,7 @@ window.I18N_PAGE = {
  "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
  "~Not yet\\. Those work in equation (.+) but not in equation (.+)\\.": "Pas encore. Ils fonctionnent dans l’équation $1, mais pas dans l’équation $2.",
  "~Add the equations\\. The (.+)'s cancel!": "Additionne les équations. Les $1 s’annulent!",
+ "~Subtract the equations \\(① − ②\\)\\. The (.+)'s cancel!": "Soustrais les équations (① − ②). Les $1 s’annulent!",
  "Solving Linear Systems": "Résoudre des systèmes linéaires",
  "Coordinate plane with the two lines of the system": "Plan cartésien avec les deux droites du système",
  "Elimination": "Élimination",
@@ -1459,6 +1467,7 @@ window.I18N_PAGE = {
  "Line up the x's, the y's and the numbers.": "Aligne les x, les y et les nombres.",
  "~Multiply equation (.+) by (.+) to clear the fractions\\.": "Multiplie l’équation $1 par $2 pour éliminer les fractions.",
  "~Multiply equation (.+) by (.+) so the (.+)'s are opposites\\.": "Multiplie l’équation $1 par $2 pour que les $3 soient opposés.",
+ "~Multiply equation (.+) by (.+) so the (.+)'s match\\.": "Multiplie l’équation $1 par $2 pour que les $3 soient pareils.",
  "On the graph it's still the same line!": "Sur le graphique, c’est toujours la même droite!",
  "It's still the same line!": "C’est toujours la même droite!",
  "~Equation (.+) only has (.+), so there is nothing to cancel\\.": "L’équation $1 n’a que $2, donc il n’y a rien à éliminer.",
@@ -1474,6 +1483,8 @@ window.I18N_PAGE = {
  "~Combine the (.+)'s\\.": "Regroupe les $1.",
  "Work it out.": "Calcule.",
  "~Add the equations\\. Everything cancels, and 0 = (.+) is (.+) true\\.": "Additionne les équations. Tout s’annule, et 0 = $1 est $2 vrai.",
+ "~Subtract the equations\\. Everything cancels, and 0 = (.+) is (.+) true\\.": "Soustrais les équations. Tout s’annule, et 0 = $1 est $2 vrai.",
+ "~Subtract the equations \\(① − ②\\)\\. The (.+)'s cancel! With only (.+) left, the graph is a (.+) line through the crossing\\.": "Soustrais les équations (① − ②). Les $1 s’annulent! Avec seulement $2, le graphique est une droite $3 qui passe par le point de rencontre.",
  "~Add the equations\\. The (.+)'s cancel! With only (.+) left, the graph is a (.+) line through the crossing\\.": "Additionne les équations. Les $1 s’annulent! Avec seulement $2, le graphique est une droite $3 qui passe par le point de rencontre.",
  "~With only (.+) left, the graph is a (.+) line through the crossing\\.": "Avec seulement $1, le graphique est une droite $2 qui passe par le point de rencontre.",
  "straight up-and-down": "verticale",
