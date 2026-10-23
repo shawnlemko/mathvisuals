@@ -189,12 +189,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .xbox.neg rect { fill: url(#pat-tneg); }
 .xbox.neg text { fill: #1b2733; font-size: 26px; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
 .xbox text { fill: #fff; font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; text-anchor: middle; dominant-baseline: central; }
+.wt circle { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt path { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt text { fill: #fff; font-family: var(--font-num); font-weight: 700; font-size: 17px; text-anchor: middle; dominant-baseline: central; }
 .piece { cursor: grab; }
 .wt.frac rect { fill: var(--orange); stroke: var(--ink); stroke-width: 2; }
 .wt.frac text { font-size: 18px; }
-.wt.neg path, .wt.neg rect { fill: url(#pat-tneg); }
+.wt.neg circle, .wt.neg path, .wt.neg rect { fill: url(#pat-tneg); }
 .wt.neg text { fill: var(--neg-ink); font-size: 13px; letter-spacing: -1px; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
 .wt.frac.neg text { font-size: 18px; letter-spacing: 0; }
 .piece.enter > * { animation: drop 0.4s ease-out; }
@@ -206,7 +207,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .fbar { stroke: var(--ink); stroke-width: 3; }
 .optag { animation: optag 1.6s ease-out forwards; }
 @keyframes optag { 0% { opacity: 0; transform: translateY(12px); } 15%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
-.piece.leave rect, .piece.leave path, .piece.leave .tl rect, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
+.piece.leave rect, .piece.leave path, .piece.leave circle, .piece.leave .tl rect, .seg.leave rect, .seg.leave.one rect, .seg.leave.x rect { fill: var(--warn); }
 @keyframes leave { 0%, 40% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-36px); } }
 
 .side { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--muted); text-anchor: end; dominant-baseline: central; }
@@ -216,7 +217,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .seg text { paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
 .zero { stroke: var(--ink); stroke-width: 3; }
 .seg text { fill: #1b2733; font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
+.seg text.small { font-size: 22px; }
 .seg.x text { font-family: var(--font-display); font-style: italic; font-weight: 800; font-size: 34px; }
+.seg.x text.small { font-size: 24px; }
 .seg line { stroke: rgba(0,0,0,0.35); stroke-width: 1.5; }
 .mismatch { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 8 6; }
 .divider { stroke: var(--ink); stroke-width: 4; stroke-dasharray: 8 6; }
@@ -317,9 +320,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const $ = id => document.getElementById(id);
   const NS = "http://www.w3.org/2000/svg";
   const svg = $("svg"), board = $("board");
-  const PX = 345, PY = 410, ARM = 200, PLATE = 224, STEM = 16, SPLIT = 680;
-  const BOX = 52, WT_W = 30, WT_H = 32, GAP = 4;
-  const BAR_X = 800, BAR_W = 370, BAR_H = 58, BAR_Y = { L: 40, R: 118 }, STEP_Y = 260;
+  const PX = 345, PY = 410, ARM = 200, PLATE = 250, STEM = 16, SPLIT = 680;
+  const BOX = 52, WT_W = 30, WT_H = 30, GAP = 4; // 1 and −1 pieces are circles WT_W across
+  const BAR_X = 800, BAR_W = 370, BAR_H = 66, BAR_Y = { L: 34, R: 120 }, STEP_Y = 260;
   const MAX_X = 6, MAX_ONE = 24, NOMINAL_X = 4;
   // Algebra tiles view: two mats side by side, an x tile is TX_W by TX_H, a 1 tile TU square.
   const MAT = { L: 22, R: 358 }, MAT_W = 300, MAT_Y = 190, MAT_H = 325, MAT_MID = 340, TU = 28, TX_W = 28, TX_H = 96, TGAP = 4;
@@ -424,12 +427,19 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const sx = el("g", { class: "src", "data-type": type, transform: `translate(${x},${562}) scale(1.08)` }, gTray);
       xBox(sx, type === "nx");
     });
-    [["one", "1", "wt", PX + 12], ["neg", "−1", "wt neg", PX + 84]].forEach(([type, label, cls, x]) => {
+    [["one", PX + 14], ["neg", PX + 86]].forEach(([type, x]) => {
       const so = el("g", { class: "src", "data-type": type, transform: `translate(${x},${566}) scale(1.6)` }, gTray);
-      const wb = el("g", { class: cls }, so);
-      el("path", { d: weightPath(0, 0) }, wb); txt(label, { x: WT_W / 2, y: 20 }, wb);
+      chip(so, type === "neg");
     });
     txt("Drag onto the scale", { x: PX, y: 658, class: "trayl" }, gTray);
+  }
+
+  // A 1 (orange) or −1 (red striped) circle for the scale, top-left at 0, 0.
+  function chip(parent, neg) {
+    const w = el("g", { class: neg ? "wt neg" : "wt" }, parent);
+    el("circle", { cx: WT_W / 2, cy: WT_W / 2, r: WT_W / 2 - 1 }, w);
+    txt(neg ? "−1" : "1", { x: WT_W / 2, y: WT_W / 2 + 1 }, w);
+    return w;
   }
 
   // An x box for the scale (blue), or a −x box (red striped), top-left at 0, 0.
@@ -551,32 +561,36 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     render();
   }
 
-  // Lay pieces on a plate: boxes first, then weights, wrapping into rows that stack upward.
+  // Lay pieces on a plate: x boxes, then 1s, then −1s, each kind starting its own rows, stacking upward.
+  // Lots of pieces are drawn smaller (down to half size) so they never pile into the messages above.
+  const PAN_ROOM = 190;
   function placePieces(s) {
-    const items = [];
-    for (let i = 0; i < s.x; i++) items.push({ t: "x", i, w: BOX, h: BOX });
-    for (let i = 0; i < s.nx; i++) items.push({ t: "nx", i, w: BOX, h: BOX });
-    const whole = Math.floor(s.one / S.D), rest = s.one % S.D;
-    for (let i = 0; i < whole; i++) items.push({ t: "one", i, w: WT_W, h: WT_H });
-    if (rest) items.push({ t: "frac", i: 0, w: 52, h: 26, label: fracStr(rest, S.D) });
-    const wholeN = Math.floor(s.neg / S.D), restN = s.neg % S.D;
-    for (let i = 0; i < wholeN; i++) items.push({ t: "neg", i, w: WT_W, h: WT_H });
-    if (restN) items.push({ t: "frac", neg: true, i: 0, w: 60, h: 26, label: "−" + fracStr(restN, S.D) });
-    const rows = []; let row = [], used = 0;
-    const inner = PLATE - 20;
-    items.forEach(it => {
-      if (row.length && used + it.w > inner) { rows.push(row); row = []; used = 0; }
-      row.push(it); used += it.w + GAP;
-    });
-    if (row.length) rows.push(row);
-    let base = 0;
-    rows.forEach(r => {
-      const w = r.reduce((a, it) => a + it.w + GAP, -GAP), h = Math.max(...r.map(it => it.h));
-      let x = -w / 2;
-      r.forEach(it => { it.x = x; it.y = base - it.h; x += it.w + GAP; });
-      base -= h + GAP;
-    });
-    return items;
+    const whole = Math.floor(s.one / S.D), rest = s.one % S.D, wholeN = Math.floor(s.neg / S.D), restN = s.neg % S.D;
+    const groups = [
+      Array.from({ length: s.x }, (_, i) => ({ t: "x", i, w: BOX, h: BOX })).concat(Array.from({ length: s.nx }, (_, i) => ({ t: "nx", i, w: BOX, h: BOX }))),
+      Array.from({ length: whole }, (_, i) => ({ t: "one", i, w: WT_W, h: WT_H })).concat(rest ? [{ t: "frac", i: 0, w: 52, h: 26, label: fracStr(rest, S.D) }] : []),
+      Array.from({ length: wholeN }, (_, i) => ({ t: "neg", i, w: WT_W, h: WT_H })).concat(restN ? [{ t: "frac", neg: true, i: 0, w: 60, h: 26, label: "−" + fracStr(restN, S.D) }] : [])
+    ].filter(gp => gp.length);
+    const lay = k => {
+      const inner = (PLATE - 16) / k, items = [];
+      let base = 0;
+      groups.forEach(gp => {
+        const rows = []; let row = [], used = 0;
+        gp.forEach(it => { if (row.length && used + it.w > inner) { rows.push(row); row = []; used = 0; } row.push(it); used += it.w + GAP; });
+        rows.push(row);
+        rows.forEach(r => {
+          const w = r.reduce((a, it) => a + it.w + GAP, -GAP), h = Math.max(...r.map(it => it.h));
+          let x = -w / 2;
+          r.forEach(it => { it.x = x; it.y = base - it.h; x += it.w + GAP; items.push(it); });
+          base -= h + GAP;
+        });
+      });
+      return { items, h: -base };
+    };
+    let k = 1, out = lay(1);
+    while (k > 0.5 && out.h * k > PAN_ROOM) { k -= 0.05; out = lay(k); }
+    out.items.forEach(it => { it.x *= k; it.y *= k; it.k = k; });
+    return out.items;
   }
 
   function drawPans() {
@@ -602,7 +616,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       items.forEach(it => {
         const count = it.t === "x" ? s.x : it.t === "nx" ? s.nx : it.t === "neg" ? wholeN : whole;
         if (it.t === "frac") { // the part of a weight left after dividing; it can't be dragged
-          const fg = el("g", { class: "wt frac" + (it.neg ? " neg" : ""), transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
+          const fg = el("g", { class: "wt frac" + (it.neg ? " neg" : ""), transform: `translate(${it.x},${it.y - STEM - 10}) scale(${it.k})` }, g);
           el("rect", { x: 0, y: 0, width: it.w, height: it.h, rx: 6 }, fg);
           txt(it.label, { x: it.w / 2, y: it.h / 2 + 1 }, fg);
           return;
@@ -610,12 +624,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         let cls = "piece";
         if (leave && it.i >= count - leave[it.t]) cls += " leave";
         if (enter && it.i >= count - enter[it.t]) cls += " enter";
-        const pg = el("g", { class: cls, "data-side": side, "data-type": it.t, transform: `translate(${it.x},${it.y - STEM - 10})` }, g);
+        const pg = el("g", { class: cls, "data-side": side, "data-type": it.t, transform: `translate(${it.x},${it.y - STEM - 10}) scale(${it.k})` }, g);
         if (it.t === "x" || it.t === "nx") xBox(pg, it.t === "nx");
         else {
-          const w = el("g", { class: it.t === "neg" ? "wt neg" : "wt" }, pg);
-          el("path", { d: weightPath(0, 0) }, w);
-          txt(it.t === "neg" ? "−1" : "1", { x: WT_W / 2, y: 20 }, w);
+          chip(pg, it.t === "neg");
         }
       });
     });
@@ -664,7 +676,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const ends = {};
     if (over) {
       el("line", { x1: X0, y1: BAR_Y.L - 12, x2: X0, y2: BAR_Y.R + BAR_H + 12, class: "zero" }, gBars);
-      txt("0", { x: X0, y: BAR_Y.R + BAR_H + 26, class: "side", "text-anchor": "middle" }, gBars);
+      txt("0", { x: X0, y: BAR_Y.R + BAR_H + 22, class: "side", "text-anchor": "middle" }, gBars);
     }
     ["L", "R"].forEach(side => {
       const y = BAR_Y[side], s = fx && fx.before ? fx.before[side] : S[side];
@@ -707,14 +719,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       });
       negs.forEach(n => { n.a = X0 + n.at * u; n.b = X0 + (n.at + n.len) * u; });
       const block = (t, x, len, label, gone, isCover) => {
-        const w = len * u, ticks = t !== "x" && u >= 7, inset = isCover ? 9 : 0; // a cover sits inside the bar it covers
+        // A cover sits in the lower part of the bar it covers, so the bar's own labels stay readable in the upper part.
+        const w = len * u, ticks = t !== "x" && u >= 7, top = isCover ? 30 : 0, bot = isCover ? 4 : 0;
         const g = el("g", { class: "seg " + t + (gone ? " leave" : "") }, gBars);
-        el("rect", { x, y: y + inset, width: w, height: BAR_H - 2 * inset }, g);
-        if (ticks) for (let k = 1; k < len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - inset - 14, x2: x + k * u, y2: y + BAR_H - inset }, g);
-        // A label goes in the part of the block the covers leave uncovered (the covers are drawn last, on top).
-        let a = x, b = x + w;
-        if (!isCover) negs.forEach(n => { if (n.a < b && n.b > a) { if (n.a <= a) a = Math.max(a, n.b); else b = Math.min(b, n.a); } });
-        if (b - a >= 26) txt(t === "neg" ? "−" + label : label, { x: (a + b) / 2, y: y + BAR_H / 2 - (ticks ? 5 : 0) }, g);
+        el("rect", { x, y: y + top, width: w, height: BAR_H - top - bot }, g);
+        if (ticks) for (let k = 1; k < len - 1e-9; k++) el("line", { x1: x + k * u, y1: y + BAR_H - bot - 12, x2: x + k * u, y2: y + BAR_H - bot }, g);
+        const covered = !isCover && negs.some(n => n.a < x + w - 0.5 && n.b > x + 0.5);
+        const ly = isCover ? y + top + (BAR_H - top - bot) / 2 : covered ? y + 16 : y + BAR_H / 2 - (ticks ? 5 : 0);
+        if (w >= 26) txt(t === "neg" ? "−" + label : label, { x: x + w / 2, y: ly, class: isCover || covered ? "small" : "" }, g);
       };
       segs.forEach(sg => block(sg.t, X0 + sg.at * u, sg.len, sg.label, sg.leave));
       negs.forEach(n => block(n.t, n.a, n.len, n.label, n.leave, true));
@@ -917,7 +929,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       ? `<svg width="${BOX * scale}" height="${BOX * scale}" viewBox="0 0 ${BOX} ${BOX}"><g class="xbox neg"><rect x="1" y="1" width="${BOX - 2}" height="${BOX - 2}" rx="5"/><text x="${BOX / 2}" y="${BOX / 2}">−x</text></g></svg>`
       : type === "x"
       ? `<svg width="${BOX * scale}" height="${BOX * scale}" viewBox="0 0 ${BOX} ${BOX}"><g class="xbox"><rect x="1" y="1" width="${BOX - 2}" height="${BOX - 2}" rx="5"/><text x="${BOX / 2}" y="${BOX / 2}">x</text></g></svg>`
-      : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt${type === "neg" ? " neg" : ""}"><path d="${weightPath(0, 0)}"/><text x="${WT_W / 2}" y="20">${type === "neg" ? "−1" : "1"}</text></g></svg>`;
+      : `<svg width="${(WT_W + 2) * scale}" height="${(WT_H + 2) * scale}" viewBox="-1 -1 ${WT_W + 2} ${WT_H + 2}"><g class="wt${type === "neg" ? " neg" : ""}"><circle cx="${WT_W / 2}" cy="${WT_W / 2}" r="${WT_W / 2 - 1}"/><text x="${WT_W / 2}" y="${WT_W / 2 + 1}">${type === "neg" ? "−1" : "1"}</text></g></svg>`;
     document.body.appendChild(gh);
     drag = { type, from, gh, id: e.pointerId };
     moveGhost(e);
