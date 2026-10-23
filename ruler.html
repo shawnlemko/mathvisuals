@@ -149,7 +149,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 /* Ruler (grades 4-9, Shawn 2026-10-23). A 12 inch ruler drawn at true scale: inches on the top edge, centimetres
    on the bottom edge when both are shown (30 cm fits under 12 in, like a real ruler).
    Marks: whole inches always; Halves, Quarters, Eighths and Sixteenths toggle on and off, each its own colour and
-   height. A mark takes the colour of the biggest shown piece it belongs to (with Halves off, the middle mark is 4/8).
+   height. Each button hides or shows only its own marks (Halves off hides the middle mark of every inch, Shawn 2026-10-23).
    Learn: the slider (or a drag on the ruler) moves a strip along the ruler. All marks of the same kind as the one
    it ends on light up, and the board reads the length: count the smallest spaces, then simplify (2 6/16 = 2 3/8 in).
    Metric reads 6.4 cm = 64 mm. Zoom in draws the inch (or centimetre) the strip ends in large, with every mark named.
@@ -313,15 +313,19 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 
   const finest = () => [16, 8, 4, 2].find(d => show[d]) || 1;
   const step = () => 16 / finest();
-  // The biggest shown piece a mark belongs to: 1 (whole inch), 2, 4, 8, 16, or 0 when it is not drawn.
-  function level(r) {
-    r = ((r % 16) + 16) % 16;
-    if (r === 0) return 1;
-    for (const d of [2, 4, 8, 16]) if (show[d] && r % (16 / d) === 0) return d;
-    return 0;
-  }
   const lowest = r => (r % 16 ? 16 / gcd(r % 16, 16) : 1); // denominator in lowest terms
-  const snap = x => Math.max(0, Math.min(192, Math.round(x / step()) * step()));
+  // The kind of mark at a spot: 1 (whole inch), 2, 4, 8, 16 (its lowest terms), or 0 when its button is off.
+  function level(r) {
+    const d = lowest(((r % 16) + 16) % 16);
+    return d === 1 || show[d] ? d : 0;
+  }
+  // The nearest drawn mark, so the strip always stops on a mark you can see.
+  function snap(x) {
+    x = Math.max(0, Math.min(192, Math.round(x)));
+    for (let k = 0; k <= 16; k++) for (const s of [x - k, x + k]) if (s >= 0 && s <= 192 && level(s)) return s;
+    return x;
+  }
+  const nextMark = (s, dir) => { do s += dir; while (s > 0 && s < 192 && !level(s)); return Math.max(0, Math.min(192, s)); };
   const toMm = s => Math.round(s / 16 * 25.4);
   const cmStr = m => (m % 10 ? (m / 10).toFixed(1) : String(m / 10));
 
@@ -592,8 +596,8 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     syncSlider(); render();
   }
   slider.addEventListener("input", () => setLen(+slider.value));
-  $("#minus").onclick = () => setLen((sys === "cm" ? mm : v) - (sys === "cm" ? 1 : step()));
-  $("#plus").onclick = () => setLen((sys === "cm" ? mm : v) + (sys === "cm" ? 1 : step()));
+  $("#minus").onclick = () => setLen(sys === "cm" ? mm - 1 : nextMark(v, -1));
+  $("#plus").onclick = () => setLen(sys === "cm" ? mm + 1 : nextMark(v, 1));
 
   const toSvgX = e => {
     const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
@@ -651,8 +655,9 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       // Mostly land on the smallest marks shown, so students have to count them.
       for (let t = 0; t < 20; t++) {
         n = ri(lo, hi) * st;
-        if (n % 16 && (finest() === 1 || lowest(n) === finest() || Math.random() < 0.3)) break;
+        if (n % 16 && level(n) && (finest() === 1 || lowest(n) === finest() || Math.random() < 0.3)) break;
       }
+      n = snap(n);
     } else {
       do n = ri(R[0], R[1]); while (n % 10 === 0 && Math.random() < 0.85);
     }
