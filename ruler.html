@@ -1,0 +1,1134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Ruler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Ruler (grades 4-9, Shawn 2026-10-23). A 12 inch ruler drawn at true scale: inches on the top edge, centimetres
+   on the bottom edge when both are shown (30 cm fits under 12 in, like a real ruler).
+   Marks: whole inches always; Halves, Quarters, Eighths and Sixteenths toggle on and off, each its own colour and
+   height. Each button hides or shows only its own marks (Halves off hides the middle mark of every inch, Shawn 2026-10-23).
+   Learn: the slider (or a drag on the ruler) moves a strip along the ruler. All marks of the same kind as the one
+   it ends on light up, and the board reads the length: count the smallest spaces, then simplify (2 6/16 = 2 3/8 in).
+   Metric reads 6.4 cm = 64 mm. Zoom in draws the inch (or centimetre) the strip ends in large, with every mark named.
+   Practice: an object lies on the ruler from 0; students type the length; Show me slides the strip along and reads it.
+   Always fraction notation, never the ÷ sign. */
+.board { padding: 4px; }
+.dock { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; align-items: stretch; }
+.dock .card { padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.dock .grow { flex: 1 1 400px; }
+.seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 14px; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.row .label { margin: 0; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button { font-size: 1.1rem; min-height: 48px; padding: 8px 14px; }
+.btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.tool.on { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+/* Mark buttons wear their mark colour; switched on they fill with it. The one the strip ends on glows. */
+.mk-btn { border-width: 3px; border-color: var(--c); color: var(--ink); }
+.mk-btn.on { background: var(--c); color: var(--sheet); border-color: var(--c); }
+.mk-btn.now { box-shadow: 0 0 0 4px var(--sheet), 0 0 0 8px var(--c); }
+.mk-btn[data-d="2"] { --c: var(--c2); } .mk-btn[data-d="4"] { --c: var(--c4); }
+.mk-btn[data-d="8"] { --c: var(--c8); } .mk-btn[data-d="16"] { --c: var(--c16); }
+.len { display: flex; align-items: center; gap: 12px; }
+.len input[type=range] { flex: 1 1 auto; min-width: 160px; height: 36px; }
+.len button { font-size: 1.5rem; min-width: 50px; min-height: 50px; padding: 0; }
+.ask { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.ans { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; }
+.ans input { font: inherit; font-size: 1.6rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; height: 50px; width: 3ch; text-align: center; padding: 0 2px; }
+.ans input.wide { width: 5ch; }
+.ans input.bad { border-color: var(--warn); }
+.ans input.ok { border-color: var(--green); color: var(--green); }
+.frac-in { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.frac-in input { height: 42px; font-size: 1.4rem; }
+.frac-in i { display: block; width: 100%; height: 3px; background: var(--ink); border-radius: 2px; }
+.fb { margin: 0; font-size: 1.1rem; font-weight: 700; min-height: 1.4em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); } .fb.mid { color: var(--orange); }
+.score { font-size: 1rem; color: var(--muted); margin: 0; }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.2rem; }
+
+/* Board. Mark colours: halves blue, quarters green, eighths orange, sixteenths purple. */
+:root { --wood: #f6e6bd; --wood-edge: #c4a157; --strip: #2a9d8f; --c2: var(--pt); --c4: var(--green); --c8: var(--orange); --c16: #7b3fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --wood: #3b3222; --wood-edge: #8f7440; --strip: #3fbfae; --c16: #b88cff; } }
+:root[data-theme="dark"] { --wood: #3b3222; --wood-edge: #8f7440; --strip: #3fbfae; --c16: #b88cff; }
+.body { fill: var(--wood); stroke: var(--wood-edge); stroke-width: 3; }
+.tk { stroke: var(--ink); stroke-linecap: butt; pointer-events: none; }
+.tk.l1 { stroke-width: 3.5; } .tk.l2 { stroke: var(--c2); stroke-width: 3; } .tk.l4 { stroke: var(--c4); stroke-width: 2.6; }
+.tk.l8 { stroke: var(--c8); stroke-width: 2.2; } .tk.l16 { stroke: var(--c16); stroke-width: 1.8; }
+.tk.dim { opacity: 0.4; }
+.tk.hl { stroke-width: 6; }
+.tk.l16.hl { stroke-width: 4; }
+.mm { stroke: var(--ink); stroke-width: 1.6; pointer-events: none; }
+.mm.half { stroke-width: 2.4; } .mm.cm { stroke-width: 3.5; }
+.strip { fill: var(--strip); opacity: 0.85; }
+.marker { stroke: var(--warn); stroke-width: 4; stroke-linecap: round; pointer-events: none; }
+.handle { fill: var(--warn); stroke: var(--sheet); stroke-width: 4; cursor: ew-resize; }
+.zbox { fill: var(--wood); stroke: var(--wood-edge); stroke-width: 3; }
+.zfill { fill: var(--strip); opacity: 0.35; }
+.zframe { fill: none; stroke: var(--strip); stroke-width: 4; pointer-events: none; }
+.zlink { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
+.tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); pointer-events: none; }
+.tx.m { fill: var(--muted); font-weight: 500; }
+.tx.l2 { fill: var(--c2); } .tx.l4 { fill: var(--c4); } .tx.l8 { fill: var(--c8); } .tx.l16 { fill: var(--c16); }
+.tx.dim { opacity: 0.45; }
+.word { font-family: var(--font-body); font-weight: 700; fill: var(--muted); pointer-events: none; }
+.bar { stroke: var(--ink); stroke-linecap: round; }
+.bar.l2 { stroke: var(--c2); } .bar.l4 { stroke: var(--c4); } .bar.l8 { stroke: var(--c8); } .bar.l16 { stroke: var(--c16); }
+.pop { animation: pop 0.4s ease-out both; transform-box: fill-box; transform-origin: center; }
+@keyframes pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Ruler</h1></div>
+    <div class="seg-btns" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on">Learn</button><button type="button" data-mode="practice">Practice</button>
+    </div>
+  </header>
+
+  <div class="board"><svg id="svg" viewBox="0 0 1600 420" role="img" aria-label="A 12 inch ruler. Slide the strip along it to read a length."></svg></div>
+
+  <div class="dock">
+    <section class="card grow" id="learn">
+      <p class="label">Slide to measure</p>
+      <div class="len">
+        <button type="button" id="minus" aria-label="One mark less">−</button>
+        <input type="range" id="slider" min="0" max="192" step="2" value="38" aria-label="Length">
+        <button type="button" id="plus" aria-label="One mark more">+</button>
+      </div>
+    </section>
+
+    <section class="card grow" id="practice" hidden>
+      <p class="ask" id="ask">How long is the pencil?</p>
+      <div class="row">
+        <span class="ans" id="ansIn">
+          <input id="aW" inputmode="numeric" autocomplete="off" aria-label="Whole inches">
+          <span class="frac-in"><input id="aN" inputmode="numeric" autocomplete="off" aria-label="Top of the fraction"><i></i><input id="aD" inputmode="numeric" autocomplete="off" aria-label="Bottom of the fraction"></span>
+          <span class="unit">in</span>
+        </span>
+        <span class="ans" id="ansCm" hidden>
+          <input id="aM" class="wide" inputmode="decimal" autocomplete="off" aria-label="Your answer">
+          <span class="seg-btns" role="group" aria-label="Answer in" id="mUnit"><button type="button" data-u="cm" class="on">cm</button><button type="button" data-u="mm">mm</button></span>
+        </span>
+        <div class="btns"><button type="button" class="go" id="check">Check</button><button type="button" id="showme">Show me</button><button type="button" id="newq">New object</button></div>
+      </div>
+      <div class="row"><p class="fb" id="fb" aria-live="polite"></p><p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p></div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <span class="label">Ruler</span>
+        <div class="seg-btns" role="group" aria-label="Ruler" id="sys">
+          <button type="button" data-s="in" class="on">Inches</button><button type="button" data-s="cm">Centimetres</button><button type="button" data-s="both">Both</button>
+        </div>
+      </div>
+      <div class="row" id="marks">
+        <span class="label">Marks</span>
+        <div class="btns">
+          <button type="button" class="mk-btn" data-d="2">Halves</button>
+          <button type="button" class="mk-btn" data-d="4">Quarters</button>
+          <button type="button" class="mk-btn" data-d="8">Eighths</button>
+          <button type="button" class="mk-btn" data-d="16">Sixteenths</button>
+        </div>
+      </div>
+      <div class="btns">
+        <button type="button" class="tool" id="tUnits" aria-pressed="true">Units</button>
+        <button type="button" class="tool" id="tZoom" aria-pressed="false">Zoom in</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("#svg");
+  function E(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const tr = s => (window.I18N ? window.I18N.tr(s) : s);
+
+  // ---------- state ----------
+  // Inch lengths are counted in sixteenths (38 = 2 6/16 in). Metric lengths in millimetres.
+  let mode = "learn", sys = "in", units = true, zoom = false;
+  const show = { 2: true, 4: true, 8: true, 16: false };
+  let v = 38, mm = 64;
+  let q = null, solved = false, anim = {};
+
+  const finest = () => [16, 8, 4, 2].find(d => show[d]) || 1;
+  const step = () => 16 / finest();
+  const lowest = r => (r % 16 ? 16 / gcd(r % 16, 16) : 1); // denominator in lowest terms
+  // The kind of mark at a spot: 1 (whole inch), 2, 4, 8, 16 (its lowest terms), or 0 when its button is off.
+  function level(r) {
+    const d = lowest(((r % 16) + 16) % 16);
+    return d === 1 || show[d] ? d : 0;
+  }
+  // The nearest drawn mark, so the strip always stops on a mark you can see.
+  function snap(x) {
+    x = Math.max(0, Math.min(192, Math.round(x)));
+    for (let k = 0; k <= 16; k++) for (const s of [x - k, x + k]) if (s >= 0 && s <= 192 && level(s)) return s;
+    return x;
+  }
+  const nextMark = (s, dir) => { do s += dir; while (s > 0 && s < 192 && !level(s)); return Math.max(0, Math.min(192, s)); };
+  const toMm = s => Math.round(s / 16 * 25.4);
+  const cmStr = m => (m % 10 ? (m / 10).toFixed(1) : String(m / 10));
+
+  // What is being read right now: the system, and the length (sixteenths or mm).
+  function reading() {
+    if (mode === "practice") return { s: q.s, n: solved ? (q.shown != null ? q.shown : q.n) : null };
+    return sys === "cm" ? { s: "cm", n: mm } : { s: "in", n: v };
+  }
+
+  // ---------- small layout: text and fractions that know their width ----------
+  const CW = 0.62;
+  function T(s, fs, cls) {
+    s = String(s);
+    return { w: s.length * CW * fs, draw(g, x, y) { E("text", { x: x + this.w / 2, y: y + fs * 0.36, class: "tx " + (cls || ""), "text-anchor": "middle", "font-size": fs }, g, s); } };
+  }
+  function Fr(a, b, fs, cls) {
+    const f = fs * 0.72, t = T(a, f, cls), d = T(b, f, cls), w = Math.max(t.w, d.w) + fs * 0.25;
+    return { w, draw(g, x, y) {
+      E("line", { x1: x, x2: x + w, y1: y, y2: y, class: "bar " + (cls || ""), "stroke-width": Math.max(2.5, fs * 0.07) }, g);
+      t.draw(g, x + (w - t.w) / 2, y - f * 0.62); d.draw(g, x + (w - d.w) / 2, y + f * 0.62);
+    } };
+  }
+  function Row(items, sp) {
+    items = items.filter(Boolean);
+    const w = items.reduce((t, i) => t + i.w, 0) + sp * (items.length - 1);
+    return { w, draw(g, x, y) { for (const i of items) { i.draw(g, x, y); x += i.w + sp; } } };
+  }
+  // 2 3/8 as one item; leaves out a 0 whole and a 0 fraction.
+  function mixed(k, n, d, fs, cls) {
+    if (!n) return T(k, fs, "");
+    return Row([k ? T(k, fs, "") : null, Fr(n, d, fs, cls)], fs * 0.14);
+  }
+  const unitT = (u, fs) => (units ? T(tr(u), fs * 0.8, "m") : null);
+
+  // The reading in inches: count the smallest spaces shown, then put it in lowest terms.
+  function inchRead(s, fs) {
+    const k = Math.floor(s / 16), r = s % 16, F = finest(), L = lowest(r);
+    const out = [];
+    if (r && F !== L) out.push(mixed(k, r / (16 / F), F, fs, "l" + F), T("=", fs, "m"));
+    out.push(mixed(k, r / (16 / L), L, fs, "l" + L), unitT("in", fs));
+    return Row(out, fs * 0.32);
+  }
+  function cmRead(m, fs, about) {
+    return Row([about ? T(tr("about"), fs * 0.6, "m") : null, T(cmStr(m), fs, ""), unitT("cm", fs), T("=", fs, "m"), T(m, fs, ""), unitT("mm", fs)], fs * 0.3);
+  }
+
+  // ---------- geometry ----------
+  const W = 1600, X0 = 90, PX = 118;               // 0 on the ruler, and pixels per inch (12 in ends at 1506)
+  const X = s => X0 + s / 16 * PX;                  // sixteenths to x
+  const XM = m => X0 + m / 25.4 * PX;               // millimetres to x
+  const RX0 = 40, RX1 = 1560;
+  const TICK = { 1: 78, 2: 62, 4: 48, 8: 36, 16: 26 };
+  const MTICK = { cm: 60, half: 42, mm: 26 };
+  let G = {};                                        // this frame's layout
+
+  function layout() {
+    const both = sys === "both";
+    const g = { top: 0, objTop: 118, edge: 214 };
+    g.inEdge = sys === "cm" ? null : g.edge;                   // inches hang from the top edge
+    g.cmTop = sys === "cm";                                    // centimetres on top when alone
+    const inH = 78 + 46, cmH = 60 + 40, wordH = 40;
+    g.rulerH = both ? inH + wordH + cmH + 4 : (sys === "cm" ? cmH : inH) + wordH + 6;
+    g.bottom = g.edge + g.rulerH;
+    g.below = both ? g.bottom + 92 : g.bottom;                 // room for an object under the cm edge
+    g.zy = g.below + 76;                                       // zoom box
+    g.h = zoom ? g.zy + 80 + 84 : g.below + 18;
+    return g;
+  }
+
+  // ---------- drawing ----------
+  function render() {
+    svg.innerHTML = "";
+    G = layout();
+    const a = anim; anim = {};
+    svg.setAttribute("viewBox", `0 0 ${W} ${G.h}`);
+    const rd = reading(), both = sys === "both";
+    const inV = rd.n == null ? null : rd.s === "in" ? rd.n : null;
+    const cmV = rd.n == null ? null : rd.s === "cm" ? rd.n : null;
+    // In Both, an inch length also reads on the cm edge (to the nearest mm).
+    const cmShown = cmV != null ? cmV : (both && inV != null ? toMm(inV) : null);
+    const xEnd = rd.n == null ? null : rd.s === "in" ? X(rd.n) : XM(rd.n);
+    const act = inV != null ? level(inV % 16) : 0;   // the kind of mark the strip ends on
+    document.querySelectorAll(".mk-btn").forEach(b => b.classList.toggle("now", act > 1 && +b.dataset.d === act));
+
+    // Top: the reading.
+    if (rd.n != null) {
+      const fs = 50, parts = [];
+      if (rd.s === "in") {
+        parts.push(inchRead(rd.n, fs));
+        if (both && mode === "learn") parts.push(cmRead(toMm(rd.n), fs * 0.7, true));
+      } else parts.push(cmRead(rd.n, fs, false));
+      const r = Row(parts, 70), g = E("g", { class: a.top ? "pop" : "" });
+      r.draw(g, (W - r.w) / 2, 58);
+    }
+
+    // The ruler body.
+    E("rect", { x: RX0, y: G.edge, width: RX1 - RX0, height: G.rulerH, rx: 6, class: "body" });
+
+    // Inch marks, from the top edge down.
+    if (sys !== "cm") {
+      const y = G.edge;
+      for (let s = 0; s <= 192; s++) {
+        const l = level(s);
+        if (!l) continue;
+        let c = "tk l" + l;
+        if (inV != null) c += l === act ? " hl" : " dim";
+        E("line", { x1: X(s), x2: X(s), y1: y, y2: y + TICK[l], class: c });
+      }
+      for (let k = 0; k <= 12; k++) E("text", { x: X(16 * k), y: y + TICK[1] + 38, class: "tx", "text-anchor": "middle", "font-size": 34 }, svg, String(k));
+      if (units) E("text", { x: X0 + (sys === "both" ? 3 : 6) * PX, y: y + TICK[1] + 76, class: "word", "text-anchor": "middle", "font-size": 24 }, svg, tr("inches"));
+    }
+    // Centimetre marks: on the top edge when alone, rising from the bottom edge in Both.
+    if (sys !== "in") {
+      const top = G.cmTop, y = top ? G.edge : G.bottom, d = top ? 1 : -1;
+      for (let m = 0; m <= 300; m++) {
+        const k = m % 10 === 0 ? "cm" : m % 5 === 0 ? "half" : "mm";
+        E("line", { x1: XM(m), x2: XM(m), y1: y, y2: y + d * MTICK[k], class: "mm " + (k === "mm" ? "" : k) });
+      }
+      const ny = top ? y + MTICK.cm + 32 : y - MTICK.cm - 14;
+      for (let c = 0; c <= 30; c++) E("text", { x: XM(10 * c), y: ny, class: "tx", "text-anchor": "middle", "font-size": 26 }, svg, String(c));
+      if (units) E("text", { x: X0 + (top ? 6 : 9) * PX, y: top ? ny + 38 : G.edge + TICK[1] + 76, class: "word", "text-anchor": "middle", "font-size": 24 }, svg, tr("centimetres"));
+    }
+
+    // The object (Practice) or the strip (Learn), lying on the ruler from 0.
+    const under = mode === "practice" && q.s === "cm" && both;
+    if (mode === "practice") {
+      const x1 = q.s === "in" ? X(q.n) : XM(q.n);
+      drawObject(q.obj, X0, x1, under ? G.bottom : G.edge, !under);
+    } else if (xEnd != null) {
+      E("rect", { x: X0, y: G.edge - 62, width: Math.max(0, xEnd - X0), height: 46, rx: 4, class: "strip" });
+      E("circle", { cx: xEnd, cy: G.edge - 86, r: 18, class: "handle" });
+    }
+    // The red line where the length ends, across the ruler.
+    if (xEnd != null) {
+      const y0 = mode === "learn" ? G.edge - 70 : under ? G.edge : G.edge - 78;
+      const y1 = under ? G.bottom + 8 + OBJ[q.obj].h + 10 : G.bottom;
+      E("line", { x1: xEnd, x2: xEnd, y1: y0, y2: y1, class: "marker" });
+    }
+
+    // Zoom in: the inch (and centimetre) the length ends in, drawn large.
+    if (zoom) {
+      const wantIn = rd.s === "in";
+      const wantCm = sys !== "in" && (rd.s === "cm" || (both && mode === "learn"));
+      const two = wantIn && wantCm;
+      const labels = mode === "learn" || solved;
+      if (wantIn) {
+        const n = rd.s === "in" ? rd.n : null;
+        const end = n != null ? n : (mode === "practice" ? q.n : v);
+        zoomInch(end, n, two ? 60 : 220, two ? 900 : 1380, labels, act);
+      }
+      if (wantCm) {
+        const n = cmShown;
+        const end = n != null ? n : (q && q.s === "cm" ? q.n : mm);
+        zoomCm(end, n, two ? 1000 : 220, two ? 1540 : 1380, labels);
+      }
+    }
+  }
+
+  const ZH = 80;
+  // One inch, large. Every shown mark is named in lowest terms (once the answer is shown in Practice).
+  function zoomInch(end, n, zx0, zx1, labels, act) {
+    const k = Math.min(11, end && end % 16 === 0 ? end / 16 - 1 : Math.floor(end / 16));
+    const zw = (zx1 - zx0) / 16, zy = G.zy, Z = i => zx0 + i * zw;
+    E("path", { d: `M${X(16 * k)} ${G.edge} L${zx0} ${zy} M${X(16 * k + 16)} ${G.edge} L${zx1} ${zy}`, class: "zlink" });
+    E("rect", { x: X(16 * k), y: G.edge, width: PX, height: TICK[1], class: "zframe" });
+    E("rect", { x: zx0, y: zy, width: zx1 - zx0, height: ZH, class: "zbox" });
+    const r = n == null ? null : n - 16 * k;
+    if (r) E("rect", { x: zx0, y: zy, width: r * zw, height: ZH, class: "zfill" });
+    for (let i = 0; i <= 16; i++) {
+      const l = level(i);
+      if (!l) continue;
+      let c = "tk l" + l;
+      if (r != null) c += l === act ? " hl" : " dim";
+      E("line", { x1: Z(i), x2: Z(i), y1: zy, y2: zy + ZH * TICK[l] / TICK[1], class: c });
+      if (i % 16 === 0) T(k + i / 16, 34, "").draw(svg, Z(i) - T(k + i / 16, 34).w / 2, zy + ZH + 34);
+      else if (labels) {
+        const L = lowest(i), f = Fr(i / (16 / L), L, zw > 60 ? 42 : 34, "l" + L + (r != null && l !== act ? " dim" : ""));
+        f.draw(svg, Z(i) - f.w / 2, zy + ZH + 44);
+      }
+    }
+    if (r != null) E("line", { x1: Z(r), x2: Z(r), y1: zy - 12, y2: zy + ZH + 8, class: "marker" });
+    if (units) E("text", { x: (zx0 + zx1) / 2, y: zy - 14, class: "word", "text-anchor": "middle", "font-size": 24 }, svg, tr("1 inch"));
+  }
+  // One centimetre, large: 10 millimetres.
+  function zoomCm(end, n, zx0, zx1, labels) {
+    const c = Math.min(29, end && end % 10 === 0 ? end / 10 - 1 : Math.floor(end / 10));
+    const zw = (zx1 - zx0) / 10, zy = G.zy, Z = i => zx0 + i * zw;
+    const y = G.cmTop ? G.edge : G.bottom;
+    E("path", { d: `M${XM(10 * c)} ${y} L${zx0} ${zy} M${XM(10 * c + 10)} ${y} L${zx1} ${zy}`, class: "zlink" });
+    E("rect", { x: XM(10 * c), y: G.cmTop ? y : y - MTICK.cm, width: XM(10) - X0, height: MTICK.cm, class: "zframe" });
+    E("rect", { x: zx0, y: zy, width: zx1 - zx0, height: ZH, class: "zbox" });
+    const r = n == null ? null : n - 10 * c;
+    if (r) E("rect", { x: zx0, y: zy, width: r * zw, height: ZH, class: "zfill" });
+    for (let i = 0; i <= 10; i++) {
+      const k = i % 10 === 0 ? "cm" : i === 5 ? "half" : "mm";
+      E("line", { x1: Z(i), x2: Z(i), y1: zy, y2: zy + ZH * MTICK[k] / MTICK.cm, class: "mm " + (k === "mm" ? "" : k) });
+      if (i % 10 === 0) { const t = T(c + i / 10, 34, ""); t.draw(svg, Z(i) - t.w / 2, zy + ZH + 34); }
+      else if (labels) { const t = T(i, 28, "m"); t.draw(svg, Z(i) - t.w / 2, zy + ZH + 30); }
+    }
+    if (r != null) E("line", { x1: Z(r), x2: Z(r), y1: zy - 12, y2: zy + ZH + 8, class: "marker" });
+    if (units) E("text", { x: (zx0 + zx1) / 2, y: zy - 14, class: "word", "text-anchor": "middle", "font-size": 24 }, svg, labels ? tr("1 cm = 10 mm") : tr("1 cm"));
+  }
+
+  // ---------- objects for Practice, drawn from x0 to x1 along an edge ----------
+  // Each object has a length range in sixteenths and in mm, and a height.
+  const OBJ = {
+    pencil:   { in: [64, 120], mm: [100, 190], h: 54 },
+    crayon:   { in: [40, 64],  mm: [60, 100],  h: 50 },
+    eraser:   { in: [24, 44],  mm: [35, 65],   h: 52 },
+    clip:     { in: [20, 32],  mm: [30, 50],   h: 40 },
+    nail:     { in: [24, 64],  mm: [40, 100],  h: 40 },
+    marker:   { in: [72, 104], mm: [110, 160], h: 58 },
+    key:      { in: [32, 52],  mm: [50, 80],   h: 56 },
+  };
+  const NAMES = { pencil: "pencil", crayon: "crayon", eraser: "eraser", clip: "paper clip", nail: "nail", marker: "marker", key: "key" };
+  function drawObject(kind, x0, x1, yEdge, above) {
+    const h = OBJ[kind].h, L = x1 - x0, y = above ? yEdge - 8 - h : yEdge + 8, m = y + h / 2;
+    const g = E("g", { "aria-hidden": "true" });
+    const P = (d, fill, extra) => E("path", Object.assign({ d, fill, stroke: "#1b2733", "stroke-width": 2, "stroke-linejoin": "round" }, extra || {}), g);
+    if (kind === "pencil") {
+      const e = Math.min(30, L * 0.08), f = Math.min(22, L * 0.06), t = Math.min(70, L * 0.17);
+      P(`M${x0 + 6} ${y} H${x0 + e} V${y + h} H${x0 + 6} Q${x0} ${y + h} ${x0} ${y + h - 6} V${y + 6} Q${x0} ${y} ${x0 + 6} ${y}Z`, "#f19aa8");
+      P(`M${x0 + e} ${y} h${f} v${h} h${-f}Z`, "#b7bcc4");
+      P(`M${x0 + e + f} ${y} H${x1 - t} V${y + h} H${x0 + e + f}Z`, "#f5c542");
+      E("path", { d: `M${x0 + e + f} ${y + h / 3} H${x1 - t} M${x0 + e + f} ${y + 2 * h / 3} H${x1 - t}`, stroke: "#c9971c", "stroke-width": 2 }, g);
+      P(`M${x1 - t} ${y} L${x1} ${m} L${x1 - t} ${y + h}Z`, "#efd2a4");
+      P(`M${x1 - t * 0.32} ${m - h * 0.16} L${x1} ${m} L${x1 - t * 0.32} ${m + h * 0.16}Z`, "#3b3b3b");
+    } else if (kind === "crayon") {
+      const t = Math.min(40, L * 0.2);
+      P(`M${x0 + 4} ${y + 4} H${x1 - t} V${y + h - 4} H${x0 + 4} Q${x0} ${y + h - 4} ${x0} ${m} Q${x0} ${y + 4} ${x0 + 4} ${y + 4}Z`, "#2f7fd0");
+      E("path", { d: `M${x0 + L * 0.18} ${y + 4} V${y + h - 4} M${x1 - t - L * 0.12} ${y + 4} V${y + h - 4}`, stroke: "#ffffff", "stroke-width": 3 }, g);
+      P(`M${x1 - t} ${y + 6} L${x1 - 3} ${m - 4} Q${x1} ${m} ${x1 - 3} ${m + 4} L${x1 - t} ${y + h - 6}Z`, "#2f7fd0");
+    } else if (kind === "eraser") {
+      P(`M${x0} ${y + 8} Q${x0} ${y} ${x0 + 8} ${y} H${x1 - 8} Q${x1} ${y} ${x1} ${y + 8} V${y + h - 8} Q${x1} ${y + h} ${x1 - 8} ${y + h} H${x0 + 8} Q${x0} ${y + h} ${x0} ${y + h - 8}Z`, "#f4a4b5");
+      P(`M${x0 + L * 0.45} ${y} H${x1 - 8} Q${x1} ${y} ${x1} ${y + 8} V${y + h - 8} Q${x1} ${y + h} ${x1 - 8} ${y + h} H${x0 + L * 0.45}Z`, "#4a7bd0");
+    } else if (kind === "clip") {
+      // One wire: outer loop, left loop, inner right loop.
+      const y3 = y + h, yi1 = y + h * 0.25, yi2 = y + h * 0.75, r = h / 2, r2 = h * 0.375, r3 = h * 0.25;
+      E("path", { d: `M${x0 + 0.3 * L} ${y3} H${x1 - r} A${r} ${r} 0 0 0 ${x1 - r} ${y} H${x0 + r2} A${r2} ${r2} 0 0 0 ${x0 + r2} ${yi2} H${x1 - 0.22 * L} A${r3} ${r3} 0 0 0 ${x1 - 0.22 * L} ${yi1} H${x0 + 0.3 * L}`, fill: "none", stroke: "#7d8793", "stroke-width": 5, "stroke-linecap": "round" }, g);
+    } else if (kind === "nail") {
+      const t = Math.min(24, L * 0.18);
+      P(`M${x0} ${y} h8 v${h} h-8Z`, "#7d8793");
+      P(`M${x0 + 8} ${m - 6} H${x1 - t} L${x1} ${m} L${x1 - t} ${m + 6} H${x0 + 8}Z`, "#a9b2bc");
+    } else if (kind === "marker") {
+      const c = L * 0.32, t = Math.min(26, L * 0.06);
+      P(`M${x0 + 8} ${y} H${x0 + c} V${y + h} H${x0 + 8} Q${x0} ${y + h} ${x0} ${y + h - 8} V${y + 8} Q${x0} ${y} ${x0 + 8} ${y}Z`, "#c0392b");
+      P(`M${x0 + c} ${y + 3} H${x1 - t - 14} V${y + h - 3} H${x0 + c}Z`, "#f2f2f2");
+      P(`M${x1 - t - 14} ${y + 8} H${x1 - t} V${y + h - 8} H${x1 - t - 14}Z`, "#c0392b");
+      P(`M${x1 - t} ${m - 7} H${x1 - 4} Q${x1} ${m} ${x1 - 4} ${m + 7} H${x1 - t}Z`, "#c0392b");
+    } else if (kind === "key") {
+      const hr = h / 2, sx = x0 + 2 * hr;
+      P(`M${x0 + hr} ${y} A${hr} ${hr} 0 1 0 ${x0 + hr + 0.1} ${y}Z`, "#e0b43c");
+      E("circle", { cx: x0 + hr * 0.7, cy: m, r: hr * 0.3, fill: "var(--sheet)", stroke: "#1b2733", "stroke-width": 2 }, g);
+      const tw = (x1 - sx) / 5;
+      P(`M${sx - 2} ${m - 7} H${x1 - 4} L${x1} ${m - 3} V${m + 7} H${x1 - tw} v8 h${-tw * 0.6} v-8 H${x1 - 3 * tw} v10 h${-tw * 0.6} v-10 H${sx - 2}Z`, "#e0b43c");
+    }
+  }
+
+  // ---------- Learn: slider, plus/minus, and drag on the board ----------
+  const slider = $("#slider");
+  function syncSlider() {
+    if (sys === "cm") { slider.max = 300; slider.step = 1; slider.value = mm; }
+    else { slider.max = 192; slider.step = step(); slider.value = v; }
+  }
+  function setLen(x) {
+    if (sys === "cm") mm = Math.max(0, Math.min(300, Math.round(x)));
+    else v = snap(x);
+    syncSlider(); render();
+  }
+  slider.addEventListener("input", () => setLen(+slider.value));
+  $("#minus").onclick = () => setLen(sys === "cm" ? mm - 1 : nextMark(v, -1));
+  $("#plus").onclick = () => setLen(sys === "cm" ? mm + 1 : nextMark(v, 1));
+
+  const toSvgX = e => {
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  };
+  const fromX = x => (sys === "cm" ? (x - X0) / PX * 25.4 : (x - X0) / PX * 16);
+  let dragging = false;
+  svg.addEventListener("pointerdown", e => {
+    if (mode !== "learn") return;
+    const p = toSvgX(e);
+    if (p.y < G.edge - 110 || p.y > G.below || p.x < RX0 || p.x > RX1) return;
+    dragging = true; svg.setPointerCapture(e.pointerId); setLen(fromX(p.x));
+  });
+  svg.addEventListener("pointermove", e => { if (dragging) setLen(fromX(toSvgX(e).x)); });
+  svg.addEventListener("pointerup", () => { dragging = false; });
+  svg.addEventListener("pointercancel", () => { dragging = false; });
+
+  // ---------- controls ----------
+  $("#sys").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || b.dataset.s === sys) return;
+    const was = sys;
+    sys = b.dataset.s;
+    document.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x === b));
+    $("#marks").hidden = sys === "cm";
+    // Keep about the same length when switching.
+    if (sys === "cm") mm = Math.max(0, Math.min(300, toMm(v)));
+    else if (was === "cm") v = snap(mm / 25.4 * 16);
+    syncSlider();
+    if (mode === "practice") newQ(); else render();
+  });
+  function markBtns() { document.querySelectorAll(".mk-btn").forEach(b => { b.classList.toggle("on", show[b.dataset.d]); b.setAttribute("aria-pressed", show[b.dataset.d]); }); }
+  document.querySelectorAll(".mk-btn").forEach(b => b.onclick = () => {
+    show[b.dataset.d] = !show[b.dataset.d]; markBtns();
+    v = snap(v); syncSlider();
+    if (mode === "practice") newQ(); else render();
+  });
+  $("#tUnits").onclick = () => { units = !units; $("#tUnits").classList.toggle("on", units); $("#tUnits").setAttribute("aria-pressed", units); unitLbl(); render(); };
+  $("#tZoom").onclick = () => { zoom = !zoom; $("#tZoom").classList.toggle("on", zoom); $("#tZoom").setAttribute("aria-pressed", zoom); render(); };
+
+  // ---------- Practice ----------
+  let right = 0, total = 0, counted = false, mUnit = "cm", sweep = 0;
+  const inputs = ["#aW", "#aN", "#aD", "#aM"].map($);
+  inputs.forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") check(); }));
+  const fb = (t, c) => { $("#fb").textContent = t; $("#fb").className = "fb " + c; };
+  const mark = c => inputs.forEach(i => { i.classList.remove("ok", "bad"); if (c) i.classList.add(c); });
+  function unitLbl() { $("#ansIn .unit").hidden = !units; }
+  function newQ() {
+    cancelAnimationFrame(sweep);
+    const s = sys === "both" ? pick(["in", "cm"]) : sys;
+    const kinds = Object.keys(OBJ).filter(k => !q || k !== q.obj);
+    const obj = pick(kinds), R = OBJ[obj][s === "in" ? "in" : "mm"];
+    let n;
+    if (s === "in") {
+      const st = step(), lo = Math.ceil(R[0] / st), hi = Math.floor(R[1] / st);
+      // Mostly land on the smallest marks shown, so students have to count them.
+      for (let t = 0; t < 20; t++) {
+        n = ri(lo, hi) * st;
+        if (n % 16 && level(n) && (finest() === 1 || lowest(n) === finest() || Math.random() < 0.3)) break;
+      }
+      n = snap(n);
+    } else {
+      do n = ri(R[0], R[1]); while (n % 10 === 0 && Math.random() < 0.85);
+    }
+    q = { s, obj, n }; solved = false; counted = false;
+    inputs.forEach(i => { i.value = ""; });
+    mark(""); fb("", "");
+    $("#ansIn").hidden = s !== "in"; $("#ansCm").hidden = s !== "cm";
+    $("#ask").textContent = tr(`How long is the ${NAMES[obj]}?`) + (sys === "both" ? " " + tr(s === "in" ? "Use the inch edge." : "Use the centimetre edge.") : "");
+    render();
+    (s === "in" ? $("#aW") : $("#aM")).focus({ preventScroll: true });
+  }
+  function nameOf(d) { return { 2: "halves", 4: "quarters", 8: "eighths", 16: "sixteenths" }[d]; }
+  function check() {
+    if (solved) return;
+    const n = q.n;
+    if (q.s === "in") {
+      const w = $("#aW").value.trim(), a = $("#aN").value.trim(), b = $("#aD").value.trim();
+      if (!w && !a && !b) { fb(tr("Type your answer in the boxes."), "mid"); return; }
+      if ([w, a, b].some(s => s && !/^\d+$/.test(s)) || (a && !b) || (b && !a) || (b && +b === 0)) { fb(tr("Type a whole number and a fraction, like 2 and 3/8."), "mid"); return; }
+      if (!counted) { total++; counted = true; }
+      const got = (+w || 0) + (a ? +a / +b : 0), k = Math.floor(n / 16), r = n % 16, L = lowest(r);
+      if (Math.abs(got - n / 16) < 1e-9) {
+        right++; win();
+        if (a && gcd(+a, +b) > 1) fb(tr("Yes! In lowest terms that is") + " " + (k ? k + " " : "") + `${r / (16 / L)}/${L} in.`, "ok");
+        else if (a && +a >= +b) fb(tr("Yes! As a mixed number:") + " " + (k ? k + " " : "") + (r ? `${r / (16 / L)}/${L}` : "") + " in.", "ok");
+        else fb(tr("Yes! That's it."), "ok");
+        return;
+      }
+      mark("bad");
+      const frac = a ? +a / +b : 0;
+      let msg;
+      if ((+w || 0) !== k && Math.abs(frac - r / 16) < 1e-9) msg = tr("Not yet. The fraction is right. Check the whole inches.");
+      else if (Math.abs(got - n / 16) * 16 <= step() + 1e-9) msg = tr("Close! Count the small marks after the last whole inch again.");
+      else if (finest() > 1) msg = tr(`Not yet. Find the last whole inch, then count the ${nameOf(finest())} after it.`);
+      else msg = tr("Not yet. Count the whole inches from 0.");
+      fb(msg, "no"); score();
+    } else {
+      const s = $("#aM").value.trim();
+      if (!s) { fb(tr("Type your answer in the box."), "mid"); return; }
+      if (!/^\d*\.?\d+$/.test(s)) { fb(tr("Type a number, like 6.4."), "mid"); return; }
+      if (!counted) { total++; counted = true; }
+      const got = mUnit === "cm" ? +s * 10 : +s;
+      if (Math.abs(got - n) < 1e-9) { right++; win(); fb(tr("Yes! That's it.") + " " + `${cmStr(n)} cm = ${n} mm.`, "ok"); return; }
+      mark("bad");
+      let msg = tr("Not yet. Count the centimetres, then the small millimetre marks.");
+      if (mUnit === "cm" && Math.abs(+s - n) < 1e-9) msg = tr("That is the number of millimetres. 10 mm make 1 cm.");
+      else if (mUnit === "mm" && Math.abs(+s * 10 - n) < 1e-9) msg = tr("That is the number of centimetres. 1 cm is 10 mm.");
+      else if (Math.abs(got - n) <= 1) msg = tr("Close! Count the millimetre marks again.");
+      fb(msg, "no"); score();
+    }
+  }
+  function win() { solved = true; mark("ok"); score(); anim.top = 1; render(); }
+  function score() { $("#right").textContent = right; $("#total").textContent = total; }
+  $("#check").onclick = check;
+  $("#newq").onclick = newQ;
+  // Show me: the red line travels along the ruler, one mark at a time, and stops at the end of the object.
+  $("#showme").onclick = () => {
+    if (solved) return;
+    if (!counted) { total++; counted = true; score(); }
+    const n = q.n, k = Math.floor(n / 16), r = n % 16, L = lowest(r);
+    if (q.s === "in") { $("#aW").value = k || (r ? "" : 0); $("#aN").value = r ? r / (16 / L) : ""; $("#aD").value = r ? L : ""; }
+    else $("#aM").value = mUnit === "cm" ? cmStr(n) : n;
+    mark("ok"); fb(tr("Here is how to read it."), "mid");
+    const t0 = performance.now(), dur = 900;
+    const tick = now => {
+      const f = Math.min(1, (now - t0) / dur), st = q.s === "in" ? step() : 1;
+      solved = true;
+      q.shown = f < 1 ? Math.round((n * f) / st) * st : null;
+      if (f < 1) { render(); sweep = requestAnimationFrame(tick); } else { anim.top = 1; render(); }
+    };
+    sweep = requestAnimationFrame(tick);
+  };
+  $("#mUnit").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    mUnit = b.dataset.u;
+    document.querySelectorAll("[data-u]").forEach(x => x.classList.toggle("on", x === b));
+    if (!solved) { $("#aM").classList.remove("bad"); fb("", ""); }
+  });
+
+  // ---------- modes ----------
+  function setMode(m) {
+    if (m === mode) return;
+    mode = m;
+    document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+    $("#learn").hidden = m !== "learn"; $("#practice").hidden = m !== "practice";
+    cancelAnimationFrame(sweep);
+    if (m === "practice") newQ(); else render();
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  $("#tUnits").classList.add("on");
+  markBtns(); syncSlider(); render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Ruler (ruler.html). Canadian units: pouce (po), centimètre (cm), millimètre (mm). */
+window.I18N_PAGE = {
+ "Ruler": "Règle",
+ "Mode": "Mode",
+ "Learn": "Apprendre",
+ "A 12 inch ruler. Slide the strip along it to read a length.": "Une règle de 12 pouces. Glisse la bande le long de la règle pour lire une longueur.",
+ "Slide to measure": "Glisse pour mesurer",
+ "One mark less": "Un trait de moins",
+ "One mark more": "Un trait de plus",
+ "Length": "Longueur",
+ "Inches": "Pouces",
+ "Centimetres": "Centimètres",
+ "Both": "Les deux",
+ "Marks": "Traits",
+ "Halves": "Demis",
+ "Quarters": "Quarts",
+ "Eighths": "Huitièmes",
+ "Sixteenths": "Seizièmes",
+ "Units": "Unités",
+ "Zoom in": "Agrandir",
+ "New object": "Nouvel objet",
+ "Show me": "Montre-moi",
+ "Answer in": "Réponds en",
+ "Your answer": "Ta réponse",
+ "Whole inches": "Pouces entiers",
+ "Top of the fraction": "Haut de la fraction",
+ "Bottom of the fraction": "Bas de la fraction",
+ "Correct: {0} of {1}": "Bonnes réponses : {0} sur {1}",
+
+ "in": "po",
+ "inches": "pouces",
+ "centimetres": "centimètres",
+ "about": "environ",
+ "1 inch": "1 pouce",
+ "1 cm": "1 cm",
+
+ "How long is the pencil?": "Quelle est la longueur du crayon?",
+ "How long is the crayon?": "Quelle est la longueur du crayon de cire?",
+ "How long is the eraser?": "Quelle est la longueur de la gomme à effacer?",
+ "How long is the paper clip?": "Quelle est la longueur du trombone?",
+ "How long is the nail?": "Quelle est la longueur du clou?",
+ "How long is the marker?": "Quelle est la longueur du marqueur?",
+ "How long is the key?": "Quelle est la longueur de la clé?",
+ "Use the inch edge.": "Utilise le côté en pouces.",
+ "Use the centimetre edge.": "Utilise le côté en centimètres.",
+
+ "Type your answer in the boxes.": "Écris ta réponse dans les cases.",
+ "Type your answer in the box.": "Écris ta réponse dans la case.",
+ "Type a whole number and a fraction, like 2 and 3/8.": "Écris un nombre entier et une fraction, comme 2 et 3/8.",
+ "Type a number, like 6.4.": "Écris un nombre, comme 6.4.",
+ "Yes! That's it.": "Oui! C'est ça.",
+ "Yes! That's it. {n} cm = {n} mm.": "Oui! C'est ça. {n} cm = {n} mm.",
+ "~Yes! In lowest terms that is (.+) in\\.": "Oui! Sous sa forme la plus simple, c'est $1 po.",
+ "~Yes! As a mixed number: (.+) in\\.": "Oui! En nombre fractionnaire : $1 po.",
+ "Here is how to read it.": "Voici comment la lire.",
+ "Not yet. The fraction is right. Check the whole inches.": "Pas encore. La fraction est bonne. Vérifie les pouces entiers.",
+ "Close! Count the small marks after the last whole inch again.": "Presque! Compte de nouveau les petits traits après le dernier pouce entier.",
+ "Not yet. Find the last whole inch, then count the halves after it.": "Pas encore. Trouve le dernier pouce entier, puis compte les demis après.",
+ "Not yet. Find the last whole inch, then count the quarters after it.": "Pas encore. Trouve le dernier pouce entier, puis compte les quarts après.",
+ "Not yet. Find the last whole inch, then count the eighths after it.": "Pas encore. Trouve le dernier pouce entier, puis compte les huitièmes après.",
+ "Not yet. Find the last whole inch, then count the sixteenths after it.": "Pas encore. Trouve le dernier pouce entier, puis compte les seizièmes après.",
+ "Not yet. Count the whole inches from 0.": "Pas encore. Compte les pouces entiers à partir de 0.",
+ "Not yet. Count the centimetres, then the small millimetre marks.": "Pas encore. Compte les centimètres, puis les petits traits des millimètres.",
+ "That is the number of millimetres. 10 mm make 1 cm.": "C'est le nombre de millimètres. 10 mm font 1 cm.",
+ "That is the number of centimetres. 1 cm is 10 mm.": "C'est le nombre de centimètres. 1 cm vaut 10 mm.",
+ "Close! Count the millimetre marks again.": "Presque! Compte de nouveau les traits des millimètres."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
