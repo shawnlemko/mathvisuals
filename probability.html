@@ -150,7 +150,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    Probability is read as "number out of number": the outcomes that count as a win, out of all the outcomes.
    Understand: pick what counts as a win; the wins get counted 1, 2, 3 on the board, then "3 out of 8", the fraction and a likelihood line.
    Explore: run 1, 10, 100 or 1000 trials; a bar chart compares what happened with the theory (dashed lines).
-   Play: questions to answer as __ out of __, with Show me and Try it. */
+   Play: questions to answer as __ out of __, with Show me and Try it.
+   Die can also be two 6-sided dice, added (Sum of two) or multiplied (Product of two): the board is the 6 × 6 grid of all 36 outcomes,
+   and the boxes that match the event (Sum > 8, Even sum...) light up green. */
 :root { --c-red: #d23c3c; --c-blue: #2f5fd0; --c-yellow: #e0a810; --c-green: #23935f; --c-purple: #8650c8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-red: #ff6b6b; --c-blue: #7aa2ff; --c-yellow: #f5c542; --c-green: #4cc49a; --c-purple: #b38cf0; } }
 :root[data-theme="dark"] { --c-red: #ff6b6b; --c-blue: #7aa2ff; --c-yellow: #f5c542; --c-green: #4cc49a; --c-purple: #b38cf0; }
@@ -237,6 +239,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .legend { font-family: var(--font-body); font-size: 17px; fill: var(--muted); }
 .fly { font-family: var(--font-display); font-weight: 800; font-size: 40px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; }
 .fly.yes { fill: var(--green); } .fly.no { fill: var(--muted); }
+/* Two dice: the outcome grid */
+.cell { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 2; }
+.oc.lit .cell { fill: color-mix(in srgb, var(--green) 28%, var(--sheet)); stroke: var(--green); stroke-width: 4; }
+.cnum { font-family: var(--font-num); font-weight: 700; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.cnt { font-family: var(--font-num); font-weight: 700; fill: var(--green); }
+.corner { font-family: var(--font-num); font-weight: 700; fill: var(--orange); text-anchor: middle; dominant-baseline: central; }
+.axlbl { font-family: var(--font-display); font-weight: 800; font-size: 22px; fill: var(--muted); text-anchor: middle; }
+.seg-btns.dice button { font-size: 1rem; padding: 6px 12px; }
+.evrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.evrow + .evrow { margin-top: 8px; }
+.evw { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; }
+.chips button.sym { font-family: var(--font-num); font-size: 1.6rem; min-width: 54px; justify-content: center; }
+.chips button.sym.on::after { content: none; }
+.step.big output { font-size: 1.7rem; min-width: 2.4ch; }
+.step.off { opacity: 0.35; }
 </style>
 
 <div class="wrap">
@@ -324,9 +341,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ---- Devices ----
-  // A setup (cfg) is { dev, die, spin, bag }. Its outcomes are all equally likely; each has a kind (what a win is picked by).
+  // A setup (cfg) is { dev, die, dice, evs, spin, bag }. Its outcomes are all equally likely; each has a kind (what a win is picked by).
+  // dice is "one", "sum" or "product". With two dice the outcomes are the 36 boxes of the grid (a = 1st die, b = 2nd die)
+  // and the kind is the sum or product; the wins come from the event evs[dice] = { op, n } instead of being picked one by one.
+  const two = c => c.dev === "die" && c.dice !== "one";
+  const COMBINE = { sum: (a, b) => a + b, product: (a, b) => a * b };
+  const EV_RANGE = { sum: [2, 12], product: [1, 36] };
+  const OPS = { eq: (v, n) => v === n, gt: (v, n) => v > n, lt: (v, n) => v < n, even: v => v % 2 === 0, odd: v => v % 2 === 1 };
   function outcomes(cfg) {
     if (cfg.dev === "coin") return [{ kind: "H" }, { kind: "T" }];
+    if (two(cfg)) {
+      const out = [];
+      for (let b = 1; b <= 6; b++) for (let a = 1; a <= 6; a++) out.push({ kind: COMBINE[cfg.dice](a, b), a, b });
+      return out;
+    }
     if (cfg.dev === "die") return Array.from({ length: cfg.die }, (_, i) => ({ kind: i + 1 }));
     if (cfg.dev === "spinner") return cfg.spin.map(c => ({ kind: c }));
     const out = [];
@@ -337,12 +365,23 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const seen = [];
     for (const o of outcomes(cfg)) if (!seen.includes(o.kind)) seen.push(o.kind);
     if (cfg.dev === "spinner" || cfg.dev === "bag") return COLS.filter(c => seen.includes(c));
+    if (cfg.dev === "die") return seen.sort((a, b) => a - b);
     return seen;
   }
+  // The values that win under a two-dice event.
+  function evSet(c) {
+    const { op, n } = c.evs[c.dice];
+    return new Set(kinds(c).filter(v => OPS[op](v, n)));
+  }
+  function evLabel(dice, { op, n }) {
+    return "P(" + ({ eq: `${dice} is ${n}`, gt: `${dice} greater than ${n}`, lt: `${dice} less than ${n}`,
+      even: `even ${dice}`, odd: `odd ${dice}` })[op] + ")";
+  }
   const kindName = (dev, k) => dev === "coin" ? (k === "H" ? "heads" : "tails") : String(k);
-  const unitWord = (cfg, n) => ({ coin: n === 1 ? "side" : "sides", die: n === 1 ? "face" : "faces",
+  const unitWord = (cfg, n) => two(cfg) ? (n === 1 ? "outcome" : "outcomes") : ({ coin: n === 1 ? "side" : "sides", die: n === 1 ? "face" : "faces",
     spinner: n === 1 ? "section" : "sections", bag: n === 1 ? "marble" : "marbles" })[cfg.dev];
   function evName(cfg, winKinds) {
+    if (two(cfg)) return evLabel(cfg.dice, cfg.evs[cfg.dice]);
     const ks = kinds(cfg).filter(k => winKinds.has(k));
     if (!ks.length) return "P(nothing)";
     if (ks.length === kinds(cfg).length) return "P(anything)";
@@ -354,7 +393,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ---- State ----
-  const cfg = { dev: "spinner", die: 6,
+  const cfg = { dev: "spinner", die: 6, dice: "one",
+    evs: { sum: { op: "gt", n: 8 }, product: { op: "gt", n: 12 } },
     spin: ["red", "blue", "yellow", "red", "blue", "red", "green", "blue"],
     bag: { red: 3, blue: 5, yellow: 0, green: 0, purple: 0 } };
   const wins = { coin: new Set(["H"]), die: new Set([6]), spinner: new Set(["red"]), bag: new Set(["red"]) };
@@ -364,6 +404,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   let els = [], needleEl = null, spinGeo = null;
 
   function resetStats() { stats = { n: 0, by: {} }; last = null; }
+  const curWins = () => two(cfg) ? evSet(cfg) : wins[cfg.dev];
 
   // ---- Board ----
   function render() {
@@ -371,11 +412,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     els = []; needleEl = null; spinGeo = null;
     if (mode === "play") {
       if (!q) newQuestion();
-      drawSample(q.cfg, q.wins, { x: 0, y: 0, w: W, h: H }, { badges: shown, fade: shown, edit: false, cap: true });
+      drawSample(q.cfg, q.wins, { x: 0, y: 0, w: W, h: H }, { badges: shown, fade: shown, light: shown, edit: false, cap: true });
     } else if (mode === "understand") {
-      drawSample(cfg, wins[cfg.dev], { x: 0, y: 0, w: W, h: H }, { badges: true, fade: true, edit: true, cap: true });
+      drawSample(cfg, curWins(), { x: 0, y: 0, w: W, h: H }, { badges: true, fade: true, light: true, edit: true, cap: true });
     } else {
-      drawSample(cfg, wins[cfg.dev], { x: 0, y: 0, w: 450, h: H }, { badges: false, fade: false, edit: true, cap: true });
+      drawSample(cfg, curWins(), { x: 0, y: 0, w: 450, h: H }, { badges: false, fade: false, light: true, edit: true, cap: true });
       drawChart({ x: 470, y: 0, w: 530, h: H });
     }
     if (last != null && els[last]) els[last].classList.add("land");
@@ -386,12 +427,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     el("text", { class: "badge-t", x, y: y + 1, "font-size": r * 1.15 }, g, n);
   }
 
+  // A 6-sided die face with pips, f wide, top-left at x, y.
+  function dieFace(parent, x, y, f, v) {
+    el("rect", { class: "face", x, y, width: f, height: f, rx: f * 0.16 }, parent);
+    const P = { 1: [[.5, .5]], 2: [[.27, .27], [.73, .73]], 3: [[.25, .25], [.5, .5], [.75, .75]],
+      4: [[.27, .27], [.73, .27], [.27, .73], [.73, .73]], 5: [[.25, .25], [.75, .25], [.5, .5], [.25, .75], [.75, .75]],
+      6: [[.28, .23], [.72, .23], [.28, .5], [.72, .5], [.28, .77], [.72, .77]] }[v];
+    for (const [px, py] of P) el("circle", { class: "pip", cx: x + px * f, cy: y + py * f, r: f * 0.085 }, parent);
+  }
+
   function drawSample(c, winKinds, R, o) {
     const all = outcomes(c);
     const capH = o.cap ? 56 : 0;
     if (o.cap) {
       const n = all.length;
-      const txt = c.dev === "coin" ? "2 sides" : c.dev === "die" ? `${n} faces` :
+      const txt = c.dev === "coin" ? "2 sides" : two(c) ? `6 × 6 = ${n} outcomes` : c.dev === "die" ? `${n} faces` :
         c.dev === "spinner" ? `${n} equal sections` : `${n} ${unitWord(c, n)}`;
       el("text", { class: "cap", x: R.x + R.w / 2, y: R.y + 40 }, svg, txt);
     }
@@ -456,6 +506,31 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       return;
     }
 
+    if (two(c)) {
+      // The 6 × 6 grid: 1st die across the top, 2nd die down the side, the sum (or product) in each box.
+      const lab = 40;
+      const s = Math.min((A.w - lab) / 7, (A.h - lab) / 7, 100), pad = s * 0.07;
+      const gx = A.x + lab + (A.w - lab - 7 * s) / 2, gy = A.y + lab + (A.h - lab - 7 * s) / 2;
+      el("text", { class: "axlbl", x: gx + 4 * s, y: gy - 12 }, svg, "1st die");
+      el("text", { class: "axlbl", x: gx - 14, y: gy + 4 * s, transform: `rotate(-90 ${gx - 14} ${gy + 4 * s})` }, svg, "2nd die");
+      el("text", { class: "corner", x: gx + s / 2, y: gy + s / 2, "font-size": s * 0.7 }, svg, c.dice === "sum" ? "+" : "×");
+      for (let v = 1; v <= 6; v++) {
+        dieFace(svg, gx + v * s + pad * 1.5, gy + pad * 1.5, s - pad * 3, v);
+        dieFace(svg, gx + pad * 1.5, gy + v * s + pad * 1.5, s - pad * 3, v);
+      }
+      all.forEach((oc, i) => {
+        const x = gx + oc.a * s + pad / 2, y = gy + oc.b * s + pad / 2, f = s - pad;
+        const g = mk(i);
+        g.classList.remove("fade");
+        if (o.light && isWin(i)) g.classList.add("lit");
+        el("rect", { class: "cell", x, y, width: f, height: f, rx: f * 0.12 }, g);
+        el("text", { class: "cnum", x: x + f / 2, y: y + f / 2 + 1, "font-size": f * (oc.kind >= 10 ? 0.42 : 0.5) }, g, oc.kind);
+        el("rect", { class: "lring", x: x - 3, y: y - 3, width: f + 6, height: f + 6, rx: f * 0.14, style: "stroke-width: 6" }, g);
+        if (o.badges && isWin(i)) el("text", { class: "cnt", x: x + f * 0.08, y: y + f * 0.24, "font-size": f * 0.2 }, g, nextBadge());
+      });
+      return;
+    }
+
     if (c.dev === "die") {
       const n = all.length;
       let best = null;
@@ -469,14 +544,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       for (let i = 0; i < n; i++) {
         const x = ox + (i % best.cols) * s, y = oy + Math.floor(i / best.cols) * s;
         const g = mk(i);
-        el("rect", { class: "face", x, y, width: f, height: f, rx: f * 0.16 }, g);
         const v = i + 1;
-        if (n === 6) {
-          const P = { 1: [[.5, .5]], 2: [[.27, .27], [.73, .73]], 3: [[.25, .25], [.5, .5], [.75, .75]],
-            4: [[.27, .27], [.73, .27], [.27, .73], [.73, .73]], 5: [[.25, .25], [.75, .25], [.5, .5], [.25, .75], [.75, .75]],
-            6: [[.28, .23], [.72, .23], [.28, .5], [.72, .5], [.28, .77], [.72, .77]] }[v];
-          for (const [px, py] of P) el("circle", { class: "pip", cx: x + px * f, cy: y + py * f, r: f * 0.085 }, g);
-        } else {
+        if (n === 6) dieFace(g, x, y, f, v);
+        else {
+          el("rect", { class: "face", x, y, width: f, height: f, rx: f * 0.16 }, g);
           el("text", { class: "fnum", x: x + f / 2, y: y + f / 2 + 2, "font-size": f * (v >= 10 ? 0.44 : 0.52) }, g, v);
         }
         el("rect", { class: "ring", x: x - 7, y: y - 7, width: f + 14, height: f + 14, rx: f * 0.2 }, g);
@@ -512,7 +583,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   function drawChart(R) {
-    const ks = kinds(cfg), all = outcomes(cfg), wk = wins[cfg.dev];
+    const ks = kinds(cfg), all = outcomes(cfg), wk = curWins();
     el("text", { class: "ctitle", x: R.x + 10, y: R.y + 40 }, svg, stats.n ? `Results after ${stats.n.toLocaleString()}` : "Results");
     const lg = el("g", {}, svg);
     el("line", { class: "theo", x1: R.x + 12, y1: R.y + 70, x2: R.x + 52, y2: R.y + 70 }, lg);
@@ -546,7 +617,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         style: `fill: ${fill}; stroke: ${isW ? "var(--green)" : "var(--ink)"}; stroke-width: ${isW ? 4 : 1.5}` }, svg);
       el("line", { class: "theo", x1: cx - bw / 2 - 6, y1: yv(th), x2: cx + bw / 2 + 6, y2: yv(th) }, svg);
       const lbl = cfg.dev === "coin" ? k : cfg.dev === "die" ? k : k[0].toUpperCase() + k.slice(1, 3);
-      el("text", { class: "bar-l", x: cx, y: Y0 + 28, "font-size": fs, style: isW ? "fill: var(--green)" : "" }, svg, lbl + (isW ? "✓" : ""));
+      el("text", { class: "bar-l", x: cx, y: Y0 + 28, "font-size": fs, style: isW ? "fill: var(--green)" : "" }, svg, lbl + (isW && ks.length <= 12 ? "✓" : ""));
       if (ks.length <= 12) el("text", { class: "bar-c", x: cx, y: Y0 + 54, "font-size": Math.min(18, fs * 0.85) }, svg, cnt);
     });
   }
@@ -559,6 +630,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       // Tap a section to change its colour.
       cfg.spin[i] = COLS[(COLS.indexOf(cfg.spin[i]) + 1) % COLS.length];
       resetStats(); refresh(); return;
+    }
+    if (two(cfg)) {
+      // Tap a box to use its number in the event.
+      const e = cfg.evs[cfg.dice];
+      if (e.op === "even" || e.op === "odd") e.op = "eq";
+      e.n = all[i].kind;
+      refresh(); return;
     }
     const k = all[i].kind, s = wins[cfg.dev];
     s.has(k) ? s.delete(k) : s.add(k);
@@ -573,7 +651,15 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (cfg.dev === "coin") {
       add(`<p class="hint" style="margin: 0">A fair coin: heads or tails.</p>`);
     } else if (cfg.dev === "die") {
-      const d = add(`<div class="row"><span>Sides</span><div class="seg-btns small" role="group" aria-label="Sides">${[4, 6, 8, 10, 12, 20]
+      const dd = add(`<div class="seg-btns dice" role="group" aria-label="Dice">${[["one", "One die"], ["sum", "Sum of two"], ["product", "Product of two"]]
+        .map(([k, t]) => `<button type="button" data-k="${k}" class="${k === cfg.dice ? "on" : ""}">${t}</button>`).join("")}</div>`);
+      dd.querySelectorAll("button").forEach(bt => bt.onclick = () => {
+        if (busy) return;
+        cfg.dice = bt.dataset.k;
+        resetStats(); refresh();
+      });
+      if (two(cfg)) { add(`<p class="hint">Two 6-sided dice. Tap a box to use its number.</p>`); return; }
+      const d = add(`<div class="row" style="margin-top: 10px"><span>Sides</span><div class="seg-btns small" role="group" aria-label="Sides">${[4, 6, 8, 10, 12, 20]
         .map(n => `<button type="button" data-n="${n}" class="${n === cfg.die ? "on" : ""}">${n}</button>`).join("")}</div></div>`);
       d.querySelectorAll("button").forEach(bt => bt.onclick = () => {
         if (busy) return;
@@ -606,9 +692,30 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     }
   }
 
+  // Two dice: Sum [=] [>] [<] − 8 +, then Even sum / Odd sum.
+  function eventPanel(box) {
+    const e = cfg.evs[cfg.dice], [lo, hi] = EV_RANGE[cfg.dice];
+    const noun = cfg.dice === "sum" ? "Sum" : "Product", word = cfg.dice;
+    const cmp = e.op !== "even" && e.op !== "odd";
+    box.innerHTML = `<div class="evrow"><span class="evw">${noun}</span>
+        <div class="chips">${[["eq", "=", "equal to"], ["gt", ">", "greater than"], ["lt", "<", "less than"]]
+          .map(([k, t, a]) => `<button type="button" class="sym${e.op === k ? " on" : ""}" data-op="${k}" aria-label="${a}" aria-pressed="${e.op === k}">${t}</button>`).join("")}</div>
+        <div class="step big${cmp ? "" : " off"}"><button type="button" data-d="-1" aria-label="Smaller number">−</button><output>${e.n}</output><button type="button" data-d="1" aria-label="Bigger number">+</button></div></div>
+      <div class="evrow chips">${[["even", `Even ${word}`], ["odd", `Odd ${word}`]]
+          .map(([k, t]) => `<button type="button" data-op="${k}" class="${e.op === k ? "on" : ""}" aria-pressed="${e.op === k}">${t}</button>`).join("")}</div>`;
+    box.querySelectorAll("button[data-op]").forEach(bt => bt.onclick = () => { if (busy) return; e.op = bt.dataset.op; refresh(); });
+    box.querySelectorAll("button[data-d]").forEach(bt => bt.onclick = () => {
+      if (busy) return;
+      if (!cmp) e.op = "eq";
+      e.n = Math.max(lo, Math.min(hi, e.n + +bt.dataset.d));
+      refresh();
+    });
+  }
+
   function chipsPanel() {
     const box = $("chips");
     box.textContent = "";
+    if (two(cfg)) { eventPanel(box); return; }
     const s = wins[cfg.dev];
     for (const k of kinds(cfg)) {
       const bt = document.createElement("button");
@@ -656,8 +763,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function fracHTML(a, b) { return `<span class="frac"><span>${a}</span><span>${b}</span></span>`; }
 
   function readPanel() {
-    const { w, t } = countWins(cfg, wins[cfg.dev]);
-    const name = evName(cfg, wins[cfg.dev]);
+    const { w, t } = countWins(cfg, curWins());
+    const name = evName(cfg, curWins());
     $("outof").innerHTML = `<span><span class="w">${w}</span> <small>out of</small> <span class="t">${t}</span></span>`;
     const g = gcd(w, t);
     let eq = `<span class="ev">${name}</span> = ${fracHTML(w, t)}`;
@@ -679,16 +786,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       rb.querySelectorAll("button").forEach(b => b.onclick = () => { const n = +b.dataset.n; n ? run(n) : (resetStats(), refresh()); });
     }
     rb.querySelectorAll("button").forEach(b => b.disabled = busy);
-    const { w, t } = countWins(cfg, wins[cfg.dev]);
+    const { w, t } = countWins(cfg, curWins());
     const got = outcomesWinCount();
-    const name = evName(cfg, wins[cfg.dev]);
+    const name = evName(cfg, curWins());
     $("res").innerHTML = `<span class="k">${name}</span><span></span><span></span>
       <span class="k">Happened</span><span class="got"><b>${got.toLocaleString()}</b> out of <b>${stats.n.toLocaleString()}</b></span><span class="got">${stats.n ? pct(got / stats.n) : ""}</span>
       <span class="k">Theory</span><span class="th"><b>${w}</b> out of <b>${t}</b></span><span class="th">${pct(w / t)}</span>`;
   }
   function outcomesWinCount() {
     let s = 0;
-    for (const k of wins[cfg.dev]) s += stats.by[k] || 0;
+    for (const k of curWins()) s += stats.by[k] || 0;
     return s;
   }
 
@@ -753,9 +860,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // ---- Play ----
   function newQuestion() {
     const dev = playDev === "mix" ? pick(["die", "die", "spinner", "spinner", "bag", "bag", "coin"]) : playDev;
-    const c = { dev, die: 6, spin: [], bag: { red: 0, blue: 0, yellow: 0, green: 0, purple: 0 } };
+    const c = { dev, die: 6, dice: "one", evs: {}, spin: [], bag: { red: 0, blue: 0, yellow: 0, green: 0, purple: 0 } };
     let text = "", ev = "", w = new Set();
-    if (dev === "coin") {
+    if (dev === "die" && rnd(10) < 4) {
+      // Two dice, added or multiplied.
+      c.dice = pick(["sum", "sum", "product"]);
+      const op = pick(["gt", "gt", "lt", "eq", "even", "odd"]);
+      const n = c.dice === "sum" ? ({ gt: 5 + rnd(5), lt: 4 + rnd(6), eq: 4 + rnd(7) })[op] : ({ gt: pick([6, 10, 12, 15, 20]), lt: pick([5, 6, 10, 12]), eq: pick([4, 6, 12]) })[op];
+      c.evs[c.dice] = { op, n };
+      w = evSet(c);
+      const verb = c.dice === "sum" ? "add" : "multiply";
+      const say = ({ eq: `is ${n}`, gt: `is greater than ${n}`, lt: `is less than ${n}`, even: "is even", odd: "is odd" })[op];
+      text = `Roll two dice and ${verb} the numbers. What is the probability that the ${c.dice} ${say}?`;
+      ev = evLabel(c.dice, c.evs[c.dice]);
+    } else if (dev === "coin") {
       const r = rnd(5);
       if (r < 2) { w = new Set(["H"]); text = "What is the probability of flipping heads?"; ev = "P(heads)"; }
       else if (r < 4) { w = new Set(["T"]); text = "What is the probability of flipping tails?"; ev = "P(tails)"; }
@@ -1066,7 +1184,49 @@ window.I18N_PAGE = {
  "~Spin the spinner\\. What is the probability of NOT landing on (\\w+)\\?": "Fais tourner la roulette. Quelle est la probabilité de NE PAS tomber sur $1?",
  "~P\\(not (\\w+)\\)": "P(pas $1)",
  "~Pull one marble without looking\\. What is the probability of pulling (\\w+) marble\\?": "Tire une bille sans regarder. Quelle est la probabilité de tirer une bille $1?",
- "{n} wins out of {n} marbles.": "{n} cas favorables sur {n} billes."
+ "{n} wins out of {n} marbles.": "{n} cas favorables sur {n} billes.",
+ "Dice": "Dés",
+ "One die": "Un dé",
+ "Sum of two": "Somme de deux",
+ "Product of two": "Produit de deux",
+ "Two {n}-sided dice. Tap a box to use its number.": "Deux dés à {n} faces. Touche une case pour prendre son nombre.",
+ "{n} × {n} = {n} outcomes": "{n} × {n} = {n} résultats",
+ "1st die": "1er dé",
+ "2nd die": "2e dé",
+ "Sum": "Somme",
+ "Product": "Produit",
+ "Even sum": "Somme paire",
+ "Odd sum": "Somme impaire",
+ "Even product": "Produit pair",
+ "Odd product": "Produit impair",
+ "equal to": "égal à",
+ "greater than": "plus grand que",
+ "less than": "plus petit que",
+ "Smaller number": "Nombre plus petit",
+ "Bigger number": "Nombre plus grand",
+ "P(sum is {n})": "P(somme de {n})",
+ "P(sum greater than {n})": "P(somme plus grande que {n})",
+ "P(sum less than {n})": "P(somme plus petite que {n})",
+ "P(even sum)": "P(somme paire)",
+ "P(odd sum)": "P(somme impaire)",
+ "P(product is {n})": "P(produit de {n})",
+ "P(product greater than {n})": "P(produit plus grand que {n})",
+ "P(product less than {n})": "P(produit plus petit que {n})",
+ "P(even product)": "P(produit pair)",
+ "P(odd product)": "P(produit impair)",
+ "Roll two dice and add the numbers. What is the probability that the sum is {n}?": "Lance deux dés et additionne les nombres. Quelle est la probabilité que la somme soit {n}?",
+ "Roll two dice and add the numbers. What is the probability that the sum is greater than {n}?": "Lance deux dés et additionne les nombres. Quelle est la probabilité que la somme soit plus grande que {n}?",
+ "Roll two dice and add the numbers. What is the probability that the sum is less than {n}?": "Lance deux dés et additionne les nombres. Quelle est la probabilité que la somme soit plus petite que {n}?",
+ "Roll two dice and add the numbers. What is the probability that the sum is even?": "Lance deux dés et additionne les nombres. Quelle est la probabilité que la somme soit paire?",
+ "Roll two dice and add the numbers. What is the probability that the sum is odd?": "Lance deux dés et additionne les nombres. Quelle est la probabilité que la somme soit impaire?",
+ "Roll two dice and multiply the numbers. What is the probability that the product is {n}?": "Lance deux dés et multiplie les nombres. Quelle est la probabilité que le produit soit {n}?",
+ "Roll two dice and multiply the numbers. What is the probability that the product is greater than {n}?": "Lance deux dés et multiplie les nombres. Quelle est la probabilité que le produit soit plus grand que {n}?",
+ "Roll two dice and multiply the numbers. What is the probability that the product is less than {n}?": "Lance deux dés et multiplie les nombres. Quelle est la probabilité que le produit soit plus petit que {n}?",
+ "Roll two dice and multiply the numbers. What is the probability that the product is even?": "Lance deux dés et multiplie les nombres. Quelle est la probabilité que le produit soit pair?",
+ "Roll two dice and multiply the numbers. What is the probability that the product is odd?": "Lance deux dés et multiplie les nombres. Quelle est la probabilité que le produit soit impair?",
+ "Count all the outcomes first.": "Compte d’abord tous les résultats.",
+ "{n} wins out of {n} outcomes.": "{n} cas favorables sur {n} résultats.",
+ "{n} win out of {n} outcomes.": "{n} cas favorable sur {n} résultats."
 };
 </script>
 <script>
