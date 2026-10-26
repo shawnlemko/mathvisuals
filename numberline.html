@@ -199,6 +199,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 #slider:focus-visible .sl-knob { stroke: var(--pt); stroke-width: 6; }
 svg.dragging, svg.dragging #slider { cursor: grabbing; }
 .plbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; text-anchor: middle; }
+.pbar { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 @media (max-width: 600px) { .equals { font-size: 2.4rem; } .fin input { width: 76px; height: 56px; font-size: 2.1rem; } .side { margin-left: 0; } }
 </style>
 
@@ -361,13 +362,20 @@ svg.dragging, svg.dragging #slider { cursor: grabbing; }
     for (let k = 1; k < total; k++) if (k % d) el("line", { class: "cut", x1: x(k), y1: BAR_TOP, x2: x(k), y2: BAR_BOT });
     for (let i = 0; i < len; i++) el("rect", { class: "edge", x: x(i * d), y: BAR_TOP, width: d * w, height: BAR_BOT - BAR_TOP });
     // Each piece names its size when there is room.
-    // Pieces count up (1/5, 2/5, 3/5 ...) so students can count the numerator; just the count when space is tight.
-    const fit = chars => Math.min(30, (w - 18) / chars / 0.72);
-    const full = fit(String(total).length + String(d).length + 1) >= 24;
-    const pFont = full ? fit(String(total).length + String(d).length + 1) : fit(String(total).length);
+    // Pieces count up (1/5, 2/5, 3/5 ...) as stacked fractions, never with a slash (Shawn 2026-10-26),
+    // so students can count the numerator; just the count when space is tight.
+    const fit = chars => Math.min(34, (w - 22) / chars / 0.66);
+    const sFont = fit(Math.max(String(total).length, String(d).length));
+    const full = sFont >= 20;
+    const pFont = full ? sFont : Math.min(30, (w - 18) / String(total).length / 0.72);
+    const mid = (BAR_TOP + BAR_BOT) / 2;
     if (pFont >= 18) for (let k = 0; k < total; k++) {
-      const t = el("text", { class: "plbl", x: x(k) + w / 2, y: (BAR_TOP + BAR_BOT) / 2 + pFont * 0.35, "font-size": pFont });
-      t.textContent = full ? `${k + 1}/${d}` : String(k + 1);
+      const cx = x(k) + w / 2;
+      if (!full) { el("text", { class: "plbl", x: cx, y: mid + pFont * 0.35, "font-size": pFont }).textContent = String(k + 1); continue; }
+      const half = Math.max(String(k + 1).length, String(d).length) * pFont * 0.33 + 3;
+      el("text", { class: "plbl", x: cx, y: mid - pFont * 0.28, "font-size": pFont }).textContent = String(k + 1);
+      el("line", { class: "pbar", x1: cx - half, y1: mid, x2: cx + half, y2: mid });
+      el("text", { class: "plbl", x: cx, y: mid + pFont * 1.0, "font-size": pFont }).textContent = String(d);
     }
 
     // Number line with an arrow past the end.
