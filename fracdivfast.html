@@ -153,7 +153,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    Case 3, fraction over fraction: 2/3 over 4/8, both move: (2 × 8)/(3 × 4).
    The moving number is circled and flies along a curved arrow (like the sketch) to a dashed landing box.
    Work is written down the board with = lined up and step names in a right column. Never the ÷ sign.
-   Learn: one case at a time, Next step. Practice: Case 1, 2, 3 or Mixed; type the answer, Check, Hint, Show me. */
+   Learn: one case at a time, Next step. A small Why? button (off by default, Shawn 2026-10-26) shows the reason
+   quietly: a faint × 2 beside the fraction the number left, both 2s struck out, plus one sentence (× 2/2 = × 1).
+   Practice: Case 1, 2, 3 or Mixed; type the answer, Check, Hint, Show me. */
 .main { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); }
 .seg-btns { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 12px; }
@@ -175,6 +177,10 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 .say { font-size: 1.25rem; margin: 0; min-height: 3.2em; line-height: 1.5; }
 .say b.o { color: var(--orange); font-family: var(--font-num); }
 .say b.g { color: var(--green); font-family: var(--font-num); }
+.sayhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.why { font-size: 0.95rem; min-height: 36px; padding: 4px 12px; color: var(--muted); }
+.why[aria-pressed="true"] { background: var(--muted); border-color: var(--muted); color: var(--sheet); }
+.whytx { margin: 10px 0 0; padding-left: 10px; border-left: 3px solid var(--grid-major); color: var(--muted); font-size: 1.05rem; line-height: 1.45; }
 .btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .btns button { font-size: 1.05rem; min-height: 48px; padding: 8px 14px; }
 .btns button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
@@ -194,6 +200,8 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
 .tx { font-family: var(--font-num); font-weight: 700; fill: var(--ink); }
 .tx.o { fill: var(--orange); } .tx.g { fill: var(--green); } .tx.op { fill: var(--muted); }
 .tx.gone { opacity: 0.22; }
+.tx.ghost { fill: var(--muted); opacity: 0.7; }
+.cancel { stroke: var(--muted); stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
 .bar { stroke: var(--ink); stroke-linecap: round; }
 .bar.gone { opacity: 0.22; }
 .bar.g { stroke: var(--green); }
@@ -238,8 +246,9 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
         <p class="rule" id="rule"></p>
       </section>
       <section class="card">
-        <p class="steplbl" id="steplbl"></p>
+        <div class="sayhead"><p class="steplbl" id="steplbl"></p><button type="button" class="why" id="why" aria-pressed="false">Why?</button></div>
         <p class="say" id="say" aria-live="polite"></p>
+        <p class="whytx" id="whytx" hidden></p>
       </section>
       <div class="btns">
         <button type="button" class="go" id="next">Next step</button>
@@ -451,6 +460,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
       const bar = m.src === "td" ? boxes.tbar : boxes.bbar;
       if (bar) bar.el.classList.add("gone");
       path.classList.add("done");
+      if (whyOn && !$("#learn").hidden) drawGhost(m, mode === "anim");
     };
     if (mode !== "anim") { path.removeAttribute("pathLength"); done(); return; }
     // Circle pops, arrow draws, then a copy of the number rides the arrow and lands in the box.
@@ -478,6 +488,21 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     }, 1100);
   }
 
+  // Why?: moving v is really × v on the top and the bottom. A faint × v sits beside the fraction v left,
+  // and both v's there are struck out: they cancel to 1. Same side as the move, so it never meets a landing.
+  function drawGhost(m, anim) {
+    const s = boxes[m.src], bar = (m.src === "td" ? boxes.tbar : boxes.bbar).el, fs = s.fs, gap = 14, xw = CW * fs;
+    const y = +bar.getAttribute("y1"), w = String(m.v).length * CW * fs;
+    const op = m.side === "left" ? +bar.getAttribute("x1") - gap - xw / 2 : +bar.getAttribute("x2") + gap + xw / 2;
+    const num = m.side === "left" ? op - xw / 2 - gap - w / 2 : op + xw / 2 + gap + w / 2;
+    const g = E("g", { class: anim ? "fade" : "" });
+    E("text", { x: op, y: y + fs * 0.36, class: "tx ghost", "text-anchor": "middle", "font-size": fs }, g, "×");
+    E("text", { x: num, y: y + fs * 0.36, class: "tx ghost", "text-anchor": "middle", "font-size": fs }, g, m.v);
+    const slash = (cx, cy, hw) => E("line", { x1: cx - hw, y1: cy + fs * 0.42, x2: cx + hw, y2: cy - fs * 0.42, class: "cancel" }, g);
+    slash(s.x + s.w / 2, s.y, w / 2 + 8);
+    slash(num, y, w / 2 + 8);
+  }
+
   // ---------- words ----------
   const RULES = {
     1: `The bottom fraction's denominator moves <span class="up">UP ↑</span> and multiplies the top.`,
@@ -500,15 +525,25 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
     const a = Q / g === 1 ? String(P / g) : `${P / g}/${Q / g}`;
     return `Simplify. The answer is ${gr(a)}.`;
   }
+  function why(q) {
+    if (q.kase === 3) {
+      const [a, b] = [q.top[1], q.bot[1]];
+      return `Moving both is a shortcut for multiplying the top and the bottom by ${a} and by ${b}. That's multiplying by ${a}/${a} and ${b}/${b}, which are both 1, so the value doesn't change. Each number cancels where it started.`;
+    }
+    const v = q.kase === 1 ? q.bot[1] : q.top[1];
+    return `Moving the ${v} is a shortcut for multiplying the top and the bottom by ${v}. That's multiplying by ${v}/${v}, which is 1, so the value doesn't change. On the ${q.kase === 1 ? "bottom" : "top"}, the ${v}s cancel.`;
+  }
 
   // ---------- Learn ----------
-  let mode = "learn", lq = makeQ(1, ...EXAMPLES[1]), step = 0;
+  let mode = "learn", lq = makeQ(1, ...EXAMPLES[1]), step = 0, whyOn = false;
   function showLearn(anim) {
     const S = steps(lq);
     render(lq, step, anim);
     $("#rule").innerHTML = RULES[lq.kase];
     $("#steplbl").textContent = `Step ${step + 1} of ${S.length}`;
     $("#say").innerHTML = say(lq, S[step]);
+    $("#whytx").hidden = !whyOn;
+    if (whyOn) $("#whytx").textContent = why(lq);
     $("#next").disabled = step >= S.length - 1;
     $("#back").disabled = step === 0;
   }
@@ -521,6 +556,7 @@ header .seg-btns button { font-size: 1.15rem; min-height: 48px; padding: 6px 18p
   $("#back").onclick = () => { if (step > 0) { step--; showLearn(false); } };
   $("#again").onclick = () => { step = 0; showLearn(false); };
   $("#rand").onclick = () => setCase(lq.kase, true);
+  $("#why").onclick = () => { whyOn = !whyOn; $("#why").setAttribute("aria-pressed", whyOn); showLearn(false); };
   document.addEventListener("keydown", e => {
     if (mode !== "learn" || e.target.closest("input")) return;
     if (e.key === "ArrowRight") $("#next").click();
@@ -739,7 +775,15 @@ window.I18N_PAGE = {
  "~Correct! It simplifies to (.+)\\.": "Bonne réponse! Ça se simplifie en $1.",
  "Not yet. It looks like you multiplied the fractions. Move the denominator to the other level first.": "Pas encore. On dirait que tu as multiplié les fractions. Déplace d’abord le dénominateur à l’autre niveau.",
  "Not yet. Your answer is upside down. Check which way each number moves.": "Pas encore. Ta réponse est à l’envers. Vérifie dans quel sens chaque nombre se déplace.",
- "Not yet. Try a Hint.": "Pas encore. Essaie un indice."
+ "Not yet. Try a Hint.": "Pas encore. Essaie un indice.",
+ "Why?": "Pourquoi?",
+ "Moving the {n} is a shortcut for multiplying the top and the bottom by {n}.": "Déplacer le {n}, c’est un raccourci pour multiplier le haut et le bas par {n}.",
+ "That's multiplying by {n}/{n}, which is {n}, so the value doesn't change.": "C’est multiplier par {n}/{n}, qui vaut {n}, donc la valeur ne change pas.",
+ "On the bottom, the {n}s cancel.": "En bas, les {n} s’annulent.",
+ "On the top, the {n}s cancel.": "En haut, les {n} s’annulent.",
+ "Moving both is a shortcut for multiplying the top and the bottom by {n} and by {n}.": "Déplacer les deux, c’est un raccourci pour multiplier le haut et le bas par {n} et par {n}.",
+ "That's multiplying by {n}/{n} and {n}/{n}, which are both {n}, so the value doesn't change.": "C’est multiplier par {n}/{n} et {n}/{n}, qui valent tous les deux {n}, donc la valeur ne change pas.",
+ "Each number cancels where it started.": "Chaque nombre s’annule là où il était."
 };
 </script>
 <script>
