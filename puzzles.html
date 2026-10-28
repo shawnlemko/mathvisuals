@@ -155,6 +155,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .seg button { background: transparent; border: 0; border-radius: 9px; padding: 8px 16px; min-height: 46px; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--ink); }
 .seg button:hover { background: var(--sheet); }
 .seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
+/* Nine puzzles share the top switch, so its buttons are a little tighter. */
+#game button { padding: 8px 11px; font-size: 1.02rem; }
 .seg.fam button { font-family: var(--font-num); font-size: 1.5rem; padding: 4px 18px; letter-spacing: 0.08em; }
 .ops { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
@@ -293,6 +295,39 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
 .rules li { padding: 4px 10px; border-radius: 8px; }
 
+/* ---------- Take-Away ---------- */
+.nim { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.4vh, 24px); width: 100%; }
+.nim .left { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 4vh, 2.4rem); }
+.nim .left b { font-family: var(--font-num); font-size: 1.3em; color: var(--pt); }
+.pile { display: grid; gap: calc(var(--t) * 0.25); }
+.ctr { width: var(--t); height: var(--t); border-radius: 50%; background: var(--pt); border: 3px solid color-mix(in srgb, var(--pt) 60%, black); }
+.ctr.gone { background: transparent; border: 3px dashed var(--grid-major); }
+.takes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.takes button { min-width: 7em; min-height: clamp(52px, 8vh, 80px); font-family: var(--font-display); font-weight: 800; font-size: clamp(1.1rem, 3vh, 1.6rem); border-radius: 12px; }
+.takes button:disabled { opacity: 0.4; cursor: default; }
+.log { margin: 0; padding: 0; list-style: none; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
+.log li.you { color: var(--pt); }
+.log li.cpu { color: var(--orange); }
+
+/* ---------- Tower ---------- */
+.han { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(8px, 2vw, 24px); width: 100%; height: 100%; }
+.peg-col { position: relative; height: 100%; display: flex; flex-direction: column-reverse; align-items: center; gap: 4px; padding: 0 4px calc(var(--t) * 0.3); background: transparent; border: 0; border-bottom: 10px solid var(--ink); border-radius: 8px; cursor: pointer; }
+.peg-col:hover { background: var(--chip); }
+.peg-col.held { background: color-mix(in srgb, var(--pt) 12%, transparent); }
+.peg-col.goal { border-bottom-color: var(--green); }
+.pole { position: absolute; left: 50%; bottom: 0; width: 10px; transform: translateX(-50%); height: calc(var(--t) * (var(--d) + 1.8)); background: var(--grid-major); border-radius: 5px 5px 0 0; }
+.disc { position: relative; height: var(--t); flex: none; border-radius: calc(var(--t) * 0.3); display: flex; align-items: center; justify-content: center; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--t) * 0.5); color: #fff; border: 2px solid rgba(0, 0, 0, 0.3); transition: transform 0.15s; }
+.disc.up { transform: translateY(calc(var(--t) * -1.4)); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25); }
+.disc.s1 { background: #e0413b; }
+.disc.s2 { background: #f5a524; color: #1b2733; }
+.disc.s3 { background: #2e9e5b; }
+.disc.s4 { background: #2f6fd6; }
+.disc.s5 { background: #8a4fd1; }
+.best { border-collapse: collapse; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.best th, .best td { border: 1px solid var(--grid-major); padding: 4px 14px; text-align: center; }
+.best td { font-family: var(--font-num); }
+.best tr.cur td { background: var(--chip); color: var(--pt); }
+
 /* ---------- Logic Grid ---------- */
 .lg { display: grid; gap: calc(var(--t) * 0.06); }
 .lg .hd { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-family: var(--font-display); font-weight: 800; font-size: max(0.9rem, calc(var(--t) * 0.2)); line-height: 1.1; text-align: center; padding-bottom: 4px; }
@@ -333,6 +368,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     <div class="ops">
       <div class="seg" id="game" role="group" aria-label="Puzzle"></div>
       <div class="seg fam" id="fam" role="group" aria-label="Operations"></div>
+      <div class="seg" id="shape" role="group" aria-label="Regions"></div>
       <div class="seg" id="level" role="group" aria-label="Level"></div>
     </div>
   </header>
@@ -345,6 +381,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <p class="msg" id="msg" aria-live="polite"></p>
       <div class="palette" id="palette" aria-label="Colours" hidden></div>
       <ol class="rules" id="rules" hidden></ol>
+      <ol class="log" id="log" hidden></ol>
+      <table class="best" id="best" hidden></table>
       <div class="pad" id="pad" aria-label="Number keys" hidden></div>
       <div class="btns">
         <button type="button" class="go" id="new">New puzzle</button>
@@ -363,8 +401,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-  const st = { game: "kak", fam: "as", level: "easy" };
-  const GAMES = [["kak", "Kakooma"], ["cw", "Crossword"], ["np", "Number Place"], ["tri", "Sum Triangle"], ["pat", "Pattern Squares"], ["lg", "Logic Grid"], ["code", "Code Breaker"]];
+  const st = { game: "kak", fam: "as", level: "easy", shape: "box" };
+  const GAMES = [["kak", "Kakooma"], ["cw", "Crossword"], ["np", "Number Place"], ["tri", "Sum Triangle"], ["pat", "Pattern Squares"], ["lg", "Logic Grid"], ["code", "Code Breaker"], ["nim", "Take-Away"], ["han", "Tower"]];
   const FAMS = [["as", "+ −"], ["md", "× ÷"]];
   const LEVELS = [["easy", "Easy"], ["med", "Medium"], ["hard", "Hard"]];
 
@@ -382,6 +420,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     // + − and × ÷ only belong to the number puzzles.
     $("fam").hidden = st.game !== "kak" && st.game !== "cw";
     seg($("fam"), FAMS, st.fam, v => { st.fam = v; newPuzzle(); });
+    $("shape").hidden = st.game !== "np";
+    seg($("shape"), SHAPES, st.shape, v => { st.shape = v; newPuzzle(); });
     seg($("level"), LEVELS, st.level, v => { st.level = v; newPuzzle(); });
   }
   const say = (text, cls = "") => { $("msg").textContent = text; $("msg").className = "msg " + cls; };
@@ -1185,44 +1225,71 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   }
 
   // ================= Number Place =================
-  // Each row, column and box holds 1 to n once. Easy is 4 by 4 (boxes 2 by 2); Medium and Hard are
-  // 6 by 6 (boxes 2 rows by 3 columns), and Hard gives fewer numbers. Every puzzle has one answer.
-  const NP = { easy: { n: 4, bw: 2, blanks: 9 }, med: { n: 6, bw: 3, blanks: 18 }, hard: { n: 6, bw: 3, blanks: 23 } };
-  function npSolutions(g, n, bw, limit) {
-    const bh = n / bw;
+  // Each row, column and region holds 1 to n once. Easy is 4 by 4; Medium and Hard are 6 by 6, and Hard gives
+  // fewer numbers. Regions are boxes (2 by 2, or 2 rows by 3 columns) or, with Shapes, odd outlined shapes.
+  // Every puzzle has one answer.
+  const NP = { easy: { n: 4, bw: 2, blanks: 9 }, med: { n: 6, bw: 3, blanks: 18 }, hard: { n: 6, bw: 3, blanks: 22 } };
+  const SHAPES = [["box", "Boxes"], ["shape", "Shapes"]];
+  // reg[i] is the region of cell i; returns the ways to fill the zeros of g (stops at limit), filling g with the first one.
+  function npSolve(g, n, reg, limit, random) {
+    const cellsOf = [...Array(n)].map(() => []);
+    reg.forEach((r, i) => cellsOf[r].push(i));
     const ok = (i, v) => {
-      const r = Math.floor(i / n), c = i % n, r0 = r - r % bh, c0 = c - c % bw;
+      const r = Math.floor(i / n), c = i % n;
       for (let k = 0; k < n; k++) if (g[r * n + k] === v || g[k * n + c] === v) return false;
-      for (let y = r0; y < r0 + bh; y++) for (let x = c0; x < c0 + bw; x++) if (g[y * n + x] === v) return false;
-      return true;
+      return !cellsOf[reg[i]].some(j => g[j] === v);
     };
-    let count = 0;
+    let count = 0, first = null;
     const go = () => {
       const i = g.indexOf(0);
-      if (i < 0) { count++; return; }
-      for (let v = 1; v <= n && count < limit; v++) if (ok(i, v)) { g[i] = v; go(); g[i] = 0; }
+      if (i < 0) { if (!count) first = g.slice(); count++; return; }
+      const vals = [...Array(n).keys()].map(k => k + 1);
+      for (const v of random ? shuffle(vals) : vals) { if (count >= limit) break; if (ok(i, v)) { g[i] = v; go(); g[i] = 0; } }
     };
     go();
-    return count;
+    return { count, first };
+  }
+  function boxRegions(n, bw) {
+    const bh = n / bw;
+    return [...Array(n * n).keys()].map(i => Math.floor(Math.floor(i / n) / bh) * bh + Math.floor((i % n) / bw));
+  }
+  // n random connected shapes of n cells each; none is a straight row or column.
+  function shapeRegions(n) {
+    for (let tries = 0; tries < 2000; tries++) {
+      const reg = Array(n * n).fill(-1);
+      let failed = false;
+      for (let r = 0; r < n && !failed; r++) {
+        const seed = reg.indexOf(-1), cells = [seed];
+        reg[seed] = r;
+        while (cells.length < n) {
+          const next = [];
+          for (const i of cells) for (const j of [i - n, i + n, i % n ? i - 1 : -1, (i + 1) % n ? i + 1 : -1])
+            if (j >= 0 && j < n * n && reg[j] === -1) next.push(j);
+          if (!next.length) { failed = true; break; }
+          const j = pick(next);
+          reg[j] = r; cells.push(j);
+        }
+        if (!failed && (new Set(cells.map(i => Math.floor(i / n))).size === 1 || new Set(cells.map(i => i % n)).size === 1)) failed = true;
+      }
+      if (!failed) return reg;
+    }
+    return null;
   }
   function genNp() {
-    const { n, bw, blanks } = NP[st.level], bh = n / bw;
-    // A filled grid from a simple pattern, then rows, columns and digits shuffled within the rules.
-    const bands = shuffle([...Array(n / bh).keys()]).flatMap(b => shuffle([...Array(bh).keys()]).map(k => b * bh + k));
-    const stacks = shuffle([...Array(n / bw).keys()]).flatMap(s => shuffle([...Array(bw).keys()]).map(k => s * bw + k));
-    const digits = shuffle([...Array(n).keys()].map(k => k + 1));
-    const sol = [];
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
-      const R = bands[r], C = stacks[c];
-      sol.push(digits[(bw * (R % bh) + Math.floor(R / bh) + C) % n]);
+    const { n, bw, blanks } = NP[st.level];
+    for (;;) {
+      const reg = st.shape === "shape" ? shapeRegions(n) : boxRegions(n, bw);
+      if (!reg) continue;
+      const { first: sol } = npSolve(Array(n * n).fill(0), n, reg, 1, true);
+      if (!sol) continue;
+      const g = sol.slice(), hidden = new Set();
+      for (const i of shuffle([...Array(n * n).keys()])) {
+        if (hidden.size >= blanks) break;
+        g[i] = 0;
+        if (npSolve(g.slice(), n, reg, 2, false).count === 1) hidden.add(i); else g[i] = sol[i];
+      }
+      return { n, reg, sol, hidden };
     }
-    const g = sol.slice(), hidden = new Set();
-    for (const i of shuffle([...Array(n * n).keys()])) {
-      if (hidden.size >= blanks) break;
-      g[i] = 0;
-      if (npSolutions(g.slice(), n, bw, 2) === 1) hidden.add(i); else g[i] = sol[i];
-    }
-    return { n, bw, bh, sol, hidden };
   }
   let np = null;
   function startNp() {
@@ -1231,12 +1298,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     np.marks = {};
     np.shown = false;
     np.sel = [...np.hidden].sort((a, b) => a - b)[0];
-    $("rule").innerHTML = `Fill the grid so every row, column, and box has <em>1 to ${np.n}</em> once.`;
+    $("rule").innerHTML = st.shape === "shape"
+      ? `Fill the grid so every row, column, and shape has <em>1 to ${np.n}</em> once.`
+      : `Fill the grid so every row, column, and box has <em>1 to ${np.n}</em> once.`;
     drawNp();
     say("Tap a ? box, then a number.");
   }
   function drawNp() {
-    const { n, bw, bh } = np, g = el("div", "np");
+    const { n, reg } = np, g = el("div", "np");
     g.style.gridTemplateColumns = `repeat(${n}, var(--t))`;
     for (let i = 0; i < n * n; i++) {
       const r = Math.floor(i / n), c = i % n;
@@ -1252,8 +1321,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         if (i === np.sel && !np.shown) cell.classList.add("sel");
         cell.onclick = () => { np.sel = i; drawNp(); };
       } else cell = el("div", "", np.sol[i]);
-      if (c % bw === bw - 1 && c < n - 1) cell.classList.add("bx-r");
-      if (r % bh === bh - 1 && r < n - 1) cell.classList.add("bx-b");
+      // Thick lines wherever the region changes.
+      if (c < n - 1 && reg[i] !== reg[i + 1]) cell.classList.add("bx-r");
+      if (r < n - 1 && reg[i] !== reg[i + n]) cell.classList.add("bx-b");
       g.append(cell);
     }
     $("board").replaceChildren(g);
@@ -1316,6 +1386,166 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     padKey(k);
   });
 
+  // ================= Take-Away =================
+  // Players take turns removing counters; whoever takes the last one wins. The student goes first and can always win.
+  // The computer plays the winning move when it has one. The secret: leave a multiple of (most you can take + 1).
+  const NIM = { easy: { max: 2, lo: 10, hi: 14 }, med: { max: 3, lo: 15, hi: 21 }, hard: { max: 4, lo: 20, hi: 30 } };
+  let nim = null, nimScore = { won: 0, played: 0 };
+  function startNim(resetScore) {
+    if (resetScore) nimScore = { won: 0, played: 0 };
+    const cfg = NIM[st.level], m = cfg.max + 1;
+    let left;
+    do left = rnd(cfg.lo, cfg.hi); while (left % m === 0);
+    nim = { cfg, left, start: left, log: [], busy: false, over: false, gone: 0 };
+    $("rule").innerHTML = `Take 1 to ${cfg.max} counters on your turn. <em>Whoever takes the last counter wins.</em>`;
+    drawNim();
+    say("You go first.");
+  }
+  function drawNim() {
+    const box = el("div", "nim");
+    const pile = el("div", "pile");
+    // Counters in rows of ten; the ones just taken stay as dashed outlines for a moment.
+    pile.style.gridTemplateColumns = `repeat(${Math.min(10, nim.start)}, var(--t))`;
+    for (let i = 0; i < nim.left + nim.gone; i++) pile.append(el("span", "ctr" + (i >= nim.left ? " gone" : "")));
+    box.append(el("p", "left", ""), pile);
+    box.firstChild.append(el("b", "", nim.left), " left");
+    const takes = el("div", "takes");
+    for (let k = 1; k <= nim.cfg.max; k++) {
+      const b = el("button", "go", `Take ${k}`);
+      b.type = "button";
+      b.disabled = nim.busy || nim.over || k > nim.left;
+      b.onclick = () => takeNim(k);
+      takes.append(b);
+    }
+    box.append(takes);
+    $("board").replaceChildren(box);
+    $("log").hidden = false;
+    $("log").replaceChildren(...nim.log.slice(-6).map(([who, k, left]) => el("li", who, `${who === "you" ? "You" : "Computer"} took ${k}. ${left} left.`)));
+    $("prog").innerHTML = `Games won: <b>${nimScore.won}</b> of <b>${nimScore.played}</b>`;
+    fit();
+  }
+  function takeNim(k) {
+    if (nim.busy || nim.over) return;
+    nim.left -= k; nim.gone = k;
+    nim.log.push(["you", k, nim.left]);
+    if (!nim.left) return endNim(true);
+    nim.busy = true;
+    say("Computer's turn…");
+    drawNim();
+    setTimeout(() => {
+      // Leave a multiple of max + 1 when possible; otherwise take a small random amount.
+      const m = nim.cfg.max + 1, c = nim.left % m || rnd(1, Math.min(nim.cfg.max, nim.left));
+      nim.left -= c; nim.gone = c;
+      nim.log.push(["cpu", c, nim.left]);
+      nim.busy = false;
+      if (!nim.left) return endNim(false);
+      say("Your turn.");
+      drawNim();
+    }, 900);
+  }
+  function endNim(won) {
+    nim.over = true;
+    nimScore.played++;
+    if (won) nimScore.won++;
+    drawNim();
+    say(won ? "You took the last counter. You win! 🎉" : "The computer took the last counter. Try again!", won ? "right" : "wrong");
+  }
+  function showNim() {
+    const m = nim.cfg.max + 1;
+    say(`Strategy: always leave a multiple of ${m} (${m}, ${2 * m}, ${3 * m}, …). Then the computer can never take the last counter.`, "right");
+  }
+
+  // ================= Tower =================
+  // Move the whole stack to the right-hand peg, one disc at a time, never a bigger disc on a smaller one.
+  // The fewest moves for each number of discs fills a table, so students can find the pattern.
+  const HANOI = { easy: 3, med: 4, hard: 5 };
+  const hanoiBest = {};
+  let han = null;
+  function startHan() {
+    const d = HANOI[st.level];
+    han = { d, pegs: [[...Array(d).keys()].map(k => d - k), [], []], held: null, moves: 0, over: false };
+    $("rule").innerHTML = "Move the tower to the <em>right peg</em>. Move one disc at a time. Never put a bigger disc on a smaller one.";
+    drawHan();
+    say("Tap a peg to pick up its top disc, then tap where it goes.");
+  }
+  function drawHan() {
+    const box = el("div", "han");
+    box.style.setProperty("--d", han.d);
+    han.pegs.forEach((stack, p) => {
+      const peg = el("button", "peg-col" + (han.held === p ? " held" : "") + (p === 2 ? " goal" : ""));
+      peg.type = "button";
+      peg.setAttribute("aria-label", ["Left peg", "Middle peg", "Right peg"][p]);
+      peg.append(el("span", "pole"));
+      stack.forEach((size, k) => {
+        const disc = el("span", "disc s" + size, size);
+        disc.style.width = `calc(${28 + 72 * size / han.d}%)`;
+        if (han.held === p && k === stack.length - 1) disc.classList.add("up");
+        peg.append(disc);
+      });
+      peg.onclick = () => tapHan(p);
+      box.append(peg);
+    });
+    $("board").replaceChildren(box);
+    $("prog").innerHTML = `Moves: <b>${han.moves}</b>`;
+    // Fewest-moves table: a row fills in once a student finishes that tower in the fewest moves.
+    const tb = $("best");
+    tb.hidden = false;
+    const rows = [["Discs", "Fewest moves"], ...[1, 2, 3, 4, 5].map(n => [n, n < 3 || hanoiBest[n] ? 2 ** n - 1 : "?"])];
+    tb.replaceChildren(...rows.map((r, k) => { const tr = el("tr", k && r[0] === han.d ? "cur" : ""); r.forEach(x => tr.append(el(k ? "td" : "th", "", x))); return tr; }));
+    fit();
+  }
+  function tapHan(p) {
+    if (han.over) return;
+    const pegs = han.pegs;
+    if (han.held === null) {
+      if (!pegs[p].length) return;
+      han.held = p;
+      say("Now tap the peg to move it to.");
+    } else if (han.held === p) {
+      han.held = null;
+      say("Put back. Pick a disc.");
+    } else {
+      const disc = pegs[han.held].at(-1), top = pegs[p].at(-1);
+      if (top !== undefined && top < disc) {
+        say(`Disc ${disc} is bigger than disc ${top}. It can't go on top.`, "wrong");
+        han.held = null;
+        drawHan();
+        return;
+      }
+      pegs[p].push(pegs[han.held].pop());
+      han.held = null;
+      han.moves++;
+      say("");
+    }
+    drawHan();
+    if (pegs[2].length === han.d) {
+      han.over = true;
+      const best = 2 ** han.d - 1;
+      if (han.moves === best) { hanoiBest[han.d] = true; drawHan(); say(`Done in ${han.moves} moves, the fewest possible! 🎉`, "right"); }
+      else say(`Done in ${han.moves} moves! Can you do it in fewer?`, "right");
+    }
+  }
+  function showHan() {
+    // Replay the fewest-moves solution from the start, one move every half second.
+    const d = han.d, moves = [];
+    const solve = (n, a, b, c) => { if (!n) return; solve(n - 1, a, c, b); moves.push([a, c]); solve(n - 1, b, a, c); };
+    solve(d, 0, 1, 2);
+    startHan();
+    han.over = true;
+    say(`Watch: ${moves.length} moves.`);
+    const run = han;
+    let k = 0;
+    const step = () => {
+      if (han !== run || st.game !== "han" || k >= moves.length) return;
+      const [a, c] = moves[k++];
+      han.pegs[c].push(han.pegs[a].pop());
+      han.moves++;
+      drawHan();
+      han.timer = setTimeout(step, 500);
+    };
+    han.timer = setTimeout(step, 500);
+  }
+
   // ================= Sizing =================
   // Tiles scale so the whole puzzle fills the board without scrolling.
   function fit() {
@@ -1349,6 +1579,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       t = Math.min(h / (rows * 1.16), w / (0.9 + len * 1.12 + 4.2 + 0.75 + 0.3));
       b.style.setProperty("--t", Math.max(22, Math.min(70, Math.floor(t))) + "px");
       return;
+    } else if (st.game === "nim" && nim) {
+      // Rows of ten counters, plus room for the count above and the Take buttons below.
+      const cols = Math.min(10, nim.start), rows = Math.ceil(nim.start / cols);
+      t = Math.min(w / (cols * 1.25), (h - 200) / (rows * 1.25));
+      b.style.setProperty("--t", Math.max(18, Math.min(70, Math.floor(t))) + "px");
+      return;
+    } else if (st.game === "han" && han) {
+      t = Math.min((h - 20) / (han.d + 3), 64);
+      b.style.setProperty("--t", Math.max(24, Math.floor(t)) + "px");
+      return;
     } else if (st.game === "pat" && pat) {
       // Four stages in a row, or two rows of two on narrow screens.
       const one = w / (8 + 3 * 0.5 + 0.3), two = Math.min(w / (4 + 0.5 + 0.3), h / (4 + 1.6));
@@ -1370,13 +1610,21 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     $("palette").hidden = g !== "code";
     $("rules").hidden = true;
     $("check").hidden = g !== "lg";
-    $("show").textContent = g === "code" ? "Show code" : "Show answers";
-    const start = { kak: startKak, cw: startCw, np: startNp, tri: startTri, pat: startPat, lg: startLg, code: startCode };
+    $("log").hidden = true;
+    $("best").hidden = true;
+    if (han && han.timer) clearTimeout(han.timer);
+    $("show").textContent = { code: "Show code", nim: "Show strategy", han: "Show me" }[g] || "Show answers";
+    $("new").textContent = g === "nim" ? "New game" : "New puzzle";
+    const start = { kak: startKak, cw: startCw, np: startNp, tri: startTri, pat: startPat, lg: startLg, code: startCode, nim: () => startNim(false), han: startHan };
     start[g]();
   }
   $("new").onclick = newPuzzle;
   $("check").onclick = () => checkLg();
-  $("show").onclick = () => ({ kak: showKak, cw: showCw, np: showNp, tri: showTri, pat: showPat, lg: showLg, code: showCode })[st.game]();
+  $("show").onclick = () => ({ kak: showKak, cw: showCw, np: showNp, tri: showTri, pat: showPat, lg: showLg, code: showCode, nim: showNim, han: showHan })[st.game]();
+  // Tower: keys 1, 2, 3 tap the left, middle and right pegs.
+  document.addEventListener("keydown", e => {
+    if (st.game === "han" && !e.ctrlKey && !e.metaKey && !e.altKey && /^[123]$/.test(e.key)) tapHan(Number(e.key) - 1);
+  });
   newPuzzle();
 })();
 </script>
@@ -1469,7 +1717,7 @@ window.I18N_COMMON = {
 };
 </script>
 <script>
-/* French for Number and Logic Puzzles (puzzles.html): Kakooma, Crossword, Number Place, Sum Triangle, Pattern Squares, Logic Grid, Code Breaker. */
+/* French for Number and Logic Puzzles (puzzles.html). */
 window.I18N_PAGE = {
  "Puzzle": "Casse-tête",
  "Kakooma": "Kakooma",
@@ -1592,7 +1840,44 @@ window.I18N_PAGE = {
  "×{n} each time": "×{n} chaque fois",
  "Half each time": "La moitié chaque fois",
  "A third each time": "Le tiers chaque fois",
- "Square numbers": "Nombres carrés"
+ "Square numbers": "Nombres carrés",
+ "Regions": "Régions",
+ "Boxes": "Boîtes",
+ "Shapes": "Formes",
+ "Fill the grid so every row, column, and shape has {0} once.": "Remplis la grille pour que chaque rangée, colonne et forme ait {0} une fois.",
+ "Take-Away": "Enlève-jetons",
+ "Tower": "Tour",
+ "Take {n} to {n} counters on your turn. {0}": "Enlève de {n} à {n} jetons à ton tour. {0}",
+ "Whoever takes the last counter wins.": "Celui qui prend le dernier jeton gagne.",
+ "You go first.": "Tu commences.",
+ "Computer's turn…": "Au tour de l’ordinateur…",
+ "Your turn.": "À ton tour.",
+ "{0} left": "{0} restants",
+ "Take {n}": "Enlève {n}",
+ "~You took (\\d+)\\. (\\d+) left\\.": "Tu as enlevé $1. Il en reste $2.",
+ "~Computer took (\\d+)\\. (\\d+) left\\.": "L’ordinateur a enlevé $1. Il en reste $2.",
+ "Games won: {0} of {1}": "Parties gagnées : {0} sur {1}",
+ "You took the last counter. You win! 🎉": "Tu as pris le dernier jeton. Tu gagnes! 🎉",
+ "The computer took the last counter. Try again!": "L’ordinateur a pris le dernier jeton. Essaie encore!",
+ "~Strategy: always leave a multiple of (\\d+) \\((.+)\\)\\. Then the computer can never take the last counter\\.": "Stratégie : laisse toujours un multiple de $1 ($2). Ainsi, l’ordinateur ne peut jamais prendre le dernier jeton.",
+ "New game": "Nouvelle partie",
+ "Show strategy": "Afficher la stratégie",
+ "Show me": "Montre-moi",
+ "Move the tower to the {0}. Move one disc at a time. Never put a bigger disc on a smaller one.": "Déplace la tour sur la {0}. Déplace un disque à la fois. Ne mets jamais un plus grand disque sur un plus petit.",
+ "right peg": "tige de droite",
+ "Tap a peg to pick up its top disc, then tap where it goes.": "Touche une tige pour prendre son disque du dessus, puis touche où il va.",
+ "Left peg": "Tige de gauche",
+ "Middle peg": "Tige du milieu",
+ "Right peg": "Tige de droite",
+ "Moves: {0}": "Déplacements : {0}",
+ "Discs": "Disques",
+ "Fewest moves": "Moins de déplacements",
+ "Now tap the peg to move it to.": "Touche maintenant la tige où le mettre.",
+ "Put back. Pick a disc.": "Remis en place. Choisis un disque.",
+ "Disc {n} is bigger than disc {n}. It can't go on top.": "Le disque {n} est plus grand que le disque {n}. Il ne peut pas aller dessus.",
+ "Done in {n} moves, the fewest possible! 🎉": "Réussi en {n} déplacements, le moins possible! 🎉",
+ "Done in {n} moves! Can you do it in fewer?": "Réussi en {n} déplacements! Peux-tu faire moins?",
+ "Watch: {n} moves.": "Regarde : {n} déplacements."
 };
 </script>
 <script>
