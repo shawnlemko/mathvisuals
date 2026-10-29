@@ -150,7 +150,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
      they make (purple: F, Z, C, X, straight line), then the student drags the transversal and sees the
      relationship hold. Practice: name the pair, say how they relate, then find the second angle.
      Challenge: multi-step number-only puzzles, no algebra (Shawn 2026-10-15): an angle chain, a bowtie, a triangle, a bent path, two pairs of
-     parallel lines); Show me reveals the work one line at a time. -->
+     parallel lines); Show me reveals the work one line at a time.
+     Grade switch (Shawn 2026-10-29), simplest at the lowest grade: 6 shows only the pairs at one crossing
+     (vertically opposite, linear pair) and no Challenge; 7 adds corresponding, alternate interior and co-interior
+     (F, Z, C) with the Angle chain and Triangle puzzles; 8 is everything. The choice is remembered. -->
 <style>
 :root { --purple: #7a3fc4; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; } }
@@ -168,6 +171,9 @@ h1 .m { color: var(--pt); }
 .seg button:last-child { border-radius: 0 10px 10px 0; }
 .seg button + button { border-left: 0; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.grade { display: inline-flex; align-items: center; gap: 8px; }
+.grade > span { font-weight: 700; font-size: 1.05rem; }
+.grade .seg button { font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; padding: 9px 16px; }
 .main { grid-template-columns: minmax(0, 1.45fr) minmax(370px, 0.95fr); gap: 16px; }
 @media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
 .board .hint { margin: 4px 8px 2px; font-size: 1.05rem; color: var(--ink); flex: none; min-height: 1.6em; }
@@ -276,6 +282,11 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Parallel Lines and <span class="m">Transversals</span></h1></div>
     <div class="tools">
+      <div class="grade"><span>Grade</span><div class="seg" role="group" aria-label="Grade">
+        <button type="button" data-grade="6" aria-pressed="false">6</button>
+        <button type="button" data-grade="7" aria-pressed="false">7</button>
+        <button type="button" data-grade="8" aria-pressed="true">8</button>
+      </div></div>
       <div class="seg" role="group" aria-label="Mode">
         <button type="button" data-mode="learn" aria-pressed="true">Learn</button>
         <button type="button" data-mode="practice" aria-pressed="false">Practice</button>
@@ -462,12 +473,21 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     lin: { name: "Linear pair", eq: false, pairs: [[1, 2], [3, 4], [5, 6], [7, 8], [1, 3], [2, 4], [5, 7], [6, 8]], key: "Side by side. Together they make a straight line.", rule: "Angles in a linear pair add to 180°." },
   };
   const ORDER = ["corr", "altI", "altE", "vert", "coI", "lin"];
+  // What each grade shows, simplest first. Grade 6 has no Challenge.
+  const GRADES = {
+    6: { types: ["vert", "lin"], gens: [] },
+    7: { types: ["corr", "altI", "vert", "coI", "lin"], gens: ["chain", "tri"] },
+    8: { types: ORDER, gens: ["chain", "bowtie", "tri", "bend", "pairs"] },
+  };
+  let grade = 8;
+  try { const g = +localStorage.getItem("mv-transversals-grade"); if (GRADES[g]) grade = g; } catch (e) {}
+  const allowed = () => GRADES[grade].types;
   const typeLabel = t => `<span>${TYPES[t].name}</span>` + (TYPES[t].also ? `<small>(${TYPES[t].also})</small>` : "");
   const typeOf = (a, b) => ORDER.find(t => TYPES[t].pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a)));
   const side = i => (i % 2 ? "left" : "right");
 
   // ================= LEARN =================
-  const L = { t: "corr", k: 0, step: 0, theta: 62 };
+  const L = { t: allowed()[0], k: 0, step: 0, theta: 62 };
   function learnSteps() {
     const [a, b] = TYPES[L.t].pairs[L.k];
     const where = i => `∠${i} is ${INSIDE.includes(i) ? "inside" : "outside"} the parallel lines, ${side(i)} of the transversal.`;
@@ -551,9 +571,14 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   }
   const setType = t => { L.t = t; L.k = 0; L.step = 0; renderLearn(); };
   const goStep = n => { L.step = Math.max(0, Math.min(3, n)); renderLearn(); };
-  $("eqBtns").innerHTML = ["corr", "altI", "altE", "vert"].map(t => `<button type="button" data-t="${t}">${typeLabel(t)}</button>`).join("");
-  $("supBtns").innerHTML = ["coI", "lin"].map(t => `<button type="button" data-t="${t}">${typeLabel(t)}</button>`).join("");
-  document.querySelectorAll(".cbtns button").forEach(x => x.addEventListener("click", () => setType(x.dataset.t)));
+  function buildPairButtons() {
+    const btns = ts => ts.filter(t => allowed().includes(t)).map(t => `<button type="button" data-t="${t}">${typeLabel(t)}</button>`).join("");
+    $("eqBtns").innerHTML = btns(["corr", "altI", "altE", "vert"]);
+    $("supBtns").innerHTML = btns(["coI", "lin"]);
+    document.querySelectorAll(".cbtns button").forEach(x => x.addEventListener("click", () => setType(x.dataset.t)));
+    if (!allowed().includes(L.t)) { L.t = allowed()[0]; L.k = 0; L.step = 0; }
+  }
+  buildPairButtons();
   $("next").addEventListener("click", () => goStep(L.step + 1));
   $("back").addEventListener("click", () => goStep(L.step - 1));
   $("another").addEventListener("click", () => { L.k = (L.k + 1) % TYPES[L.t].pairs.length; L.step = 0; renderLearn(); });
@@ -572,7 +597,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   let pq = null;
   function newPractice() {
     PS.n++;
-    const t = pick(ORDER);
+    const t = pick(allowed());
     const pr = shuffle(pick(TYPES[t].pairs));
     let theta; do { theta = rnd(35, 145); } while (Math.abs(theta - 90) < 12);
     const phi = pick([0, 0, rnd(-28, 28), rnd(-28, 28), 180 + rnd(-20, 20)]);
@@ -580,7 +605,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     pq = { t, a: pr[0], b: pr[1], f: figure(theta, phi, rnd(260, 320)), la: labs[0], lb: labs[1], part: 1, hint: false, shown: false, first: true, done: false };
     $("p1").hidden = false; $("p2").hidden = true; $("p3").hidden = true;
     $("types").hidden = false; $("p1done").hidden = true; $("rels").hidden = false; $("p2done").hidden = true;
-    $("types").innerHTML = ORDER.map(x => `<button type="button" data-t="${x}">${typeLabel(x)}</button>`).join("");
+    $("types").innerHTML = allowed().map(x => `<button type="button" data-t="${x}">${typeLabel(x)}</button>`).join("");
     $("types").querySelectorAll("button").forEach(x => x.addEventListener("click", () => answerType(x.dataset.t)));
     $("rels").innerHTML = `<button type="button" data-r="eq">Equal</button><button type="button" data-r="sup">Add to 180°</button>`;
     $("rels").querySelectorAll("button").forEach(x => x.addEventListener("click", () => answerRel(x.dataset.r === "eq")));
@@ -703,7 +728,8 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     const f = figure(theta, pick([0, 0, rnd(-10, 10)]));
     const [a, b] = shuffle(pick([[1, 6], [1, 7], [2, 5], [2, 8], [3, 8], [4, 7]]));
     // The linking angle: prefer a first step that is corresponding or vertically opposite.
-    const links = [1, 2, 3, 4, 5, 6, 7, 8].filter(c => c !== a && c !== b && typeOf(a, c) && typeOf(c, b));
+    const ok = t => t && allowed().includes(t);
+    const links = [1, 2, 3, 4, 5, 6, 7, 8].filter(c => c !== a && c !== b && ok(typeOf(a, c)) && ok(typeOf(c, b)));
     const c = links.find(k => ["corr", "vert"].includes(typeOf(a, k))) ?? links[0];
     const t1 = TYPES[typeOf(a, c)], t2 = TYPES[typeOf(c, b)];
     const ga = f.meas(a), vc = f.meas(c), x = f.meas(b);
@@ -883,12 +909,12 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
       },
     };
   }
-  const GENS = [genChain, genBowtie, genTri, genBend, genPairs];
+  const GENS = { chain: genChain, bowtie: genBowtie, tri: genTri, bend: genBend, pairs: genPairs };
   const CS = { n: 0, right: 0, total: 0, bag: [] };
   let cz = null;
   function newChallenge() {
     CS.n++;
-    if (!CS.bag.length) CS.bag = shuffle(GENS);
+    if (!CS.bag.length) CS.bag = shuffle(GRADES[grade].gens.map(k => GENS[k]));
     cz = CS.bag.pop()();
     Object.assign(cz, { shown: 0, hint: false, first: true, done: false });
     $("ctitle").textContent = cz.title; $("cq").textContent = cz.q;
@@ -949,12 +975,27 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     else { if (!cz) newChallenge(); else renderChal(); }
   }
   document.querySelectorAll("[data-mode]").forEach(x => x.addEventListener("click", () => setMode(x.dataset.mode)));
+
+  // ================= Grade switch =================
+  // A new grade starts fresh: new pair buttons, new questions, scores back to 0.
+  function setGrade(g) {
+    grade = g;
+    try { localStorage.setItem("mv-transversals-grade", String(g)); } catch (e) {}
+    document.querySelectorAll("[data-grade]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.grade === g)));
+    const noChal = !GRADES[g].gens.length;
+    document.querySelector('[data-mode="challenge"]').hidden = noChal;
+    buildPairButtons();
+    Object.assign(PS, { n: 0, right: 0, total: 0 }); pq = null;
+    Object.assign(CS, { n: 0, right: 0, total: 0, bag: [] }); cz = null;
+    setMode(noChal && mode === "challenge" ? "learn" : mode);
+  }
+  document.querySelectorAll("[data-grade]").forEach(x => x.addEventListener("click", () => setGrade(+x.dataset.grade)));
   document.addEventListener("keydown", e => {
     if (mode !== "learn" || e.target.closest?.(".handle") || e.target.tagName === "INPUT") return;
     if (e.key === "ArrowRight") goStep(L.step + 1);
     if (e.key === "ArrowLeft") goStep(L.step - 1);
   });
-  renderLearn();
+  setGrade(grade);
 })();
 </script>
 
@@ -1053,6 +1094,7 @@ window.I18N_PAGE = {
  "Transversals": "sécantes",
  "transversal": "sécante",
  "Learn": "Apprendre",
+ "Grade": "Année",
  "Two parallel lines cut by a transversal": "Deux droites parallèles coupées par une sécante",
  "Tilt the transversal": "Incline la sécante",
  "Your answer": "Ta réponse",

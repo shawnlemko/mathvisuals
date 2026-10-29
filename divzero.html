@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Dividing by Zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Dividing by Zero (K-6 and 7-9, Number; Shawn 2026-10-29).
+   Two buckets that each hold the same amount (default 8). Left: drag 2-blocks in until the bucket is full, so 8 over 2 = 4.
+   Right: drag 0-blocks in. Each one squashes flat and adds nothing, the count keeps climbing and the bucket never fills;
+   after a few, a gentle message says 8 over 0 is undefined. Tapping a block also drops it (tablet friendly).
+   The teacher sets the bucket amount and the left divisor in the header. The amount steps by the divisor, so the left bucket always fills exactly.
+   Never the division sign: every division is a stacked fraction. */
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.ctl .grp { display: flex; align-items: center; gap: 8px; }
+.ctl .grp > span { font-weight: 700; color: var(--muted); }
+.ctl .grp button { width: 46px; height: 46px; padding: 0; font-size: 1.6rem; line-height: 1; }
+.ctl .grp button:disabled { opacity: 0.35; cursor: default; }
+.ctl output { min-width: 2ch; text-align: center; font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; }
+#reset { min-height: 46px; padding: 8px 16px; }
+
+.stage { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.side { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
+.stage > .side { overflow: hidden; }
+.msg { margin: 0; min-height: 4.05em; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; line-height: 1.35; text-align: center; text-wrap: balance; }
+.msg.good { color: var(--green); }
+.msg.zero { color: var(--warn); }
+.side svg { display: block; width: 100%; flex: 1 1 auto; min-height: 220px; touch-action: none; user-select: none; -webkit-user-select: none; }
+@media (max-width: 860px) { .side svg { height: 56vh; } }
+
+.read { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px dashed var(--grid-major); }
+.stat { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.stat .label { margin: 0; }
+.stat b { font-family: var(--font-num); font-size: 2.6rem; line-height: 1.1; }
+.stat b small { font-size: 0.55em; color: var(--muted); }
+.stat b.pulse { animation: pulse 0.35s ease; }
+@keyframes pulse { 40% { transform: scale(1.25); } }
+.eq { justify-content: center; gap: 12px; font-size: 2.4rem; font-weight: 700; }
+.eq .frac > span:first-child { border-bottom-width: 3px; }
+.eq .ans { min-width: 1.4em; text-align: center; }
+.eq .ans.q { color: var(--muted); }
+.eq .ans.undef { color: var(--warn); font-family: var(--font-display); font-size: 1.5rem; }
+.more { position: absolute; right: 16px; top: calc(4.05em * 1.2 + 24px); min-height: 46px; padding: 8px 18px; }
+
+/* Bucket drawing */
+.bucket { fill: var(--sheet); stroke: var(--ink); stroke-width: 5; stroke-linejoin: round; }
+.band { fill: var(--chip); stroke: var(--ink); stroke-width: 5; stroke-linejoin: round; }
+.band-num { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 40px; text-anchor: middle; dominant-baseline: central; }
+.full .bucket { stroke: var(--green); }
+.full .band { stroke: var(--green); }
+.blk { fill: var(--green); stroke: var(--sheet); stroke-width: 3; }
+.blk-num { fill: #fff; font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.zblk { fill: var(--sheet); stroke: var(--muted); stroke-width: 3; stroke-dasharray: 8 6; }
+.zblk-num { fill: var(--muted); font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.src { cursor: grab; outline: none; }
+.src:focus-visible rect { stroke: var(--pt); stroke-width: 5; stroke-dasharray: none; }
+.src-hint { fill: var(--muted); font-size: 20px; text-anchor: middle; }
+.level { stroke: var(--warn); stroke-width: 4; stroke-dasharray: 10 8; }
+.level-lbl { fill: var(--warn); font-family: var(--font-num); font-weight: 700; font-size: 20px; text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; }
+.plus0 { fill: var(--muted); font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; }
+.ghost { pointer-events: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+      <h1>Dividing by Zero</h1>
+    </div>
+    <div class="ctl">
+      <div class="grp"><span>Bucket holds</span><button type="button" id="vMinus" aria-label="Less">−</button><output id="vOut">8</output><button type="button" id="vPlus" aria-label="More">+</button></div>
+      <div class="grp"><span>Left blocks</span><button type="button" id="dMinus" aria-label="Less">−</button><output id="dOut">2</output><button type="button" id="dPlus" aria-label="More">+</button></div>
+      <button type="button" id="reset">Start over</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card side" id="L"></section>
+    <section class="card side" id="R"></section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const $ = id => document.getElementById(id);
+  const MAX_V = 24, MAX_D = 6, ZERO_MSG_AT = 5;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let V = 8, D = 2;
+
+  // Bucket geometry (viewBox 0 0 400 500). The band at the top carries the amount; blocks stack inside below it.
+  const TOP = 150, BAND = 46, BOT = 480, IN_TOP = TOP + BAND + 2, IN_BOT = BOT - 6;
+  const xl = y => 60 + 30 * (y - TOP) / (BOT - TOP), xr = y => 340 - 30 * (y - TOP) / (BOT - TOP);
+  const TRAY = { x: 200, y: 62, w: 120, h: 80 };
+
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const tween = (ms, fn) => new Promise(done => {
+    if (reduce) ms = Math.min(ms, 80);
+    const t0 = performance.now();
+    const step = now => {
+      const t = Math.min(1, (now - t0) / ms);
+      fn(t);
+      t < 1 ? requestAnimationFrame(step) : done();
+    };
+    requestAnimationFrame(step);
+  });
+  const ease = t => 1 - (1 - t) * (1 - t);
+  const fall = t => t * t;
+
+  // A block drawn at the origin so a group transform can move it.
+  function block(parent, d, w, h, cls) {
+    const g = el("g", { class: cls || "" }, parent);
+    el("rect", { x: -w / 2, y: -h / 2, width: w, height: h, rx: 10, class: d ? "blk" : "zblk" }, g);
+    const t = el("text", { x: 0, y: 2, class: d ? "blk-num" : "zblk-num", "font-size": Math.min(52, h * 0.7) }, g);
+    t.textContent = d;
+    return g;
+  }
+
+  function makeSide(root, zero) {
+    root.innerHTML = "";
+    const s = { zero, n: 0, busy: 0 };
+    const p = document.createElement("p");
+    p.className = "msg";
+    p.setAttribute("aria-live", "polite");
+    const svg = el("svg", { viewBox: "0 0 400 500", preserveAspectRatio: "xMidYMid meet" });
+    const read = document.createElement("div");
+    read.className = "read";
+    read.innerHTML =
+      '<div class="stat"><p class="label">Blocks added</p><b class="cnt">0</b></div>' +
+      '<div class="stat"><p class="label">Amount in bucket</p><b class="amt"></b></div>' +
+      '<div class="eq"><span class="frac"><span class="top"></span><span class="bot"></span></span><span>=</span><span class="ans q">?</span></div>';
+    root.append(p, svg, read);
+    s.msg = p; s.svg = svg;
+    s.cnt = read.querySelector(".cnt"); s.amt = read.querySelector(".amt"); s.ans = read.querySelector(".ans");
+    read.querySelector(".top").textContent = V;
+    read.querySelector(".bot").textContent = zero ? 0 : D;
+
+    const id = "clip" + (zero ? "R" : "L");
+    const clip = el("clipPath", { id }, el("defs", {}, svg));
+    el("path", { d: `M${xl(IN_TOP) + 3},${IN_TOP} L${xl(IN_BOT) + 3},${IN_BOT} L${xr(IN_BOT) - 3},${IN_BOT} L${xr(IN_TOP) - 3},${IN_TOP}Z` }, clip);
+    s.pail = el("g", {}, svg);
+    el("path", { class: "bucket", d: `M${xl(TOP)},${TOP} L${xl(BOT) - 2},${BOT - 12} Q${xl(BOT)},${BOT} ${xl(BOT) + 12},${BOT} L${xr(BOT) - 12},${BOT} Q${xr(BOT)},${BOT} ${xr(BOT) + 2},${BOT - 12} L${xr(TOP)},${TOP}Z` }, s.pail);
+    s.stack = el("g", { "clip-path": `url(#${id})` }, s.pail);
+    el("path", { class: "band", d: `M${xl(TOP) - 10},${TOP} L${xr(TOP) + 10},${TOP} L${xr(TOP + BAND) + 2},${TOP + BAND} L${xl(TOP + BAND) - 2},${TOP + BAND}Z` }, s.pail);
+    el("text", { class: "band-num", x: 200, y: TOP + BAND / 2 + 1 }, s.pail).textContent = V;
+    s.fx = el("g", {}, svg);
+
+    if (zero) {
+      // The fill line never leaves the bottom.
+      el("line", { class: "level", x1: xl(IN_BOT) + 8, x2: xr(IN_BOT) - 8, y1: IN_BOT - 3, y2: IN_BOT - 3 }, s.pail);
+      s.lvl = el("text", { class: "level-lbl", x: 200, y: IN_BOT - 16 }, s.pail);
+      s.lvl.textContent = "still 0";
+      s.lvl.style.display = "none";
+    }
+
+    const src = block(svg, zero ? 0 : D, TRAY.w, TRAY.h, "src");
+    src.setAttribute("transform", `translate(${TRAY.x},${TRAY.y})`);
+    src.setAttribute("tabindex", "0");
+    src.setAttribute("role", "button");
+    src.setAttribute("aria-label", `Drop a ${zero ? 0 : D} into the bucket`);
+    el("text", { class: "src-hint", x: TRAY.x, y: TRAY.y + TRAY.h / 2 + 22 }, svg).textContent = "Drag into the bucket";
+    s.src = src;
+    wire(s);
+
+    if (zero) {
+      s.more = document.createElement("button");
+      s.more.type = "button";
+      s.more.className = "more";
+      s.more.textContent = "Add 100 zeros";
+      s.more.hidden = true;
+      s.more.addEventListener("click", () => { s.n += 100; puff(s, 0.5); show(s, true); });
+      root.appendChild(s.more);
+    }
+    show(s);
+    return s;
+  }
+
+  const full = s => !s.zero && s.n * D >= V;
+  const pt = (svg, e) => new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+
+  function wire(s) {
+    let drag = null;
+    s.src.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      const p = pt(s.svg, e);
+      drag = { x0: p.x, y0: p.y, moved: false, g: null, id: e.pointerId };
+      s.src.setPointerCapture(e.pointerId);
+    });
+    s.src.addEventListener("pointermove", e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const p = pt(s.svg, e);
+      if (!drag.moved && Math.hypot(p.x - drag.x0, p.y - drag.y0) < 8) return;
+      if (!drag.g) { drag.moved = true; drag.g = block(s.fx, s.zero ? 0 : D, TRAY.w, TRAY.h, "ghost"); }
+      drag.x = TRAY.x + p.x - drag.x0; drag.y = TRAY.y + p.y - drag.y0;
+      drag.g.setAttribute("transform", `translate(${drag.x},${drag.y})`);
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag; drag = null;
+      if (!d.moved) { drop(s, null); return; } // a tap drops a block too
+      // Generous target: anywhere over the bucket or just above it.
+      const over = d.x > 20 && d.x < 380 && d.y > TOP - 70;
+      if (over && e.type === "pointerup") drop(s, d.g, d.x, d.y);
+      else back(d.g, d.x, d.y);
+    };
+    s.src.addEventListener("pointerup", end);
+    s.src.addEventListener("pointercancel", end);
+    s.src.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); drop(s, null); } });
+  }
+
+  async function back(g, x, y) {
+    await tween(260, t => { const k = ease(t); g.setAttribute("transform", `translate(${x + (TRAY.x - x) * k},${y + (TRAY.y - y) * k})`); });
+    g.remove();
+  }
+
+  async function drop(s, g, x = TRAY.x, y = TRAY.y) {
+    g = g || block(s.fx, s.zero ? 0 : D, TRAY.w, TRAY.h, "ghost");
+    if (full(s)) {
+      say(s, "The bucket is already full.", "good");
+      return back(g, x, y + 30);
+    }
+    s.busy++;
+    const nth = s.n;
+    s.n++;
+    if (s.zero) {
+      // Fall to the bottom, squash flat to nothing, and show +0.
+      const ty = IN_BOT - TRAY.h / 2;
+      await tween(420, t => { const k = fall(t); g.setAttribute("transform", `translate(${x + (200 - x) * k},${y + (ty - y) * k})`); });
+      await tween(260, t => g.setAttribute("transform", `translate(200,${ty + TRAY.h / 2 * t}) scale(${1 + 0.4 * t},${1 - t})`));
+      g.remove();
+      puff(s, 1);
+    } else {
+      // Fall onto the stack and become one layer of the fill.
+      const h = (IN_BOT - IN_TOP) * D / V, by = IN_BOT - (nth + 1) * h;
+      const ty = by + h / 2;
+      await tween(420, t => { const k = fall(t); g.setAttribute("transform", `translate(${x + (200 - x) * k},${y + (ty - y) * k})`); });
+      const lay = el("g", {}, s.stack);
+      el("rect", { class: "blk", x: 40, y: by, width: 320, height: h, rx: 4 }, lay);
+      if (h >= 22) el("text", { class: "blk-num", x: 200, y: by + h / 2 + 1, "font-size": Math.min(48, h * 0.7) }, lay).textContent = D;
+      g.remove();
+    }
+    s.busy--;
+    show(s, true);
+  }
+
+  function puff(s, big) {
+    const t = el("text", { class: "plus0", x: 200, y: IN_BOT - 50 }, s.fx);
+    t.textContent = big < 1 ? "+0 +0 +0 …" : "+0";
+    tween(700, k => { t.setAttribute("y", IN_BOT - 50 - 60 * k); t.style.opacity = 1 - k; }).then(() => t.remove());
+  }
+
+  function say(s, text, cls) { s.msg.textContent = text; s.msg.className = "msg" + (cls ? " " + cls : ""); }
+
+  function show(s, bump) {
+    const d = s.zero ? 0 : D;
+    s.cnt.textContent = s.n;
+    if (bump) { s.cnt.classList.remove("pulse"); void s.cnt.offsetWidth; s.cnt.classList.add("pulse"); }
+    s.amt.innerHTML = "";
+    s.amt.append(String(s.n * d), Object.assign(document.createElement("small"), { textContent: ` of ${V}` }));
+    if (s.zero) {
+      s.lvl.style.display = s.n ? "" : "none";
+      const done = s.n >= ZERO_MSG_AT;
+      s.more.hidden = !done;
+      s.ans.className = "ans " + (done ? "undef" : "q");
+      s.ans.textContent = done ? "undefined" : "?";
+      if (done) say(s, `Still empty! Zeros add nothing. No number of 0s makes ${V}, so ${V} over 0 is undefined.`, "zero");
+      else if (s.n) say(s, `${s.n} ${s.n === 1 ? "zero" : "zeros"} so far, and the bucket is still empty. Keep going!`);
+      else say(s, `How many 0s fill a bucket of ${V}?`);
+    } else {
+      const f = full(s);
+      s.pail.parentNode.classList.toggle("full", f);
+      s.ans.className = "ans" + (f ? "" : " q");
+      s.ans.textContent = f ? V / D : "?";
+      if (f) say(s, `Full! It took ${s.n} of the ${D}s, so ${V} over ${D} is ${V / D}.`, "good");
+      else say(s, `How many ${D}s fill a bucket of ${V}?`);
+    }
+  }
+
+  let L, R;
+  function start() {
+    $("vOut").textContent = V; $("dOut").textContent = D;
+    $("vMinus").disabled = V - D < D; $("vPlus").disabled = V + D > MAX_V;
+    $("dMinus").disabled = D <= 1; $("dPlus").disabled = D >= MAX_D;
+    L = makeSide($("L"), false);
+    R = makeSide($("R"), true);
+  }
+  // The amount stays a multiple of the left block so the left bucket fills exactly.
+  const snap = () => { V = Math.min(Math.max(D, Math.round(V / D) * D), Math.floor(MAX_V / D) * D); };
+  $("vMinus").addEventListener("click", () => { V -= D; snap(); start(); });
+  $("vPlus").addEventListener("click", () => { V += D; snap(); start(); });
+  $("dMinus").addEventListener("click", () => { D--; snap(); start(); });
+  $("dPlus").addEventListener("click", () => { D++; snap(); start(); });
+  $("reset").addEventListener("click", start);
+  start();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Dividing by Zero (divzero.html). */
+window.I18N_PAGE = {
+  "Dividing by Zero": "Diviser par zéro",
+  "Bucket holds": "Le seau contient",
+  "Left blocks": "Blocs à gauche",
+  "Less": "Moins",
+  "More": "Plus",
+  "Amount in bucket": "Quantité dans le seau",
+  "Blocks added": "Blocs ajoutés",
+  "of {n}": "sur {n}",
+  "undefined": "non défini",
+  "still {n}": "toujours {n}",
+  "Drag into the bucket": "Glisse dans le seau",
+  "Drop a {n} into the bucket": "Mettre un {n} dans le seau",
+  "Add {n} zeros": "Ajouter {n} zéros",
+  "The bucket is already full.": "Le seau est déjà plein.",
+  "How many {n}s fill a bucket of {n}?": "Combien de {n} faut-il pour remplir un seau de {n}?",
+  "Full! It took {n} of the {n}s, so {n} over {n} is {n}.": "Plein! Il a fallu {n} blocs de {n}, donc {n} sur {n} égale {n}.",
+  "{n} zero so far, and the bucket is still empty. Keep going!": "Déjà {n} zéro, et le seau est toujours vide. Continue!",
+  "{n} zeros so far, and the bucket is still empty. Keep going!": "Déjà {n} zéros, et le seau est toujours vide. Continue!",
+  "Still empty! Zeros add nothing. No number of {n}s makes {n}, so {n} over {n} is undefined.": "Toujours vide! Les zéros n'ajoutent rien. Aucun nombre de {n} ne donne {n}, donc {n} sur {n} est non défini."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
