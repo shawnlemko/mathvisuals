@@ -146,14 +146,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <!-- Intersecting Lines and Parallels (file transversals.html; was "Parallel Lines and Transversals"). Grades 6-7, Geometry.
-     Shawn 2026-10-15, reworked 2026-10-30. Grade switch 6 / 7, modes Learn / Level 1 / Level 2.
-     Grade 6: complementary (add to 90°) and supplementary (add to 180°) angles, touching or apart.
+     Shawn 2026-10-15, reworked 2026-10-30. Grade switch 4 / 7 (Shawn asked for 6; the new K-6 puts complementary/supplementary in Grade 4), modes Learn / Level 1 / Level 2.
+     Grade 4: complementary (add to 90°) and supplementary (add to 180°) angles, touching or apart.
        Level 1: name the pair, find the missing angle. Level 2: three angles on a line or in a right angle, angle pairs that are apart.
-     Grade 7 (new Alberta 7-9: angles where two lines cross; corresponding angles; checking lines are parallel; solving problems):
-       vertically opposite, linear pair, corresponding, alternate interior, co-interior (F, Z, C shapes).
-       Level 1: name the pair, equal or supplementary, find the angle. Level 2: angle chain, bent path,
-       two pairs of parallel lines, and "Are the lines parallel?" (no > marks; decide from the angles).
-     Alternate exterior, Bowtie and Triangle (triangle sum) are kept in the code but not shown. Numbers only, no algebra. -->
+     Grade 7 (new Alberta 7-9 draft, June 2026): opposite angles (congruent), adjacent angles (supplementary),
+       corresponding angles (congruent). Level 1: name the pair, congruent or supplementary, find the angle.
+       Level 2: angle chain, two pairs of parallel lines, and "Are the lines parallel?" (no > marks; decide from the angles).
+     Alternate interior/exterior, co-interior, Bowtie, Triangle and Bent path are not in that draft: kept in the code, not shown. Numbers only, no algebra. -->
 <style>
 :root { --purple: #7a3fc4; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; } }
@@ -284,7 +283,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     <h1>Intersecting Lines and <span class="m">Parallels</span></h1></div>
     <div class="tools">
       <div class="grade"><span>Grade</span><div class="seg" role="group" aria-label="Grade">
-        <button type="button" data-grade="6" aria-pressed="false">6</button>
+        <button type="button" data-grade="4" aria-pressed="false">4</button>
         <button type="button" data-grade="7" aria-pressed="true">7</button>
       </div></div>
       <div class="seg" role="group" aria-label="Mode">
@@ -461,12 +460,12 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
 
   // ---------- Pair types ----------
   const TYPES = {
-    corr: { name: "Corresponding", eq: true, pairs: [[1, 5], [2, 6], [3, 7], [4, 8]], key: "Same spot at each crossing.", rule: "Corresponding angles are equal." },
+    corr: { name: "Corresponding", eq: true, pairs: [[1, 5], [2, 6], [3, 7], [4, 8]], key: "Same spot at each crossing.", rule: "Corresponding angles are congruent (equal)." },
     altI: { name: "Alternate interior", eq: true, pairs: [[3, 6], [4, 5]], key: "Inside the parallel lines, on opposite sides of the transversal.", rule: "Alternate interior angles are equal." },
     altE: { name: "Alternate exterior", eq: true, pairs: [[1, 8], [2, 7]], key: "Outside the parallel lines, on opposite sides of the transversal.", rule: "Alternate exterior angles are equal." },
-    vert: { name: "Vertically opposite", eq: true, pairs: [[1, 4], [2, 3], [5, 8], [6, 7]], key: "Across from each other where two lines cross.", rule: "Vertically opposite angles are equal." },
+    vert: { name: "Opposite", eq: true, pairs: [[1, 4], [2, 3], [5, 8], [6, 7]], key: "Across from each other where two lines cross.", rule: "Opposite angles are congruent (equal)." },
     coI: { name: "Co-interior", also: "same-side interior", eq: false, pairs: [[3, 5], [4, 6]], key: "Inside the parallel lines, on the same side of the transversal.", rule: "Co-interior angles are supplementary. They add to 180°." },
-    lin: { name: "Linear pair", eq: false, pairs: [[1, 2], [3, 4], [5, 6], [7, 8], [1, 3], [2, 4], [5, 7], [6, 8]], key: "Side by side. Together they make a straight line.", rule: "A linear pair is supplementary. The angles add to 180°." },
+    lin: { name: "Adjacent", eq: false, pairs: [[1, 2], [3, 4], [5, 6], [7, 8], [1, 3], [2, 4], [5, 7], [6, 8]], key: "Side by side. Together they make a straight line.", rule: "Adjacent angles on a straight line are supplementary. They add to 180°." },
     // Grade 6. Pair 0 = the angles touch, pair 1 = the angles are apart.
     comp: { name: "Complementary", eq: false, sum: 90, pairs: [[1, 2], [1, 2]], key: "Two angles that add to 90°, a right angle.", rule: "Complementary angles add to 90°." },
     supp: { name: "Supplementary", eq: false, sum: 180, pairs: [[1, 2], [1, 2]], key: "Two angles that add to 180°, a straight line.", rule: "Supplementary angles add to 180°." },
@@ -474,12 +473,14 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   const ORDER = ["corr", "altI", "altE", "vert", "coI", "lin"];
   // What each grade shows. groups: the Learn buttons, under a heading.
   const GRADES = {
-    6: { types: ["comp", "supp"], gens: ["line", "right", "apart"], groups: [["Add to 90°", ["comp"]], ["Add to 180°", ["supp"]]] },
-    7: { types: ["corr", "altI", "vert", "coI", "lin"], gens: ["chain", "parcheck", "bend", "pairs"], groups: [["Equal", ["corr", "altI", "vert"]], ["Supplementary: add to 180°", ["coI", "lin"]]] },
+    4: { types: ["comp", "supp"], gens: ["line", "right", "apart"], groups: [["Add to 90°", ["comp"]], ["Add to 180°", ["supp"]]] },
+    // Grade 7 follows the new Alberta 7-9 draft (June 2026): opposite angles are congruent, adjacent angles are
+    // supplementary, corresponding angles are congruent; verify lines are parallel; solve problems.
+    7: { types: ["vert", "lin", "corr"], gens: ["chain", "parcheck", "pairs"], groups: [["Congruent (equal)", ["vert", "corr"]], ["Supplementary: add to 180°", ["lin"]]] },
   };
-  const g6 = () => grade === 6;
+  const g6 = () => grade === 4; // the complementary / supplementary grade (new Alberta K-6: Grade 4)
   const sumOf = t => TYPES[t].sum || 180;
-  const relName = T => (T.eq ? "Equal" : T.sum === 90 ? "Add to 90°" : "Add to 180°");
+  const relName = T => (T.eq ? "Congruent" : T.sum === 90 ? "Add to 90°" : "Add to 180°");
   let grade = 7;
   try { const g = +localStorage.getItem("mv-transversals-grade"); if (GRADES[g]) grade = g; } catch (e) {}
   const allowed = () => GRADES[grade].types;
@@ -661,7 +662,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     $("types").hidden = false; $("p1done").hidden = true; $("rels").hidden = false; $("p2done").hidden = true;
     $("types").innerHTML = allowed().map(x => `<button type="button" data-t="${x}">${typeLabel(x)}</button>`).join("");
     $("types").querySelectorAll("button").forEach(x => x.addEventListener("click", () => answerType(x.dataset.t)));
-    $("rels").innerHTML = `<button type="button" data-r="eq">Equal</button><button type="button" data-r="sup">Supplementary (add to 180°)</button>`;
+    $("rels").innerHTML = `<button type="button" data-r="eq">Congruent (equal)</button><button type="button" data-r="sup">Supplementary (add to 180°)</button>`;
     $("rels").querySelectorAll("button").forEach(x => x.addEventListener("click", () => answerRel(x.dataset.r === "eq")));
     $("p3in").value = ""; $("p3in").className = ""; $("p3work").innerHTML = "";
     $("pfb").innerHTML = ""; $("pnext").hidden = true; $("phelp").hidden = false;
@@ -726,7 +727,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
       if (pq.part !== 3) return;
       $("rels").hidden = true;
       const d = $("p2done"); d.hidden = false;
-      d.innerHTML = `<span class="${good ? "ok" : "no"}">${good ? "✓" : "✗"}</span> <span>${T.eq ? "Equal" : "Supplementary"}</span>`;
+      d.innerHTML = `<span class="${good ? "ok" : "no"}">${good ? "✓" : "✗"}</span> <span>${T.eq ? "Congruent" : "Supplementary"}</span>`;
       openP3();
     }, 900);
   }
@@ -949,10 +950,10 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     const vertical = qg + qx === 5;
     const g = meas(qg), x = meas(qx);
     const rows = [
-      { L: "∠1", R: g + "°", note: "Corresponding angles are equal (>> lines)." },
-      { L: "∠2", R: g + "°", note: "Corresponding angles are equal (> lines)." },
-      ...(vertical ? [{ L: "x", R: "∠2", note: "Vertically opposite angles are equal." }, { L: "", R: x + "°" }]
-        : [{ L: "x", R: `180° ${MINUS} ∠2`, note: "Angles in a linear pair add to 180°." }, { L: "", R: `180° ${MINUS} ${g}°` }, { L: "", R: x + "°" }]),
+      { L: "∠1", R: g + "°", note: "Corresponding angles are congruent (>> lines)." },
+      { L: "∠2", R: g + "°", note: "Corresponding angles are congruent (> lines)." },
+      ...(vertical ? [{ L: "x", R: "∠2", note: "Opposite angles are congruent (equal)." }, { L: "", R: x + "°" }]
+        : [{ L: "x", R: `180° ${MINUS} ∠2`, note: "Adjacent angles on a straight line add to 180°." }, { L: "", R: `180° ${MINUS} ${g}°` }, { L: "", R: x + "°" }]),
     ];
     const at = (i, j, qd, cls, r) => { const [d1, d2] = rays(qd); wedge(X(i, j), d1, d2, r, cls); return inAngle(X(i, j), d1, d2, meas(qd), r === 54 ? 120 : 76); };
     return {
@@ -977,15 +978,15 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   function genParCheck() {
     let theta; do { theta = rnd(55, 125); } while (Math.abs(theta - 90) < 10);
     const d = Math.random() < 0.5 ? 0 : pick([-1, 1]) * rnd(3, 7), par = d === 0;
-    const kind = pick(["corr", "altI", "coI"]), T = TYPES[kind];
+    const kind = "corr", T = TYPES[kind];
     const C = P(500, 330), Tu = dirDeg(theta), s = 160 / Math.sin(theta * D);
     const X0 = add(C, mul(Tu, s)), X1 = sub(C, mul(Tu, s)), Ld1 = dirDeg(d), R = P(1, 0), Lf = P(-1, 0);
     // Top angle: 2 (corr), 3 (altI) or 4 (coI). Bottom angle: 6, above the bottom line, right of the transversal.
     const top = { corr: [R, Tu, theta], altI: [Lf, neg(Tu), theta], coI: [R, neg(Tu), 180 - theta] }[kind];
     const m1 = top[2], m2 = theta - d;
     const rows = T.eq
-      ? [{ text: `These are ${T.name.toLowerCase()} angles. If the lines are parallel, they are equal.` },
-         { text: par ? `${m1}° = ${m2}°. They are equal.` : `${m1}° and ${m2}° are not equal.` },
+      ? [{ text: `These are ${T.name.toLowerCase()} angles. If the lines are parallel, they are congruent.` },
+         { text: par ? `${m1}° = ${m2}°. They are congruent.` : `${m1}° and ${m2}° are not equal.` },
          { text: par ? "So the lines are parallel." : "So the lines are not parallel." }]
       : [{ text: "These are co-interior angles. If the lines are parallel, they add to 180°." },
          { L: `${m1}° + ${m2}°`, R: (m1 + m2) + "°" },
@@ -1244,6 +1245,18 @@ window.I18N_PAGE = {
  "Transversals": "sécantes",
  "transversal": "sécante",
  "Learn": "Apprendre",
+ "Opposite": "Opposés",
+ "Adjacent": "Adjacents",
+ "Congruent": "Congrus",
+ "Congruent (equal)": "Congrus (égaux)",
+ "Opposite angles are congruent (equal).": "Les angles opposés sont congrus (égaux).",
+ "Corresponding angles are congruent (equal).": "Les angles correspondants sont congrus (égaux).",
+ "Adjacent angles on a straight line are supplementary.": "Les angles adjacents sur une droite sont supplémentaires.",
+ "Adjacent angles on a straight line add to 180°.": "La somme des angles adjacents sur une droite est 180°.",
+ "These are corresponding angles. If the lines are parallel, they are congruent.": "Ce sont des angles correspondants. Si les droites sont parallèles, ils sont congrus.",
+ "{n}° = {n}°. They are congruent.": "{n}° = {n}°. Ils sont congrus.",
+ "Corresponding angles are congruent (>> lines).": "Les angles correspondants sont congrus (droites >>).",
+ "Corresponding angles are congruent (> lines).": "Les angles correspondants sont congrus (droites >).",
  "Intersecting Lines and Parallels": "Droites sécantes et parallèles",
  "Intersecting Lines and {0}": "Droites sécantes et {0}",
  "Parallels": "parallèles",
