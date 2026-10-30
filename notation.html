@@ -147,7 +147,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 </style>
 <style>
 /* Geometry Notation Workbench (grade 7): segments, rays, lines, angles, triangles, polygons, ∥ and ⊥.
-   Learn: four short lessons, one idea per Next step.
+   Learn: one picture holds every object; tapping a definition card lights up its object.
    Name it: read a picture, write the notation (Level 1 buttons; Levels 2 and 3 mix buttons and typing).
    Build it: read a notation, draw it on a snap-to grid. Sandbox: draw anything, see its names.
    Rules kept everywhere: a ray's endpoint comes first, shared vertices need 3-letter angle names,
@@ -184,9 +184,13 @@ header h1 { font-size: clamp(1.4rem, 2.3vw, 2.3rem); }
 .big .bad { color: var(--warn); }
 .gap { display: inline-block; width: 0.6em; border-bottom: 0.08em solid var(--muted); margin: 0 0.05em; }
 .words { margin: 0; font-size: 1.35rem; line-height: 1.4; }
-.lessons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
-.lessons button { min-height: 52px; font-size: 1.05rem; background: var(--sheet); border: 2px solid var(--grid-major); text-align: left; }
-.lessons button[aria-pressed="true"] { border-color: var(--orange); color: var(--orange); background: color-mix(in srgb, var(--orange) 10%, var(--sheet)); }
+.defs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.defs button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 8px 12px; background: var(--sheet); border: 2px solid var(--grid-major); min-height: 0; }
+.defs button .nt { font-size: 1.9rem; color: var(--ink); }
+.defs button b { font-size: 1.05rem; }
+.defs button small { font-size: 0.9rem; font-weight: 400; color: var(--muted); line-height: 1.25; }
+.defs button[aria-pressed="true"] { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 10%, var(--sheet)); }
+.defs button[aria-pressed="true"] .nt { color: var(--orange); }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row button { min-height: 48px; padding: 6px 14px; font-size: 1.1rem; background: var(--sheet); border: 2px solid var(--grid-major); }
 .row button.go { background: var(--orange); border-color: var(--orange); color: #fff; }
@@ -245,6 +249,7 @@ header h1 { font-size: clamp(1.4rem, 2.3vw, 2.3rem); }
 .hi .objf { fill: var(--orange); }
 .poly.hi { fill: color-mix(in srgb, var(--orange) 14%, transparent); }
 .hi2 .obj { stroke: var(--pt); stroke-width: 6; }
+.poly.hi { stroke: var(--orange); stroke-width: 7; }
 .hi2 .objf { fill: var(--pt); }
 .faint .obj, .poly.faint { stroke: var(--grid-major); }
 .faint .objf { fill: var(--grid-major); }
@@ -299,17 +304,8 @@ svg.draw-on { cursor: crosshair; }
       </section>
 
       <div class="panel" id="pLearn">
-        <section class="card lessons" id="lessons"></section>
-        <section class="card read" aria-live="polite">
-          <p class="kind" id="lTitle"></p>
-          <div class="big" id="lNota"></div>
-          <p class="words" id="lText"></p>
-        </section>
-        <div class="row">
-          <button type="button" id="lBack">Back</button>
-          <button type="button" class="go" id="lNext">Next step</button>
-          <span class="count" id="lCount"></span>
-        </div>
+        <p class="draw">Tap a symbol to find it in the picture.</p>
+        <section class="defs" id="defs"></section>
       </div>
 
       <div class="panel" id="pName" hidden>
@@ -482,8 +478,10 @@ svg.draw-on { cursor: crosshair; }
   function extent(o, P) {
     const a = px(P[o.p[0]]), b = px(P[o.p[1]]), d = unit(sub(b, a));
     if (o.t === "seg") return [a, b, false, false];
-    if (o.t === "ray") return [a, add(a, mul(d, clipT(a, d))), false, true];
-    return [add(a, mul(d, -clipT(a, mul(d, -1)))), add(a, mul(d, clipT(a, d))), true, true];
+    // o.ext: stop the arrows a short way past the named points (the Learn picture), instead of at the board's edge.
+    const fwd = o.ext ? Math.hypot(...sub(b, a)) + o.ext : clipT(a, d), back = o.ext ? o.ext : clipT(a, mul(d, -1));
+    if (o.t === "ray") return [a, add(a, mul(d, fwd)), false, true];
+    return [add(a, mul(d, -back)), add(a, mul(d, fwd)), true, true];
   }
   function head(g, tip, d) {
     const L = 24, w = 11, b = sub(tip, mul(d, L));
@@ -600,105 +598,45 @@ svg.draw-on { cursor: crosshair; }
     }
   }
 
-  // ---------- Learn: four lessons, one idea per step ----------
-  const eqs = (s, w) => `<span class="eqs${w ? " w" : ""}">${s}</span>`;
-  const big = (...h) => h.join("");
+  // ---------- Learn: every object in one picture, a card for each symbol ----------
   const fig = (pts, objs = [], more = {}) => Object.assign({ pts, objs }, more);
-  const L1p = { A: [3, 7], B: [10, 3] }, L1r = { A: [3, 7], C: [9, 4] };
-  const L3a = { A: [7, 2], B: [3, 7], C: [11, 7] }, L3d = { A: [7, 2], B: [3, 7], C: [11, 7], D: [11, 4] };
-  const L3q = { A: [3, 3], B: [9, 2], C: [12, 7], D: [4, 8] };
-  const L4p = { A: [2, 3], B: [14, 1], C: [2, 7], D: [14, 5] }, L4n = { A: [2, 3], B: [14, 2], C: [2, 7], D: [14, 5] };
-  const L4x = { E: [3, 3], F: [11, 7], G: [5, 9], H: [9, 1] };
-  const dimPath = (a, b, y) => `M${px([a, y])[0]},${px([a, y])[1] - 12} v24 M${px([a, y])[0]},${px([a, y])[1]} H${px([b, y])[0]} M${px([b, y])[0]},${px([b, y])[1] - 12} v24`;
-  const LESSONS = [
-    { name: "1. Segments, rays, lines", steps: [
-      { title: "Line segment", nota: fmt(SEG("A", "B")), text: "A line segment has two endpoints, A and B. It stops at both ends.",
-        fig: fig(L1p, [], { hi: [SEG("A", "B")] }) },
-      { title: "Line segment", nota: big(fmt(SEG("A", "B")), eqs("="), fmt(SEG("B", "A"))), text: "Same two endpoints, same segment. You can name it AB or BA.",
-        fig: fig(L1p, [], { hi: [SEG("A", "B")] }) },
-      { title: "Ray", nota: fmt(RAY("A", "C")), text: "A ray has one endpoint, A. The arrow shows it goes on forever, through C.",
-        fig: fig(L1r, [], { hi: [RAY("A", "C")], hotPts: ["A"] }) },
-      { title: "Ray", nota: big(fmt(RAY("A", "C")), eqs("≠"), `<span style="color:var(--pt)">${fmt(RAY("C", "A"))}</span>`),
-        text: "Ray CA starts at C and goes the other way. It is a different ray. The endpoint letter always comes first.",
-        fig: fig(L1r, [Object.assign(RAY("A", "C"), { cls: "faint", off: -6 }), Object.assign(RAY("C", "A"), { cls: "hi2", off: 6 })], { hotPts: ["C"] }) },
-      { title: "Line", nota: big(fmt(LINE("D", "E")), eqs("="), fmt(LINE("E", "D"))), text: "A line goes on forever both ways: arrows on both ends. Name it with any two points on it.",
-        fig: fig({ D: [5, 7], E: [11, 4] }, [], { hi: [LINE("D", "E")] }) },
-      { title: "All three", nota: big(fmt(SEG("A", "B")), fmt(RAY("C", "D")), fmt(LINE("E", "F"))), text: "Bar: a segment stops at both ends. One arrow: a ray. Two arrows: a line.",
-        fig: fig({ A: [4, 2], B: [10, 2], C: [4, 5], D: [10, 5], E: [4, 8], F: [10, 8] }, [SEG("A", "B"), RAY("C", "D"), LINE("E", "F")]) },
-    ] },
-    { name: "2. Object or length", steps: [
-      { title: "The segment", nota: fmt(SEG("A", "B")), text: "With a bar on top, AB names the segment itself: the thing you can see.",
-        fig: fig({ A: [3, 5], B: [8, 5] }, [], { hi: [SEG("A", "B")] }) },
-      { title: "Its length", nota: big(nt("AB"), eqs("="), nt("5 cm")), text: "With no bar, AB means its length: a number. Each grid square is 1 cm.",
-        fig: fig({ A: [3, 5], B: [8, 5] }, [SEG("A", "B")], { extra: [{ k: "path", cls: "dim", d: dimPath(3, 8, 4) }, { k: "text", cls: "dimt", at: [px([5.5, 4])[0], px([5.5, 4])[1] - 14], text: "5 cm" }] }) },
-      { title: "Same length", nota: big(nt("AB"), eqs("="), nt("CD"), fmt(rel("cong", SEG("A", "B"), SEG("C", "D")))),
-        text: "AB and CD are both 5 cm, so AB = CD. Same length means the segments are congruent. Tick marks show it, and ≅ says it.",
-        fig: fig({ A: [3, 5], B: [8, 5], C: [12, 2], D: [12, 7] }, [SEG("A", "B"), SEG("C", "D")], { marks: [{ t: "tick", o: [0, 1], n: 1, fresh: true }] }) },
-      { title: "Remember", nota: big(fmt(SEG("A", "B")), eqs("a thing", 1), nt("AB"), eqs("a number", 1)), text: "Bar on top: the segment (a thing). No bar: its length (a number).",
-        fig: fig({ A: [3, 5], B: [8, 5] }, [], { hi: [SEG("A", "B")] }) },
-    ] },
-    { name: "3. Angles and polygons", steps: [
-      { title: "Naming an angle", nota: nt(sym("∠"), "A", `<span class="gap"></span>`, `<span class="gap"></span>`), text: "Start on one arm. Here: A.",
-        fig: fig(L3a, [RAY("B", "A"), RAY("B", "C")], { hotPts: ["A"] }) },
-      { title: "Naming an angle", nota: nt(sym("∠"), "AB", `<span class="gap"></span>`), text: "Next, the vertex B: the corner where the two arms meet. It always goes in the middle.",
-        fig: fig(L3a, [RAY("B", "A"), RAY("B", "C")], { hotPts: ["B"] }) },
-      { title: "Naming an angle", nota: fmt(sh("angle", "A", "B", "C")), text: "End on the other arm: C. This is angle ABC.",
-        fig: fig(L3a, [RAY("B", "A"), RAY("B", "C")], { hi: [sh("angle", "A", "B", "C")], hotPts: ["C"] }) },
-      { title: "Either way", nota: big(fmt(sh("angle", "A", "B", "C")), eqs("="), fmt(sh("angle", "C", "B", "A"))), text: "Backwards works too. The vertex B stays in the middle.",
-        fig: fig(L3a, [RAY("B", "A"), RAY("B", "C")], { hi: [sh("angle", "A", "B", "C")], hotPts: ["B"] }) },
-      { title: "Short name", nota: fmt(sh("angle1", "B")), text: "Only one angle is at B, so the short name ∠B is OK here.",
-        fig: fig(L3a, [RAY("B", "A"), RAY("B", "C")], { hi: [sh("angle", "A", "B", "C")], hotPts: ["B"] }) },
-      { title: "Shared vertex", nota: big(fmt(sh("angle", "A", "B", "D")), `<span style="color:var(--pt)">${fmt(sh("angle", "D", "B", "C"))}</span>`, `<span style="color:var(--green)">${fmt(sh("angle", "A", "B", "C"))}</span>`),
-        text: "Now 3 rays meet at B, so ∠B could mean 3 different angles. Use 3 letters, with B in the middle.",
-        fig: fig(L3d, [RAY("B", "A"), RAY("B", "C"), RAY("B", "D")], { arcs: [{ p: ["A", "B", "D"], r: 80 }, { p: ["D", "B", "C"], cls: "blue", r: 80 }, { p: ["A", "B", "C"], cls: "green", r: 130 }] }) },
-      { title: "Polygon", nota: nt("ABCD"), text: "Name a polygon by going around it, corner to corner: A, B, C, D. Start anywhere, either way: BCDA works too.",
-        fig: fig(L3q, [], { hi: [sh("poly", "A", "B", "C", "D")] }) },
-      { title: "Polygon", nota: `<span class="bad">${nt("ACBD")} ✗</span>`, text: "ACBD jumps across the middle. It is not a name for this shape.",
-        fig: fig(L3q, [Object.assign(sh("poly", "A", "B", "C", "D"), { cls: "faint" })], { extra: [{ k: "path", cls: "badpath", d: "M" + ["A", "C", "B", "D", "A"].map(n => px(L3q[n]).join(",")).join(" L") }] }) },
-      { title: "Triangle", nota: big(fmt(sh("tri", "A", "B", "C")), eqs("="), fmt(sh("tri", "B", "C", "A"))), text: "A triangle: write △ and its three corners, going around it.",
-        fig: fig({ A: [3, 8], B: [12, 8], C: [6, 2] }, [], { hi: [sh("tri", "A", "B", "C")] }) },
-    ] },
-    { name: "4. Parallel and perpendicular", steps: [
-      { title: "Looks parallel?", nota: big(fmt(LINE("A", "B")), eqs("?"), fmt(LINE("C", "D"))), text: "These lines look parallel. But looks are not proof. With no marks, we can’t say.",
-        fig: fig(L4p, [LINE("A", "B"), LINE("C", "D")]) },
-      { title: "Looks can trick you", nota: big(fmt(LINE("A", "B")), eqs("?"), fmt(LINE("C", "D"))), text: "These look parallel too, but they are not. They meet far off the page.",
-        fig: fig(L4n, [LINE("A", "B"), LINE("C", "D")]) },
-      { title: "Parallel marks", nota: fmt(rel("par", LINE("A", "B"), LINE("C", "D"))), text: "Matching arrow marks say the lines are parallel. Now we know.",
-        fig: fig(L4p, [LINE("A", "B"), LINE("C", "D")], { marks: [{ t: "par", o: [0, 1], n: 1, fresh: true }] }) },
-      { title: "Looks like a right angle?", nota: big(fmt(LINE("E", "F")), eqs("?"), fmt(LINE("G", "H"))), text: "It looks like a right angle. But looks are not proof.",
-        fig: fig(L4x, [LINE("E", "F"), LINE("G", "H")]) },
-      { title: "Right angle mark", nota: fmt(rel("perp", LINE("E", "F"), LINE("G", "H"))), text: "The small square marks a right angle (90°). Now we know the lines are perpendicular.",
-        fig: fig(L4x, [LINE("E", "F"), LINE("G", "H")], { marks: [{ t: "perp", o: [0, 1], fresh: true }] }) },
-      { title: "Remember", nota: big(nt(sym("∥")), eqs("arrow marks", 1), nt(sym("⊥")), eqs("square", 1)), text: "No mark, no claim. ∥ needs matching arrow marks. ⊥ needs the square.",
-        fig: fig(L4p, [LINE("A", "B"), LINE("C", "D")], { marks: [{ t: "par", o: [0, 1], n: 1 }] }) },
-    ] },
+  const X = s => Object.assign(s, { ext: 40 });
+  const LP = {
+    A: [1, 1], B: [4, 1], C: [6, 1], D: [9, 1], E: [11.5, 1], F: [14.5, 1],
+    G: [3, 3], H: [1, 5], J: [4.5, 5], K: [6, 5], L: [9, 5], M: [7.5, 3], P: [11, 3], Q: [14, 3], R: [15, 5], S: [11.5, 5],
+    T: [1.5, 7], U: [5.5, 7], V: [1.5, 9], W: [5.5, 9], X: [8, 8], Y: [12, 8], Z: [10, 6.5], N: [10, 9.3],
+  };
+  const LOBJ = [SEG("A", "B"), X(RAY("C", "D")), X(LINE("E", "F")), X(RAY("H", "G")), X(RAY("H", "J")), sh("poly", "K", "L", "M"), sh("poly", "P", "Q", "R", "S"),
+    X(LINE("T", "U")), X(LINE("V", "W")), X(LINE("X", "Y")), X(LINE("Z", "N"))];
+  const LMARKS = [{ t: "par", o: [7, 8], n: 1 }, { t: "perp", o: [9, 10] }];
+  // Each card: the symbol, its name, a one-line meaning, and which objects (by index) it lights up.
+  const DEFS = [
+    { s: SEG("A", "B"), name: "Line segment", def: "Two endpoints. It stops at both ends.", on: [0] },
+    { s: RAY("C", "D"), name: "Ray", def: "One endpoint, then on forever one way. The endpoint letter comes first.", on: [1] },
+    { s: LINE("E", "F"), name: "Line", def: "On forever both ways. Name it with any two points on it.", on: [2] },
+    { s: sh("angle", "G", "H", "J"), name: "Angle", def: "Two rays from one vertex. The vertex letter goes in the middle.", on: [3, 4], arc: ["G", "H", "J"] },
+    { s: sh("tri", "K", "L", "M"), name: "Triangle", def: "Three sides. Name its corners going around.", on: [5] },
+    { s: sh("poly", "P", "Q", "R", "S"), name: "Polygon", def: "Name the corners in order around it. No jumping across.", on: [6] },
+    { s: rel("par", LINE("T", "U"), LINE("V", "W")), name: "Parallel", def: "Never meet. Matching arrow marks show it.", on: [7, 8] },
+    { s: rel("perp", LINE("X", "Y"), LINE("Z", "N")), name: "Perpendicular", def: "Meet at a right angle (90°). The small square shows it.", on: [9, 10] },
   ];
-  let lesson = 0, step = 0;
-  function buildLessons() {
-    LESSONS.forEach((l, i) => {
+  let defSel = 0;
+  function buildDefs() {
+    DEFS.forEach((d, i) => {
       const b = document.createElement("button");
-      b.type = "button"; b.textContent = l.name; b.dataset.i = i;
-      b.addEventListener("click", () => { lesson = i; step = 0; showLearn(); });
-      $("lessons").appendChild(b);
+      b.type = "button"; b.dataset.i = i;
+      b.innerHTML = `${fmt(d.s)}<b>${d.name}</b><small>${d.def}</small>`;
+      b.addEventListener("click", () => { defSel = i; showLearn(); });
+      $("defs").appendChild(b);
     });
   }
   function showLearn() {
-    const L = LESSONS[lesson], s = L.steps[step];
-    document.querySelectorAll("#lessons button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === lesson));
-    $("lTitle").textContent = s.title;
-    $("lNota").innerHTML = s.nota;
-    $("lText").textContent = s.text;
-    $("lCount").textContent = `Step ${step + 1} of ${L.steps.length}`;
-    $("lBack").disabled = step === 0;
-    $("lNext").textContent = step === L.steps.length - 1 ? (lesson < LESSONS.length - 1 ? "Next lesson" : "Start over") : "Next step";
-    render(s.fig);
+    const d = DEFS[defSel];
+    document.querySelectorAll("#defs button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === defSel));
+    const objs = LOBJ.map((o, i) => Object.assign({}, o, { cls: d.on.includes(i) ? "hi" : "faint" }));
+    const hot = objs.filter(o => o.cls === "hi").flatMap(o => o.p);
+    render(fig(LP, objs, { marks: LMARKS, arcs: d.arc ? [{ p: d.arc }] : [], hotPts: hot }));
   }
-  $("lNext").addEventListener("click", () => {
-    if (step < LESSONS[lesson].steps.length - 1) step++;
-    else { lesson = (lesson + 1) % LESSONS.length; step = 0; }
-    showLearn();
-  });
-  $("lBack").addEventListener("click", () => { if (step > 0) { step--; showLearn(); } });
 
   // ---------- Random pictures ----------
   function randVec(lo, hi) {
@@ -750,7 +688,7 @@ svg.draw-on { cursor: crosshair; }
   // ---------- Name it ----------
   let level = 1, nq = null, nCount = 0;
   const score = { n: { right: 0, total: 0 }, b: { right: 0, total: 0 } };
-  const LVDESC = { 1: "One object at a time.", 2: "Points share lines and corners.", 3: "Busy pictures. No mark, no claim." };
+  const LVDESC = { 1: "One object, a clean picture.", 2: "Points share a line or a corner. Pick the right letters.", 3: "Busy pictures and marks. No mark, no claim." };
 
   // Each question: a picture and the orange target to name.
   function genName() {
@@ -1074,6 +1012,7 @@ svg.draw-on { cursor: crosshair; }
 
   // ---------- Build it and Sandbox: drawing on the grid ----------
   const TOOLS = [
+    ["move", "Move", `<path d="M17 2 V22 M7 12 H27 M17 2 L13 6 M17 2 L21 6 M17 22 L13 18 M17 22 L21 18 M7 12 L11 8 M7 12 L11 16 M27 12 L23 8 M27 12 L23 16"/>`],
     ["point", "Point", `<circle class="f" cx="17" cy="12" r="5"/>`],
     ["seg", "Segment", `<path d="M5 18 L29 6"/><circle class="f" cx="5" cy="18" r="3.5"/><circle class="f" cx="29" cy="6" r="3.5"/>`],
     ["ray", "Ray", `<path d="M5 18 L26 7.5"/><path class="f" d="M32 4.5 L23 5 L26.5 11.5 Z"/><circle class="f" cx="5" cy="18" r="3.5"/>`],
@@ -1086,6 +1025,7 @@ svg.draw-on { cursor: crosshair; }
     ["clear", "Clear", `<path d="M9 4 L25 20 M25 4 L9 20"/>`],
   ];
   const TOOLTIP = {
+    move: "Move: drag a point, or drag a line to slide it.",
     point: "Point: tap the grid to add a point.",
     seg: "Segment: tap one endpoint, then the other.",
     ray: "Ray: tap the endpoint first, then a point it goes through.",
@@ -1107,7 +1047,7 @@ svg.draw-on { cursor: crosshair; }
       b.addEventListener("click", () => {
         if (tab === "build" && btask.done && k !== "undo") return;
         if (k === "undo") { if (D.hist.length) Object.assign(D, JSON.parse(D.hist.pop())); }
-        else if (k === "clear") { D.hist.push(state()); D.objs = []; D.marks = []; for (const n in D.pts) if (!D.given.includes(n)) delete D.pts[n]; }
+        else if (k === "clear") { D.hist.push(state()); D.objs = D.objs.slice(0, D.preN || 0); D.marks = []; for (const n in D.pts) if (!D.given.includes(n)) delete D.pts[n]; }
         else tool = k;
         pend = []; selObj = []; changed();
       });
@@ -1163,10 +1103,44 @@ svg.draw-on { cursor: crosshair; }
     D.hist.push(state()); D.marks.push({ t: "perp", o: [i, j], fresh: true });
     return { text: "Marked perpendicular. The square shows a right angle." };
   }
+  // Move (Sandbox): drag a point, or drag a segment, ray or line to slide both its points. Marks that stop being true come off.
+  let drag = null;
+  function dropFalseMarks() {
+    const P = D.pts;
+    D.marks = D.marks.filter(m => {
+      const a = D.objs[m.o[0]], b = D.objs[m.o[1]];
+      const da = sub(P[a.p[1]], P[a.p[0]]), db = sub(P[b.p[1]], P[b.p[0]]);
+      if (m.t === "par") return cross(da, db) === 0 && !carrierEq(a, b, P);
+      const I = meet(a, b, P);
+      return dot(da, db) === 0 && I && onObj(a, I.t) && onObj(b, I.u);
+    });
+  }
+  function moveTo(g) {
+    const names = drag.names, delta = sub(g, drag.from);
+    const next = names.map(n => add(drag.orig[n], delta));
+    if (!next.every(inGrid)) return;
+    if (next.some((q, i) => Object.keys(D.pts).some(m => !names.includes(m) && D.pts[m][0] === q[0] && D.pts[m][1] === q[1]))) return;
+    names.forEach((n, i) => (D.pts[n] = next[i]));
+    if (D.objs.some(o => o.t === "angle" && col(D.pts[o.p[0]], D.pts[o.p[1]], D.pts[o.p[2]]))) names.forEach(n => (D.pts[n] = drag.last[n]));
+    drag.last = Object.fromEntries(names.map(n => [n, D.pts[n]]));
+    drawD();
+  }
+  svg.addEventListener("pointerup", () => { if (drag) { drag = null; dropFalseMarks(); changed(); } });
   svg.addEventListener("pointerdown", e => {
     if (tab !== "build" && tab !== "sand") return;
     if (tab === "build" && btask.done) return;
     const { raw, g } = gridAt(e);
+    if (tool === "move") {
+      const n = Object.keys(D.pts).find(k => Math.hypot(...sub(px(D.pts[k]), raw)) < 24);
+      const i = n ? -1 : objNear(raw);
+      if (!n && i < 0) return;
+      const names = n ? [n] : D.objs[i].p.slice();
+      D.hist.push(state());
+      drag = { names, from: g, orig: Object.fromEntries(names.map(k => [k, D.pts[k].slice()])) };
+      drag.last = drag.orig;
+      svg.setPointerCapture(e.pointerId);
+      return;
+    }
     if (tool === "par" || tool === "perp") {
       const i = objNear(raw);
       if (i < 0) { statusMsg = { text: "Tap right on a line, ray or segment.", bad: true }; drawD(); return; }
@@ -1206,16 +1180,17 @@ svg.draw-on { cursor: crosshair; }
     statusMsg = null; drawD();
   });
   svg.addEventListener("pointermove", e => {
+    if (drag) { moveTo(gridAt(e).g); return; }
     const old = svg.querySelector(".ghost"); if (old) old.remove();
-    if ((tab !== "build" && tab !== "sand") || tool === "par" || tool === "perp") return;
+    if ((tab !== "build" && tab !== "sand") || tool === "par" || tool === "perp" || tool === "move") return;
     const { g } = gridAt(e);
     if (inGrid(g)) { const p = px(g); el("circle", { class: "ghost", cx: p[0], cy: p[1], r: 9 }); }
   });
   svg.addEventListener("pointerleave", () => { const o = svg.querySelector(".ghost"); if (o) o.remove(); });
 
   // ---------- Build it tasks ----------
-  // Each task gives the points and a list of things to draw. Hidden ones (the lines under a ∥ or ⊥) are checked too.
-  const hide = s => Object.assign(s, { hidden: true });
+  // Each task is one thing to draw. Level 2 crowds the points onto shared lines and corners;
+  // Level 3 starts with lines already drawn, so the job is the right mark or the right order.
   function genBuild() {
     if (level === 1) {
       const kind = pick(["seg", "ray", "line", "angle", "tri"]);
@@ -1227,49 +1202,65 @@ svg.draw-on { cursor: crosshair; }
       return { pts: named(L, [...ps, decoy(ps)]), reqs: [sh(kind, L[0], L[1])] };
     }
     if (level === 2) {
-      const t = pick(["lineRay", "opposite", "shared", "segRay"]);
-      if (t === "shared") {
-        const L = letters(4), { v, ps } = anglePoints(3), [x, V, y, z] = L;
-        return { pts: named(L, [ps[0], v, ps[1], ps[2]]), reqs: [sh("angle", x, V, y), sh("angle", y, V, z)] };
+      if (Math.random() < 0.6) {
+        const L = letters(4), ps = threeOnLine(), [a, b, c] = L;
+        const off = tryMake(() => { const q = add(ps[1], randVec(3, 5)); return inner(q) && !col(ps[0], ps[2], q) && farApart([...ps, q], 3) ? q : null; });
+        return { pts: named(L, [...ps, off]), reqs: [pick([RAY(b, a), RAY(b, c), RAY(c, a), SEG(b, c), SEG(a, c), LINE(b, c), RAY(b, L[3])])] };
       }
-      const L = letters(4), ps = threeOnLine(), [a, b, c, d] = L;
-      const off = tryMake(() => { const q = add(ps[1], randVec(3, 5)); return inner(q) && !col(ps[0], ps[2], q) && farApart([...ps, q], 3) ? q : null; });
-      const pts = named(L, [...ps, off]);
-      if (t === "lineRay") return { pts, reqs: [LINE(a, c), RAY(b, d)] };
-      if (t === "opposite") return { pts, reqs: [RAY(b, a), RAY(b, c)] };
-      return { pts, reqs: [SEG(a, b), RAY(b, c)] };
+      const L = letters(4), { v, ps } = anglePoints(3), [x, V, y, z] = L;
+      return { pts: named(L, [ps[0], v, ps[1], ps[2]]), reqs: [pick([sh("angle", x, V, y), sh("angle", y, V, z), sh("angle", x, V, z), sh("angle", z, V, x)])] };
     }
-    const t = pick(["par", "perp", "quad", "triRay"]);
+    const t = pick(["par", "perp", "quad", "angle"]);
     if (t === "par") return tryMake(() => {
-      const L = letters(4), [A, B, C, Dn] = L, d = randVec(4, 7), off = randVec(3, 5);
-      if (angleBetween(d, off) < 50 || angleBetween(d, off) > 130) return null;
-      const pa = anyPt(), pb = add(pa, d), pc = add(pa, off), pd = add(pc, d);
-      if (![pb, pc, pd].every(inner)) return null;
-      return { pts: named(L, Math.random() < 0.5 ? [pa, pb, pc, pd] : [pa, pb, pd, pc]), reqs: [hide(LINE(A, B)), hide(LINE(C, Dn)), rel("par", LINE(A, B), LINE(C, Dn))] };
+      // Two parallel lines and one that only looks parallel.
+      const L = letters(6), [A, B, C, Dn, E, F] = L, d = pick([[4, 1], [4, -1], [5, 1], [5, -1], [4, 0]]), off = pick([[0, 3], [1, 3], [-1, 3]]);
+      const pa = [2 + rnd(3), 1 + rnd(2)], pb = add(pa, mul(d, 2)), pc = add(pa, off), pd = add(pc, mul(d, 2));
+      const pe = add(pc, off), pf = add(add(pe, mul(d, 2)), [0, pick([1, -1])]);
+      const ps = [pa, pb, pc, pd, pe, pf];
+      if (!ps.every(inner) || !farApart(ps, 2.5)) return null;
+      return { pts: named(L, ps), pre: [LINE(A, B), LINE(C, Dn), LINE(E, F)], reqs: [rel("par", LINE(A, B), LINE(C, Dn))] };
     });
     if (t === "perp") return tryMake(() => {
-      const L = letters(4), [A, B, C, Dn] = L, d = randVec(2.5, 4), I = [5 + rnd(7), 3 + rnd(5)], r = rot(d);
-      const ps = [sub(I, d), add(I, d), sub(I, r), add(I, mul(r, 1 + rnd(2)))];
-      if (!ps.every(inner) || !farApart(ps, 2.5)) return null;
-      return { pts: named(L, ps), reqs: [hide(LINE(A, B)), hide(LINE(C, Dn)), rel("perp", LINE(A, B), LINE(C, Dn))] };
+      // Two lines at a right angle and one that only looks like it.
+      const L = letters(6), [A, B, C, Dn, E, F] = L, d = pick([[2, 1], [2, -1], [1, 0], [3, 1], [3, -1]]), I = anyPt(), r = rot(d);
+      const k = Math.hypot(...d) < 2 ? 3 : Math.hypot(...d) < 3 ? 2 : 1, ps = [sub(I, mul(d, k)), add(I, mul(d, k)), sub(I, mul(r, k)), add(I, mul(r, k))];
+      const J = add(I, mul(d, pick([-2, -1, 1, 2]) * k)), r2 = add(r, pick([[1, 0], [-1, 0], [0, 1]])), pe = sub(J, r2), pf = add(J, r2);
+      const all = [...ps, pe, pf];
+      if (!all.every(inner) || !farApart(all, 2) || Math.abs(angleBetween(d, r2) - 90) < 5) return null;
+      return { pts: named(L, all), pre: [LINE(A, B), LINE(C, Dn), LINE(E, F)], reqs: [rel("perp", LINE(A, B), LINE(C, Dn))] };
     });
     if (t === "quad") return tryMake(() => {
+      // Four corners, letters not in reading order, so the name decides the path.
       const ps = [0, 1, 2, 3].map(k => { const a = (k * Math.PI) / 2 + (Math.random() - 0.5) * 0.9; return [Math.round(8 + Math.cos(a) * (4 + rnd(3))), Math.round(5 + Math.sin(a) * (3 + rnd(2)))]; });
       if (!ps.every(inner) || !farApart(ps, 3)) return null;
       for (let i = 0; i < 4; i++) if (cross(sub(ps[(i + 1) % 4], ps[i]), sub(ps[(i + 2) % 4], ps[(i + 1) % 4])) <= 0) return null;
-      const L = letters(4);
-      return { pts: named(L, ps), reqs: [sh("poly", ...L), SEG(L[0], L[2])] };
+      const L = letters(4).sort();
+      const around = pick([[L[0], L[2], L[1], L[3]], [L[0], L[1], L[3], L[2]], [L[0], L[1], L[2], L[3]]]);
+      return { pts: named(around, ps), reqs: [sh("poly", ...L)] };
     });
-    const L = letters(4), ps = triPoints();
-    return { pts: named(L, [...ps, decoy(ps)]), reqs: [sh("tri", L[0], L[1], L[2]), RAY(L[0], L[3])] };
+    // An angle at a crossing: two lines are drawn, so four angles share the vertex.
+    return tryMake(() => {
+      const L = letters(5), [A, B, C, Dn, E] = L, I = [6 + rnd(5), 4 + rnd(3)];
+      const d1 = pick([[3, 1], [2, 1], [3, -1], [2, -1], [3, 0]]), d2 = pick([[1, 3], [-1, 3], [1, 2], [-1, 2], [0, 3]]);
+      if (angleBetween(d1, d2) < 40 || angleBetween(d1, d2) > 140) return null;
+      const ps = [sub(I, d1), add(I, d1), sub(I, d2), add(I, d2), I].map((p, i) => i < 4 ? add(I, mul(sub(p, I), 2)) : p);
+      if (!ps.every(inner)) return null;
+      return { pts: named(L, ps), pre: [LINE(A, B), LINE(C, Dn)], reqs: [pick([sh("angle", A, E, C), sh("angle", C, E, B), sh("angle", B, E, Dn), sh("angle", Dn, E, A)])] };
+    });
   }
-  const TOOLFOR = { seg: "seg", ray: "ray", line: "line", angle: "angle", tri: "poly", poly: "poly", rel: "line" };
+  const TOOLFOR = { seg: "seg", ray: "ray", line: "line", angle: "angle", tri: "poly", poly: "poly", rel: "par" };
+  function startD(task) {
+    const d = freshD(task.pts);
+    d.objs = (task.pre || []).map(o => Object.assign({}, o));
+    d.preN = d.objs.length;
+    return d;
+  }
   function newBuild() {
     btask = Object.assign(genBuild(), { done: false, tries: 0, level });
-    btask.D = freshD(btask.pts);
-    D = btask.D; pend = []; selObj = [];
-    tool = TOOLFOR[btask.reqs[0].t];
-    $("bTarget").innerHTML = btask.reqs.filter(r => !r.hidden).map(fmt).join("");
+    btask.D = D = startD(btask); pend = []; selObj = [];
+    // Level 1 starts on the right tool. Levels 2 and 3 start on Point, so choosing the tool is part of the task.
+    tool = level === 1 ? TOOLFOR[btask.reqs[0].t] : "point";
+    $("bTarget").innerHTML = btask.reqs.map(fmt).join("");
     setFb("bFb", "", "");
     $("bScore").textContent = score.b.total ? `Score: ${score.b.right} of ${score.b.total}` : "";
     changed();
@@ -1337,7 +1328,7 @@ svg.draw-on { cursor: crosshair; }
   $("bShow").addEventListener("click", () => {
     if (btask.done) return;
     btask.done = true;
-    btask.D = D = freshD(btask.pts);
+    btask.D = D = startD(btask);
     for (const r of btask.reqs) {
       if (r.t === "rel") D.marks.push({ t: r.r, o: [lineIdx(r.a), lineIdx(r.b)], n: 1, fresh: true });
       else D.objs.push(sh(r.t === "tri" ? "poly" : r.t, ...r.p));
@@ -1392,12 +1383,13 @@ svg.draw-on { cursor: crosshair; }
     $("pLearn").hidden = t !== "learn"; $("pName").hidden = t !== "name"; $("pBuild").hidden = t !== "build"; $("pSand").hidden = t !== "sand";
     $("levelBox").hidden = !(t === "name" || t === "build");
     const drawing = t === "build" || t === "sand";
+    document.querySelector('#tools [data-tool="move"]').hidden = t !== "sand";
     $("tools").hidden = !drawing; $("status").hidden = !drawing;
     svg.classList.toggle("draw-on", drawing);
     pend = []; selObj = []; statusMsg = null;
     if (t === "learn") showLearn();
     if (t === "name") { if (!nq || nq.level !== level) newName(); else showName(); }
-    if (t === "build") { if (!btask || btask.level !== level) newBuild(); else { D = btask.D; tool = TOOLFOR[btask.reqs[0].t]; drawD(); } }
+    if (t === "build") { if (!btask || btask.level !== level) newBuild(); else { D = btask.D; tool = level === 1 ? TOOLFOR[btask.reqs[0].t] : "point"; drawD(); } }
     if (t === "sand") { sandD = sandD || freshD(); D = sandD; tool = "seg"; changed(); }
   }
   document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
@@ -1410,7 +1402,7 @@ svg.draw-on { cursor: crosshair; }
   }
   document.querySelectorAll(".lv button").forEach(b => b.addEventListener("click", () => setLevel(+b.dataset.lv)));
 
-  buildLessons();
+  buildDefs();
   buildTools();
   $("lvdesc").textContent = LVDESC[1];
   setTab("learn");
@@ -1696,7 +1688,21 @@ window.I18N_PAGE = {
  "Parallel": "Parallèles",
  "Perpendicular": "Perpendiculaires",
  "{0} and {1} look parallel. Mark them with ∥ to show it.": "{0} et {1} ont l’air parallèles. Marque-les avec ∥ pour le montrer.",
- "{0} and {1} look perpendicular. Mark them with ⊥ to show it.": "{0} et {1} ont l’air perpendiculaires. Marque-les avec ⊥ pour le montrer."
+ "{0} and {1} look perpendicular. Mark them with ⊥ to show it.": "{0} et {1} ont l’air perpendiculaires. Marque-les avec ⊥ pour le montrer.",
+ "Tap a symbol to find it in the picture.": "Touche un symbole pour le trouver dans l’image.",
+ "Two endpoints. It stops at both ends.": "Deux extrémités. Il s’arrête aux deux bouts.",
+ "One endpoint, then on forever one way. The endpoint letter comes first.": "Une extrémité, puis à l’infini dans un sens. La lettre de l’extrémité vient en premier.",
+ "On forever both ways. Name it with any two points on it.": "À l’infini dans les deux sens. Nomme-la avec deux de ses points.",
+ "Two rays from one vertex. The vertex letter goes in the middle.": "Deux demi-droites qui partent d’un sommet. La lettre du sommet va au milieu.",
+ "Three sides. Name its corners going around.": "Trois côtés. Nomme ses sommets en faisant le tour.",
+ "Name the corners in order around it. No jumping across.": "Nomme les sommets dans l’ordre autour. Pas de saut par le milieu.",
+ "Never meet. Matching arrow marks show it.": "Ne se rencontrent jamais. Des marques en flèche identiques le montrent.",
+ "Meet at a right angle (90°). The small square shows it.": "Se coupent à angle droit (90°). Le petit carré le montre.",
+ "One object, a clean picture.": "Un objet, une image simple.",
+ "Points share a line or a corner. Pick the right letters.": "Les points partagent une droite ou un coin. Choisis les bonnes lettres.",
+ "Busy pictures and marks. No mark, no claim.": "Images chargées et marques. Pas de marque, pas d’affirmation.",
+ "Move": "Déplacer",
+ "Move: drag a point, or drag a line to slide it.": "Déplacer : fais glisser un point, ou une droite pour la déplacer.",
 };
 </script>
 <script>
