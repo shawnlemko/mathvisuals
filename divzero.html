@@ -164,25 +164,34 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 @media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
 .side { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
 .stage > .side { overflow: hidden; }
-.msg { margin: 0; min-height: 4.05em; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; line-height: 1.35; text-align: center; text-wrap: balance; }
+.msg { margin: 0; min-height: 2.7em; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; line-height: 1.35; text-align: center; text-wrap: balance; }
 .msg.good { color: var(--green); }
 .msg.zero { color: var(--warn); }
-.side svg { display: block; width: 100%; flex: 1 1 auto; min-height: 220px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.side svg { display: block; width: 100%; min-height: 220px; touch-action: none; user-select: none; -webkit-user-select: none; }
 @media (max-width: 860px) { .side svg { height: 56vh; } }
 
-.read { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px dashed var(--grid-major); }
+/* Bucket on the left of the card, the counts in a column beside it. */
+.body { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; }
+.body svg { flex: 1 1 auto; min-width: 0; }
+.read { flex: none; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding-left: 14px; border-left: 1px dashed var(--grid-major); }
+@media (max-width: 860px) { .body { flex-direction: column; } .read { flex-direction: row; justify-content: space-around; border-left: 0; padding: 10px 0 0; border-top: 1px dashed var(--grid-major); } }
 .stat { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .stat .label { margin: 0; }
 .stat b { font-family: var(--font-num); font-size: 2.6rem; line-height: 1.1; }
 .stat b small { font-size: 0.55em; color: var(--muted); }
 .stat b.pulse { animation: pulse 0.35s ease; }
 @keyframes pulse { 40% { transform: scale(1.25); } }
-.eq { justify-content: center; gap: 12px; font-size: 2.4rem; font-weight: 700; }
-.eq .frac > span:first-child { border-bottom-width: 3px; }
-.eq .ans { min-width: 1.4em; text-align: center; }
-.eq .ans.q { color: var(--muted); }
-.eq .ans.undef { color: var(--warn); font-family: var(--font-display); font-size: 1.5rem; }
-.more { position: absolute; right: 16px; top: calc(4.05em * 1.2 + 24px); min-height: 46px; padding: 8px 18px; }
+/* The question, big at the top of each bucket: 8 over 2 = ? */
+.ask { display: flex; justify-content: center; align-items: center; gap: 18px; padding: 8px 16px; background: var(--chip); border: 3px solid var(--grid-major); border-radius: 14px;
+  font-family: var(--font-num); font-size: 3rem; font-weight: 700; line-height: 1.05; }
+.ask .frac > span:first-child { border-bottom-width: 5px; padding-bottom: 4px; }
+.ask .frac > span:last-child { padding-top: 4px; }
+.ask .ans { min-width: 1.2em; text-align: center; }
+.ask .ans.q { color: var(--pt); }
+.ask .ans.undef { color: var(--warn); font-family: var(--font-display); font-size: 0.6em; }
+.ask.good { border-color: var(--green); }
+.ask.zero { border-color: var(--warn); }
+.more { min-height: 46px; padding: 8px 14px; }
 
 /* Bucket drawing */
 .bucket { fill: var(--sheet); stroke: var(--ink); stroke-width: 5; stroke-linejoin: round; }
@@ -275,12 +284,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     read.innerHTML =
       '<div class="stat"><p class="label">Blocks added</p><b class="cnt">0</b></div>' +
       '<div class="stat"><p class="label">Amount in bucket</p><b class="amt"></b></div>' +
-      '<div class="eq"><span class="frac"><span class="top"></span><span class="bot"></span></span><span>=</span><span class="ans q">?</span></div>';
-    root.append(p, svg, read);
+      '';
+    const ask = document.createElement("div");
+    ask.className = "ask";
+    ask.innerHTML = '<span class="frac"><span class="top"></span><span class="bot"></span></span><span>=</span><span class="ans q">?</span>';
+    const body = document.createElement("div");
+    body.className = "body";
+    body.append(svg, read);
+    root.append(ask, p, body);
+    s.read = read;
+    s.ask = ask;
     s.msg = p; s.svg = svg;
-    s.cnt = read.querySelector(".cnt"); s.amt = read.querySelector(".amt"); s.ans = read.querySelector(".ans");
-    read.querySelector(".top").textContent = V;
-    read.querySelector(".bot").textContent = zero ? 0 : D;
+    s.cnt = read.querySelector(".cnt"); s.amt = read.querySelector(".amt"); s.ans = ask.querySelector(".ans");
+    ask.querySelector(".top").textContent = V;
+    ask.querySelector(".bot").textContent = zero ? 0 : D;
 
     const id = "clip" + (zero ? "R" : "L");
     const clip = el("clipPath", { id }, el("defs", {}, svg));
@@ -316,7 +333,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       s.more.textContent = "Add 100 zeros";
       s.more.hidden = true;
       s.more.addEventListener("click", () => { s.n += 100; puff(s, 0.5); show(s, true); });
-      root.appendChild(s.more);
+      s.read.appendChild(s.more);
     }
     show(s);
     return s;
@@ -410,6 +427,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       s.more.hidden = !done;
       s.ans.className = "ans " + (done ? "undef" : "q");
       s.ans.textContent = done ? "undefined" : "?";
+      s.ask.className = "ask" + (done ? " zero" : "");
       if (done) say(s, `Still empty! Zeros add nothing. No number of 0s makes ${V}, so ${V} over 0 is undefined.`, "zero");
       else if (s.n) say(s, `${s.n} ${s.n === 1 ? "zero" : "zeros"} so far, and the bucket is still empty. Keep going!`);
       else say(s, `How many 0s fill a bucket of ${V}?`);
@@ -418,6 +436,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       s.pail.parentNode.classList.toggle("full", f);
       s.ans.className = "ans" + (f ? "" : " q");
       s.ans.textContent = f ? V / D : "?";
+      s.ask.className = "ask" + (f ? " good" : "");
       if (f) say(s, `Full! It took ${s.n} of the ${D}s, so ${V} over ${D} is ${V / D}.`, "good");
       else say(s, `How many ${D}s fill a bucket of ${V}?`);
     }
