@@ -266,6 +266,8 @@ header h1 { font-size: clamp(1.4rem, 2.3vw, 2.3rem); }
 .dot.hi, .dot.pend { fill: var(--orange); }
 .ring { fill: none; stroke: var(--orange); stroke-width: 3; }
 .ptname { font-family: var(--font-body); font-weight: 800; font-size: 32px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; pointer-events: none; }
+.lcname { font-family: var(--font-display); font-weight: 800; font-style: italic; font-size: 32px; fill: var(--muted); text-anchor: middle; dominant-baseline: central; }
+.lcname.hi { fill: var(--orange); }
 .ptname.hi { fill: var(--orange); font-size: 40px; }
 .dim { stroke: var(--green); stroke-width: 3; fill: none; }
 .dimt { font-family: var(--font-num); font-weight: 700; font-size: 30px; fill: var(--green); text-anchor: middle; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; }
@@ -419,9 +421,11 @@ svg.draw-on { cursor: crosshair; }
     if (!a || !b) return false;
     const q = n => P[n];
     if (a.t === "tri" || a.t === "poly") return (b.t === "tri" || b.t === "poly") && cyc(a.p, b.p);
+    // Grade 7 (Alberta): a segment may be written with a bar or as plain letters, AB.
+    if (a.t === "len") a = SEG(...a.p); if (b.t === "len") b = SEG(...b.p);
     if (a.t !== b.t) return false;
     switch (a.t) {
-      case "seg": case "len": return setEq(a.p, b.p);
+      case "seg": return setEq(a.p, b.p);
       case "ray": return a.p[0] === b.p[0] && col(q(a.p[0]), q(a.p[1]), q(b.p[1])) && dot(sub(q(a.p[1]), q(a.p[0])), sub(q(b.p[1]), q(b.p[0]))) > 0;
       case "line": return carrierEq(a, b, P);
       case "angle": {
@@ -611,9 +615,9 @@ svg.draw-on { cursor: crosshair; }
   const LMARKS = [{ t: "par", o: [7, 8], n: 1 }, { t: "perp", o: [9, 10] }];
   // Each card: the symbol, its name, a one-line meaning, and which objects (by index) it lights up.
   const DEFS = [
-    { s: SEG("A", "B"), name: "Line segment", def: "Two endpoints. It stops at both ends.", on: [0] },
+    { s: SEG("A", "B"), name: "Line segment", def: "Two endpoints. It stops at both ends. Write it with a bar, or just AB.", on: [0] },
     { s: RAY("C", "D"), name: "Ray", def: "One endpoint, then on forever one way. The endpoint letter comes first.", on: [1] },
-    { s: LINE("E", "F"), name: "Line", def: "On forever both ways. Name it with any two points on it.", on: [2] },
+    { s: LINE("E", "F"), name: "Line", def: "On forever both ways. Name it with two points on it, or one small letter: line m.", on: [2] },
     { s: sh("angle", "G", "H", "J"), name: "Angle", def: "Two rays from one vertex. The vertex letter goes in the middle.", on: [3, 4], arc: ["G", "H", "J"] },
     { s: sh("tri", "K", "L", "M"), name: "Triangle", def: "Three sides. Name its corners going around.", on: [5] },
     { s: sh("poly", "P", "Q", "R", "S"), name: "Polygon", def: "Name the corners in order around it. No jumping across.", on: [6] },
@@ -635,7 +639,7 @@ svg.draw-on { cursor: crosshair; }
     document.querySelectorAll("#defs button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === defSel));
     const objs = LOBJ.map((o, i) => Object.assign({}, o, { cls: d.on.includes(i) ? "hi" : "faint" }));
     const hot = objs.filter(o => o.cls === "hi").flatMap(o => o.p);
-    render(fig(LP, objs, { marks: LMARKS, arcs: d.arc ? [{ p: d.arc }] : [], hotPts: hot }));
+    render(fig(LP, objs, { marks: LMARKS, arcs: d.arc ? [{ p: d.arc }] : [], hotPts: hot, extra: [{ k: "text", cls: "lcname" + (defSel === 2 ? " hi" : ""), at: px([13, 0.35]), text: "m" }] }));
   }
 
   // ---------- Random pictures ----------
@@ -757,7 +761,7 @@ svg.draw-on { cursor: crosshair; }
       if (angleBetween(u, w) < 50 || angleBetween(u, w) > 130) return null;
       const pa = anyPt(), pb = add(pa, u), pc = add(pb, w), pd = add(pa, w);
       if (![pb, pc, pd].every(inner)) return null;
-      const mk = pick(["tick", "par"]);
+      const mk = "par";
       const f = fig(named(L, [pa, pb, pc, pd]), [SEG(A, B), SEG(B, C), SEG(C, Dn), SEG(Dn, A), SEG(A, C)], { marks: [{ t: mk, o: [0, 2], n: 1 }] });
       const t = pick(["poly", "poly", "rel", "angle", "seg"]);
       if (t === "poly") return { fig: f, tgt: sh("poly", ...L) };
@@ -768,7 +772,7 @@ svg.draw-on { cursor: crosshair; }
   }
 
   const lettersOf = s => !s || s.t === "cant" ? [] : s.t === "rel" ? [...lettersOf(s.a), ...lettersOf(s.b)] : s.p;
-  const KIND = { seg: "seg", len: "len", ray: "ray", line: "line", angle: "angle", angle1: "angle", tri: "tri", plain: "plain", poly: "poly", rel: "rel", cant: "cant" };
+  const KIND = { seg: "seg", len: "seg", ray: "ray", line: "line", angle: "angle", angle1: "angle", tri: "tri", plain: "plain", poly: "poly", rel: "rel", cant: "cant" };
   const OK = { ok: true };
   const no = msg => ({ ok: false, msg });
 
@@ -831,7 +835,7 @@ svg.draw-on { cursor: crosshair; }
   function mistakes(tgt, f) {
     const [a, b, c, d] = tgt.p || [];
     switch (tgt.t) {
-      case "seg": return [sh("len", a, b), RAY(a, b), RAY(b, a), LINE(a, b)];
+      case "seg": return [RAY(a, b), RAY(b, a), LINE(a, b)];
       case "ray": return [RAY(b, a), SEG(a, b), LINE(a, b), sh("len", a, b)];
       case "line": return [SEG(a, b), RAY(a, b), RAY(b, a)];
       case "angle": {
@@ -844,8 +848,8 @@ svg.draw-on { cursor: crosshair; }
       }
       case "tri": return [sh("angle", a, b, c), sh("plain", a, b, c), sh("angle", b, c, a)];
       case "poly": return [sh("poly", a, c, b, d), sh("poly", a, b, d, c), sh("tri", a, b, c)];
-      case "rel": return [...["par", "perp", "cong"].filter(r => r !== tgt.r).map(r => rel(r, tgt.a, tgt.b)), { t: "cant" }];
-      case "cant": { const l = tgt.look; return [l, rel(l.r === "par" ? "perp" : "par", l.a, l.b), rel("cong", SEG(...l.a.p), SEG(...l.b.p))]; }
+      case "rel": return [...["par", "perp"].filter(r => r !== tgt.r).map(r => rel(r, tgt.a, tgt.b)), { t: "cant" }, rel(tgt.r, LINE(tgt.a.p[0], tgt.b.p[0]), LINE(tgt.a.p[1], tgt.b.p[1]))];
+      case "cant": { const l = tgt.look; return [l, rel(l.r === "par" ? "perp" : "par", l.a, l.b), rel(l.r, LINE(l.a.p[0], l.b.p[0]), LINE(l.a.p[1], l.b.p[1]))]; }
     }
     return [];
   }
@@ -952,7 +956,7 @@ svg.draw-on { cursor: crosshair; }
       };
       const bx = `<span class="box"></span>`;
       addKey("bar", nt(ov(bx, "sg")), "", "segment bar"); addKey("ray", nt(ov(bx, "ray")), "", "ray arrow"); addKey("line", nt(ov(bx, "line")), "", "line arrow");
-      addKey("∠", sym("∠")); addKey("△", sym("△")); addKey("∥", sym("∥")); addKey("⊥", sym("⊥")); addKey("≅", sym("≅"));
+      addKey("∠", sym("∠")); addKey("△", sym("△")); addKey("∥", sym("∥")); addKey("⊥", sym("⊥"));
       addKey("back", "⌫", "", "delete"); addKey("clear", "Clear", "small", "Clear");
       Object.keys(q.fig.pts).sort().forEach(l => addKey(l, l, "letter"));
       if (t.t === "rel" || t.t === "cant") addKey("cant", "Can’t tell", "cantk", "Can’t tell");
@@ -998,7 +1002,7 @@ svg.draw-on { cursor: crosshair; }
     angle: "Write ∠ and three letters: a point on one arm, the vertex, then a point on the other arm.",
     tri: "Write △ and the three corners.",
     poly: "Go around the shape, corner to corner, without jumping across.",
-    rel: "Look at the marks. Arrow marks mean ∥. A square means ⊥. Tick marks mean ≅. No marks: we can’t be sure.",
+    rel: "Look at the marks. Arrow marks mean ∥. A square means ⊥. No marks: we can’t be sure.",
   };
   $("nHint").addEventListener("click", () => { if (!nq.done) setFb("nFb", HINT[nq.tgt.t === "cant" ? "rel" : nq.tgt.t], ""); });
   $("nShow").addEventListener("click", () => {
@@ -1637,7 +1641,7 @@ window.I18N_PAGE = {
  "Write ∠ and three letters: a point on one arm, the vertex, then a point on the other arm.": "Écris ∠ et trois lettres : un point sur un côté, le sommet, puis un point sur l’autre côté.",
  "Write △ and the three corners.": "Écris △ et les trois sommets.",
  "Go around the shape, corner to corner, without jumping across.": "Fais le tour de la figure, de coin en coin, sans sauter par le milieu.",
- "Look at the marks. Arrow marks mean ∥. A square means ⊥. Tick marks mean ≅. No marks: we can’t be sure.": "Regarde les marques. Des marques en flèche : ∥. Un carré : ⊥. De petits traits : ≅. Pas de marques : on ne peut pas être sûr.",
+ "Look at the marks. Arrow marks mean ∥. A square means ⊥. No marks: we can’t be sure.": "Regarde les marques. Des marques en flèche : ∥. Un carré : ⊥. Pas de marques : on ne peut pas être sûr.",
 
  // Build it and Sandbox
  "Point": "Point",
@@ -1703,6 +1707,8 @@ window.I18N_PAGE = {
  "Busy pictures and marks. No mark, no claim.": "Images chargées et marques. Pas de marque, pas d’affirmation.",
  "Move": "Déplacer",
  "Move: drag a point, or drag a line to slide it.": "Déplacer : fais glisser un point, ou une droite pour la déplacer.",
+ "Two endpoints. It stops at both ends. Write it with a bar, or just AB.": "Deux extrémités. Il s’arrête aux deux bouts. Écris-le avec une barre, ou simplement AB.",
+ "On forever both ways. Name it with two points on it, or one small letter: line m.": "À l’infini dans les deux sens. Nomme-la avec deux de ses points, ou une lettre minuscule : la droite m."
 };
 </script>
 <script>
