@@ -163,6 +163,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 header { align-items: end; }
 #dup { display: inline-flex; align-items: center; gap: 10px; font-size: 1.3rem; min-height: 56px; padding: 10px 20px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 #dup span { font-size: 1.8rem; line-height: 1; }
+/* Select many (for tablets, where there is no Shift key): each tap adds or removes a tile; drag moves them all. */
+.tools { display: flex; gap: 12px; }
+#many { display: inline-flex; align-items: center; gap: 10px; font-size: 1.3rem; min-height: 56px; padding: 10px 20px; touch-action: manipulation; }
+#many span { font-size: 1.6rem; line-height: 1; }
+#many[aria-pressed="true"] { background: var(--orange); border-color: var(--orange); color: var(--sheet); }
 #dup:hover { background: var(--sheet); color: var(--pt); }
 #dup:disabled { opacity: 0.4; cursor: default; background: var(--pt); color: var(--sheet); }
 .ghost { fill: none; stroke: var(--pt); stroke-width: 3; stroke-dasharray: 10 7; pointer-events: none; }
@@ -179,7 +184,8 @@ header { align-items: end; }
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Fraction Strips</h1></div>
-    <button id="dup" type="button" disabled aria-label="Duplicate selected tiles"><span aria-hidden="true">⧉</span>Duplicate</button>
+    <div class="tools"><button id="many" type="button" aria-pressed="false"><span aria-hidden="true">☑</span>Select many</button>
+    <button id="dup" type="button" disabled aria-label="Duplicate selected tiles"><span aria-hidden="true">⧉</span>Duplicate</button></div>
   </header>
   <div class="board"><svg id="svg" role="application" aria-label="Fraction strips workspace. Drag tiles from the tray on the right."></svg></div>
 </div>
@@ -249,6 +255,9 @@ header { align-items: end; }
   const tiles = []; // { g, k, x, y, w, sel }
   const place = t => t.g.setAttribute("transform", `translate(${t.x},${t.y})`);
   const dupBtn = document.getElementById("dup");
+  const manyBtn = document.getElementById("many");
+  let pickMany = false;
+  manyBtn.addEventListener("click", () => { pickMany = !pickMany; manyBtn.setAttribute("aria-pressed", String(pickMany)); }); 
   const syncDup = () => { dupBtn.disabled = !tiles.some(t => t.sel); };
   const setSel = (t, on) => { t.sel = on; t.g.classList.toggle("sel", on); syncDup(); };
   const clearSel = () => tiles.forEach(t => setSel(t, false));
@@ -326,7 +335,7 @@ header { align-items: end; }
     e.preventDefault();
     const p = toSvg(e);
     const g = e.target.closest(".tile");
-    let group;
+    let group, unpick = null;
     if (g && g.dataset.kind !== undefined) {
       // Pull a fresh copy off the tray; the tray tile stays put.
       clearSel();
@@ -335,15 +344,21 @@ header { align-items: end; }
     } else if (g && g.__tile) {
       const t = g.__tile;
       if (e.shiftKey) { setSel(t, !t.sel); return; }
-      if (!t.sel) { clearSel(); }
-      group = t.sel ? tiles.filter(x => x.sel) : [t];
+      if (pickMany) {
+        // Tap adds the tile; a tap (no drag) on a chosen tile takes it out again.
+        if (t.sel) unpick = t; else setSel(t, true);
+        group = tiles.filter(x => x.sel);
+      } else {
+        if (!t.sel) { clearSel(); }
+        group = t.sel ? tiles.filter(x => x.sel) : [t];
+      }
     }
     svg.setPointerCapture(e.pointerId);
     if (group) {
       group.forEach(t => { wsLayer.appendChild(t.g); t.g.classList.add("lift"); });
-      drag = { kind: "move", id: e.pointerId, group, start: p, origin: group.map(t => [t.x, t.y]), moved: false, fromTray: !!(g && g.dataset.kind !== undefined) };
+      drag = { kind: "move", id: e.pointerId, group, unpick, start: p, origin: group.map(t => [t.x, t.y]), moved: false, fromTray: !!(g && g.dataset.kind !== undefined) };
     } else {
-      if (!e.shiftKey) clearSel();
+      if (!e.shiftKey && !pickMany) clearSel();
       drag = { kind: "box", id: e.pointerId, start: p, rect: el("rect", { class: "marquee", x: p.x, y: p.y, width: 0, height: 0 }, fx) };
     }
   });
@@ -374,6 +389,7 @@ header { align-items: end; }
     showGhosts(group, null);
     trash.classList.remove("hot");
     group.forEach(t => t.g.classList.remove("lift"));
+    if (drag.unpick && !drag.moved) setSel(drag.unpick, false);
     if (drag.fromTray && !drag.moved) { group.forEach(removeTile); drag = null; drawMatches(); return; }
     if (e.type === "pointercancel") {
       group.forEach((t, i) => { t.x = drag.origin[i][0]; t.y = drag.origin[i][1]; place(t); });
@@ -521,6 +537,8 @@ window.I18N_PAGE = {
  "Duplicate selected tiles": "Dupliquer les tuiles choisies",
  "{0}Duplicate": "{0}Dupliquer",
  "Duplicate": "Dupliquer",
+ "{0}Select many": "{0}Choisir plusieurs",
+ "Select many": "Choisir plusieurs",
  "Fraction strips workspace. Drag tiles from the tray on the right.": "Espace de travail des bandes de fractions. Glisse des tuiles du plateau à droite.",
  "1 whole": "1 entier",
  "Trash": "Corbeille"

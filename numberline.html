@@ -212,9 +212,9 @@ svg.dragging, svg.dragging #slider { cursor: grabbing; }
   <section class="card entry-card">
     <div class="entry">
       <div class="fin" role="group" aria-label="Fraction">
-        <input id="n" type="number" inputmode="numeric" min="0" max="60" aria-label="Numerator">
+        <input id="n" data-pad data-step type="text" inputmode="numeric" min="0" max="60" aria-label="Numerator">
         <span class="bar"></span>
-        <input id="d" type="number" inputmode="numeric" min="1" max="20" aria-label="Denominator">
+        <input id="d" data-pad data-step type="text" inputmode="numeric" min="1" max="20" aria-label="Denominator">
       </div>
       <div class="equals" id="eq" aria-live="polite"></div>
       <div class="side">
@@ -418,6 +418,178 @@ svg.dragging, svg.dragging #slider { cursor: grabbing; }
   document.querySelectorAll("#len button").forEach(b => b.addEventListener("click", () => { len = +b.dataset.len; render(); }));
   $("reset").addEventListener("click", () => { $("n").value = 1; $("d").value = 5; len = 1; render(); });
   $("reset").click();
+})();
+</script>
+<script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
 })();
 </script>
 
