@@ -1,0 +1,1393 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>How AI Guesses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* How AI Guesses (grades 7-10, Stats/Probability). A simulation, no real AI: built-in examples show what a
+   language model and a picture guesser do with probability.
+   Learning walks five parts with Next step / Back:
+     1 Count it yourself: tallies of the word after "slice of" in 10 sentences become chances (5/10, 3/10, 2/10).
+     2 Roll the next word: a spinner sized by the chances builds "My ___ ___ a slice of ___." one word at a time.
+     3 Creativity dial: a 0 (Safe) to 2 (Wild) slider reshapes the chances (count to the power 1/dial, shared out).
+     4 Fair data: tap he / she / they in 10 "The doctor said ..." sentences and watch the guess change.
+     5 Picture guesser: clue toggles give points; each point doubles an animal's score; chance = score over total.
+       The mystery photo gives fox 128/145 (88%), and it is really a cat.
+   Practice: mixed questions with Check, Show me and Next question; fractions in two stacked boxes, any equivalent
+   fraction accepted. */
+:root { --c-orange: #c2571a; --c-blue: #2f5fd0; --c-purple: #8650c8; --c-green: #1f7a5a; --c-teal: #0e7c86; --c-pink: #c23a7a; --c-brown: #8a6a2a; --fur-o: #e8873a; --fur-g: #a3abb4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-orange: #f08a4b; --c-blue: #7aa2ff; --c-purple: #b38cf0; --c-green: #4cc49a; --c-teal: #4cc3cc; --c-pink: #f07ab0; --c-brown: #d2b070; --fur-o: #e8873a; --fur-g: #8d96a0; } }
+:root[data-theme="dark"] { --c-orange: #f08a4b; --c-blue: #7aa2ff; --c-purple: #b38cf0; --c-green: #4cc49a; --c-teal: #4cc3cc; --c-pink: #f07ab0; --c-brown: #d2b070; --fur-o: #e8873a; --fur-g: #8d96a0; }
+.main { grid-template-columns: minmax(0, 1.6fr) minmax(330px, 1fr); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg-btns button { border: 0; border-radius: 0; background: var(--sheet); color: var(--ink); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; cursor: pointer; }
+.seg-btns button + button { border-left: 2px solid var(--grid-major); }
+.seg-btns button.on { background: var(--pt); color: var(--sheet); }
+.parts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
+.parts button { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 2px; min-height: 54px; font-size: 0.85rem; line-height: 1.15;
+  background: var(--sheet); color: var(--muted); border: 2px solid var(--grid-major); border-radius: 10px; cursor: pointer; }
+.parts button b { font-family: var(--font-num); font-size: 1.25rem; color: var(--ink); }
+.parts button.on { border-color: var(--pt); background: var(--pt); color: var(--sheet); }
+.parts button.on b { color: var(--sheet); }
+.parts button.done b::after { content: " ✓"; color: var(--green); font-size: 0.9rem; }
+.parts button.on.done b::after { color: var(--sheet); }
+.ptitle { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; margin: 0 0 6px; }
+.say { font-size: 1.2rem; margin: 0 0 12px; line-height: 1.45; }
+.say b { color: var(--pt); }
+.ctrls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.ctrls:empty { display: none; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btns button, .nav button { font-size: 1.1rem; min-height: 50px; padding: 8px 16px; cursor: pointer; }
+button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-weight: 700; }
+button:disabled { opacity: 0.45; cursor: default; }
+.nav { display: flex; align-items: center; gap: 10px; border-top: 1px dashed var(--grid-major); padding-top: 12px; }
+.nav .go { margin-left: auto; }
+.nav span { color: var(--muted); font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 1.05rem; background: var(--sheet); color: var(--ink); border: 2px solid var(--grid-major); padding: 6px 12px; cursor: pointer; }
+.chips button.on { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--sheet)); }
+.chips button.on::before { content: "✓"; color: var(--green); font-weight: 800; }
+.chips button:not(.on)::before { content: "○"; color: var(--muted); }
+.chips.lock button { cursor: default; }
+.dial { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.dial input { width: 100%; accent-color: var(--pt); height: 34px; }
+.dial span { font-weight: 700; color: var(--muted); }
+.picks { display: flex; flex-wrap: wrap; gap: 6px; min-height: 2em; }
+.picks span { font-weight: 700; padding: 2px 10px; border-radius: 999px; border: 2px solid currentColor; font-size: 1.05rem; }
+.mathtbl { display: grid; grid-template-columns: auto auto auto auto; gap: 0 18px; justify-content: start; align-items: center; font-family: var(--font-num); font-size: 1.15rem; }
+.mathtbl .k { font-family: var(--font-body); font-weight: 700; color: var(--muted); font-size: 0.8rem; line-height: 1.2; }
+.mathtbl .frac { font-size: 0.95rem; line-height: 1.05; }
+.note { color: var(--muted); margin: 0; font-size: 0.95rem; }
+.toggle { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; font-weight: 700; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--pt); }
+.learned { margin: 0; padding-left: 1.3em; font-size: 1.1rem; }
+.learned li + li { margin-top: 4px; }
+.got { font-weight: 700; color: var(--green); }
+/* Practice */
+.q { font-size: 1.3rem; font-weight: 700; margin: 0 0 12px; line-height: 1.4; }
+.q .w { font-family: var(--font-display); font-weight: 800; }
+.ans { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.fin { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; }
+.fin .ln { width: 86px; height: 3px; background: var(--ink); border-radius: 2px; }
+.ans input { font-family: var(--font-num); font-weight: 700; font-size: 1.8rem; width: 3.4ch; height: 58px; text-align: center; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 10px; }
+.ans input.wide { width: 4.4ch; }
+.ans .unit { font-size: 1.2rem; color: var(--muted); font-weight: 700; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.choices button { font-size: 1.15rem; min-height: 52px; padding: 6px 16px; background: var(--sheet); color: var(--ink); border: 2px solid var(--grid-major); cursor: pointer; }
+.choices button.right { border-color: var(--green); background: color-mix(in srgb, var(--green) 20%, var(--sheet)); }
+.choices button.wrong { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--sheet)); }
+.fb { margin: 6px 0 0; font-size: 1.15rem; font-weight: 700; min-height: 1.5em; }
+.fb.ok { color: var(--green); } .fb.no { color: var(--warn); }
+.work { font-size: 1.15rem; margin-top: 6px; }
+.work .eqs { display: grid; grid-template-columns: auto auto auto; gap: 8px 10px; align-items: center; justify-content: start; font-family: var(--font-num); font-size: 1.3rem; }
+.work .eqs .nm { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); font-weight: 700; padding-left: 10px; }
+.score { margin: 10px 0 0; color: var(--muted); }
+.score b { color: var(--ink); font-family: var(--font-num); font-size: 1.3rem; }
+/* Board */
+#svg { user-select: none; }
+.sent { font-family: var(--font-body); font-size: 27px; fill: var(--ink); }
+.sent .so { font-weight: 700; }
+.sent .nw { font-weight: 700; }
+.cap { font-family: var(--font-display); font-weight: 800; font-size: 26px; fill: var(--muted); }
+.tw { font-family: var(--font-display); font-weight: 800; font-size: 34px; }
+.big { font-family: var(--font-num); font-weight: 700; font-size: 36px; fill: var(--ink); }
+.fr { font-family: var(--font-num); font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.barbg { fill: var(--chip); }
+.prompt { font-family: var(--font-display); font-weight: 800; font-size: 38px; fill: var(--ink); text-anchor: middle; }
+.blank { fill: var(--muted); }
+.wl { font-family: var(--font-display); font-weight: 800; font-size: 25px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.hist { font-family: var(--font-body); font-size: 23px; fill: var(--ink); }
+.pron { cursor: pointer; }
+.pron:focus-visible rect { stroke-width: 6; }
+.pron text { font-family: var(--font-display); font-weight: 800; font-size: 25px; text-anchor: middle; dominant-baseline: central; }
+.pct { font-family: var(--font-num); font-weight: 700; font-size: 25px; fill: var(--ink); text-anchor: middle; }
+.guess { fill: color-mix(in srgb, var(--pt) 10%, var(--sheet)); stroke: var(--pt); stroke-width: 3; }
+.ink { stroke: var(--ink); stroke-width: 3; }
+.lbl { font-family: var(--font-display); font-weight: 800; font-size: 30px; text-anchor: middle; dominant-baseline: central; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>How AI Guesses</h1></div>
+    <div class="tools">
+      <div class="seg-btns" role="group" aria-label="Mode" id="modes">
+        <button type="button" data-mode="learn" class="on">Learning</button><button type="button" data-mode="practice">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1000 700" role="img" aria-label="How AI guesses"></svg></div>
+
+    <div class="panel">
+      <section class="card" id="learnCard">
+        <div class="parts" id="parts" role="group" aria-label="Parts"></div>
+        <p class="ptitle" id="ptitle"></p>
+        <p class="say" id="say" aria-live="polite"></p>
+        <div class="ctrls" id="ctrls"></div>
+        <div class="nav">
+          <button type="button" id="back">Back</button>
+          <span id="stepnum"></span>
+          <button type="button" class="go" id="next">Next step</button>
+        </div>
+      </section>
+
+      <section class="card" id="pracCard" hidden>
+        <p class="q" id="pq"></p>
+        <div id="pans"></div>
+        <div class="btns">
+          <button type="button" class="go" id="pcheck">Check</button>
+          <button type="button" id="pshow">Show me</button>
+          <button type="button" id="pnext">Next question</button>
+        </div>
+        <p class="fb" id="pfb" aria-live="polite"></p>
+        <div class="work" id="pwork"></div>
+        <p class="score">Correct: <b id="pright">0</b> of <b id="ptried">0</b></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const svg = $("svg");
+  const COLS = ["var(--c-orange)", "var(--c-blue)", "var(--c-purple)", "var(--c-green)", "var(--c-teal)", "var(--c-pink)", "var(--c-brown)"];
+  const tint = (c, p = 28) => `color-mix(in srgb, ${c} ${p}%, var(--sheet))`;
+  const pct = p => (p > 0 && p < 0.005 ? "<1%" : Math.round(p * 100) + "%");
+  const hf = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const rnd = n => Math.floor(Math.random() * n);
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pickW = ws => { let r = Math.random() * ws.reduce((s, w) => s + w, 0); for (let i = 0; i < ws.length; i++) { r -= ws[i]; if (r < 0) return i; } return ws.length - 1; };
+
+  // ---------- SVG helpers ----------
+  function sfrac(cx, cy, n, d, size, col) {
+    const w = Math.max(String(n).length, String(d).length) * size * 0.62 + 12;
+    return `<text class="fr" x="${cx}" y="${cy - size * 0.6}" style="fill:${col};font-size:${size}px">${n}</text>` +
+      `<line x1="${cx - w / 2}" x2="${cx + w / 2}" y1="${cy}" y2="${cy}" style="stroke:${col}" stroke-width="3"/>` +
+      `<text class="fr" x="${cx}" y="${cy + size * 0.62}" style="fill:${col};font-size:${size}px">${d}</text>`;
+  }
+  function tally(x, y, n, col) {
+    let s = "";
+    for (let i = 0; i < n; i++) {
+      const g = Math.floor(i / 5), k = i % 5, gx = x + g * 92;
+      if (k < 4) s += `<line x1="${gx + k * 15}" x2="${gx + k * 15}" y1="${y}" y2="${y + 44}" style="stroke:${col}" stroke-width="5" stroke-linecap="round"/>`;
+      else s += `<line x1="${gx - 8}" x2="${gx + 53}" y1="${y + 36}" y2="${y + 8}" style="stroke:${col}" stroke-width="5" stroke-linecap="round"/>`;
+    }
+    return s;
+  }
+  // A table of words: tally marks, count or fraction, and a bar.
+  function table(rows, o) {
+    const total = rows.reduce((s, r) => s + r.n, 0);
+    let s = "";
+    rows.forEach((r, i) => {
+      const y = o.y + i * o.rowH;
+      s += `<g opacity="${o.hi != null && o.hi !== i ? 0.4 : 1}">`;
+      s += `<text class="tw" x="${o.x}" y="${y + 34}" style="fill:${r.col}">${r.w}</text>`;
+      if (o.tally) s += tally(o.x + 4, y + 50, r.n, r.col);
+      if (o.frac) s += sfrac(o.x + o.w - 34, y + 62, r.n, total, 32, r.col);
+      else if (o.count) s += `<text class="big" x="${o.x + o.w - 34}" y="${y + 86}" text-anchor="middle" style="fill:${r.col}">${r.n}</text>`;
+      if (o.bar) {
+        const bw = o.w - 90;
+        s += `<rect class="barbg" x="${o.x}" y="${y + 106}" width="${bw}" height="22" rx="6"/>`;
+        s += `<rect x="${o.x}" y="${y + 106}" width="${bw * r.n / total}" height="22" rx="6" style="fill:${r.col}"/>`;
+      }
+      s += `</g>`;
+    });
+    return s;
+  }
+  function wedge(cx, cy, r, a0, a1) {
+    const p = a => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    const [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `M${cx} ${cy}L${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z`;
+  }
+  function spinner(cx, cy, r, rows, hi) {
+    const total = rows.reduce((s, x) => s + x.n, 0);
+    let s = "", cum = 0;
+    rows.forEach((w, i) => {
+      const a0 = -Math.PI / 2 + 2 * Math.PI * cum / total; cum += w.n;
+      const a1 = -Math.PI / 2 + 2 * Math.PI * cum / total, am = (a0 + a1) / 2;
+      s += `<path d="${wedge(cx, cy, r, a0, a1)}" style="fill:${tint(w.col, hi === i ? 60 : 30)};stroke:${hi === i ? w.col : "var(--ink)"}" stroke-width="${hi === i ? 7 : 3}"/>`;
+      const lx = cx + r * 0.64 * Math.cos(am), ly = cy + r * 0.64 * Math.sin(am);
+      s += `<text class="wl" x="${lx}" y="${ly - 26}">${w.w}</text>` + sfrac(lx, ly + 22, w.n, total, 21, "var(--ink)");
+    });
+    return s;
+  }
+  const needle = (cx, cy, r, deg) =>
+    `<g id="needle" transform="rotate(${deg} ${cx} ${cy})"><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r + 26}" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>` +
+    `<path d="M${cx - 16} ${cy - r + 40}L${cx} ${cy - r + 8}L${cx + 16} ${cy - r + 40}Z" fill="var(--ink)"/><circle cx="${cx}" cy="${cy}" r="16" fill="var(--ink)"/></g>`;
+  // Which wedge an angle (degrees, clockwise from the top) lands in, and a random angle inside wedge i.
+  function angleIn(rows, i) {
+    const total = rows.reduce((s, x) => s + x.n, 0);
+    let cum = 0; for (let k = 0; k < i; k++) cum += rows[k].n;
+    return 360 * (cum + rows[i].n * (0.2 + 0.6 * Math.random())) / total;
+  }
+
+  // ---------- Animal picture (part 5 and practice) ----------
+  const CLUES = [
+    { k: "ears", name: "Pointy ears" }, { k: "whisk", name: "Whiskers" }, { k: "snout", name: "Long snout" },
+    { k: "bushy", name: "Bushy tail" }, { k: "orange", name: "Orange fur" }];
+  const ANIMALS = [{ w: "cat", col: "var(--c-blue)" }, { w: "dog", col: "var(--c-green)" }, { w: "fox", col: "var(--c-orange)" }];
+  function points(f) {
+    const p = [0, 0, 0]; // cat, dog, fox
+    if (f.ears) { p[0] += 1; p[2] += 1; } else p[1] += 2;
+    if (f.whisk) { p[0] += 2; p[2] += 1; }
+    if (f.snout) { p[1] += 1; p[2] += 1; } else p[0] += 1;
+    if (f.bushy) p[2] += 3;
+    if (f.orange) p[2] += 2;
+    return p;
+  }
+  function chances(f) {
+    const pts = points(f), sc = pts.map(p => 2 ** p), tot = sc.reduce((a, b) => a + b, 0);
+    return { pts, sc, tot, p: sc.map(x => x / tot) };
+  }
+  function animal(f) {
+    const fur = f.orange ? "var(--fur-o)" : "var(--fur-g)", ink = "var(--ink)";
+    let s = `<g transform="translate(-40,0)">`;
+    // tail
+    if (f.bushy) s += `<ellipse cx="105" cy="330" rx="40" ry="92" transform="rotate(-18 105 330)" fill="${fur}" stroke="${ink}" stroke-width="3"/><ellipse cx="86" cy="252" rx="22" ry="26" fill="#fff" stroke="${ink}" stroke-width="3"/>`;
+    else s += `<path d="M125 410 Q70 340 105 260" fill="none" stroke="${ink}" stroke-width="20" stroke-linecap="round"/><path d="M125 410 Q70 340 105 260" fill="none" stroke="${fur}" stroke-width="13" stroke-linecap="round"/>`;
+    // legs and body
+    for (const x of [165, 205, 295, 335]) s += `<rect x="${x}" y="455" width="28" height="105" rx="10" fill="${fur}" stroke="${ink}" stroke-width="3"/>`;
+    s += `<ellipse cx="255" cy="430" rx="145" ry="78" fill="${fur}" stroke="${ink}" stroke-width="3"/>`;
+    // head
+    if (!f.ears) s += `<ellipse cx="398" cy="318" rx="24" ry="58" transform="rotate(14 398 318)" fill="${fur}" stroke="${ink}" stroke-width="3" style="filter:brightness(0.8)"/>`;
+    if (f.ears) s += `<path d="M362 290L372 212L410 272Z M412 270L448 206L458 282Z" fill="${fur}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`;
+    s += `<circle cx="410" cy="330" r="68" fill="${fur}" stroke="${ink}" stroke-width="3"/>`;
+    if (!f.ears) s += `<ellipse cx="378" cy="322" rx="22" ry="54" transform="rotate(14 378 322)" fill="${fur}" stroke="${ink}" stroke-width="3" style="filter:brightness(0.8)"/>`;
+    let nx = 474, ny = 340;
+    if (f.snout) { s += `<ellipse cx="490" cy="352" rx="58" ry="27" fill="${fur}" stroke="${ink}" stroke-width="3"/>`; nx = 542; ny = 346; }
+    s += `<circle cx="${nx}" cy="${ny}" r="10" fill="${ink}"/><circle cx="432" cy="312" r="9" fill="${ink}"/>`;
+    s += `<path d="M${nx - 8} ${ny + 14} q-12 14 -26 4" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+    if (f.whisk) for (const [dx, dy] of [[52, -14], [56, 4], [50, 22]]) s += `<line x1="${nx - 14}" y1="${ny + 6}" x2="${nx - 14 + dx}" y2="${ny + 6 + dy}" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
+    s += `</g><line x1="20" x2="560" y1="562" y2="562" stroke="var(--grid-major)" stroke-width="4"/>`;
+    return s;
+  }
+  function animalBars(c, o = {}) {
+    let s = `<text class="cap" x="785" y="70" text-anchor="middle">${o.title || "AI's guess"}</text>`;
+    ANIMALS.forEach((a, i) => {
+      const y = 130 + i * 160;
+      s += `<text class="tw" x="600" y="${y + 34}" style="fill:${a.col}">${a.w}</text>`;
+      if (o.hide) { s += `<text class="big" x="975" y="${y + 36}" text-anchor="end">?</text><rect class="barbg" x="600" y="${y + 58}" width="375" height="34" rx="8"/>`; return; }
+      s += `<text class="big" x="975" y="${y + 36}" text-anchor="end" style="font-size:40px">${pct(c.p[i])}</text>`;
+      s += `<rect class="barbg" x="600" y="${y + 58}" width="375" height="34" rx="8"/><rect x="600" y="${y + 58}" width="${375 * c.p[i]}" height="34" rx="8" style="fill:${a.col}"/>`;
+      if (o.real === i) s += `<text x="600" y="${y + 128}" class="lbl" text-anchor="start" style="fill:var(--green);text-anchor:start">✓ the real animal</text>`;
+      if (o.wrong === i) s += `<text x="600" y="${y + 128}" class="lbl" style="fill:var(--warn);text-anchor:start">✗ AI's guess, wrong!</text>`;
+    });
+    return s;
+  }
+
+  // ---------- Data ----------
+  const P1 = [
+    ["I ate a ", "pizza", "."], ["Can I have a ", "cake", "?"], ["She cut a ", "bread", "."], ["He wants a ", "pizza", "."],
+    ["We shared a ", "pizza", "."], ["A ", "cake", " is sweet."], ["Toast a ", "bread", "."], ["Save me a ", "pizza", "!"],
+    ["One ", "cake", ", please."], ["Grab a ", "pizza", "."]];
+  const P1W = [{ w: "pizza", col: COLS[0] }, { w: "cake", col: COLS[2] }, { w: "bread", col: COLS[1] }];
+  const SLOTS = [
+    { lead: "My ___", rows: [{ w: "cat", n: 5 }, { w: "dog", n: 3 }, { w: "robot", n: 2 }] },
+    { lead: "My cat ___", rows: [{ w: "ate", n: 4 }, { w: "found", n: 4 }, { w: "painted", n: 2 }] },
+    { lead: "a slice of ___", rows: [{ w: "pizza", n: 5 }, { w: "cake", n: 3 }, { w: "bread", n: 2 }] }];
+  SLOTS.forEach(sl => sl.rows.forEach((r, i) => (r.col = [COLS[0], COLS[2], COLS[1]][i])));
+  const DIAL = [["pizza", 40], ["cake", 25], ["bread", 15], ["cheese", 10], ["toast", 6], ["pie", 3], ["sock", 1]].map(([w, n], i) => ({ w, n, col: COLS[i] }));
+  const PRON = ["he", "she", "they"], PCOL = { he: "var(--c-teal)", she: "var(--c-purple)", they: "var(--c-orange)" };
+  const ENDS = ["was busy.", "would call back.", "was on the phone.", "was running late.", "needed a coffee.", "was tired.", "was ready.", "had a plan.", "was happy.", "would help."];
+  const UNFAIR = ["he", "he", "he", "she", "he", "he", "they", "he", "he", "he"];
+  const FAIR = ["he", "she", "they", "she", "he", "she", "they", "he", "she", "he"];
+  const MYSTERY = { ears: true, whisk: true, snout: false, bushy: true, orange: true };
+
+  function dialChances(rows, c) {
+    if (c <= 0) { const m = Math.max(...rows.map(r => r.n)); const k = rows.findIndex(r => r.n === m); return rows.map((_, i) => (i === k ? 1 : 0)); }
+    const w = rows.map(r => r.n ** (1 / c)), t = w.reduce((a, b) => a + b, 0);
+    return w.map(x => x / t);
+  }
+  const dialName = c => (c === 0 ? "Safe" : c < 0.75 ? "Careful" : c <= 1.25 ? "Normal" : c < 1.75 ? "Creative" : "Wild");
+
+  // ---------- State ----------
+  const S = {
+    mode: "learn", part: 0, step: 0, seen: [false, false, false, false, false],
+    counted: 0,
+    spin: { deg: 0, slot: 0, words: [], hist: [], busy: false, hi: null, solo: null },
+    dial: 1, picks: [],
+    pron: UNFAIR.slice(),
+    clue: { ears: true, whisk: true, snout: false, bushy: false, orange: false }, saw: { dog: false, fox: false }, math: false
+  };
+
+  const PARTS = [
+    { short: "Count", title: "Count it yourself", steps: [
+      "AI learns by reading tons of sentences. Here are 10 of them. Look at the word that comes after <b>slice of</b>.",
+      "Count the words like AI does. Tap <b>Count next</b> to tally one sentence at a time.",
+      "Turn the counts into chances. Each count is out of all 10 sentences.",
+      "AI sees <b>a slice of ___</b>. Pizza has the biggest chance, 5 out of 10. AI doesn't know what pizza is. It just counted!"] },
+    { short: "Spin", title: "Roll the next word", steps: [
+      "AI doesn't always pick the top word. It spins! A bigger chance gets a bigger piece of the spinner. Tap <b>Spin</b>.",
+      "Now build a whole sentence. AI picks one word at a time. Tap <b>Spin</b> for each blank.",
+      "Make more sentences. Same chances, different sentences! That's why AI can answer the same question in different ways."] },
+    { short: "Dial", title: "Creativity dial", steps: [
+      "AI has a creativity dial. At <b>1 (Normal)</b> it uses the chances it counted. The dashed boxes show those chances.",
+      "Turn it down to <b>0 (Safe)</b>. The top word gets all of the chance. AI always says the same thing: safe, but boring.",
+      "Turn it up to <b>2 (Wild)</b>. Rare words get a bigger chance. AI gets creative... or silly. A slice of sock?",
+      "Your turn. Pick a setting and tap <b>Pick 10 words</b>. Which setting would you use for a story? For a math answer?"] },
+    { short: "Fair", title: "Fair data", steps: [
+      "This AI read only these 10 sentences about doctors. Look at the word after <b>said</b>.",
+      "Ask the AI to finish <b>The doctor said ___</b>. It picks <b>he</b> 8 out of 10 times. But doctors can be anyone! The data wasn't fair.",
+      "Fix the data. Tap a word in a sentence to change it: he, she, they. Watch the chances change.",
+      "AI is only as fair as the data it learns from. People have to check the data."] },
+    { short: "Pictures", title: "Picture guesser", steps: [
+      "AI can guess pictures too. It looks for clues and gives each animal a chance. Turn the clues on and off.",
+      "Challenge: change the clues until AI guesses <b>dog</b>. Then make it guess <b>fox</b>.",
+      "Mystery photo! AI found these clues in a new photo. What does AI guess? How sure is it?",
+      "It was a cat! A fluffy orange cat. AI was 88% sure and still wrong. A big chance does not mean a right answer.",
+      "What we learned:"] }];
+
+  // ---------- Learning: drawing ----------
+  function drawP1() {
+    const st = S.step, n = st === 0 ? 0 : st === 1 ? S.counted : 10;
+    let s = "";
+    P1.forEach(([pre, w, post], i) => {
+      const col = P1W.find(x => x.w === w).col, on = i < n;
+      s += `<text class="sent" x="30" y="${66 + i * 60}">${pre}<tspan class="so">slice of</tspan> <tspan class="nw" style="fill:${on ? col : "var(--ink)"}${on ? ";text-decoration:underline" : ""}">${w}</tspan>${post}</text>`;
+      if (st === 1 && i === n) s += `<path d="M10 ${56 + i * 60}l14 -9v18z" fill="var(--pt)"/>`;
+    });
+    s += `<line x1="585" x2="585" y1="20" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
+    s += `<text class="cap" x="790" y="40" text-anchor="middle">Word after “slice of”</text>`;
+    const rows = P1W.map(x => ({ ...x, n: P1.slice(0, n).filter(p => p[1] === x.w).length }));
+    s += table(rows, { x: 610, y: 66, w: 370, rowH: 160, tally: true, count: st >= 1, frac: st >= 2, bar: st >= 2 });
+    if (st >= 2) s += `<text class="cap" x="790" y="${66 + 3 * 160 - 6}" text-anchor="middle" style="font-size:22px">out of 10 sentences</text>`;
+    if (st === 3) {
+      s += `<rect class="guess" x="605" y="572" width="380" height="104" rx="14"/>`;
+      s += `<text class="cap" x="795" y="606" text-anchor="middle" style="font-size:22px;fill:var(--pt)">AI's best guess</text>`;
+      s += `<text class="prompt" x="795" y="655" style="font-size:34px">slice of <tspan style="fill:${COLS[0]}">pizza</tspan></text>`;
+    }
+    return s;
+  }
+  function sentenceSVG() {
+    const sp = S.spin, w = i => sp.words[i];
+    const part = (i) => {
+      const cur = sp.slot === i && !sp.busy && sp.words.length === i;
+      if (w(i) != null) { const r = SLOTS[i].rows[w(i)]; return `<tspan style="fill:${r.col}">${r.w}</tspan>`; }
+      return `<tspan class="blank" style="${cur ? "fill:var(--pt)" : ""}">___</tspan>`;
+    };
+    if (S.step === 0) return `<text class="prompt" x="500" y="66">a slice of ${part(2)}</text>`;
+    return `<text class="prompt" x="500" y="66">My ${part(0)} ${part(1)} a slice of ${part(2)}.</text>`;
+  }
+  const SP = { cx: 290, cy: 410, r: 215 };
+  function curSlot() { return S.step === 0 ? 2 : Math.min(S.spin.words.length, 2); }
+  function drawP2() {
+    const sl = curSlot(), rows = SLOTS[sl].rows;
+    let s = sentenceSVG();
+    s += `<text class="cap" x="${SP.cx}" y="160" text-anchor="middle">Next word after “${SLOTS[sl].lead.replace(" ___", "")}”</text>`;
+    s += spinner(SP.cx, SP.cy, SP.r, rows, S.spin.hi) + needle(SP.cx, SP.cy, SP.r, S.spin.deg);
+    if (S.step >= 1) {
+      s += `<line x1="575" x2="575" y1="120" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
+      s += `<text class="cap" x="600" y="160">Sentences AI made</text>`;
+      S.spin.hist.slice(-9).forEach((h, i) => (s += `<text class="hist" x="600" y="${210 + i * 52}">${h}</text>`));
+      if (!S.spin.hist.length) s += `<text class="hist" x="600" y="210" style="fill:var(--muted)">(none yet)</text>`;
+    }
+    return s;
+  }
+  function drawDial(rows, c, lead, o = {}) {
+    const p = dialChances(rows, c), base = dialChances(rows, 1);
+    const n = rows.length, slot = 900 / n, bw = slot * 0.62, y0 = 580, H = 400;
+    let s = `<text class="prompt" x="50" y="66" style="text-anchor:start">${lead}</text>`;
+    if (!o.hideDial) s += `<text class="prompt" x="960" y="66" style="text-anchor:end;font-size:32px">Creativity <tspan style="fill:var(--pt)">${c.toFixed(1)}</tspan> <tspan style="fill:var(--muted);font-size:26px">${dialName(c)}</tspan></text>`;
+    rows.forEach((r, i) => {
+      const x = 50 + i * slot + (slot - bw) / 2;
+      s += `<rect x="${x}" y="${y0 - H * p[i]}" width="${bw}" height="${H * p[i]}" rx="6" style="fill:${r.col}"/>`;
+      if (!o.noBase) s += `<rect x="${x}" y="${y0 - H * base[i]}" width="${bw}" height="${H * base[i]}" fill="none" stroke="var(--ink)" stroke-width="3" stroke-dasharray="9 7"/>`;
+      s += `<text class="pct" x="${x + bw / 2}" y="${y0 - H * Math.max(p[i], o.noBase ? 0 : base[i]) - 12}">${pct(p[i])}</text>`;
+      s += `<text class="wl" x="${x + bw / 2}" y="${y0 + 32}" style="fill:${r.col}">${r.w}</text>`;
+    });
+    s += `<line x1="40" x2="960" y1="${y0}" y2="${y0}" stroke="var(--ink)" stroke-width="3"/>`;
+    if (!o.noBase) s += `<rect x="250" y="652" width="34" height="24" fill="none" stroke="var(--ink)" stroke-width="3" stroke-dasharray="7 5"/><text class="hist" x="294" y="672" style="font-size:21px">counted chance</text>` +
+      `<rect x="530" y="652" width="34" height="24" fill="var(--muted)"/><text class="hist" x="574" y="672" style="font-size:21px">chance with this dial</text>`;
+    return s;
+  }
+  function drawP4() {
+    let s = `<text class="cap" x="30" y="40" style="font-size:22px">Tap a word to change it</text>`;
+    S.pron.forEach((p, i) => {
+      const y = 92 + i * 59, col = PCOL[p];
+      s += `<text class="sent" x="30" y="${y}" style="font-size:25px">The doctor said</text>`;
+      s += `<g class="pron" data-i="${i}" role="button" tabindex="0" aria-label="Change ${p}"><rect x="222" y="${y - 32}" width="82" height="44" rx="12" style="fill:${tint(col, 25)};stroke:${col}" stroke-width="3"/><text x="263" y="${y - 10}" style="fill:${col}">${p}</text></g>`;
+      s += `<text class="sent" x="316" y="${y}" style="font-size:25px">${ENDS[i]}</text>`;
+    });
+    s += `<line x1="585" x2="585" y1="20" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
+    s += `<text class="cap" x="790" y="40" text-anchor="middle">Word after “said”</text>`;
+    const rows = PRON.map(w => ({ w, col: PCOL[w], n: S.pron.filter(x => x === w).length }));
+    s += table(rows, { x: 610, y: 60, w: 370, rowH: 152, tally: true, frac: true, bar: true });
+    if (S.step >= 1) {
+      const m = Math.max(...rows.map(r => r.n)), tops = rows.filter(r => r.n === m);
+      s += `<rect class="guess" x="605" y="532" width="380" height="140" rx="14"/>`;
+      s += `<text class="cap" x="795" y="566" text-anchor="middle" style="font-size:22px;fill:var(--pt)">AI's best guess</text>`;
+      s += `<text class="prompt" x="795" y="614" style="font-size:30px">The doctor said ${tops.length > 1 ? "…" : `<tspan style="fill:${tops[0].col}">${tops[0].w}</tspan>`}</text>`;
+      s += `<text class="hist" x="795" y="654" text-anchor="middle" style="font-size:22px;fill:var(--muted)">${tops.length > 1 ? "a tie: " + tops.map(t => t.w).join(" or ") : m + " out of 10 times"}</text>`;
+    }
+    return s;
+  }
+  function drawP5() {
+    const f = S.step >= 2 && S.step <= 3 ? MYSTERY : S.clue, c = chances(f);
+    let s = "";
+    if (S.step >= 2 && S.step <= 3) {
+      s += `<rect x="15" y="100" width="540" height="480" rx="16" fill="none" stroke="var(--muted)" stroke-width="3" stroke-dasharray="12 8"/>`;
+      s += `<text class="cap" x="285" y="80" text-anchor="middle">Mystery photo</text>`;
+    }
+    s += animal(f);
+    if (S.step === 3) s += `<rect x="140" y="600" width="300" height="70" rx="14" style="fill:${tint("var(--green)", 20)};stroke:var(--green)" stroke-width="4"/><text class="lbl" x="290" y="636" style="fill:var(--green)">Real animal: CAT</text>`;
+    s += `<line x1="585" x2="585" y1="20" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
+    s += animalBars(c, S.step === 3 ? { real: 0, wrong: 2 } : {});
+    return s;
+  }
+
+  // ---------- Learning: controls ----------
+  function ctrlsHTML() {
+    const p = S.part, st = S.step;
+    if (p === 0 && st === 1) return `<div class="btns"><button type="button" class="go" data-act="count1" ${S.counted >= 10 ? "disabled" : ""}>Count next</button><button type="button" data-act="countAll" ${S.counted >= 10 ? "disabled" : ""}>Count all</button><button type="button" data-act="count0">Start over</button></div>`;
+    if (p === 0 && st === 2) return `<div class="eq">chance = ${hf("times the word came next", "all the sentences")}</div>`;
+    if (p === 1) {
+      const done = st > 0 && S.spin.words.length === 3;
+      return `<div class="btns"><button type="button" class="go" data-act="spin">${done ? "Start a new sentence" : "Spin"}</button>${st === 2 ? `<button type="button" data-act="spin3">Make a whole sentence</button>` : ""}</div>`;
+    }
+    if (p === 2) return `<div class="btns"><button type="button" data-act="dial0">0 Safe</button><button type="button" data-act="dial1">1 Normal</button><button type="button" data-act="dial2">2 Wild</button></div>
+      <div class="dial"><span>Safe</span><input type="range" id="dial" min="0" max="2" step="0.1" value="${S.dial}" aria-label="Creativity dial"><span>Wild</span></div>
+      <div class="btns"><button type="button" class="go" data-act="pick10">Pick 10 words</button></div>
+      <div class="picks" id="picks">${S.picks.map(i => `<span style="color:${DIAL[i].col}">${DIAL[i].w}</span>`).join("")}</div>`;
+    if (p === 3) return `<div class="btns"><button type="button" data-act="unfair">Unfair data</button><button type="button" data-act="fair">Fair data</button></div>`;
+    if (p === 4) {
+      if (st === 4) return `<ol class="learned"><li>AI counts patterns in its data.</li><li>It picks the next word by chance, like a spinner.</li><li>A creativity dial changes the chances.</li><li>Unfair data makes unfair guesses.</li><li>AI can be very sure and still be wrong. Check its answers!</li></ol>`;
+      const lock = st >= 2, f = lock ? MYSTERY : S.clue, c = chances(f);
+      let h = `<div class="chips${lock ? " lock" : ""}">${CLUES.map(k => `<button type="button" data-clue="${k.k}" class="${f[k.k] ? "on" : ""}" ${lock ? 'aria-disabled="true"' : ""}>${k.name}</button>`).join("")}</div>`;
+      if (st === 1) h += `<p class="note">Made AI guess dog: <span class="got">${S.saw.dog ? "✓" : "…"}</span> &nbsp; fox: <span class="got">${S.saw.fox ? "✓" : "…"}</span></p>`;
+      h += `<div class="btns" style="align-items:center;gap:8px 16px">${st === 2 ? `<button type="button" class="go" data-act="reveal">Reveal the real animal</button>` : ""}<label class="toggle"><input type="checkbox" id="mathT" ${S.math ? "checked" : ""}> Show the math</label></div>`;
+      if (S.math) {
+        h += `<div class="mathtbl"><span class="k">Animal</span><span class="k">Points</span><span class="k">Score<br>(×2 per point)</span><span class="k">Chance<br>(score over total)</span>`;
+        ANIMALS.forEach((a, i) => (h += `<b style="color:${a.col}">${a.w}</b><span>${c.pts[i]}</span><span>${c.sc[i]}</span><span>${hf(c.sc[i], c.tot)}</span>`));
+        h += `</div>`;
+      }
+      return h;
+    }
+    return "";
+  }
+
+  function renderLearn() {
+    const P = PARTS[S.part];
+    $("parts").innerHTML = PARTS.map((q, i) => `<button type="button" data-part="${i}" class="${i === S.part ? "on" : ""} ${S.seen[i] ? "done" : ""}"><b>${i + 1}</b>${q.short}</button>`).join("");
+    $("ptitle").textContent = `Part ${S.part + 1}: ${P.title}`;
+    $("say").innerHTML = P.steps[S.step];
+    $("ctrls").innerHTML = ctrlsHTML();
+    $("stepnum").textContent = `Step ${S.step + 1} of ${P.steps.length}`;
+    $("back").disabled = S.part === 0 && S.step === 0;
+    const last = S.step === P.steps.length - 1;
+    $("next").textContent = last ? (S.part === 4 ? "Done" : "Next part →") : "Next step";
+    $("next").disabled = last && S.part === 4;
+    drawLearn();
+    const d = $("dial");
+    if (d) d.addEventListener("input", () => { S.dial = +d.value; S.picks = []; drawLearn(); $("picks").innerHTML = ""; });
+    const m = $("mathT");
+    if (m) m.addEventListener("change", () => { S.math = m.checked; renderLearn(); });
+  }
+  function drawLearn() {
+    const p = S.part;
+    svg.innerHTML = p === 0 ? drawP1() : p === 1 ? drawP2() : p === 2 ? drawDial(DIAL, S.dial, "a slice of ___") : p === 3 ? drawP4() : drawP5();
+  }
+
+  function enterStep() {
+    const p = S.part, st = S.step;
+    if (p === 0 && st === 1 && S.counted === 0) S.counted = 0;
+    if (p === 0 && st >= 2) S.counted = 10;
+    if (p === 1) { S.spin.words = []; S.spin.hi = null; }
+    if (p === 2) { S.dial = st === 1 ? 0 : st === 2 ? 2 : 1; S.picks = []; }
+    if (p === 3 && st <= 1) S.pron = UNFAIR.slice();
+    if (p === 4 && st === 1) S.saw = { dog: false, fox: false };
+    renderLearn();
+  }
+  function go(dir) {
+    if (S.spin.busy) return;
+    const n = PARTS[S.part].steps.length;
+    if (dir > 0) {
+      if (S.step < n - 1) S.step++;
+      else if (S.part < 4) { S.seen[S.part] = true; S.part++; S.step = 0; }
+      else return;
+    } else {
+      if (S.step > 0) S.step--;
+      else if (S.part > 0) { S.part--; S.step = PARTS[S.part].steps.length - 1; }
+      else return;
+    }
+    if (S.part === 4 && S.step === 4) S.seen[4] = true;
+    enterStep();
+  }
+
+  // Spinner animation: the needle turns 2 to 3 times and stops inside the picked wedge.
+  function spinTo(rows, cb, ms = 1300) {
+    const i = pickW(rows.map(r => r.n)), target = angleIn(rows, i);
+    const start = S.spin.deg, base = start - (start % 360);
+    const end = base + 360 * (2 + rnd(2)) + target;
+    S.spin.busy = true; S.spin.hi = null;
+    const t0 = performance.now();
+    (function frame(t) {
+      const k = Math.min(1, (t - t0) / ms), e = 1 - (1 - k) ** 3;
+      S.spin.deg = start + (end - start) * e;
+      const nd = $("needle");
+      if (nd) nd.setAttribute("transform", `rotate(${S.spin.deg} ${SP.cx} ${SP.cy})`);
+      if (k < 1) requestAnimationFrame(frame);
+      else { S.spin.deg = end % 360; S.spin.busy = false; S.spin.hi = i; cb(i); }
+    })(t0);
+  }
+  function doSpin(then) {
+    const sp = S.spin;
+    if (sp.busy) return;
+    if (S.step === 0) {
+      sp.words = [];
+      drawLearn();
+      spinTo(SLOTS[2].rows, i => { sp.words = [null, null, i]; sp.words.length = 3; renderLearn(); then && then(); });
+      return;
+    }
+    if (sp.words.length === 3) { sp.words = []; sp.hi = null; renderLearn(); if (!then) return; }
+    const slot = sp.words.length;
+    spinTo(SLOTS[slot].rows, i => {
+      sp.words.push(i);
+      if (sp.words.length === 3) sp.hist.push(`My ${SLOTS[0].rows[sp.words[0]].w} ${SLOTS[1].rows[sp.words[1]].w} a slice of ${SLOTS[2].rows[sp.words[2]].w}.`);
+      renderLearn();
+      then && then();
+    }, then ? 650 : 1300);
+  }
+  function spinWhole() {
+    const sp = S.spin;
+    if (sp.busy) return;
+    sp.words = []; sp.hi = null; renderLearn();
+    const next = () => { if (sp.words.length < 3) setTimeout(() => doSpin(next), 150); };
+    doSpin(next);
+  }
+
+  $("learnCard").addEventListener("click", e => {
+    const pb = e.target.closest("[data-part]");
+    if (pb && !S.spin.busy) { S.seen[S.part] = S.seen[S.part] || S.step === PARTS[S.part].steps.length - 1; S.part = +pb.dataset.part; S.step = 0; enterStep(); return; }
+    const cb = e.target.closest("[data-clue]");
+    if (cb && S.step < 2) {
+      const k = cb.dataset.clue; S.clue[k] = !S.clue[k];
+      const c = chances(S.clue), top = c.p.indexOf(Math.max(...c.p));
+      if (S.step === 1) { if (top === 1) S.saw.dog = true; if (top === 2) S.saw.fox = true; }
+      renderLearn(); return;
+    }
+    const a = e.target.closest("[data-act]");
+    if (!a) return;
+    const act = a.dataset.act;
+    if (act === "count1") S.counted = Math.min(10, S.counted + 1);
+    if (act === "countAll") S.counted = 10;
+    if (act === "count0") S.counted = 0;
+    if (act === "spin") return doSpin();
+    if (act === "spin3") return spinWhole();
+    if (act.startsWith("dial") && act.length === 5) { S.dial = +act[4]; S.picks = []; }
+    if (act === "pick10") S.picks = Array.from({ length: 10 }, () => pickW(dialChances(DIAL, S.dial)));
+    if (act === "unfair") S.pron = UNFAIR.slice();
+    if (act === "fair") S.pron = FAIR.slice();
+    if (act === "reveal") { S.step = 3; }
+    renderLearn();
+  });
+  $("back").addEventListener("click", () => go(-1));
+  $("next").addEventListener("click", () => go(1));
+  function flipPron(g) {
+    if (S.mode !== "learn" || S.part !== 3) return;
+    const i = +g.dataset.i; S.pron[i] = PRON[(PRON.indexOf(S.pron[i]) + 1) % 3];
+    renderLearn();
+    const ng = svg.querySelector(`[data-i="${i}"]`); if (ng) ng.focus();
+  }
+  svg.addEventListener("click", e => { const g = e.target.closest(".pron"); if (g) flipPron(g); });
+  svg.addEventListener("keydown", e => { const g = e.target.closest(".pron"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); flipPron(g); } });
+  document.addEventListener("keydown", e => {
+    if (S.mode !== "learn" || e.target.closest("input, .pron")) return;
+    if (e.key === "ArrowRight") go(1);
+    if (e.key === "ArrowLeft") go(-1);
+  });
+
+  // ---------- Practice ----------
+  const CTX = [
+    { lead: "a slice of", words: ["pizza", "cake", "bread", "cheese"] },
+    { lead: "I like to play", words: ["soccer", "hockey", "chess", "tag"] },
+    { lead: "My pet is a", words: ["dog", "cat", "fish", "bird"] },
+    { lead: "Today it is", words: ["sunny", "rainy", "cold", "windy"] }];
+  const BIAS = ["The pilot said", "The nurse said", "The coach said", "The engineer said", "The chef said"];
+  const DIALS = [
+    { lead: "a slice of ___", rows: DIAL },
+    { lead: "I like to play ___", rows: [["soccer", 40], ["hockey", 25], ["chess", 15], ["tag", 10], ["piano", 6], ["dragons", 3], ["broccoli", 1]].map(([w, n], i) => ({ w, n, col: COLS[i] })) },
+    { lead: "My pet is a ___", rows: [["dog", 40], ["cat", 25], ["fish", 15], ["hamster", 10], ["bird", 6], ["snake", 3], ["dinosaur", 1]].map(([w, n], i) => ({ w, n, col: COLS[i] })) }];
+  const SPLITS = [[5, 3, 2], [6, 3, 1], [4, 4, 2], [7, 2, 1], [5, 4, 1], [6, 2, 2], [4, 3, 3]];
+  const Q = { q: null, done: false, right: 0, tried: 0, last: "" };
+
+  function counts(k, lo, hi) {
+    for (;;) { const a = Array.from({ length: k }, () => lo + rnd(hi - lo + 1)); const m = Math.max(...a); if (a.filter(x => x === m).length === 1) return a; }
+  }
+  function makeQ() {
+    const types = ["frac", "most", "spin", "dial", "bias", "pic"].filter(t => t !== Q.last);
+    const t = types[rnd(types.length)]; Q.last = t;
+    if (t === "frac" || t === "most") {
+      const c = CTX[rnd(CTX.length)], k = 3 + rnd(2), ns = counts(k, 1, 7);
+      const rows = c.words.slice(0, k).map((w, i) => ({ w, n: ns[i], col: COLS[[0, 2, 1, 3][i]] }));
+      const total = ns.reduce((a, b) => a + b, 0);
+      if (t === "most") return { t, rows, lead: c.lead, ask: `AI counted the words after <span class="w">“${c.lead}”</span>. Which word will AI most likely pick next?`, kind: "choice", opts: rows.map(r => r.w), ans: rows[ns.indexOf(Math.max(...ns))].w };
+      const i = rnd(k);
+      return { t, rows, lead: c.lead, ask: `AI counted the words after <span class="w">“${c.lead}”</span>. What is the chance AI picks <span class="w" style="color:${rows[i].col}">${rows[i].w}</span>?`, kind: "frac", n: rows[i].n, d: total, i };
+    }
+    if (t === "bias") {
+      const lead = BIAS[rnd(BIAS.length)], he = 5 + rnd(4), she = 1 + rnd(he - 2), they = 1 + rnd(2);
+      const rows = PRON.map((w, i) => ({ w, col: PCOL[w], n: [he, she, they][i] }));
+      if (Math.random() < 0.5) return { t, rows, lead, ask: `The data has the words after <span class="w">“${lead}”</span>. How many more <span class="w" style="color:${PCOL.she}">she</span> sentences would make he and she equal?`, kind: "num", ans: he - she, sub: true };
+      return { t, rows, lead, ask: `The data has the words after <span class="w">“${lead}”</span>. What is the chance AI picks <span class="w" style="color:${PCOL.she}">she</span>?`, kind: "frac", n: she, d: he + she + they, i: 1 };
+    }
+    if (t === "spin") {
+      const c = CTX[rnd(CTX.length)], sp = shuffle(SPLITS[rnd(SPLITS.length)].slice());
+      const rows = c.words.slice(0, 3).map((w, i) => ({ w, n: sp[i], col: COLS[[0, 2, 1][i]] }));
+      const times = [10, 20, 30, 50, 100][rnd(5)], i = rnd(3);
+      return { t, rows, lead: c.lead, times, i, ask: `AI spins this spinner <b>${times}</b> times. About how many times will it pick <span class="w" style="color:${rows[i].col}">${rows[i].w}</span>?`, kind: "num", ans: rows[i].n * times / 10 };
+    }
+    if (t === "dial") {
+      const d = DIALS[rnd(DIALS.length)], rare = d.rows[6].w, top = d.rows[0].w, v = rnd(3);
+      if (v === 0) return { t, d, ask: `The creativity dial is turned down to <b>0 (Safe)</b>. Which word will AI pick?`, kind: "choice", opts: shuffle(d.rows.slice(0, 4).map(r => r.w)), ans: top, why: `At 0, the top word gets all of the chance, so AI always picks ${top}.` };
+      if (v === 1) return { t, d, ask: `AI wrote <span class="w">“${d.lead.replace("___", rare)}”</span>. Was the creativity dial probably low or high?`, kind: "choice", opts: ["Low (Safe)", "High (Wild)"], ans: "High (Wild)", why: `${rare} had a tiny counted chance. A high dial makes rare words more likely.` };
+      return { t, d, ask: `Which dial setting gives <span class="w" style="color:${d.rows[6].col}">${rare}</span> the biggest chance?`, kind: "choice", opts: ["0 Safe", "1 Normal", "2 Wild"], ans: "2 Wild", why: `The higher the dial, the bigger the chance for rare words like ${rare}.` };
+    }
+    // picture
+    if (Math.random() < 0.4) {
+      const a = ANIMALS[2];
+      return { t: "pic", f: MYSTERY, sure: true, ask: `AI is 88% sure this photo is a <span class="w" style="color:${a.col}">fox</span>. Is it for sure a fox?`, kind: "choice", opts: ["Yes, 88% is very high", "No, AI can still be wrong"], ans: "No, AI can still be wrong", why: "88% is a chance, not a promise. 12% of the time a guess like this is wrong. This one was a cat!" };
+    }
+    let f, c;
+    do { f = Object.fromEntries(CLUES.map(k => [k.k, Math.random() < 0.5])); c = chances(f); } while (Math.max(...c.p) < 0.6);
+    const top = c.p.indexOf(Math.max(...c.p));
+    return { t: "pic", f, ask: "Look at the clues in this picture. Which animal will AI guess?", kind: "choice", opts: ANIMALS.map(a => a.w), ans: ANIMALS[top].w, why: `The clues give ${ANIMALS[top].w} the most points, so it gets the biggest chance (${pct(c.p[top])}).` };
+  }
+
+  function drawQ() {
+    const q = Q.q, show = Q.done;
+    let s = "";
+    if (q.t === "frac" || q.t === "most" || q.t === "bias") {
+      s += `<text class="cap" x="500" y="56" text-anchor="middle">Word after “${q.lead}”</text>`;
+      const rowH = q.rows.length === 4 ? 150 : 180;
+      s += table(q.rows, { x: 200, y: 90, w: 600, rowH, tally: true, count: show, frac: show && q.kind === "frac", bar: show, hi: show && q.i != null ? q.i : null });
+    } else if (q.t === "spin") {
+      s += `<text class="prompt" x="500" y="66">${q.lead} ___</text>`;
+      s += spinner(500, 380, 270, q.rows, show ? q.i : null);
+      s += `<circle cx="500" cy="380" r="14" fill="var(--ink)"/>`;
+    } else if (q.t === "dial") {
+      s += drawDial(q.d.rows, 1, q.d.lead, { hideDial: true, noBase: true });
+      s += `<text class="cap" x="960" y="66" text-anchor="end" style="font-size:24px">counted chances (dial at 1)</text>`;
+    } else {
+      s += animal(q.f) + `<line x1="585" x2="585" y1="20" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
+      s += animalBars(chances(q.f), { hide: !q.sure && !show, real: q.sure && show ? 0 : undefined, wrong: q.sure && show ? 2 : undefined });
+      if (q.sure && show) s += `<rect x="140" y="600" width="300" height="70" rx="14" style="fill:${tint("var(--green)", 20)};stroke:var(--green)" stroke-width="4"/><text class="lbl" x="290" y="636" style="fill:var(--green)">Real animal: CAT</text>`;
+      if (!q.sure) s += `<text class="cap" x="285" y="620" text-anchor="middle" style="font-size:22px">Clues: ${CLUES.filter(k => q.f[k.k]).map(k => k.name.toLowerCase()).join(", ") || "none"}</text>`;
+    }
+    svg.innerHTML = s;
+  }
+
+  function newQ() {
+    Q.q = makeQ(); Q.done = false; Q.counted = false;
+    const q = Q.q;
+    $("pq").innerHTML = q.ask;
+    $("pfb").textContent = ""; $("pfb").className = "fb"; $("pwork").innerHTML = "";
+    let h = "";
+    if (q.kind === "frac") h = `<div class="ans"><div class="fin"><input id="aN" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Top number"><span class="ln"></span><input id="aD" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Bottom number"></div></div>`;
+    if (q.kind === "num") h = `<div class="ans"><input id="aX" class="wide" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Answer"><span class="unit">${q.sub ? "more sentences" : "times"}</span></div>`;
+    if (q.kind === "choice") h = `<div class="choices">${q.opts.map(o => `<button type="button" data-opt="${o}">${o}</button>`).join("")}</div>`;
+    $("pans").innerHTML = h;
+    $("pcheck").hidden = q.kind === "choice";
+    $("pshow").disabled = false;
+    drawQ();
+    const f = $("pans").querySelector("input"); if (f && matchMedia("(pointer: fine)").matches) f.focus();
+  }
+  function score(ok) { if (!Q.counted) { Q.counted = true; Q.tried++; if (ok) Q.right++; } $("pright").textContent = Q.right; $("ptried").textContent = Q.tried; }
+  function fb(ok, msg) { $("pfb").className = "fb " + (ok ? "ok" : "no"); $("pfb").innerHTML = msg; }
+  function workFor(q) {
+    if (q.kind === "frac") {
+      const g = gcd(q.n, q.d);
+      return `<div class="eqs"><span>chance</span><span>=</span><span>${hf(q.n, q.d)}<span class="nm">${q.rows[q.i].w} count over all</span></span>` +
+        (g > 1 ? `<span></span><span>=</span><span>${hf(q.n / g, q.d / g)}<span class="nm">simplify</span></span>` : "") + `</div>`;
+    }
+    if (q.t === "spin") {
+      const r = q.rows[q.i];
+      return `<div class="eqs"><span>chance</span><span>=</span><span>${hf(r.n, 10)}</span>
+        <span>times</span><span>=</span><span>${hf(r.n, 10)} × ${q.times}<span class="nm">chance × spins</span></span>
+        <span></span><span>=</span><span>${hf(r.n * q.times, 10)}</span>
+        <span></span><span>=</span><span>${q.ans}</span></div><p class="note">About ${q.ans}. Spins are random, so it could be a little more or less.</p>`;
+    }
+    if (q.sub) { const he = q.rows[0].n, she = q.rows[1].n; return `<div class="eqs"><span>more she</span><span>=</span><span>${he} − ${she}<span class="nm">he − she</span></span><span></span><span>=</span><span>${q.ans}</span></div>`; }
+    return `<p>${q.why || ""}</p>`;
+  }
+  function finish(showWork) { Q.done = true; drawQ(); if (showWork) $("pwork").innerHTML = workFor(Q.q); }
+  function check() {
+    const q = Q.q; if (!q || q.kind === "choice") return;
+    if (q.kind === "frac") {
+      const n = parseInt($("aN").value, 10), d = parseInt($("aD").value, 10);
+      if (!n || !d) return fb(false, "Fill in both boxes.");
+      if (n * q.d === d * q.n) { score(true); fb(true, `Yes! ${q.n} out of ${q.d}.`); return finish(true); }
+      score(false);
+      if (n === q.d && d === q.n) return fb(false, "Flip it: the top is the count for that word, the bottom is all the tallies.");
+      if (n === q.n) return fb(false, `The top is right. For the bottom, count every tally, not just one word.`);
+      return fb(false, "Not yet. Count the tallies for that word, then count all the tallies.");
+    }
+    const x = parseFloat($("aX").value);
+    if (isNaN(x)) return fb(false, "Type a number.");
+    if (x === q.ans) { score(true); fb(true, "Yes!"); return finish(true); }
+    score(false);
+    if (q.t === "spin") fb(false, `Not yet. The chance is ${q.rows[q.i].n} out of 10. What is that part of ${q.times}?`);
+    else fb(false, "Not yet. How many more she would match the he count?");
+  }
+  function showMe() {
+    const q = Q.q; score(false);
+    if (q.kind === "frac") { $("aN").value = q.n; $("aD").value = q.d; }
+    if (q.kind === "num") $("aX").value = q.ans;
+    if (q.kind === "choice") $("pans").querySelectorAll("[data-opt]").forEach(b => b.dataset.opt === q.ans && b.classList.add("right"));
+    fb(true, "Here's how:"); finish(true);
+  }
+  $("pans").addEventListener("click", e => {
+    const b = e.target.closest("[data-opt]"); if (!b || Q.done) return;
+    const ok = b.dataset.opt === Q.q.ans;
+    b.classList.add(ok ? "right" : "wrong");
+    if (ok) { score(true); fb(true, "Yes!"); finish(true); }
+    else { score(false); fb(false, "Not quite. Try another one, or tap Show me."); }
+  });
+  $("pans").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  $("pcheck").addEventListener("click", check);
+  $("pshow").addEventListener("click", showMe);
+  $("pnext").addEventListener("click", newQ);
+
+  // ---------- Mode ----------
+  $("modes").addEventListener("click", e => {
+    const b = e.target.closest("[data-mode]"); if (!b || S.spin.busy) return;
+    S.mode = b.dataset.mode;
+    $("modes").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+    $("learnCard").hidden = S.mode !== "learn";
+    $("pracCard").hidden = S.mode !== "practice";
+    if (S.mode === "learn") renderLearn(); else newQ();
+  });
+
+  enterStep();
+})();
+</script>
+<script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
