@@ -211,6 +211,42 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); }
 .toggles { margin-top: 4px; font-size: 1.05rem; }
 [data-show]:not(.on) { display: none !important; }
+
+/* Make change */
+.price-lbl { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 30px; text-anchor: middle; }
+.price-tag { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 3; stroke-linejoin: round; }
+.price-amt { fill: var(--pt); font-family: var(--font-num); font-weight: 700; font-size: 76px; text-anchor: middle; dominant-baseline: central; }
+.nl-line { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.nl-tick { stroke: var(--ink); stroke-width: 4; }
+.nl-lbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; }
+.nl-lbl.ends { fill: var(--pt); font-size: 34px; }
+.hop { fill: none; stroke: var(--orange); stroke-width: 4; stroke-linecap: round; }
+.hop-head { fill: var(--orange); }
+.hop-lbl { fill: var(--orange); font-family: var(--font-num); font-weight: 700; font-size: 36px; text-anchor: middle; }
+.hop.todo { stroke: var(--muted); stroke-dasharray: 10 10; opacity: .7; }
+.hop-lbl.todo { fill: var(--muted); font-size: 44px; }
+.hop.new { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawHop .6s ease forwards; }
+@keyframes drawHop { to { stroke-dashoffset: 0; } }
+.pop { transform-box: fill-box; transform-origin: center; animation: pop .45s cubic-bezier(.3,1.6,.6,1) backwards; }
+@keyframes pop { from { transform: scale(0); opacity: 0; } }
+.change-line { text-anchor: middle; }
+.change-lbl { fill: var(--good); font-family: var(--font-display); font-weight: 800; font-size: 34px; }
+.change-amt { fill: var(--good); font-family: var(--font-num); font-weight: 700; font-size: 36px; }
+.chg-piece { cursor: default; pointer-events: none; }
+.bill-txt { fill: #fff; font-family: var(--font-display); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.steps { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); column-gap: 8px; align-items: baseline;
+  font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; line-height: 1.2; }
+.steps .l { text-align: right; white-space: nowrap; }
+.steps .r { white-space: nowrap; }
+.steps > div { padding: 3px 0; }
+.steps .why { font-family: var(--font-body, inherit); font-weight: 400; font-size: .9rem; line-height: 1.15; color: var(--muted); padding-left: 6px; }
+.steps .why.all { grid-column: 1 / -1; padding-left: 0; white-space: normal; }
+.steps .tot { color: var(--good); }
+.pay-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.pay-row .label { margin: 0; }
+.bill-picks { display: flex; gap: 8px; }
+.bill-picks button { font-family: var(--font-num); font-size: 1.3rem; min-height: 48px; min-width: 76px; }
+.bill-picks button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
 </style>
 
 <div class="wrap">
@@ -221,6 +257,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       <button type="button" data-mode="sort" aria-pressed="false">Sort coins</button>
       <button type="button" data-mode="much" aria-pressed="true" class="on">How much?</button>
       <button type="button" data-mode="make" aria-pressed="false">Make the amount</button>
+      <button type="button" data-mode="change" aria-pressed="false">Make change</button>
     </div>
   </header>
 
@@ -276,6 +313,27 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
         </div>
       </div>
 
+      <!-- Make change -->
+      <div class="card" data-show="change">
+        <div class="pay-row"><span class="label">Pay with</span><div class="bill-picks" id="billPicks"></div></div>
+        <p class="task">How much change do you get back?</p>
+        <p class="howto">Count up from the price to the money you paid.</p>
+        <form class="answer-row" id="chgForm" autocomplete="off">
+          <input id="chgIn" data-pad="dec" type="text" inputmode="decimal" aria-label="How much change" placeholder="?">
+          <button type="submit" class="go">Check</button>
+        </form>
+        <p class="feedback" id="chgFb" aria-live="polite"></p>
+        <div class="btn-row">
+          <button type="button" id="chgHint">Hint</button>
+          <button type="button" id="chgShow">Show answer</button>
+          <button type="button" id="chgNew">New price</button>
+        </div>
+      </div>
+      <div class="card" data-show="change">
+        <p class="label">Count up</p>
+        <div class="steps" id="chgSteps" aria-live="polite"></div>
+      </div>
+
       <div class="card" data-show="much make">
         <p class="label">Coins to use</p>
         <div class="coin-picks" id="coinPicks"></div>
@@ -283,7 +341,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
         <div class="max-picks" id="maxPicks"></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-show="sort much make">
         <div class="toggles"><label><input type="checkbox" id="nums" checked> Show numbers on coins</label></div>
       </div>
     </div>
@@ -372,6 +430,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   const dolFull = c => isFr() ? `${(c / 100).toFixed(2).replace(".", ",")} $` : `$${(c / 100).toFixed(2)}`;
   const cts = c => isFr() ? `${c} ¢` : `${c}¢`;
   const fmt = c => c < 100 ? cts(c) : dolFull(c);
+  const short = c => c < 100 ? cts(c) : dol(c); // 25¢, $1, $1.25
   const both = c => isFr()
     ? (c < 100 ? `${cts(c)} (c’est ${dolFull(c)})` : `${dolFull(c)} (c’est ${cts(c)})`)
     : (c < 100 ? `${c}¢ (that's ${dolFull(c)})` : `${dolFull(c)} (that's ${c}¢)`);
@@ -402,7 +461,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   const MAXES = [100, 200, 500, 1000];
   let nextId = 1;
   const newState = () => ({ coins: new Map(), piles: new Map() });
-  const S = { sort: newState(), much: newState(), make: newState() };
+  const S = { sort: newState(), much: newState(), make: newState(), change: newState() };
   const st = () => S[mode];
   const games = { much: { answer: 0 }, make: { target: 0 } };
 
@@ -522,6 +581,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
       el("rect", { class: "bag-tie", x: 770, y: 100, width: 136, height: 20, rx: 10 }, bag);
       el("text", { class: "bag-lbl", x: BAG.cx, y: 160 }, bag).textContent = "BAG";
     }
+    if (mode === "change") { drawChange(); return; }
     if (mode !== "much") {
       el("rect", { class: "tray-bg", id: "tray", x: 4, y: TRAY_Y, width: W - 8, height: H - TRAY_Y - 4, rx: 12 }, layers.back);
       const kinds = mode === "make" ? ORDER.filter(k => settings.kinds.has(k)) : ORDER;
@@ -743,6 +803,162 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     else setFb("makeFb", "nope", `Too much! The bag has <span class="amt">${fmt(have)}</span>. Take some out.`);
   });
 
+  // ---------- Make change ----------
+  // Count up from the price to the bill, one friendly number at a time:
+  // to the next quarter, the next dollar, the next $5, then the bill.
+  const BILLS = [500, 1000, 2000];
+  const BILL_COLOR = { 500: "#2f64ad", 1000: "#7a4aa6", 2000: "#2f7d45" };
+  const chg = { bill: 500, price: 0, steps: [], shown: 0, last: -1 };
+  const PIECES = [2000, 1000, 500, 200, 100, 25, 10, 5];
+  const PIECE_KIND = { 200: "toonie", 100: "loonie", 25: "quarter", 10: "dime", 5: "nickel" };
+  const piecesFor = amt => { const out = []; for (const v of PIECES) while (amt >= v) { out.push(v); amt -= v; } return out; };
+
+  function makeSteps(price, bill) {
+    const steps = [];
+    let at = price;
+    for (const [size, why] of [[25, "q"], [100, "d"], [500, "f"], [bill, "b"]]) {
+      const to = Math.min(bill, Math.ceil(at / size) * size);
+      if (to > at) { steps.push({ from: at, to, add: to - at, why: to === bill ? "b" : why, pieces: piecesFor(to - at) }); at = to; }
+    }
+    return steps;
+  }
+  function newChange() {
+    const B = chg.bill, lo = Math.round(B * 0.3 / 5), hi = B / 5 - 1;
+    let p, tries = 0;
+    do { p = 5 * rand(lo, hi); tries++; } while (tries < 20 && (p === chg.price || (p % 100 === 0 && Math.random() < 0.85)));
+    chg.price = p; chg.steps = makeSteps(p, B); chg.shown = 0; chg.last = -1;
+    $("chgIn").value = ""; $("chgFb").textContent = ""; $("chgFb").className = "feedback";
+    showChange();
+  }
+  // The steps are revealed one at a time; one more press adds up the jumps.
+  const chgAmt = () => { const a = chg.bill - chg.price; return a < 200 ? both(a) : dolFull(a); };
+  const chgDone = () => chg.shown > chg.steps.length;
+  function showChange() {
+    const hint = $("chgHint");
+    hint.textContent = chg.shown === 0 ? "Hint" : "Next step";
+    hint.disabled = chgDone();
+    drawStepList();
+    if (mode === "change") drawBack();
+  }
+
+  function billMarkup(v, w) {
+    const h = Math.round(w * 0.46), c = BILL_COLOR[v];
+    let s = `<rect x="${-w / 2 + 3}" y="${-h / 2 + 4}" width="${w}" height="${h}" rx="${w * 0.04}" fill="#000" opacity=".2"/>`;
+    s += `<rect x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="${w * 0.04}" fill="${c}" stroke="#0005" stroke-width="2"/>`;
+    s += `<rect x="${-w / 2 + w * 0.05}" y="${-h / 2 + h * 0.1}" width="${w * 0.9}" height="${h * 0.8}" rx="${w * 0.03}" fill="none" stroke="#fff8" stroke-width="2"/>`;
+    s += `<circle cx="${w * 0.25}" cy="0" r="${h * 0.26}" fill="#fff3"/>`;
+    s += `<text class="bill-txt" x="${-w * 0.1}" y="2" font-size="${h * 0.48}">${dol(v)}</text>`;
+    s += `<text class="bill-txt" x="${w * 0.36}" y="${-h * 0.27}" font-size="${h * 0.2}">${v / 100}</text>`;
+    return s;
+  }
+  const pieceW = (v, s) => v >= 500 ? 150 * s : 2 * KINDS[PIECE_KIND[v]].r * s;
+  const pieceMarkup = (v, s) => v >= 500 ? billMarkup(v, 150 * s) : `<g transform="scale(${s})">${coinMarkup(PIECE_KIND[v], nums)}</g>`;
+
+  function drawChange() {
+    const g = el("g", {}, layers.back);
+    // Price tag and the bill paid
+    el("text", { class: "price-lbl", x: 250, y: 46 }, g).textContent = "Price";
+    el("path", { class: "price-tag", d: "M80 70H420Q436 70 436 86V178Q436 194 420 194H80L52 132Z" }, g);
+    el("circle", { cx: 84, cy: 132, r: 8, fill: "var(--grid-major)" }, g);
+    el("text", { class: "price-amt", x: 262, y: 134 }, g).textContent = dolFull(chg.price);
+    el("text", { class: "price-lbl", x: 760, y: 46 }, g).textContent = "You pay with";
+    el("g", { transform: "translate(760 134)" }, g).innerHTML = billMarkup(chg.bill, 270);
+
+    // Open number line: equal spaces for each jump (not to scale).
+    const NL = 340, X0 = 90, X1 = 910, n = chg.steps.length, shown = Math.min(chg.shown, n);
+    const tx = i => X0 + i * (X1 - X0) / n;
+    el("line", { class: "nl-line", x1: X0 - 30, y1: NL, x2: X1 + 30, y2: NL }, g);
+    const tick = (i, v, ends) => {
+      el("line", { class: "nl-tick", x1: tx(i), y1: NL - 14, x2: tx(i), y2: NL + 14 }, g);
+      el("text", { class: "nl-lbl" + (ends ? " ends" : ""), x: tx(i), y: NL + 50 }, g).textContent = dolFull(v);
+    };
+    tick(0, chg.price, true);
+    tick(n, chg.bill, true);
+    const arc = (xa, xb, cls) => {
+      const mid = (xa + xb) / 2, top = NL - 2 * Math.min(70, (xb - xa) * 0.4);
+      const path = el("path", { class: "hop " + cls, d: `M${xa + 6} ${NL - 6}Q${mid} ${top} ${xb - 6} ${NL - 6}`, pathLength: 1 }, g);
+      return { mid, peak: (NL - 6 + top) / 2, path };
+    };
+    for (let i = 0; i < shown; i++) {
+      const s = chg.steps[i], fresh = i === chg.last;
+      if (i < n - 1) tick(i + 1, s.to, false);
+      const a = arc(tx(i), tx(i + 1), fresh ? "new" : "");
+      // Arrowhead at the end of the jump
+      const xb = tx(i + 1) - 6, ang = Math.atan2(NL - 6 - (2 * a.peak - NL + 6), xb - a.mid);
+      const hg = el("g", { transform: `translate(${xb} ${NL - 8}) rotate(${ang * 180 / Math.PI})` }, g);
+      const head = el("polygon", { class: "hop-head" + (fresh ? " pop" : ""), points: poly(3, 11, 0) }, hg);
+      if (fresh) head.style.animationDelay = ".45s";
+      const lbl = el("text", { class: "hop-lbl" + (fresh ? " pop" : ""), x: a.mid, y: a.peak - 16 }, g);
+      lbl.textContent = "+" + short(s.add);
+      // The coins and bills for this jump, under it
+      const hopW = (X1 - X0) / n - 16, gap = 8;
+      const full = s.pieces.reduce((t, v) => t + pieceW(v, 1) + gap, -gap);
+      const k = Math.min(1, hopW / full);
+      let x = a.mid - (full * k) / 2;
+      s.pieces.forEach((v, j) => {
+        const w = pieceW(v, k);
+        const outer = el("g", { class: "coin chg-piece", transform: `translate(${x + w / 2} 480)` }, g);
+        const inner = el("g", { class: fresh ? "pop" : "" }, outer);
+        if (fresh) inner.style.animationDelay = `${0.3 + j * 0.18}s`;
+        inner.innerHTML = pieceMarkup(v, k);
+        x += w + gap * k;
+      });
+    }
+    if (shown < n) {
+      const a = arc(tx(shown), tx(n), "todo");
+      el("text", { class: "hop-lbl todo", x: a.mid, y: a.peak - 12 }, g).textContent = "?";
+    }
+    if (chgDone()) {
+      const t = el("text", { class: "change-line" + (chg.last === n ? " pop" : ""), x: 500, y: 608 }, g);
+      el("tspan", { class: "change-lbl" }, t).textContent = "Change: ";
+      el("tspan", { class: "change-amt" }, t).textContent = `${chg.steps.map(s => short(s.add)).join(" + ")} = ${fmt(chg.bill - chg.price)}`;
+    }
+  }
+
+  // Short step names for the right column (French: "~next (.+)" in i18n/money.js).
+  const WHY = { q: () => `next ${short(25)}`, d: () => `next ${short(100)}`, f: () => `next ${short(500)}`, b: () => "to the bill" };
+  function drawStepList() {
+    const box = $("chgSteps");
+    box.innerHTML = "";
+    const add = (cls, txt) => { const d = document.createElement("div"); d.className = cls; d.textContent = txt; box.appendChild(d); };
+    const shown = Math.min(chg.shown, chg.steps.length);
+    if (!shown) add("why all", "Press Hint to count up.");
+    for (let i = 0; i < shown; i++) {
+      const s = chg.steps[i];
+      add("l", `${dolFull(s.from)} + ${short(s.add)}`); add("", "="); add("r", dolFull(s.to));
+      add("why", WHY[s.why]());
+    }
+    if (chgDone()) {
+      add("l tot", "Change"); add("tot", "="); add("r tot", fmt(chg.bill - chg.price)); add("why", "add the jumps");
+    }
+  }
+
+  $("chgHint").addEventListener("click", () => { if (!chgDone()) { chg.last = chg.shown; chg.shown++; showChange(); } });
+  $("chgShow").addEventListener("click", () => {
+    chg.last = chgDone() ? -1 : chg.steps.length; chg.shown = chg.steps.length + 1; showChange();
+    setFb("chgFb", "good", `Your change is <span class="amt">${chgAmt()}</span>.`);
+  });
+  $("chgNew").addEventListener("click", newChange);
+  $("chgForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const a = chg.bill - chg.price, vals = readMoney($("chgIn").value);
+    if (!vals.length) setFb("chgFb", "nope", "Type how much change you get back.");
+    else if (vals.includes(a)) setFb("chgFb", "good", `Yes! Your change is <span class="amt">${chgAmt()}</span>.`);
+    else if (vals.includes(chg.price)) setFb("chgFb", "nope", "That is the price. How much do you get back?");
+    else setFb("chgFb", "nope", "Not quite. Press Hint to count up from the price.");
+  });
+  const billPicks = $("billPicks");
+  function drawBillPicks() {
+    billPicks.innerHTML = "";
+    for (const v of BILLS) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = dol(v); b.setAttribute("aria-pressed", v === chg.bill);
+      b.addEventListener("click", () => { chg.bill = v; drawBillPicks(); newChange(); });
+      billPicks.appendChild(b);
+    }
+  }
+  drawBillPicks();
+
   // ---------- Sort coins ----------
   function updateTotal() {
     const t = [...S.sort.coins.values()].reduce((s, c) => s + KINDS[c.kind].v, 0);
@@ -791,13 +1007,14 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     for (const c of [...S.make.coins.values()]) if (!settings.kinds.has(c.kind)) { takeFromPile(c); S.make.coins.delete(c.id); }
     if (mode === "make") rebuild(); else render();
   }
-  $("nums").addEventListener("change", e => { nums = e.target.checked; rebuild(); });
+  $("nums").addEventListener("change", e => { nums = e.target.checked; chg.last = -1; rebuild(); });
 
   // ---------- Game switch ----------
   function setMode(m) {
     mode = m;
     document.querySelectorAll("[data-mode]").forEach(b => { const on = b.dataset.mode === m; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
     document.querySelectorAll("[data-show]").forEach(n => n.classList.toggle("on", n.dataset.show.split(" ").includes(m)));
+    chg.last = -1;
     rebuild();
   }
   document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
@@ -806,12 +1023,14 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   window.addEventListener("langchange", () => {
     updateTotal();
     if (games.make.target) $("target").textContent = fmt(games.make.target);
-    $("muchFb").textContent = ""; $("makeFb").textContent = "";
+    $("muchFb").textContent = ""; $("makeFb").textContent = ""; $("chgFb").textContent = "";
+    chg.last = -1; drawBillPicks(); drawStepList();
     rebuild();
   });
 
   newMuch();
   newMake();
+  newChange();
   setMode("much");
 })();
 </script>
@@ -1115,7 +1334,27 @@ window.I18N_PAGE = {
  "Yes! You made {0}.": "Oui! Tu as formé {0}.",
  "Not enough yet. The bag has {0}. Add more.": "Pas encore assez. Le sac contient {0}. Ajoutes-en.",
  "Too much! The bag has {0}. Take some out.": "Trop! Le sac contient {0}. Enlèves-en.",
- "⠿ {n} coins": "⠿ {n} pièces"
+ "⠿ {n} coins": "⠿ {n} pièces",
+ "Make change": "Rendre la monnaie",
+ "How much change do you get back?": "Combien de monnaie te rend-on?",
+ "Count up from the price to the money you paid.": "Compte à partir du prix jusqu’à l’argent que tu as donné.",
+ "How much change": "Combien de monnaie",
+ "New price": "Nouveau prix",
+ "Count up": "Compte par bonds",
+ "Pay with": "Payer avec",
+ "Press Hint to count up.": "Appuie sur Indice pour compter par bonds.",
+ "Price": "Prix",
+ "You pay with": "Tu paies avec",
+ "Change": "Monnaie",
+ "Change:": "Monnaie :",
+ "~next (.+)": "prochain $1",
+ "to the bill": "jusqu’au billet",
+ "add the jumps": "additionne les bonds",
+ "Your change is {0}.": "On te rend {0}.",
+ "Yes! Your change is {0}.": "Oui! On te rend {0}.",
+ "Type how much change you get back.": "Écris combien de monnaie on te rend.",
+ "That is the price. How much do you get back?": "C’est le prix. Combien te rend-on?",
+ "Not quite. Press Hint to count up from the price.": "Pas tout à fait. Appuie sur Indice pour compter à partir du prix."
 };
 </script>
 <script>
