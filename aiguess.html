@@ -166,16 +166,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); color: var(--ink); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; cursor: pointer; }
 .seg-btns button + button { border-left: 2px solid var(--grid-major); }
 .seg-btns button.on { background: var(--pt); color: var(--sheet); }
-.parts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
-.parts button { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 2px; min-height: 54px; font-size: 0.85rem; line-height: 1.15;
+.parts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+.parts button { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 3px 2px; min-height: 50px; font-size: 0.85rem; line-height: 1.15;
   background: var(--sheet); color: var(--muted); border: 2px solid var(--grid-major); border-radius: 10px; cursor: pointer; }
 .parts button b { font-family: var(--font-num); font-size: 1.25rem; color: var(--ink); }
 .parts button.on { border-color: var(--pt); background: var(--pt); color: var(--sheet); }
 .parts button.on b { color: var(--sheet); }
 .parts button.done b::after { content: " ✓"; color: var(--green); font-size: 0.9rem; }
 .parts button.on.done b::after { color: var(--sheet); }
-.ptitle { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; margin: 0 0 6px; }
-.say { font-size: 1.2rem; margin: 0 0 12px; line-height: 1.45; }
+.plabel { margin: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+.ptitle { font-family: var(--font-display); font-weight: 800; font-size: 1.65rem; line-height: 1.2; color: var(--pt); margin: 0 0 8px; }
+.idea { border: 3px solid var(--green); background: color-mix(in srgb, var(--green) 12%, var(--sheet)); border-radius: 12px; padding: 8px 14px; margin-bottom: 12px; }
+.idea span { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); font-weight: 800; }
+.idea p { margin: 2px 0 0; font-size: 1.2rem; font-weight: 700; line-height: 1.35; }
+.say { font-size: 1.2rem; margin: 0 0 8px; line-height: 1.45; }
 .say b { color: var(--pt); }
 .ctrls { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 .ctrls:empty { display: none; }
@@ -266,9 +270,11 @@ button:disabled { opacity: 0.45; cursor: default; }
     <div class="panel">
       <section class="card" id="learnCard">
         <div class="parts" id="parts" role="group" aria-label="Parts"></div>
+        <p class="plabel" id="plabel"></p>
         <p class="ptitle" id="ptitle"></p>
         <p class="say" id="say" aria-live="polite"></p>
         <div class="ctrls" id="ctrls"></div>
+        <div class="idea" id="idea" hidden><span>Big idea</span><p id="ideaText"></p></div>
         <div class="nav">
           <button type="button" id="back">Back</button>
           <span id="stepnum"></span>
@@ -434,10 +440,14 @@ button:disabled { opacity: 0.45; cursor: default; }
     { lead: "a slice of ___", rows: [{ w: "pizza", n: 5 }, { w: "cake", n: 3 }, { w: "bread", n: 2 }] }];
   SLOTS.forEach(sl => sl.rows.forEach((r, i) => (r.col = [COLS[0], COLS[2], COLS[1]][i])));
   const DIAL = [["pizza", 40], ["cake", 25], ["bread", 15], ["cheese", 10], ["toast", 6], ["pie", 3], ["sock", 1]].map(([w, n], i) => ({ w, n, col: COLS[i] }));
-  const PRON = ["he", "she", "they"], PCOL = { he: "var(--c-teal)", she: "var(--c-purple)", they: "var(--c-orange)" };
-  const ENDS = ["was busy.", "would call back.", "was on the phone.", "was running late.", "needed a coffee.", "was tired.", "was ready.", "had a plan.", "was happy.", "would help."];
-  const UNFAIR = ["he", "he", "he", "she", "he", "he", "they", "he", "he", "he"];
-  const FAIR = ["he", "she", "they", "she", "he", "she", "they", "he", "she", "he"];
+  // Part 4: heart attack patients. A man's card shows chest pain; the k-th woman shows WSIGN[k % 4].
+  const SIGNS = [{ w: "chest pain", col: "var(--c-blue)" }, { w: "very tired", col: "var(--c-purple)" }, { w: "upset stomach", col: "var(--c-green)" }, { w: "jaw pain", col: "var(--c-orange)" }];
+  const WSIGN = [1, 2, 0, 3];
+  const MARIA = [1, 2, 3];
+  const WHO = { M: { w: "Man", col: "var(--c-teal)" }, W: { w: "Woman", col: "var(--c-pink)" } };
+  const UNFAIR = ["M", "M", "M", "W", "M", "M", "M", "M", "M", "M"];
+  const FAIR = ["M", "W", "M", "W", "M", "W", "M", "W", "M", "W"];
+  function patientSigns(who) { let k = 0; return who.map(x => (x === "M" ? 0 : WSIGN[k++ % 4])); }
   const MYSTERY = { ears: true, whisk: true, snout: false, bushy: true, orange: true };
 
   function dialChances(rows, c) {
@@ -453,34 +463,40 @@ button:disabled { opacity: 0.45; cursor: default; }
     counted: 0,
     spin: { deg: 0, slot: 0, words: [], hist: [], busy: false, hi: null, solo: null },
     dial: 1, picks: [],
-    pron: UNFAIR.slice(),
+    who: UNFAIR.slice(),
     clue: { ears: true, whisk: true, snout: false, bushy: false, orange: false }, saw: { dog: false, fox: false }, math: false
   };
 
   const PARTS = [
-    { short: "Count", title: "Count it yourself", steps: [
+    { short: "Count", title: "Count it yourself", q: "How does AI get trained?", ideaAt: 3,
+      idea: "AI is trained by counting patterns in lots of data. The more often something shows up in the data, the bigger its chance.", steps: [
       "AI learns by reading tons of sentences. Here are 10 of them. Look at the word that comes after <b>slice of</b>.",
       "Count the words like AI does. Tap <b>Count next</b> to tally one sentence at a time.",
       "Turn the counts into chances. Each count is out of all 10 sentences.",
       "AI sees <b>a slice of ___</b>. Pizza has the biggest chance, 5 out of 10. AI doesn't know what pizza is. It just counted!"] },
-    { short: "Spin", title: "Roll the next word", steps: [
+    { short: "Spin", title: "Roll the next word", q: "How does AI pick the next word?", ideaAt: 2,
+      idea: "AI picks each word by chance, like a spinner. That is why the same question can get different answers.", steps: [
       "AI doesn't always pick the top word. It spins! A bigger chance gets a bigger piece of the spinner. Tap <b>Spin</b>.",
       "Now build a whole sentence. AI picks one word at a time. Tap <b>Spin</b> for each blank.",
       "Make more sentences. Same chances, different sentences! That's why AI can answer the same question in different ways."] },
-    { short: "Dial", title: "Creativity dial", steps: [
+    { short: "Dial", title: "Creativity dial", q: "Why is AI sometimes boring and sometimes silly?", ideaAt: 3,
+      idea: "A creativity setting changes the chances. Low: safe and the same every time. High: surprising, and sometimes silly.", steps: [
       "AI has a creativity dial. At <b>1 (Normal)</b> it uses the chances it counted. The dashed boxes show those chances.",
       "Turn it down to <b>0 (Safe)</b>. The top word gets all of the chance. AI always says the same thing: safe, but boring.",
       "Turn it up to <b>2 (Wild)</b>. Rare words get a bigger chance. AI gets creative... or silly. A slice of sock?",
       "Your turn. Pick a setting and tap <b>Pick 10 words</b>. Which setting would you use for a story? For a math answer?"] },
-    { short: "Fair", title: "Fair data", steps: [
-      "This AI read only these 10 sentences about doctors. Look at the word after <b>said</b>.",
-      "Ask the AI to finish <b>The doctor said ___</b>. It picks <b>he</b> 8 out of 10 times. But doctors can be anyone! The data wasn't fair.",
-      "Fix the data. Tap a word in a sentence to change it: he, she, they. Watch the chances change.",
-      "AI is only as fair as the data it learns from. People have to check the data."] },
-    { short: "Pictures", title: "Picture guesser", steps: [
+    { short: "Fair", title: "Who is missing?", q: "Can AI have a blind spot?", ideaAt: 4,
+      idea: "AI learns what \u201cnormal\u201d looks like from its data. If the data is mostly men, AI treats men as normal and misses women. Always ask: who is missing from the data?", steps: [
+      "AI can help doctors spot heart attacks. This AI was trained on 10 heart attack patients. Look who is in the data: <b>9 men and only 1 woman</b>.",
+      "AI counts the signs. <b>Chest pain</b> shows up 9 out of 10 times. So AI learns: a heart attack looks like chest pain.",
+      "Maria comes in. She is very tired, has an upset stomach and jaw pain. These are common heart attack signs for women. AI saw them only 1 out of 10 times, so it says go home. <b>AI missed it!</b>",
+      "Nobody planned to leave women out. For years, most heart studies used mostly men, so men's signs became \u201cnormal\u201d and women's became \u201cunusual.\u201d That is the blind spot. Fix it: tap patients to add women, or tap <b>Fair data</b>. Add women until AI tells Maria to get help.",
+      "With fair data, AI sees women's signs too. Now it tells Maria to get help right away."] },
+    { short: "Pictures", title: "Picture guesser", q: "Can AI be sure and still be wrong?", ideaAt: 3,
+      idea: "A high chance is not proof. AI can be very sure and still be wrong, so always check its answers.", steps: [
       "AI can guess pictures too. It looks for clues and gives each animal a chance. Turn the clues on and off.",
       "Challenge: change the clues until AI guesses <b>dog</b>. Then make it guess <b>fox</b>.",
-      "Mystery photo! AI found these clues in a new photo. What does AI guess? How sure is it?",
+      "Mystery photo! AI found these clues in a new photo. What does AI guess?",
       "It was a cat! A fluffy orange cat. AI was 88% sure and still wrong. A big chance does not mean a right answer.",
       "What we learned:"] }];
 
@@ -548,23 +564,34 @@ button:disabled { opacity: 0.45; cursor: default; }
     return s;
   }
   function drawP4() {
-    let s = `<text class="cap" x="30" y="40" style="font-size:22px">Tap a word to change it</text>`;
-    S.pron.forEach((p, i) => {
-      const y = 92 + i * 59, col = PCOL[p];
-      s += `<text class="sent" x="30" y="${y}" style="font-size:25px">The doctor said</text>`;
-      s += `<g class="pron" data-i="${i}" role="button" tabindex="0" aria-label="Change ${p}"><rect x="222" y="${y - 32}" width="82" height="44" rx="12" style="fill:${tint(col, 25)};stroke:${col}" stroke-width="3"/><text x="263" y="${y - 10}" style="fill:${col}">${p}</text></g>`;
-      s += `<text class="sent" x="316" y="${y}" style="font-size:25px">${ENDS[i]}</text>`;
+    const sg = patientSigns(S.who);
+    let s = `<text class="cap" x="20" y="40" style="font-size:22px">10 heart attack patients${S.step >= 3 ? " (tap to change)" : ""}</text>`;
+    S.who.forEach((w, i) => {
+      const x = 20 + (i % 2) * 280, y = 62 + Math.floor(i / 2) * 122, c = WHO[w].col, sc = SIGNS[sg[i]];
+      s += `<g class="pron" data-i="${i}" role="button" tabindex="0" aria-label="Patient ${i + 1}, ${WHO[w].w}">`;
+      s += `<rect x="${x}" y="${y}" width="265" height="108" rx="14" style="fill:${tint(c, 14)};stroke:${c}" stroke-width="3"/>`;
+      s += `<circle cx="${x + 38}" cy="${y + 34}" r="15" style="fill:${c}"/><path d="M${x + 14} ${y + 84} q24 -46 48 0 z" style="fill:${c}"/>`;
+      s += `<text x="${x + 76}" y="${y + 42}" style="fill:${c};font-size:28px;text-anchor:start">${WHO[w].w}</text>`;
+      s += `<text x="${x + 76}" y="${y + 82}" class="hist" style="fill:${sc.col};font-weight:700;font-size:23px;dominant-baseline:auto;text-anchor:start;font-family:var(--font-body)">${sc.w}</text></g>`;
     });
     s += `<line x1="585" x2="585" y1="20" y2="680" stroke="var(--grid)" stroke-width="3"/>`;
-    s += `<text class="cap" x="790" y="40" text-anchor="middle">Word after “said”</text>`;
-    const rows = PRON.map(w => ({ w, col: PCOL[w], n: S.pron.filter(x => x === w).length }));
-    s += table(rows, { x: 610, y: 60, w: 370, rowH: 152, tally: true, frac: true, bar: true });
-    if (S.step >= 1) {
-      const m = Math.max(...rows.map(r => r.n)), tops = rows.filter(r => r.n === m);
-      s += `<rect class="guess" x="605" y="532" width="380" height="140" rx="14"/>`;
-      s += `<text class="cap" x="795" y="566" text-anchor="middle" style="font-size:22px;fill:var(--pt)">AI's best guess</text>`;
-      s += `<text class="prompt" x="795" y="614" style="font-size:30px">The doctor said ${tops.length > 1 ? "…" : `<tspan style="fill:${tops[0].col}">${tops[0].w}</tspan>`}</text>`;
-      s += `<text class="hist" x="795" y="654" text-anchor="middle" style="font-size:22px;fill:var(--muted)">${tops.length > 1 ? "a tie: " + tops.map(t => t.w).join(" or ") : m + " out of 10 times"}</text>`;
+    s += `<text class="cap" x="790" y="40" text-anchor="middle" style="font-size:24px">Heart attack signs in the data</text>`;
+    const n = SIGNS.map((_, k) => sg.filter(x => x === k).length);
+    if (S.step >= 1) SIGNS.forEach((g, k) => {
+      const y = 62 + k * 86, on = S.step >= 2 && MARIA.includes(k);
+      s += `<text class="tw" x="605" y="${y + 30}" style="fill:${g.col};font-size:27px">${g.w}${on ? " ★" : ""}</text>`;
+      s += sfrac(950, y + 38, n[k], 10, 25, g.col);
+      s += `<rect class="barbg" x="605" y="${y + 46}" width="290" height="18" rx="6"/><rect x="605" y="${y + 46}" width="${29 * n[k]}" height="18" rx="6" style="fill:${g.col}"/>`;
+    });
+    if (S.step >= 2) {
+      const m = MARIA.reduce((a, k) => a + n[k], 0), ok = m >= 3;
+      s += `<rect class="guess" x="600" y="418" width="385" height="268" rx="14"/>`;
+      s += `<text class="cap" x="792" y="452" text-anchor="middle" style="font-size:24px;fill:var(--ink)">Maria comes in</text>`;
+      s += `<text class="hist" x="792" y="488" text-anchor="middle" style="font-size:22px">★ very tired, upset stomach, jaw pain</text>`;
+      s += `<text class="hist" x="616" y="540" style="font-size:22px">In the data, her signs show up</text>`;
+      s += sfrac(940, 545, m, 10, 26, "var(--ink)");
+      s += `<text class="hist" x="616" y="572" style="font-size:20px;fill:var(--muted)">AI warns at 3 out of 10 or more</text>`;
+      s += `<text class="lbl" x="792" y="640" style="fill:${ok ? "var(--green)" : "var(--warn)"};font-size:28px">${ok ? "AI: Get help now! ✓" : "AI: You're fine. Go home. ✗"}</text>`;
     }
     return s;
   }
@@ -595,12 +622,13 @@ button:disabled { opacity: 0.45; cursor: default; }
       <div class="dial"><span>Safe</span><input type="range" id="dial" min="0" max="2" step="0.1" value="${S.dial}" aria-label="Creativity dial"><span>Wild</span></div>
       <div class="btns"><button type="button" class="go" data-act="pick10">Pick 10 words</button></div>
       <div class="picks" id="picks">${S.picks.map(i => `<span style="color:${DIAL[i].col}">${DIAL[i].w}</span>`).join("")}</div>`;
-    if (p === 3) return `<div class="btns"><button type="button" data-act="unfair">Unfair data</button><button type="button" data-act="fair">Fair data</button></div>`;
+    if (p === 3 && st >= 3) return `<div class="btns"><button type="button" data-act="unfair">Unfair data</button><button type="button" data-act="fair">Fair data</button></div>`;
     if (p === 4) {
-      if (st === 4) return `<ol class="learned"><li>AI counts patterns in its data.</li><li>It picks the next word by chance, like a spinner.</li><li>A creativity dial changes the chances.</li><li>Unfair data makes unfair guesses.</li><li>AI can be very sure and still be wrong. Check its answers!</li></ol>`;
+      if (st === 4) return `<ol class="learned"><li>AI counts patterns in its data.</li><li>It picks the next word by chance, like a spinner.</li><li>A creativity dial changes the chances.</li><li>Data that leaves people out makes AI miss them.</li><li>AI can be very sure and still be wrong. Check its answers!</li></ol>`;
       const lock = st >= 2, f = lock ? MYSTERY : S.clue, c = chances(f);
-      let h = `<div class="chips${lock ? " lock" : ""}">${CLUES.map(k => `<button type="button" data-clue="${k.k}" class="${f[k.k] ? "on" : ""}" ${lock ? 'aria-disabled="true"' : ""}>${k.name}</button>`).join("")}</div>`;
+      let h = st === 3 ? "" : `<div class="chips${lock ? " lock" : ""}">${CLUES.map(k => `<button type="button" data-clue="${k.k}" class="${f[k.k] ? "on" : ""}" ${lock ? 'aria-disabled="true"' : ""}>${k.name}</button>`).join("")}</div>`;
       if (st === 1) h += `<p class="note">Made AI guess dog: <span class="got">${S.saw.dog ? "✓" : "…"}</span> &nbsp; fox: <span class="got">${S.saw.fox ? "✓" : "…"}</span></p>`;
+      if (st === 3) return h;
       h += `<div class="btns" style="align-items:center;gap:8px 16px">${st === 2 ? `<button type="button" class="go" data-act="reveal">Reveal the real animal</button>` : ""}<label class="toggle"><input type="checkbox" id="mathT" ${S.math ? "checked" : ""}> Show the math</label></div>`;
       if (S.math) {
         h += `<div class="mathtbl"><span class="k">Animal</span><span class="k">Points</span><span class="k">Score<br>(×2 per point)</span><span class="k">Chance<br>(score over total)</span>`;
@@ -615,7 +643,10 @@ button:disabled { opacity: 0.45; cursor: default; }
   function renderLearn() {
     const P = PARTS[S.part];
     $("parts").innerHTML = PARTS.map((q, i) => `<button type="button" data-part="${i}" class="${i === S.part ? "on" : ""} ${S.seen[i] ? "done" : ""}"><b>${i + 1}</b>${q.short}</button>`).join("");
-    $("ptitle").textContent = `Part ${S.part + 1}: ${P.title}`;
+    $("plabel").textContent = `Part ${S.part + 1} of 5 · ${P.title}`;
+    $("ptitle").textContent = P.q;
+    $("idea").hidden = S.step !== P.ideaAt;
+    $("ideaText").textContent = P.idea;
     $("say").innerHTML = P.steps[S.step];
     $("ctrls").innerHTML = ctrlsHTML();
     $("stepnum").textContent = `Step ${S.step + 1} of ${P.steps.length}`;
@@ -640,7 +671,8 @@ button:disabled { opacity: 0.45; cursor: default; }
     if (p === 0 && st >= 2) S.counted = 10;
     if (p === 1) { S.spin.words = []; S.spin.hi = null; }
     if (p === 2) { S.dial = st === 1 ? 0 : st === 2 ? 2 : 1; S.picks = []; }
-    if (p === 3 && st <= 1) S.pron = UNFAIR.slice();
+    if (p === 3 && st <= 2) S.who = UNFAIR.slice();
+    if (p === 3 && st === 4) S.who = FAIR.slice();
     if (p === 4 && st === 1) S.saw = { dog: false, fox: false };
     renderLearn();
   }
@@ -722,16 +754,16 @@ button:disabled { opacity: 0.45; cursor: default; }
     if (act === "spin3") return spinWhole();
     if (act.startsWith("dial") && act.length === 5) { S.dial = +act[4]; S.picks = []; }
     if (act === "pick10") S.picks = Array.from({ length: 10 }, () => pickW(dialChances(DIAL, S.dial)));
-    if (act === "unfair") S.pron = UNFAIR.slice();
-    if (act === "fair") S.pron = FAIR.slice();
+    if (act === "unfair") S.who = UNFAIR.slice();
+    if (act === "fair") S.who = FAIR.slice();
     if (act === "reveal") { S.step = 3; }
     renderLearn();
   });
   $("back").addEventListener("click", () => go(-1));
   $("next").addEventListener("click", () => go(1));
   function flipPron(g) {
-    if (S.mode !== "learn" || S.part !== 3) return;
-    const i = +g.dataset.i; S.pron[i] = PRON[(PRON.indexOf(S.pron[i]) + 1) % 3];
+    if (S.mode !== "learn" || S.part !== 3 || S.step < 3) return;
+    const i = +g.dataset.i; S.who[i] = S.who[i] === "M" ? "W" : "M";
     renderLearn();
     const ng = svg.querySelector(`[data-i="${i}"]`); if (ng) ng.focus();
   }
@@ -772,10 +804,10 @@ button:disabled { opacity: 0.45; cursor: default; }
       return { t, rows, lead: c.lead, ask: `AI counted the words after <span class="w">“${c.lead}”</span>. What is the chance AI picks <span class="w" style="color:${rows[i].col}">${rows[i].w}</span>?`, kind: "frac", n: rows[i].n, d: total, i };
     }
     if (t === "bias") {
-      const lead = BIAS[rnd(BIAS.length)], he = 5 + rnd(4), she = 1 + rnd(he - 2), they = 1 + rnd(2);
-      const rows = PRON.map((w, i) => ({ w, col: PCOL[w], n: [he, she, they][i] }));
-      if (Math.random() < 0.5) return { t, rows, lead, ask: `The data has the words after <span class="w">“${lead}”</span>. How many more <span class="w" style="color:${PCOL.she}">she</span> sentences would make he and she equal?`, kind: "num", ans: he - she, sub: true };
-      return { t, rows, lead, ask: `The data has the words after <span class="w">“${lead}”</span>. What is the chance AI picks <span class="w" style="color:${PCOL.she}">she</span>?`, kind: "frac", n: she, d: he + she + they, i: 1 };
+      const lead = "Patients in the data", men = 5 + rnd(5), women = 1 + rnd(men - 2);
+      const rows = [{ w: "men", col: WHO.M.col, n: men }, { w: "women", col: WHO.W.col, n: women }];
+      if (Math.random() < 0.5) return { t, rows, lead, ask: `An AI was trained on these heart attack patients. How many more <span class="w" style="color:${WHO.W.col}">women</span> would make men and women equal?`, kind: "num", ans: men - women, sub: true };
+      return { t, rows, lead, ask: `An AI was trained on these heart attack patients. What fraction of the patients are <span class="w" style="color:${WHO.W.col}">women</span>?`, kind: "frac", n: women, d: men + women, i: 1, frac2: true };
     }
     if (t === "spin") {
       const c = CTX[rnd(CTX.length)], sp = shuffle(SPLITS[rnd(SPLITS.length)].slice());
@@ -830,7 +862,7 @@ button:disabled { opacity: 0.45; cursor: default; }
     $("pfb").textContent = ""; $("pfb").className = "fb"; $("pwork").innerHTML = "";
     let h = "";
     if (q.kind === "frac") h = `<div class="ans"><div class="fin"><input id="aN" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Top number"><span class="ln"></span><input id="aD" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Bottom number"></div></div>`;
-    if (q.kind === "num") h = `<div class="ans"><input id="aX" class="wide" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Answer"><span class="unit">${q.sub ? "more sentences" : "times"}</span></div>`;
+    if (q.kind === "num") h = `<div class="ans"><input id="aX" class="wide" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Answer"><span class="unit">${q.sub ? "more women" : "times"}</span></div>`;
     if (q.kind === "choice") h = `<div class="choices">${q.opts.map(o => `<button type="button" data-opt="${o}">${o}</button>`).join("")}</div>`;
     $("pans").innerHTML = h;
     $("pcheck").hidden = q.kind === "choice";
@@ -843,7 +875,7 @@ button:disabled { opacity: 0.45; cursor: default; }
   function workFor(q) {
     if (q.kind === "frac") {
       const g = gcd(q.n, q.d);
-      return `<div class="eqs"><span>chance</span><span>=</span><span>${hf(q.n, q.d)}<span class="nm">${q.rows[q.i].w} count over all</span></span>` +
+      return `<div class="eqs"><span>chance</span><span>=</span><span>${hf(q.n, q.d)}<span class="nm">${q.frac2 ? "women over all patients" : q.rows[q.i].w + " count over all"}</span></span>` +
         (g > 1 ? `<span></span><span>=</span><span>${hf(q.n / g, q.d / g)}<span class="nm">simplify</span></span>` : "") + `</div>`;
     }
     if (q.t === "spin") {
@@ -853,7 +885,7 @@ button:disabled { opacity: 0.45; cursor: default; }
         <span></span><span>=</span><span>${hf(r.n * q.times, 10)}</span>
         <span></span><span>=</span><span>${q.ans}</span></div><p class="note">About ${q.ans}. Spins are random, so it could be a little more or less.</p>`;
     }
-    if (q.sub) { const he = q.rows[0].n, she = q.rows[1].n; return `<div class="eqs"><span>more she</span><span>=</span><span>${he} − ${she}<span class="nm">he − she</span></span><span></span><span>=</span><span>${q.ans}</span></div>`; }
+    if (q.sub) { const he = q.rows[0].n, she = q.rows[1].n; return `<div class="eqs"><span>more women</span><span>=</span><span>${he} − ${she}<span class="nm">men − women</span></span><span></span><span>=</span><span>${q.ans}</span></div>`; }
     return `<p>${q.why || ""}</p>`;
   }
   function finish(showWork) { Q.done = true; drawQ(); if (showWork) $("pwork").innerHTML = workFor(Q.q); }
@@ -865,15 +897,15 @@ button:disabled { opacity: 0.45; cursor: default; }
       if (n * q.d === d * q.n) { score(true); fb(true, `Yes! ${q.n} out of ${q.d}.`); return finish(true); }
       score(false);
       if (n === q.d && d === q.n) return fb(false, "Flip it: the top is the count for that word, the bottom is all the tallies.");
-      if (n === q.n) return fb(false, `The top is right. For the bottom, count every tally, not just one word.`);
-      return fb(false, "Not yet. Count the tallies for that word, then count all the tallies.");
+      if (n === q.n) return fb(false, `The top is right. For the bottom, count every tally, not just one row.`);
+      return fb(false, "Not yet. Count the tallies in that row, then count all the tallies.");
     }
     const x = parseFloat($("aX").value);
     if (isNaN(x)) return fb(false, "Type a number.");
     if (x === q.ans) { score(true); fb(true, "Yes!"); return finish(true); }
     score(false);
     if (q.t === "spin") fb(false, `Not yet. The chance is ${q.rows[q.i].n} out of 10. What is that part of ${q.times}?`);
-    else fb(false, "Not yet. How many more she would match the he count?");
+    else fb(false, "Not yet. How many more women would match the number of men?");
   }
   function showMe() {
     const q = Q.q; score(false);
