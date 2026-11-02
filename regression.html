@@ -165,6 +165,8 @@ h1 .m { color: var(--orange); }
 .models button { min-height: 44px; font-size: 1rem; background: var(--sheet); }
 .models button[aria-pressed="true"] { background: var(--orange); color: var(--sheet); border-color: var(--orange); }
 .form { margin: 8px 0 0; font-family: var(--font-num); font-weight: 700; font-size: 1.1rem; color: var(--muted); }
+.eqn.ti { color: var(--c); }
+.rline { font-family: var(--font-num); font-weight: 700; font-size: 1.2rem; color: var(--muted); }
 .eqn { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; color: var(--orange); overflow-wrap: anywhere; }
 .r2row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 4px; }
 .r2 { font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; line-height: 1.1; white-space: nowrap; }
@@ -260,9 +262,10 @@ svg[data-mode="match"] .pt { pointer-events: none; }
       </div>
 
       <div class="card">
-        <p class="label">2. Drag the orange dots to fit the data</p>
+        <p class="label" id="mainLabel">2. Drag the orange dots to fit the data</p>
         <div class="eqn" id="userEq"></div>
         <div class="r2row"><span class="r2" id="userR2"></span><span class="verdict-pill" id="verdict"></span></div>
+        <div class="rline" id="tiR" hidden></div>
         <div class="meter" aria-hidden="true"><div class="fill" id="meterFill"></div><div class="best" id="meterBest" hidden></div></div>
         <div class="scale" aria-hidden="true"><span>0</span><span>0.5</span><span>1</span></div>
         <div class="row">
@@ -497,11 +500,28 @@ svg[data-mode="match"] .pt { pointer-events: none; }
 
   function readout(c, fits) {
     $("form").textContent = FORM[model];
-    $("userEq").textContent = eqText(model, c, 2);
     const r2 = userR2(model, c), best = fits[model];
     const R = model === "quad" ? "R²" : "r²";
     const v = $("verdict");
-    if (r2 == null) { $("userR2").textContent = `${R} = ?`; v.textContent = "Add more points"; v.className = "verdict-pill v-poor"; $("meterFill").style.width = "0"; }
+    // One r² at a time (Shawn 2026-11-02): with the calculator fit on, this card shows the TI-84 values instead of the student's.
+    const ti = shown[model] && best;
+    const card2 = $("userEq").closest(".card");
+    card2.className = "card" + (ti ? " f-" + model : "");
+    $("userEq").className = "eqn" + (ti ? " ti" : "");
+    $("mainLabel").textContent = ti ? `TI-84 ${NAME[model]}` : "2. Drag the orange dots to fit the data";
+    $("howNote").hidden = !!ti; v.hidden = !!ti;
+    $("tiR").hidden = !(ti && model !== "quad");
+    if (ti && model !== "quad") $("tiR").textContent = `r = ${fixed(best.r, 4)}`;
+    if (ti) {
+      $("userEq").textContent = eqText(model, best, 4);
+      $("userR2").textContent = `${R} = ${best.r2.toFixed(4)}`;
+      $("meterFill").style.width = Math.max(0, Math.min(1, best.r2)) * 100 + "%";
+      $("meterFill").style.background = "var(--c)";
+    } else {
+      $("userEq").textContent = eqText(model, c, 2);
+      $("meterFill").style.background = "";
+    }
+    if (ti) {} else if (r2 == null) { $("userR2").textContent = `${R} = ?`; v.textContent = "Add more points"; v.className = "verdict-pill v-poor"; $("meterFill").style.width = "0"; }
     else {
       $("userR2").textContent = r2 < -0.0005 ? `${R} < 0` : `${R} = ${Math.max(0, r2).toFixed(4)}`;
       $("meterFill").style.width = Math.max(0, Math.min(1, r2)) * 100 + "%";
@@ -514,7 +534,7 @@ svg[data-mode="match"] .pt { pointer-events: none; }
       v.textContent = txt; v.className = "verdict-pill " + cls;
     }
     const mb = $("meterBest");
-    mb.hidden = !(shown[model] && best);
+    mb.hidden = true;
     if (best) { mb.style.left = Math.max(0, Math.min(1, best.r2)) * 100 + "%"; mb.style.background = `var(--${{ lin: "green", quad: "purple", exp: "pink", ln: "teal" }[model]})`; }
     $("expNote").hidden = model !== "exp";
     $("howNote").textContent = {
@@ -530,6 +550,7 @@ svg[data-mode="match"] .pt { pointer-events: none; }
       card.classList.toggle("mine", m === model);
       const RR = m === "quad" ? "R²" : "r²";
       if (!shown[m]) { out.hidden = true; rr.textContent = ""; return; }
+      if (m === model && f) { out.hidden = false; out.innerHTML = `<span class="vals">Values shown above</span>`; rr.textContent = ""; return; }
       out.hidden = false;
       if (!f) { out.innerHTML = `<span class="vals">${pts.length < (m === "quad" ? 3 : 2) ? "Not enough points" : "Cannot fit this data"}</span>`; rr.textContent = ""; return; }
       rr.textContent = `${RR} = ${f.r2.toFixed(4)}`;
@@ -740,6 +761,7 @@ window.I18N_COMMON = {
 <script>
 /* French for Regression: Curve of Best Fit (regression.html). */
 window.I18N_PAGE = {
+ "Values shown above": "Valeurs affichées plus haut",
  "Match regression": "Ajuster la régression",
  "Move points": "Déplacer les points",
  "What to drag": "Quoi glisser",
