@@ -199,7 +199,8 @@ h1 .m { color: var(--orange); }
 .g-minor { stroke: var(--grid); stroke-width: 1; }
 .g-axis { stroke: var(--muted); stroke-width: 2.5; }
 .tick { font-family: var(--font-num); font-weight: 700; font-size: 19px; fill: var(--ink); }
-.c-user { fill: none; stroke: var(--orange); stroke-width: 4.5; stroke-linejoin: round; stroke-linecap: round; }
+.c-hit { fill: none; stroke: transparent; stroke-width: 34; cursor: move; pointer-events: stroke; }
+.c-user { pointer-events: none; fill: none; stroke: var(--orange); stroke-width: 4.5; stroke-linejoin: round; stroke-linecap: round; }
 .c-best { fill: none; stroke-width: 3.5; stroke-dasharray: 12 8; stroke-linecap: round; }
 .c-best.lin { stroke: var(--green); } .c-best.quad { stroke: var(--purple); } .c-best.exp { stroke: var(--pink); } .c-best.ln { stroke: var(--teal); }
 .resid { stroke: var(--orange); stroke-width: 2.5; stroke-dasharray: 4 4; opacity: 0.8; }
@@ -255,6 +256,7 @@ h1 .m { color: var(--orange); }
           <label><input type="checkbox" id="showResid">Show misses</label>
           <button type="button" id="resetCurve">Reset my curve</button>
         </div>
+        <p class="note" id="howNote"></p>
         <p class="note" id="expNote" hidden>Like the TI-84, exponential r² is measured on ln y.</p>
       </div>
 
@@ -295,6 +297,7 @@ h1 .m { color: var(--orange); }
   }
   const gBest = el("g", { "clip-path": "url(#plotClip)" }, svg);
   const gResid = el("g", {}, svg);
+  const userHit = el("path", { class: "c-hit", "clip-path": "url(#plotClip)" }, svg);
   const userPath = el("path", { class: "c-user", "clip-path": "url(#plotClip)" }, svg);
   const gPts = el("g", {}, svg);
   const gHd = el("g", {}, svg);
@@ -458,6 +461,7 @@ h1 .m { color: var(--orange); }
     // student's curve and handles
     const c = userCurve(model, handles);
     userPath.setAttribute("d", curvePath(c.f, model === "ln" ? 0.01 : MIN));
+    userHit.setAttribute("d", userPath.getAttribute("d"));
     gHd.replaceChildren();
     handles.forEach((h, i) => {
       const g = el("g", { class: "hd", tabindex: 0, "data-h": i, role: "button", "aria-label": `Curve handle (${h.x}, ${h.y})` }, gHd);
@@ -500,6 +504,12 @@ h1 .m { color: var(--orange); }
     mb.hidden = !(shown[model] && best);
     if (best) { mb.style.left = Math.max(0, Math.min(1, best.r2)) * 100 + "%"; mb.style.background = `var(--${{ lin: "green", quad: "purple", exp: "pink", ln: "teal" }[model]})`; }
     $("expNote").hidden = model !== "exp";
+    $("howNote").textContent = {
+      lin: "Drag a dot to tilt the line. Drag the line itself to slide it.",
+      quad: "The vertex dot moves the whole parabola. The other dot changes how wide it is and which way it opens.",
+      exp: "Drag a dot to bend the curve. Drag the curve itself to slide it.",
+      ln: "Drag a dot to bend the curve. Drag the curve itself to slide it.",
+    }[model];
 
     // calculator cards
     FAM.forEach(m => {
@@ -533,6 +543,7 @@ h1 .m { color: var(--orange); }
   svg.addEventListener("pointerdown", e => {
     const hd = e.target.closest(".hd"), pt = e.target.closest(".pt");
     if (hd) drag = { kind: "h", i: +hd.dataset.h };
+    else if (e.target === userHit) drag = { kind: "c" };
     else if (pt) drag = { kind: "p", i: +pt.dataset.i };
     else {
       const q = toPlane(e);
@@ -545,7 +556,26 @@ h1 .m { color: var(--orange); }
   svg.addEventListener("pointermove", e => {
     if (!drag) return;
     const q = toPlane(e);
-    if (drag.kind === "h") handles[drag.i] = fixHandle(drag.i, q);
+    // Sliding: the curve itself, or the quadratic's vertex, moves both handles together so the shape stays the same.
+    if (drag.kind === "c" || (drag.kind === "h" && drag.i === 0 && model === "quad")) {
+      const a = drag.kind === "c" ? (drag.last ||= q) : handles[0];
+      const dx = round(q.x - a.x, 1), dy = round(q.y - a.y, 1);
+      const next = handles.map(h => ({ x: round(h.x + dx, 1), y: round(h.y + dy, 1) }));
+      const lowX = model === "ln" ? 0.2 : MIN, lowY = model === "exp" ? 0.2 : MIN;
+      const ok = h => h.x >= lowX && h.x <= MAX && h.y >= lowY && h.y <= MAX;
+      if (drag.kind === "h") { // the vertex follows the pointer; the other dot may leave the grid
+        const v = { x: round(Math.min(MAX, Math.max(MIN, q.x)), 1), y: round(Math.min(MAX, Math.max(MIN, q.y)), 1) };
+        // Keep the other dot on the same parabola and on the grid (mirror it or pull it closer to the vertex).
+        const a2 = (handles[1].y - handles[0].y) / (handles[1].x - handles[0].x) ** 2;
+        let d = handles[1].x - handles[0].x, h1 = null;
+        for (let t = 0; t < 60 && !h1; t++) {
+          for (const dd of [d, -d]) { const c = { x: round(v.x + dd, 1), y: round(v.y + a2 * dd * dd, 1) }; if (ok(c) && Math.abs(dd) >= 0.3) { h1 = c; break; } }
+          d *= 0.92;
+        }
+        if (h1) handles = [v, h1];
+      } else if (next.every(ok)) { handles = next; drag.last = { x: a.x + dx, y: a.y + dy }; }
+    }
+    else if (drag.kind === "h") handles[drag.i] = fixHandle(drag.i, q);
     else { drag.off = q.x < MIN - 0.3 || q.x > MAX + 0.3 || q.y < MIN - 0.3 || q.y > MAX + 0.3; pts[drag.i] = clampPt(q); }
     draw(); mark(); showCoord();
   });
@@ -563,6 +593,7 @@ h1 .m { color: var(--orange); }
     if (drag.off) g.classList.add("del");
   }
   function showCoord() {
+    if (drag.kind === "c") return;
     const p = drag.kind === "h" ? handles[drag.i] : pts[drag.i];
     coord.setAttribute("class", "coord " + (drag.off ? "del" : drag.kind));
     coord.setAttribute("x", Math.min(sx(MAX) - 60, Math.max(sx(MIN) + 60, sx(p.x))));
@@ -686,6 +717,9 @@ window.I18N_COMMON = {
 <script>
 /* French for Regression: Curve of Best Fit (regression.html). */
 window.I18N_PAGE = {
+ "Drag a dot to tilt the line. Drag the line itself to slide it.": "Glisse un point pour incliner la droite. Glisse la droite elle-même pour la déplacer.",
+ "The vertex dot moves the whole parabola. The other dot changes how wide it is and which way it opens.": "Le point du sommet déplace toute la parabole. L’autre point change sa largeur et le sens de son ouverture.",
+ "Drag a dot to bend the curve. Drag the curve itself to slide it.": "Glisse un point pour courber la courbe. Glisse la courbe elle-même pour la déplacer.",
  "Regression: Curve of Best Fit": "Régression : courbe la mieux ajustée",
  "Regression: {0}": "Régression : {0}",
  "Curve of Best Fit": "courbe la mieux ajustée",
