@@ -196,6 +196,15 @@ h1 .m { color: var(--orange); }
 .board { position: relative; }
 .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding-top: 6px; flex: none; }
 .bar .hint { margin: 0; font-size: 0.85rem; }
+/* Mode switch: Match regression (curve moves, data locked) or Move points (data moves, curve locked). */
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); min-height: 40px; padding: 6px 14px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"][data-mode="match"] { background: var(--orange); color: var(--sheet); }
+.seg button[aria-pressed="true"][data-mode="points"] { background: var(--pt); color: var(--sheet); }
+svg[data-mode="points"] .hd, svg[data-mode="points"] .c-hit { pointer-events: none; }
+svg[data-mode="points"] .hd { opacity: 0.35; }
+svg[data-mode="match"] .pt { pointer-events: none; }
 .g-minor { stroke: var(--grid); stroke-width: 1; }
 .g-axis { stroke: var(--muted); stroke-width: 2.5; }
 .tick { font-family: var(--font-num); font-weight: 700; font-size: 19px; fill: var(--ink); }
@@ -228,6 +237,10 @@ h1 .m { color: var(--orange); }
     <div class="board">
       <svg id="svg" role="img" aria-label="Scatter plot with your curve"></svg>
       <div class="bar">
+        <div class="seg" id="modeSeg" role="group" aria-label="What to drag">
+          <button type="button" data-mode="match" aria-pressed="true">Match regression</button>
+          <button type="button" data-mode="points" aria-pressed="false">Move points</button>
+        </div>
         <button type="button" id="newData">New data</button>
         <button type="button" id="clearPts">Clear points</button>
         <p class="hint" id="hint">Tap the grid to add a point. Drag a point off the grid to remove it.</p>
@@ -418,7 +431,7 @@ h1 .m { color: var(--orange); }
   }
 
   // ---------- state ----------
-  let pts = makeData("lin"), model = "lin", handles = [];
+  let pts = makeData("lin"), model = "lin", handles = [], mode = "match";
   const shown = { lin: false, quad: false, exp: false, ln: false };
 
   function defaultHandles() {
@@ -526,7 +539,8 @@ h1 .m { color: var(--orange); }
       out.querySelector(".eq1").textContent = eqText(m, f, 4);
       vals.forEach(t => { const s = document.createElement("span"); s.textContent = t; out.querySelector(".vals").appendChild(s); });
     });
-    $("hint").textContent = pts.length ? "Tap the grid to add a point. Drag a point off the grid to remove it." : "Tap the grid to add points.";
+    $("hint").textContent = mode === "match" ? "The points are locked. Drag the orange curve."
+      : pts.length ? "Tap the grid to add a point. Drag a point off the grid to remove it." : "Tap the grid to add points.";
   }
 
   // build calculator cards
@@ -541,10 +555,11 @@ h1 .m { color: var(--orange); }
   // ---------- interaction ----------
   let drag = null;
   svg.addEventListener("pointerdown", e => {
-    const hd = e.target.closest(".hd"), pt = e.target.closest(".pt");
+    const hd = mode === "match" && e.target.closest(".hd"), pt = mode === "points" && e.target.closest(".pt");
     if (hd) drag = { kind: "h", i: +hd.dataset.h };
-    else if (e.target === userHit) drag = { kind: "c" };
+    else if (mode === "match" && e.target === userHit) drag = { kind: "c" };
     else if (pt) drag = { kind: "p", i: +pt.dataset.i };
+    else if (mode === "match") return;
     else {
       const q = toPlane(e);
       if (q.x < MIN || q.x > MAX || q.y < MIN || q.y > MAX || pts.length >= 25) return;
@@ -602,7 +617,7 @@ h1 .m { color: var(--orange); }
   }
   // keyboard: arrows move a focused point or handle by 0.1 (Shift: 1)
   svg.addEventListener("keydown", e => {
-    const g = e.target.closest(".hd, .pt"); if (!g) return;
+    const g = e.target.closest(mode === "match" ? ".hd" : ".pt"); if (!g) return;
     const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (!k) return;
     e.preventDefault();
     const s = e.shiftKey ? 1 : 0.1, isH = g.classList.contains("hd"), i = +(isH ? g.dataset.h : g.dataset.i);
@@ -610,6 +625,13 @@ h1 .m { color: var(--orange); }
     if (isH) handles[i] = fixHandle(i, q); else pts[i] = clampPt(q);
     draw(); (isH ? gHd : gPts).children[i].focus();
   });
+
+  function setMode(m) {
+    mode = m; svg.dataset.mode = m;
+    document.querySelectorAll("#modeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+    draw();
+  }
+  document.querySelectorAll("#modeSeg button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
 
   function setModel(m) {
     model = m;
@@ -623,6 +645,7 @@ h1 .m { color: var(--orange); }
   $("clearPts").addEventListener("click", () => { pts = []; draw(); });
 
   window.__reg = { REG, userCurve, userR2, get pts() { return pts; }, set pts(v) { pts = v; draw(); }, setModel, get handles() { return handles; }, set handles(v) { handles = v; draw(); } };
+  svg.dataset.mode = mode;
   setModel("lin");
 })();
 </script>
@@ -717,6 +740,10 @@ window.I18N_COMMON = {
 <script>
 /* French for Regression: Curve of Best Fit (regression.html). */
 window.I18N_PAGE = {
+ "Match regression": "Ajuster la régression",
+ "Move points": "Déplacer les points",
+ "What to drag": "Quoi glisser",
+ "The points are locked. Drag the orange curve.": "Les points sont bloqués. Glisse la courbe orange.",
  "Drag a dot to tilt the line. Drag the line itself to slide it.": "Glisse un point pour incliner la droite. Glisse la droite elle-même pour la déplacer.",
  "The vertex dot moves the whole parabola. The other dot changes how wide it is and which way it opens.": "Le point du sommet déplace toute la parabole. L’autre point change sa largeur et le sens de son ouverture.",
  "Drag a dot to bend the curve. Drag the curve itself to slide it.": "Glisse un point pour courber la courbe. Glisse la courbe elle-même pour la déplacer.",
