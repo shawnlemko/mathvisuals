@@ -155,13 +155,46 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
 .seg button[aria-pressed="true"] { background: var(--pt); color: var(--sheet); }
 .grid-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
 @media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+/* Learning / Practice switch in the header */
+header .seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+header .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.2rem; min-height: 48px; padding: 6px 20px; }
+header .seg-btns button + button { border-left: 2px solid var(--grid-major); }
+header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
+/* Practice: read the slope of a line and type it as a fraction. */
+.pp-dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.p-task { margin: 0 0 12px; font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
+.p-entry { gap: 14px; }
+.frac-in { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; }
+.frac-in input { width: 4.2ch; font-family: var(--font-num); font-size: 1.9rem; font-weight: 700; text-align: center; padding: 4px 6px;
+  border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.frac-in input:first-child { color: var(--green); }
+.frac-in input:last-child { color: var(--orange); }
+.frac-in .bar { width: 100%; height: 3px; background: var(--ink); border-radius: 2px; }
+.frac-in .bar + input { margin-top: 0; }
+.go { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 22px; min-height: 48px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.go:hover { background: var(--sheet); color: var(--pt); }
+.p-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.p-btns button { font-size: 1.05rem; min-height: 46px; padding: 8px 16px; }
+.p-btns button:disabled { opacity: 0.45; cursor: default; }
+.solved { margin-left: auto; font-weight: 700; color: var(--muted); }
+.solved b { font-family: var(--font-num); color: var(--ink); font-size: 1.3rem; }
+.verdict.ok .pill { color: var(--green); } .verdict.no .pill { color: var(--warn); }
+.verdict .frac { font-family: var(--font-num); font-weight: 700; font-size: 1.3rem; margin-left: 6px; vertical-align: middle; }
+/* Show me: one step per line, = signs lined up, step name in the right column. */
+.steps { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: 12px; row-gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.steps .l { justify-self: end; }
+.steps .why { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); justify-self: end; text-align: right; }
 </style>
 
 <div class="wrap">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1><span class="r">Rise</span> over <span class="n">Run</span> Lab</h1></div>
-    <p>Drag point A or B, or use the sliders. The slope updates as you go. Points snap to whole numbers.</p>
+    <p id="learnTip">Drag point A or B, or use the sliders. The slope updates as you go. Points snap to whole numbers.</p>
+    <p id="practiceTip" hidden>Count the rise and the run from A to B. Then type the slope.</p>
+    <div class="seg-btns" id="mode" role="group" aria-label="Mode">
+      <button type="button" data-mode="learn" class="on" aria-pressed="true">Learning</button><button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+    </div>
   </header>
 
   <div class="main">
@@ -169,7 +202,7 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
       <svg id="plane" role="img" aria-label="Coordinate plane with a line through points A and B"></svg>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="learnPanel">
       <section class="card" aria-live="polite">
         <p class="label">Slope</p>
         <div class="points"><span><b>A</b> <span id="aTxt"></span></span><span><b>B</b> <span id="bTxt"></span></span></div>
@@ -203,6 +236,29 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
         </div>
       </section>
 
+    </div>
+
+    <!-- Practice: a random line through two clear grid points; the student reads the slope. -->
+    <div class="panel" id="practicePanel" hidden>
+      <section class="card">
+        <p class="p-task">What is the slope of this line?</p>
+        <div class="eq p-entry">
+          <span class="var">m</span><span>=</span>
+          <span class="frac-in"><input id="pNum" type="text" autocomplete="off" data-pad="neg" aria-label="Rise (top)"><span class="bar"></span><input id="pDen" type="text" autocomplete="off" data-pad="neg" aria-label="Run (bottom)"></span>
+          <button type="button" id="pCheck" class="go">Check</button>
+        </div>
+        <p class="hint"><span class="c-green">Rise</span> on top, <span class="c-orange">run</span> on the bottom.</p>
+        <div class="verdict" id="pFb" aria-live="polite" hidden><span class="pill" id="pPill"></span><p id="pNote"></p></div>
+        <div class="p-btns">
+          <button type="button" id="pShow">Show me</button>
+          <button type="button" id="pNew">New graph</button>
+          <span class="solved">Solved: <b id="pSolved">0</b></span>
+        </div>
+      </section>
+      <section class="card" id="pStepsCard" hidden>
+        <p class="label">Show me</p>
+        <div class="steps" id="pSteps" aria-live="polite"></div>
+      </section>
     </div>
   </div>
 </div>
@@ -367,6 +423,178 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
 })();
 </script>
 <script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
+})();
+</script>
+<script>
 (() => {
   const { fmt, gcd } = MathBoard;
   const $ = id => document.getElementById(id);
@@ -377,7 +605,9 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
 
   // Builds the plane for Quadrant I (0 to 10) or all four quadrants (−10 to 10), keeping A and B where they fit.
   // Quadrant I uses bigger squares so the board stays the same size on screen.
-  function setup(quads) {
+  let quads = 4;
+  function setup(q) {
+    quads = q;
     const svg = $("plane"), a = A ? { x: A.x, y: A.y } : { x: 2, y: 2 }, bb = B ? { x: B.x, y: B.y } : { x: 8, y: 6 };
     svg.replaceChildren();
     b = quads === 1 ? MathBoard.create(svg, { min: 0, max: 10, unit: 58, pad: 40 }) : MathBoard.create(svg, { min: -10, max: 10 });
@@ -441,7 +671,7 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
       const simple = d === 1 ? fmt(n) : `<span class="frac"><span>${fmt(n)}</span><span>${d}</span></span>`;
       const dec = Number.isInteger(rise / run) ? "" : `<span class="dec">≈ ${fmt(+(rise / run).toFixed(2))}</span>`;
       ans.innerHTML = `<span>=</span> <span class="answer">${simple}${dec}</span>`;
-      if (rise === 0) { kind = "Zero"; color = "var(--muted)"; text = `The rise is 0, so the slope is 0 ÷ ${fmt(run)} = 0. The line is horizontal.`; }
+      if (rise === 0) { kind = "Zero"; color = "var(--muted)"; text = "The rise is 0, so the slope is 0. The line is horizontal."; }
       else if (n > 0) {
         kind = "Positive"; color = "var(--green)";
         text = "The line goes up as you read from left to right." +
@@ -490,6 +720,140 @@ h1 .r { color: var(--green); } h1 .n { color: var(--orange); }
   });
 
   render();
+
+  /* ---------- Practice: read the slope of a random line ---------- */
+  const NS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+  const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const fracHTML = (n, d) => d === 1 ? `<span>${fmt(n)}</span>` : `<span class="frac"><span>${fmt(n)}</span><span>${fmt(d)}</span></span>`;
+  let mode = "learn", pb, pq = null, step = 0, solved = 0, done = false;
+  const pd = {}; // practice drawing: line, triangle, segments, labels
+
+  // A random line: the slope kind first (positive, negative, zero, whole number or fraction), then two clear grid points.
+  // The run is always to the right, so students read left to right.
+  function newQuestion() {
+    let q;
+    do {
+      const kind = ["whole", "whole", "frac", "frac", "frac", "zero"][randInt(0, 5)];
+      let n, d;
+      if (kind === "zero") { n = 0; d = 1; }
+      else if (kind === "whole") { n = randInt(1, 4); d = 1; }
+      else { d = randInt(2, 5); do n = randInt(1, 7); while (gcd(n, d) !== 1); }
+      if (kind !== "zero" && Math.random() < 0.5) n = -n;
+      // Sometimes the points are farther apart, so the fraction needs simplifying (like 4 over 6).
+      const ks = [1, 2, 3].filter(k => d * k <= 8 && Math.abs(n) * k <= 8 && (kind !== "whole" || k <= 2));
+      const k = kind === "zero" ? 1 : ks[randInt(0, ks.length - 1)];
+      const run = kind === "zero" ? randInt(2, 7) : d * k, rise = n * k;
+      const ax = randInt(-8, 8 - run), ay = randInt(-8 - Math.min(0, rise), 8 - Math.max(0, rise));
+      q = { n, d, rise, run, A: { x: ax, y: ay }, B: { x: ax + run, y: ay + rise } };
+    // Keep A and B off the axes so the dots never hide a number label or sit on an axis line.
+    } while ((q.A.x === 0 || q.A.y === 0 || q.B.x === 0 || q.B.y === 0) || (pq && q.n === pq.n && q.d === pq.d));
+    pq = q; step = 0; done = false;
+    $("pNum").value = ""; $("pDen").value = "";
+    $("pFb").hidden = true;
+    drawPractice(); drawSteps();
+  }
+
+  function setupPractice() {
+    const svg = $("plane");
+    svg.replaceChildren();
+    pb = MathBoard.create(svg, { min: -10, max: 10 });
+    pd.tri = pb.fill("green"); pd.ln = pb.line();
+    pd.run = pb.segment("orange"); pd.rise = pb.segment("green");
+    pd.lblRun = pb.label("orange"); pd.lblRise = pb.label("green");
+    pd.dots = ["A", "B"].map(name => {
+      const g = svgEl("g", {}, pb.layers.points);
+      svgEl("circle", { class: "pp-dot", r: 14 }, g);
+      svgEl("text", { class: "mb-name", "text-anchor": "middle", dy: 6.5 }, g).textContent = name;
+      return g;
+    });
+    svg.setAttribute("aria-label", "Coordinate plane with a line through points A and B. Read its slope.");
+  }
+
+  // The board shows the line and points A and B. Show me adds the run (step 1) and the rise (step 2).
+  function drawPractice() {
+    const { A, B, rise, run } = pq, C = { x: B.x, y: A.y };
+    pb.lineThrough(pd.ln, A, B);
+    [A, B].forEach((P, i) => pd.dots[i].setAttribute("transform", `translate(${pb.sx(P.x)},${pb.sy(P.y)})`));
+    const showRun = step >= 1, showRise = step >= 2 && rise !== 0;
+    pb.setSegment(pd.run, A, C, { arrow: true, gap: rise === 0 ? 16 : 0 });
+    pb.setSegment(pd.rise, C, B, { arrow: true, gap: 16 });
+    pb.setPolygon(pd.tri, [A, C, B]);
+    pb.show(pd.run, showRun); pb.show(pd.rise, showRise); pb.show(pd.tri, showRise);
+    if (showRun) pd.lblRun.set("run = " + fmt(run), (pb.sx(A.x) + pb.sx(C.x)) / 2, pb.sy(A.y) + (rise > 0 ? 32 : -14)); else pd.lblRun.hide();
+    if (showRise) {
+      const right = C.x <= pb.max - 4;
+      pd.lblRise.set("rise = " + fmt(rise), pb.sx(C.x) + (right ? 12 : -12), (pb.sy(C.y) + pb.sy(B.y)) / 2 + 8, right ? "start" : "end");
+    } else pd.lblRise.hide();
+  }
+
+  // Show me: one line per step, = signs lined up, the step's name on the right.
+  function drawSteps() {
+    const { n, d, rise, run } = pq;
+    $("pStepsCard").hidden = step === 0;
+    const where = rise > 0 ? "Go right from A until you are under B." : rise < 0 ? "Go right from A until you are above B." : "Go right from A to B.";
+    const rows = [
+      `<span class="l c-orange">run</span><span>=</span><span class="c-orange">${fmt(run)}</span><span class="why">${where}</span>`,
+      `<span class="l c-green">rise</span><span>=</span><span class="c-green">${fmt(rise)}</span><span class="why">${rise > 0 ? "Then go up to B." : rise < 0 ? "Then go down to B. Down is negative." : "B is at the same height, so there is no rise."}</span>`,
+      `<span class="l"><span class="var">m</span></span><span>=</span><span class="frac"><span class="c-green">${fmt(rise)}</span><span class="c-orange">${fmt(run)}</span></span><span class="why">Rise over run.</span>`
+    ];
+    if (n !== rise || d !== run) rows.push(`<span class="l"></span><span>=</span>${fracHTML(n, d)}<span class="why">Simplify.</span>`);
+    pq.total = rows.length;
+    $("pSteps").innerHTML = rows.slice(0, step).join("");
+    $("pShow").textContent = step === 0 ? "Show me" : "Next step";
+    $("pShow").disabled = step >= rows.length;
+  }
+
+  const readNum = s => { s = s.trim().replace(/[−–]/g, "-"); return /^-?\d+$/.test(s) ? parseInt(s, 10) : s === "" ? "" : NaN; };
+  function feedback(ok, pill, note, extra = "") {
+    $("pFb").hidden = false;
+    $("pFb").className = "verdict " + (ok ? "ok" : "no");
+    $("pPill").textContent = pill;
+    $("pNote").innerHTML = `<span>${note}</span>${extra}`;
+  }
+  function check() {
+    if (done) return;
+    const { n, d } = pq;
+    const top = readNum($("pNum").value);
+    let bot = readNum($("pDen").value);
+    if (top === "") { $("pNum").focus(); return feedback(false, "Not yet", "Type the rise on top."); }
+    if (bot === "") bot = 1; // a whole number can go in the top box alone
+    if (Number.isNaN(top) || Number.isNaN(bot)) return feedback(false, "Not yet", "Use whole numbers in each box, like 2 over 3 or −4.");
+    if (bot === 0) return feedback(false, "Not yet", "The run can't be 0. Count the squares to the right.");
+    if (top * d === n * bot) {
+      done = true;
+      if (step < pq.total) solved++;
+      $("pSolved").textContent = solved;
+      step = Math.max(step, 2); drawPractice(); // show the rise and run on the graph
+      const simplest = n === 0 || (gcd(top, bot) === 1 && bot > 0);
+      return simplest
+        ? feedback(true, "Correct", n === 0 ? "A flat line has a slope of 0." : n > 0 ? "The line goes up from left to right." : "The line goes down from left to right.")
+        : feedback(true, "Correct", "In simplest form, that is", fracHTML(n, d));
+    }
+    if (n !== 0 && top * d === -n * bot)
+      return feedback(false, "Check the sign", n > 0 ? "The line goes up from left to right, so the slope is positive." : "The line goes down from left to right, so the slope is negative.");
+    if (n !== 0 && top * n === d * bot)
+      return feedback(false, "Flipped", "That is run over rise. Put the rise on top and the run on the bottom.");
+    if (n === 0) return feedback(false, "Not yet", "Look again. Does the line go up or down at all?");
+    feedback(false, "Not yet", "Count again. Go right from A, then up or down to B.");
+  }
+
+  $("pCheck").addEventListener("click", check);
+  ["pNum", "pDen"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } }));
+  $("pShow").addEventListener("click", () => { step++; drawPractice(); drawSteps(); });
+  $("pNew").addEventListener("click", () => { newQuestion(); $("pNum").focus(); });
+
+  function setMode(m) {
+    if (m === mode) return;
+    mode = m;
+    const practice = m === "practice";
+    $("mode").querySelectorAll("button").forEach(x => { const on = x.dataset.mode === m; x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); });
+    $("learnPanel").hidden = practice; $("practicePanel").hidden = !practice;
+    $("learnTip").hidden = practice; $("practiceTip").hidden = !practice;
+    if (practice) { setupPractice(); if (pq) { drawPractice(); drawSteps(); } else newQuestion(); }
+    else { setup(quads); render(); }
+  }
+  $("mode").addEventListener("click", e => { const btn = e.target.closest("button"); if (btn) setMode(btn.dataset.mode); });
 })();
 </script>
 
@@ -610,7 +974,7 @@ window.I18N_PAGE = {
  "The rise is negative because B is lower than A.": "L’élévation est négative parce que B est plus bas que A.",
  "The run is negative because B is left of A.": "La course est négative parce que B est à gauche de A.",
  "The run is 0, and you can't divide by zero. The line is vertical, so it has no slope.": "La course est 0, et on ne peut pas diviser par zéro. La droite est verticale, donc elle n’a pas de pente.",
- "The rise is 0, so the slope is 0 ÷ {n} = 0. The line is horizontal.": "L’élévation est 0, donc la pente est 0 ÷ {n} = 0. La droite est horizontale.",
+ "The rise is 0, so the slope is 0. The line is horizontal.": "L’élévation est 0, donc la pente est 0. La droite est horizontale.",
  "Rise and run can't both be 0, because A and B would be the same point.": "L’élévation et la course ne peuvent pas être 0 toutes les deux, car A et B seraient le même point.",
  "Rise and run": "Élévation et course",
  "The sliders move point B relative to A.": "Les curseurs déplacent le point B par rapport à A.",
@@ -618,7 +982,43 @@ window.I18N_PAGE = {
  "{0} Show rise and run": "{0} Afficher l’élévation et la course",
  "{0} Show coordinates": "{0} Afficher les coordonnées",
  "Quadrant I": "Quadrant I",
- "All four quadrants": "Les quatre quadrants"
+ "All four quadrants": "Les quatre quadrants",
+ /* Learning / Practice */
+ "Learning": "Apprentissage",
+ "Mode": "Mode",
+ "Count the rise and the run from A to B. Then type the slope.": "Compte l’élévation et la course de A à B. Ensuite, écris la pente.",
+ "What is the slope of this line?": "Quelle est la pente de cette droite?",
+ "{0} on top, {1} on the bottom.": "{0} en haut, {1} en bas.",
+ "Rise (top)": "Élévation (en haut)",
+ "Run (bottom)": "Course (en bas)",
+ "Show me": "Montre-moi",
+ "New graph": "Nouveau graphique",
+ "Solved: {0}": "Réussies : {0}",
+ "Coordinate plane with a line through points A and B. Read its slope.": "Plan cartésien avec une droite passant par les points A et B. Lis sa pente.",
+ "Go right from A until you are under B.": "Va vers la droite à partir de A jusqu’à être sous B.",
+ "Go right from A until you are above B.": "Va vers la droite à partir de A jusqu’à être au-dessus de B.",
+ "Go right from A to B.": "Va vers la droite de A jusqu’à B.",
+ "Then go up to B.": "Ensuite, monte jusqu’à B.",
+ "Then go down to B. Down is negative.": "Ensuite, descends jusqu’à B. Descendre, c’est négatif.",
+ "B is at the same height, so there is no rise.": "B est à la même hauteur, donc il n’y a pas d’élévation.",
+ "Rise over run.": "Élévation sur course.",
+ "Simplify.": "Simplifie.",
+ "Not yet": "Pas encore",
+ "Correct": "Bonne réponse",
+ "Check the sign": "Vérifie le signe",
+ "Flipped": "À l’envers",
+ "Type the rise on top.": "Écris l’élévation en haut.",
+ "Use whole numbers in each box, like 2 over 3 or −4.": "Utilise des nombres entiers dans chaque case, comme 2 sur 3 ou −4.",
+ "The run can't be 0. Count the squares to the right.": "La course ne peut pas être 0. Compte les carrés vers la droite.",
+ "A flat line has a slope of 0.": "Une droite horizontale a une pente de 0.",
+ "The line goes up from left to right.": "La droite monte de gauche à droite.",
+ "The line goes down from left to right.": "La droite descend de gauche à droite.",
+ "In simplest form, that is": "Sous forme simplifiée, c’est",
+ "The line goes up from left to right, so the slope is positive.": "La droite monte de gauche à droite, donc la pente est positive.",
+ "The line goes down from left to right, so the slope is negative.": "La droite descend de gauche à droite, donc la pente est négative.",
+ "That is run over rise. Put the rise on top and the run on the bottom.": "C’est la course sur l’élévation. Mets l’élévation en haut et la course en bas.",
+ "Look again. Does the line go up or down at all?": "Regarde encore. Est-ce que la droite monte ou descend?",
+ "Count again. Go right from A, then up or down to B.": "Compte encore. Va vers la droite à partir de A, puis monte ou descends jusqu’à B."
 };
 </script>
 <script>
