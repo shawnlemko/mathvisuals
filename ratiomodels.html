@@ -1,0 +1,1474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Ratio Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Header: three models and a Learning / Practice switch */
+header .seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+header .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.1rem; min-height: 48px; padding: 6px 16px; }
+header .seg-btns button + button { border-left: 2px solid var(--grid-major); }
+header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .switches { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 44px; padding: 6px 14px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button.on { background: var(--pt); color: var(--sheet); }
+@media (min-width: 861px) { .main { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
+.c-a { color: var(--pt); font-weight: 700; }
+.c-b { color: var(--orange); font-weight: 700; }
+
+/* Panel controls */
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.row + .row { margin-top: 12px; }
+.num { width: 3.2ch; font-family: var(--font-num); font-size: 1.8rem; font-weight: 700; text-align: center; padding: 2px 4px;
+  border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.num.wide { width: 4.2ch; }
+.num.a { color: var(--pt); } .num.b { color: var(--orange); }
+.colon { font-family: var(--font-num); font-size: 1.8rem; font-weight: 700; }
+select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); min-height: 44px; }
+.go { font-family: var(--font-display); font-size: 1.1rem; padding: 10px 20px; min-height: 48px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.go:hover { background: var(--sheet); color: var(--pt); }
+.btns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.btns button { font-size: 1.05rem; min-height: 46px; padding: 8px 16px; }
+.btns button:disabled { opacity: 0.45; cursor: default; }
+.solved { margin-left: auto; font-weight: 700; color: var(--muted); }
+.solved b { font-family: var(--font-num); color: var(--ink); font-size: 1.3rem; }
+.task { margin: 0 0 12px; font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; line-height: 1.3; }
+.tag { display: inline-block; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; border: 2px solid var(--green); color: var(--green); margin-bottom: 8px; }
+.verdict.ok .pill { color: var(--green); } .verdict.no .pill { color: var(--warn); }
+.verdict p { margin: 0; }
+.slider { grid-template-columns: 5.5em minmax(0, 1fr) 2.2em; }
+.slider label { overflow-wrap: anywhere; }
+/* Work steps: one per line, = signs lined up, step name in the right column */
+.steps { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: 12px; row-gap: 10px; font-family: var(--font-num); font-size: 1.4rem; }
+.steps .l { justify-self: end; }
+.steps .why { font-family: var(--font-body); font-size: 0.95rem; color: var(--muted); justify-self: end; text-align: right; }
+.steps .new { animation: pop .35s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* The board: plain HTML drawn in percentages, text sized to the board (container units) so it fills any screen */
+.rb { position: relative; container-type: size; padding: 0; overflow: hidden; --u: min(1cqh, 0.62cqw); }
+@media (max-width: 860px), (max-height: 519px) { .rb { height: 60vh; min-height: 360px; } }
+.say { position: absolute; left: 3%; right: 3%; top: 4%; margin: 0; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4.4); line-height: 1.25; text-wrap: balance; }
+.say .q { display: block; color: var(--green); }
+
+/* Double number line */
+.dn-name { position: absolute; left: 1.5%; width: 17%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 3.8); line-height: 1.1; overflow-wrap: anywhere; }
+.dn-line { position: absolute; left: 19%; right: 2.5%; height: max(3px, calc(var(--u) * 0.6)); background: var(--ink); transform: translateY(-50%); border-radius: 2px; }
+.dn-line::after { content: ""; position: absolute; right: -2px; top: 50%; transform: translate(50%, -50%); border-left: calc(var(--u) * 2.4) solid var(--ink); border-top: calc(var(--u) * 1.4) solid transparent; border-bottom: calc(var(--u) * 1.4) solid transparent; }
+.dn-line.a { background: var(--pt); } .dn-line.a::after { border-left-color: var(--pt); }
+.dn-line.b { background: var(--orange); } .dn-line.b::after { border-left-color: var(--orange); }
+.dn-tick { position: absolute; width: max(3px, calc(var(--u) * 0.6)); height: calc(var(--u) * 4.5); background: var(--ink); transform: translate(-50%, -50%); }
+.dn-v { position: absolute; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 6.6); line-height: 1; white-space: nowrap; }
+.dn-v.top { transform: translate(-50%, -100%); color: var(--pt); }
+.dn-v.bot { transform: translate(-50%, 0); color: var(--orange); }
+.dn-v .empty { display: inline-block; width: 2.6ch; height: 1.15em; border: 3px dashed var(--grid-major); border-radius: 8px; vertical-align: middle; }
+.dn-v input { width: 2.8ch; font: inherit; color: inherit; text-align: center; padding: 0.04em 0.06em; border: 3px solid var(--grid-major); border-radius: 10px; background: var(--sheet); }
+.dn-v input.ok { border-color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--sheet)); }
+.dn-v input.no { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--sheet)); }
+.dn-v input.shown { border-style: dashed; border-color: var(--green); }
+.dn-x { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 3.4); color: var(--green); background: var(--sheet); border: 2px solid var(--green); border-radius: 999px; padding: 0.05em 0.45em; white-space: nowrap; }
+.dn-x.new, .tp-box.new, .tp-tot.new { animation: pop .35s ease-out; }
+
+/* Part and whole: the two groups as squares */
+.pw { position: absolute; left: 2%; right: 2%; top: 20%; bottom: 3%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pw-brace { display: inline-flex; flex-direction: column; align-items: center; }
+.pw-row { display: inline-flex; align-items: flex-end; gap: calc(var(--u) * 7); padding: calc(var(--u) * 1.5) calc(var(--u) * 2) 0; }
+.pw-g { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 1.6); transition: opacity .25s; }
+.pw { --s: calc(var(--u) * 9); }
+.pw.many { --s: calc(var(--u) * 7.5); }
+.pw-sq { display: grid; grid-template-columns: repeat(5, var(--s)); gap: calc(var(--s) * 0.18); }
+.pw-sq i { display: block; width: var(--s); height: var(--s); border-radius: calc(var(--s) * 0.16); }
+.pw-g.a i { background: var(--pt); }
+.pw-g.b i { background: var(--orange); border-radius: 50%; }
+.pw-lbl { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4.2); white-space: nowrap; }
+.pw-lbl b { font-family: var(--font-num); }
+.pw-g.a .pw-lbl { color: var(--pt); } .pw-g.b .pw-lbl { color: var(--orange); }
+.pw-under { align-self: stretch; height: calc(var(--u) * 3.2); margin-top: calc(var(--u) * 2); border: max(3px, calc(var(--u) * 0.6)) solid var(--green); border-top: 0; border-radius: 0 0 12px 12px; visibility: hidden; }
+.pw-wl { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4.2); color: var(--green); margin-top: calc(var(--u) * 1.2); visibility: hidden; white-space: nowrap; }
+.pw-wl b { font-family: var(--font-num); }
+.pw.whole .pw-under, .pw.whole .pw-wl { visibility: visible; }
+.dim { opacity: 0.22; }
+.ord { display: inline-block; font-family: var(--font-body); font-weight: 700; font-size: calc(var(--u) * 3); background: var(--ink); color: var(--sheet); border-radius: 999px; padding: 0.1em 0.6em; margin-bottom: calc(var(--u) * 0.6); }
+.ord:empty { visibility: hidden; }
+
+/* Tape diagram */
+.tp-name { position: absolute; left: 1.5%; width: 15%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4.2); line-height: 1.1; overflow-wrap: anywhere; }
+.tp-name.a { color: var(--pt); } .tp-name.b { color: var(--orange); }
+.tp-tape { position: absolute; transform: translateY(-50%); display: flex; border: max(3px, calc(var(--u) * 0.5)) solid var(--ink); }
+.tp-box { flex: 1 1 0; display: flex; align-items: center; justify-content: center; min-width: 0;
+  font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 5.2); color: #fff; overflow: hidden; }
+.tp-box + .tp-box { border-left: max(3px, calc(var(--u) * 0.5)) solid var(--ink); }
+.tp-tape.a .tp-box { background: var(--pt); } .tp-tape.b .tp-box { background: var(--orange); }
+.tp-tot { position: absolute; transform: translateY(-50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 6); white-space: nowrap; }
+.tp-tot.a { color: var(--pt); } .tp-tot.b { color: var(--orange); }
+.tp-tot.ask { color: var(--green); }
+.tp-brace { position: absolute; width: calc(var(--u) * 3); border: max(3px, calc(var(--u) * 0.6)) solid var(--green); border-left: 0; border-radius: 0 12px 12px 0; }
+.tp-wl { position: absolute; max-width: 16%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 800; color: var(--green); font-size: calc(var(--u) * 3.6); line-height: 1.1; text-align: left; }
+.tp-wl b { display: block; font-family: var(--font-num); font-size: calc(var(--u) * 6); }
+.tp-q { color: var(--green); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Ratio Models</h1></div>
+    <div class="switches">
+      <div class="seg-btns" id="tabs" role="group" aria-label="Model">
+        <button type="button" data-tab="dnl" class="on" aria-pressed="true">Double Number Line</button><button type="button" data-tab="pw" aria-pressed="false">Part and Whole</button><button type="button" data-tab="tp" aria-pressed="false">Tape Diagram</button>
+      </div>
+      <div class="seg-btns" id="mode" role="group" aria-label="Mode">
+        <button type="button" data-mode="learn" class="on" aria-pressed="true">Learning</button><button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board rb" id="board" aria-live="polite"></div>
+
+    <!-- Double number line: Learning -->
+    <div class="panel" data-tab="dnl" data-mode="learn">
+      <section class="card">
+        <p class="label">Ratio</p>
+        <div class="row">
+          <input class="num a" id="dA" type="text" inputmode="numeric" data-pad data-step min="1" max="12" value="3" aria-label="First number">
+          <span class="colon">:</span>
+          <input class="num b" id="dB" type="text" inputmode="numeric" data-pad data-step min="1" max="12" value="2" aria-label="Second number">
+        </div>
+        <div class="row"><label for="dStory">Story</label><select id="dStory"></select></div>
+      </section>
+      <section class="card">
+        <p class="label">Equivalent ratios</p>
+        <div class="steps" id="dSteps"></div>
+        <div class="btns">
+          <button type="button" id="dBack">Back</button>
+          <button type="button" id="dNext" class="go">Next step</button>
+          <button type="button" id="dReset">Start over</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Double number line: Practice -->
+    <div class="panel" data-tab="dnl" data-mode="practice" hidden>
+      <section class="card">
+        <div class="row"><span>Level</span><span class="seg" id="dLevel"><button type="button" data-v="1" class="on">Level 1</button><button type="button" data-v="2">Level 2</button></span></div>
+        <p class="hint" id="dLevelHint"></p>
+        <div class="btns">
+          <button type="button" id="dpCheck" class="go">Check</button>
+          <button type="button" id="dpShow">Show me</button>
+          <button type="button" id="dpNew">New question</button>
+          <span class="solved">Solved: <b id="dpSolved">0</b></span>
+        </div>
+        <div class="verdict" id="dpFb" hidden><span class="pill"></span><p></p></div>
+      </section>
+      <section class="card" id="dpStepsCard" hidden>
+        <p class="label">Show me</p>
+        <div class="steps" id="dpSteps"></div>
+      </section>
+    </div>
+
+    <!-- Part and whole: Learning -->
+    <div class="panel" data-tab="pw" data-mode="learn" hidden>
+      <section class="card">
+        <div class="row"><label for="wStory">Story</label><select id="wStory"></select></div>
+        <div class="row">
+          <label class="c-a" for="wA" id="wALbl"></label>
+          <input class="num a" id="wA" type="text" inputmode="numeric" data-pad data-step min="1" max="15" value="4">
+        </div>
+        <div class="row">
+          <label class="c-b" for="wB" id="wBLbl"></label>
+          <input class="num b" id="wB" type="text" inputmode="numeric" data-pad data-step min="1" max="15" value="6">
+        </div>
+      </section>
+      <section class="card">
+        <p class="label">Ratios in this story</p>
+        <div class="steps" id="wSteps"></div>
+        <div class="btns">
+          <button type="button" id="wBack">Back</button>
+          <button type="button" id="wNext" class="go">Next step</button>
+          <button type="button" id="wReset">Start over</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Part and whole: Practice -->
+    <div class="panel" data-tab="pw" data-mode="practice" hidden>
+      <section class="card">
+        <span class="tag" id="wpTag"></span>
+        <p class="task" id="wpTask"></p>
+        <div class="row">
+          <input class="num wide" id="wp1" type="text" inputmode="numeric" data-pad aria-label="First number">
+          <span class="colon">:</span>
+          <input class="num wide" id="wp2" type="text" inputmode="numeric" data-pad aria-label="Second number">
+          <button type="button" id="wpCheck" class="go">Check</button>
+        </div>
+        <div class="verdict" id="wpFb" hidden><span class="pill"></span><p></p></div>
+        <div class="btns">
+          <button type="button" id="wpShow">Show me</button>
+          <button type="button" id="wpNew">New question</button>
+          <span class="solved">Solved: <b id="wpSolved">0</b></span>
+        </div>
+      </section>
+      <section class="card" id="wpStepsCard" hidden>
+        <p class="label">Show me</p>
+        <div class="steps" id="wpSteps"></div>
+      </section>
+    </div>
+
+    <!-- Tape diagram: Learning -->
+    <div class="panel" data-tab="tp" data-mode="learn" hidden>
+      <section class="card">
+        <div class="row"><label for="tStory">Story</label><select id="tStory"></select></div>
+        <p class="label" style="margin-top: 14px">Build the tape</p>
+        <div class="slider"><label for="tA" class="c-a" id="tALbl"></label><input type="range" id="tA" min="1" max="10" step="1" value="2"><output id="tAOut" class="c-a"></output></div>
+        <div class="slider"><label for="tB" class="c-b" id="tBLbl"></label><input type="range" id="tB" min="1" max="10" step="1" value="3" class="orange"><output id="tBOut" class="c-b"></output></div>
+        <div class="row" style="margin-top: 14px">
+          <span>I know</span><select id="tKnow"></select><span class="colon">=</span>
+          <input class="num wide" id="tVal" type="text" inputmode="numeric" data-pad value="40" aria-label="Known amount">
+        </div>
+      </section>
+      <section class="card">
+        <p class="label">Solve with the tape</p>
+        <div class="steps" id="tSteps"></div>
+        <div class="btns">
+          <button type="button" id="tBack">Back</button>
+          <button type="button" id="tNext" class="go">Next step</button>
+          <button type="button" id="tReset">Start over</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tape diagram: Practice -->
+    <div class="panel" data-tab="tp" data-mode="practice" hidden>
+      <section class="card">
+        <p class="label">1. Build the tape</p>
+        <div class="slider"><label for="tpA" class="c-a" id="tpALbl"></label><input type="range" id="tpA" min="1" max="10" step="1" value="1"><output id="tpAOut" class="c-a"></output></div>
+        <div class="slider"><label for="tpB" class="c-b" id="tpBLbl"></label><input type="range" id="tpB" min="1" max="10" step="1" value="1" class="orange"><output id="tpBOut" class="c-b"></output></div>
+        <p class="label" style="margin-top: 14px">2. Solve</p>
+        <div class="row"><span>One part =</span><input class="num wide" id="tpPart" type="text" inputmode="numeric" data-pad aria-label="One part"></div>
+        <div class="row"><span id="tpAskLbl"></span><input class="num wide" id="tpAns" type="text" inputmode="numeric" data-pad aria-label="Answer"><button type="button" id="tpCheck" class="go">Check</button></div>
+        <div class="verdict" id="tpFb" hidden><span class="pill"></span><p></p></div>
+        <div class="btns">
+          <button type="button" id="tpShow">Show me</button>
+          <button type="button" id="tpNew">New question</button>
+          <span class="solved">Solved: <b id="tpSolved">0</b></span>
+        </div>
+      </section>
+      <section class="card" id="tpStepsCard" hidden>
+        <p class="label">Show me</p>
+        <div class="steps" id="tpSteps"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
+})();
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const rnd = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const fmt = n => (Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100));
+  const frac = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const read = el => { const t = el.value.trim(); return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN; };
+  const board = $("board");
+  const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  // Stories for the double number line: the top line (blue) and the bottom line (orange).
+  const LINES = [
+    { name: "Flour and eggs", a: "Flour (cups)", b: "Eggs", say: (a, b) => `A recipe uses ${pl(a, "cup")} of flour for every ${pl(b, "egg")}.` },
+    { name: "Apples and cost", a: "Apples", b: "Cost ($)", say: (a, b) => `${pl(a, "apple")} cost${a === 1 ? "s" : ""} $${b}.` },
+    { name: "Laps and minutes", a: "Laps", b: "Minutes", say: (a, b) => `Sam runs ${pl(a, "lap")} every ${pl(b, "minute")}.` },
+    { name: "Red and white paint", a: "Red paint (L)", b: "White paint (L)", say: (a, b) => `Mix ${a} L of red paint with every ${b} L of white paint.` },
+    { name: "Juice and water", a: "Juice (cups)", b: "Water (cups)", say: (a, b) => `Mix ${pl(a, "cup")} of juice with every ${pl(b, "cup")} of water.` },
+  ];
+  // Stories for part and whole, and the tape diagram: two parts (blue, orange) and the whole (green).
+  const GROUPS = [
+    { a: "cats", b: "dogs", w: "animals", at: "at an animal shelter", has: (a, b) => `An animal shelter has ${a} cats and ${b} dogs.` },
+    { a: "girls", b: "boys", w: "students", at: "in a class", has: (a, b) => `A class has ${a} girls and ${b} boys.` },
+    { a: "wins", b: "losses", w: "games", at: "for a hockey team", has: (a, b) => `A hockey team has ${a} wins and ${b} losses.` },
+    { a: "pencils", b: "pens", w: "writing tools", at: "in a drawer", has: (a, b) => `A drawer has ${a} pencils and ${b} pens.` },
+    { a: "cars", b: "trucks", w: "vehicles", at: "in a parking lot", has: (a, b) => `A parking lot has ${a} cars and ${b} trucks.` },
+  ];
+  function fillSelect(sel, list) { sel.innerHTML = list.map((s, i) => `<option value="${i}">${s.name || cap(s.a) + " and " + s.b}</option>`).join(""); }
+
+  // Work steps: left side, =, right side, step name
+  function stepRow(l, r, why, isNew) {
+    const c = isNew ? " new" : "";
+    return `<span class="l${c}">${l}</span><span class="${c.trim()}">=</span><span class="${c.trim()}">${r}</span><span class="why${c}">${why}</span>`;
+  }
+  function verdict(el, ok, text) {
+    el.hidden = false;
+    el.className = "verdict " + (ok ? "ok" : "no");
+    el.querySelector(".pill").textContent = ok ? "Correct" : "Not yet";
+    el.querySelector("p").textContent = text;
+  }
+  function seg(el, on) { for (const b of el.querySelectorAll("button")) { b.classList.toggle("on", b === on); b.setAttribute("aria-pressed", b === on); } }
+
+  const S = { tab: "dnl", mode: "learn" };
+
+  /* ---------------- Double number line ---------------- */
+  const N = 6; // ticks 0 to 6 groups
+  const xAt = i => 22 + i * (72 / N); // percent across the board
+  const Y_TOP = 40, Y_BOT = 70;
+  // cells: arrays of length N+1, each {v} (a number), {input:true}, or {empty:true}; chips: array of labels or null
+  function drawDnl(say, names, top, bot, chips, fresh) {
+    let h = `<p class="say"><span>${say}</span></p>`;
+    h += `<div class="dn-name c-a" style="top:${Y_TOP}%">${names.a}</div><div class="dn-name c-b" style="top:${Y_BOT}%">${names.b}</div>`;
+    h += `<div class="dn-line a" style="top:${Y_TOP}%"></div><div class="dn-line b" style="top:${Y_BOT}%"></div>`;
+    const cell = (c, i, row) => {
+      if (c.input) return `<input type="text" inputmode="numeric" data-pad data-i="${i}" data-row="${row}" aria-label="${row === "a" ? names.a : names.b} at ${i} groups">`;
+      if (c.empty) return `<span class="empty"></span>`;
+      return c.v;
+    };
+    for (let i = 0; i <= N; i++) {
+      const x = xAt(i);
+      h += `<div class="dn-tick" style="left:${x}%;top:${Y_TOP}%"></div><div class="dn-tick" style="left:${x}%;top:${Y_BOT}%"></div>`;
+      h += `<div class="dn-v top" style="left:${x}%;top:calc(${Y_TOP}% - var(--u) * 3.4)">${cell(top[i], i, "a")}</div>`;
+      h += `<div class="dn-v bot" style="left:${x}%;top:calc(${Y_BOT}% + var(--u) * 3.4)">${cell(bot[i], i, "b")}</div>`;
+      if (chips && chips[i]) h += `<div class="dn-x${fresh === i ? " new" : ""}" style="left:${x}%;top:${(Y_TOP + Y_BOT) / 2}%">${chips[i]}</div>`;
+    }
+    board.innerHTML = h;
+  }
+
+  // Learning: pick a ratio, then Next step adds one more group at a time.
+  const DL = { step: 0 };
+  function dRatio() {
+    const clamp = el => { let v = Math.round(read(el)); if (!(v >= 1)) v = 1; if (v > 12) v = 12; return v; };
+    return [clamp($("dA")), clamp($("dB"))];
+  }
+  function renderDL() {
+    const [a, b] = dRatio(), st = LINES[$("dStory").value];
+    const shown = DL.step + 1; // groups shown
+    const top = [], bot = [], chips = [];
+    for (let i = 0; i <= N; i++) {
+      if (i <= shown) { top.push({ v: a * i }); bot.push({ v: b * i }); } else { top.push({ empty: true }); bot.push({ empty: true }); }
+      chips.push(i >= 2 && i <= shown ? `× ${i}` : null);
+    }
+    drawDnl(st.say(a, b), st, top, bot, chips, shown >= 2 ? shown : null);
+    let s = stepRow(`<span class="c-a">${st.a}</span> : <span class="c-b">${st.b}</span>`, `<span class="c-a">${a}</span> : <span class="c-b">${b}</span>`, "1 group", false);
+    for (let k = 2; k <= shown; k++) s += stepRow(`<span class="c-a">${a} × ${k}</span> : <span class="c-b">${b} × ${k}</span>`, `<span class="c-a">${a * k}</span> : <span class="c-b">${b * k}</span>`, `${k} groups`, k === shown);
+    $("dSteps").innerHTML = s;
+    $("dNext").disabled = shown >= N;
+    $("dBack").disabled = DL.step === 0;
+  }
+  $("dNext").onclick = () => { if (DL.step < N - 1) DL.step++; renderDL(); };
+  $("dBack").onclick = () => { if (DL.step > 0) DL.step--; renderDL(); };
+  $("dReset").onclick = () => { DL.step = 0; renderDL(); };
+  for (const id of ["dA", "dB"]) { $(id).addEventListener("input", () => { DL.step = 0; renderDL(); }); $(id).addEventListener("change", () => { const [a, b] = dRatio(); $("dA").value = a; $("dB").value = b; renderDL(); }); }
+  $("dStory").onchange = renderDL;
+
+  // Practice: fill in the empty boxes.
+  const DP = { level: 1, solved: 0 };
+  function newDP() {
+    const lvl = DP.level;
+    let a, b;
+    do { a = rnd(lvl === 1 ? 1 : 2, lvl === 1 ? 9 : 7); b = rnd(lvl === 1 ? 1 : 2, lvl === 1 ? 9 : 7); } while (a === b);
+    const g = lvl === 1 ? 1 : rnd(2, 4); // the group that is given in full
+    const st = pick(LINES);
+    const top = [{ v: 0 }], bot = [{ v: 0 }];
+    let blanks = [];
+    for (let i = 1; i <= N; i++) {
+      let ta = false, tb = false; // true = blank
+      if (i !== g) {
+        const r = Math.random();
+        if (r < 0.35) { ta = tb = true; } else if (r < 0.65) ta = true; else if (r < 0.95) tb = true;
+        if (lvl === 2 && i === 1) { ta = tb = true; } // level 2: find one group first
+      }
+      top.push(ta ? { input: true } : { v: a * i });
+      bot.push(tb ? { input: true } : { v: b * i });
+      if (ta) blanks.push(["a", i]); if (tb) blanks.push(["b", i]);
+    }
+    if (blanks.length < 3) return newDP();
+    Object.assign(DP, { a, b, g, st, top, bot, shown: 0, done: false, gave: false });
+    DP.say = lvl === 1 ? st.say(a, b) : st.say(a * g, b * g);
+    drawDnl(DP.say + `</span><span class="q">Fill in the empty boxes.`, st, top, bot, null);
+    $("dpFb").hidden = true; $("dpStepsCard").hidden = true; $("dpSteps").innerHTML = "";
+    $("dpShow").textContent = "Show me"; $("dpShow").disabled = false;
+    $("dLevelHint").textContent = lvl === 1 ? "The first tick is one group. Multiply both numbers by the same number." : "Find one group first: split the full pair into equal groups.";
+  }
+  function dpInputs() { return [...board.querySelectorAll(".dn-v input")]; }
+  function dpWant(inp) { return (inp.dataset.row === "a" ? DP.a : DP.b) * Number(inp.dataset.i); }
+  $("dpCheck").onclick = () => {
+    const ins = dpInputs().filter(i => !i.classList.contains("shown"));
+    if (!ins.length) return;
+    let right = 0, empty = 0, added = false;
+    for (const inp of ins) {
+      const v = read(inp), w = dpWant(inp);
+      inp.classList.remove("ok", "no");
+      if (isNaN(v)) { empty++; continue; }
+      if (v === w) { right++; inp.classList.add("ok"); } else {
+        inp.classList.add("no");
+        // Adding the same amount instead of multiplying (3:2, 5:4, 7:6 ...)
+        const i = Number(inp.dataset.i), mine = inp.dataset.row === "a" ? DP.a : DP.b, other = inp.dataset.row === "a" ? DP.b : DP.a;
+        if (i > 1 && v === mine + (other * i - other)) added = true;
+      }
+    }
+    if (empty) return verdict($("dpFb"), false, `Fill in every box first. ${empty} still empty.`);
+    if (right === ins.length) {
+      if (!DP.done && !DP.gave) { DP.solved++; $("dpSolved").textContent = DP.solved; }
+      DP.done = true;
+      return verdict($("dpFb"), true, `Every pair is the same ratio as ${DP.a} : ${DP.b}.`);
+    }
+    verdict($("dpFb"), false, added ? "It looks like you added. Each tick is one more group, so multiply both numbers by the same number." : `${right} of ${ins.length} boxes are right. Fix the red ones.`);
+  };
+  // Show me: one line per press, and the matching boxes fill in.
+  function dpPlan() {
+    const plan = [];
+    const { a, b, g, st } = DP;
+    if (g > 1) {
+      plan.push({ l: frac(a * g, g), r: a, why: `1 group of ${st.a.toLowerCase()}`, cls: "c-a", fill: [["a", 1]] });
+      plan.push({ l: frac(b * g, g), r: b, why: `1 group of ${st.b.toLowerCase()}`, cls: "c-b", fill: [["b", 1]] });
+    }
+    for (let i = 2; i <= N; i++) {
+      const need = dpInputs().filter(x => Number(x.dataset.i) === i).length;
+      if (!need || i === g) continue;
+      plan.push({ l: `<span class="c-a">${a} × ${i}</span> : <span class="c-b">${b} × ${i}</span>`, r: `<span class="c-a">${a * i}</span> : <span class="c-b">${b * i}</span>`, why: `${i} groups`, fill: [["a", i], ["b", i]], chip: i });
+    }
+    return plan;
+  }
+  $("dpShow").onclick = () => {
+    const plan = dpPlan();
+    if (DP.shown >= plan.length) return;
+    DP.gave = true;
+    const p = plan[DP.shown++];
+    $("dpStepsCard").hidden = false;
+    $("dpSteps").querySelectorAll(".new").forEach(e => e.classList.remove("new"));
+    $("dpSteps").insertAdjacentHTML("beforeend", stepRow(p.cls ? `<span class="${p.cls}">${p.l}</span>` : p.l, p.cls ? `<span class="${p.cls}">${p.r}</span>` : p.r, p.why, true));
+    for (const [row, i] of p.fill) for (const inp of dpInputs()) if (inp.dataset.row === row && Number(inp.dataset.i) === i) { inp.value = dpWant(inp); inp.classList.remove("ok", "no"); inp.classList.add("shown"); inp.readOnly = true; }
+    if (p.chip) board.insertAdjacentHTML("beforeend", `<div class="dn-x new" style="left:${xAt(p.chip)}%;top:${(Y_TOP + Y_BOT) / 2}%">× ${p.chip}</div>`);
+    $("dpShow").textContent = DP.shown >= plan.length ? "All shown" : "Next step";
+    $("dpShow").disabled = DP.shown >= plan.length;
+  };
+  $("dpNew").onclick = newDP;
+  $("dLevel").onclick = e => { const b = e.target.closest("button"); if (!b) return; seg($("dLevel"), b); DP.level = Number(b.dataset.v); newDP(); };
+
+  /* ---------------- Part and whole ---------------- */
+  // which: "a", "b" or "w" for the first and second terms; whole shows the green bracket
+  function drawPW(say, st, a, b, first, second, showWhole, wholeCount) {
+    const ord = k => (first === k ? "1st" : second === k ? "2nd" : "");
+    const dim = k => ((first || second) && first !== k && second !== k && first !== "w" && second !== "w" ? " dim" : "");
+    const sq = n => `<div class="pw-sq" style="grid-template-columns:repeat(${Math.min(n, 5)}, var(--s))">${"<i></i>".repeat(n)}</div>`;
+    let h = `<p class="say"><span>${say}</span></p>`;
+    h += `<div class="pw${showWhole ? " whole" : ""}${Math.max(a, b) > 10 ? " many" : ""}"><div class="pw-brace"><div class="pw-row">`;
+    h += `<div class="pw-g a${dim("a")}"><span class="ord">${ord("a")}</span>${sq(a)}<div class="pw-lbl"><b>${a}</b> ${st.a}</div></div>`;
+    h += `<div class="pw-g b${dim("b")}"><span class="ord">${ord("b")}</span>${sq(b)}<div class="pw-lbl"><b>${b}</b> ${st.b}</div></div>`;
+    h += `</div><div class="pw-under"></div><div class="pw-wl">${ord("w") ? `<span class="ord">${ord("w")}</span> ` : ""}${wholeCount ? `<b>${wholeCount}</b> ` : ""}<span>${st.w} in all</span></div></div></div>`;
+    board.innerHTML = h;
+  }
+  const WL = { step: 0 };
+  function wCounts() {
+    const c = el => { let v = Math.round(read(el)); if (!(v >= 1)) v = 1; if (v > 15) v = 15; return v; };
+    return [c($("wA")), c($("wB"))];
+  }
+  function renderWL() {
+    const st = GROUPS[$("wStory").value], [a, b] = wCounts(), w = a + b;
+    $("wALbl").textContent = cap(st.a); $("wBLbl").textContent = cap(st.b);
+    const A = `<span class="c-a">${st.a}</span>`, B = `<span class="c-b">${st.b}</span>`, W = `<span class="c-green">${st.w}</span>`;
+    const rows = [
+      { l: `${A} : ${B}`, r: `<span class="c-a">${a}</span> : <span class="c-b">${b}</span>`, why: "Part to part", f: "a", s: "b" },
+      { l: `${B} : ${A}`, r: `<span class="c-b">${b}</span> : <span class="c-a">${a}</span>`, why: "Part to part", f: "b", s: "a" },
+      { l: `<span class="c-a">${a}</span> + <span class="c-b">${b}</span>`, r: `<span class="c-green">${w}</span>`, why: "The whole", whole: true },
+      { l: `${A} : ${W}`, r: `<span class="c-a">${a}</span> : <span class="c-green">${w}</span>`, why: "Part to whole", f: "a", s: "w" },
+      { l: `${B} : ${W}`, r: `<span class="c-b">${b}</span> : <span class="c-green">${w}</span>`, why: "Part to whole", f: "b", s: "w" },
+    ];
+    let s = "";
+    for (let i = 0; i < WL.step; i++) s += stepRow(rows[i].l, rows[i].r, rows[i].why, i === WL.step - 1);
+    $("wSteps").innerHTML = s;
+    const cur = rows[WL.step - 1] || {};
+    drawPW(st.has(a, b), st, a, b, cur.f, cur.s, WL.step >= 3, WL.step >= 3 ? w : 0);
+    $("wNext").disabled = WL.step >= rows.length;
+    $("wBack").disabled = WL.step === 0;
+  }
+  $("wNext").onclick = () => { WL.step = Math.min(5, WL.step + 1); renderWL(); };
+  $("wBack").onclick = () => { WL.step = Math.max(0, WL.step - 1); renderWL(); };
+  $("wReset").onclick = () => { WL.step = 0; renderWL(); };
+  for (const id of ["wA", "wB"]) { $(id).addEventListener("input", renderWL); $(id).addEventListener("change", () => { const [a, b] = wCounts(); $("wA").value = a; $("wB").value = b; renderWL(); }); }
+  $("wStory").onchange = renderWL;
+
+  // Practice: the question names the two things in order; type the ratio.
+  const WP = { solved: 0 };
+  const KINDS = [["a", "b"], ["b", "a"], ["a", "b"], ["b", "a"], ["a", "w"], ["b", "w"], ["a", "w"], ["b", "w"], ["w", "a"], ["w", "b"]];
+  function wpName(k, st) { return k === "a" ? st.a : k === "b" ? st.b : `all ${st.w}`; }
+  function newWP() {
+    const st = pick(GROUPS);
+    let a, b; do { a = rnd(2, 15); b = rnd(2, 15); } while (a === b);
+    const [f, s] = pick(KINDS);
+    const val = { a, b, w: a + b };
+    Object.assign(WP, { st, a, b, f, s, x: val[f], y: val[s], shown: 0, done: false, gave: false });
+    const tag = f === "w" ? "Whole to part" : s === "w" ? "Part to whole" : "Part to part";
+    $("wpTag").textContent = tag;
+    const q = `Write the ratio of ${wpName(f, st)} to ${wpName(s, st)}.`;
+    $("wpTask").textContent = q;
+    WP.say = st.has(a, b);
+    drawPW(WP.say + `</span><span class="q">${q}`, st, a, b, null, null, false, 0);
+    for (const id of ["wp1", "wp2"]) { $(id).value = ""; $(id).readOnly = false; }
+    $("wpFb").hidden = true; $("wpStepsCard").hidden = true; $("wpSteps").innerHTML = "";
+    $("wpShow").textContent = "Show me"; $("wpShow").disabled = false;
+  }
+  $("wpCheck").onclick = () => {
+    const p = read($("wp1")), q = read($("wp2")), { x, y, a, b, f, s, st } = WP;
+    if (isNaN(p) || isNaN(q)) return verdict($("wpFb"), false, "Type a number in both boxes.");
+    if (p * y === q * x && p > 0) {
+      if (!WP.done && !WP.gave) { WP.solved++; $("wpSolved").textContent = WP.solved; }
+      WP.done = true;
+      const g = gcd(x, y);
+      let t = p === x ? `${cap(wpName(f, st))} to ${wpName(s, st)} is ${x} : ${y}.` : `${p} : ${q} is the same ratio as ${x} : ${y}.`;
+      if (g > 1 && p === x) t += ` In simplest form it is ${x / g} : ${y / g}.`;
+      return verdict($("wpFb"), true, t);
+    }
+    if (p * x === q * y) return verdict($("wpFb"), false, `Check the order. The first number should be the ${wpName(f, st)}.`);
+    const hasW = f === "w" || s === "w";
+    if (hasW && [a, b].includes(p) && [a, b].includes(q)) return verdict($("wpFb"), false, `The question asks about all ${st.w}. Add both groups to find the whole.`);
+    if (!hasW && (p === a + b || q === a + b)) return verdict($("wpFb"), false, `This one is part to part. Compare the ${st.a} and the ${st.b}, not the whole.`);
+    verdict($("wpFb"), false, "Not quite. Count each group again.");
+  };
+  $("wpShow").onclick = () => {
+    const { st, a, b, f, s, x, y } = WP, hasW = f === "w" || s === "w";
+    const col = k => (k === "a" ? "c-a" : k === "b" ? "c-b" : "c-green");
+    const plan = [];
+    if (hasW) plan.push({ l: `<span class="c-a">${a}</span> + <span class="c-b">${b}</span>`, r: `<span class="c-green">${a + b}</span>`, why: "The whole", whole: true });
+    plan.push({ l: `<span class="${col(f)}">${f === "w" ? st.w : st[f]}</span> : <span class="${col(s)}">${s === "w" ? st.w : st[s]}</span>`, r: `<span class="${col(f)}">${x}</span> : <span class="${col(s)}">${y}</span>`, why: $("wpTag").textContent, last: true });
+    if (WP.shown >= plan.length) return;
+    WP.gave = true;
+    const p = plan[WP.shown++];
+    $("wpStepsCard").hidden = false;
+    $("wpSteps").querySelectorAll(".new").forEach(e => e.classList.remove("new"));
+    $("wpSteps").insertAdjacentHTML("beforeend", stepRow(p.l, p.r, p.why, true));
+    drawPW(WP.say + `</span><span class="q">${$("wpTask").textContent}`, st, a, b, p.last ? f : null, p.last ? s : null, hasW, hasW ? a + b : 0);
+    if (p.last) { $("wp1").value = x; $("wp2").value = y; $("wpFb").hidden = true; }
+    $("wpShow").textContent = WP.shown >= plan.length ? "All shown" : "Next step";
+    $("wpShow").disabled = WP.shown >= plan.length;
+  };
+  $("wpNew").onclick = newWP;
+
+  /* ---------------- Tape diagram ---------------- */
+  // labels: per box value (number or "?"), totals: {a, b, w} strings or "" ; ask: which total is the question
+  const T_A = 38, T_B = 64, T_H = 17; // row centres and box height (percent of the board)
+  function drawTape(say, st, pa, pb, part, tot, ask, fresh) {
+    const m = Math.max(pa, pb), bw = Math.min(54 / m, 11), x0 = 18;
+    let h = `<p class="say"><span>${say}</span></p>`;
+    h += `<div class="tp-name a" style="top:${T_A}%">${cap(st.a)}</div><div class="tp-name b" style="top:${T_B}%">${cap(st.b)}</div>`;
+    const row = (n, y, k) => {
+      let r = `<div class="tp-tape ${k}" style="left:${x0}%;top:${y}%;width:${n * bw}%;height:${T_H}%">`;
+      for (let i = 0; i < n; i++) r += `<div class="tp-box${fresh ? " new" : ""}">${part}</div>`;
+      r += `</div>`;
+      const t = tot[k];
+      if (t !== "") r += `<div class="tp-tot ${ask === k ? "ask" : k}" style="left:${x0 + n * bw + 2}%;top:${y}%">${t}</div>`;
+      return r;
+    };
+    h += row(pa, T_A, "a") + row(pb, T_B, "b");
+    const bx = x0 + m * bw + 13;
+    if (tot.w !== "") h += `<div class="tp-brace" style="left:${bx}%;top:${T_A - T_H / 2}%;height:${T_B - T_A + T_H}%"></div>`;
+    if (tot.w !== "") h += `<div class="tp-wl" style="left:calc(${bx}% + var(--u) * 4.5);top:${(T_A + T_B) / 2}%"><b class="${ask === "w" ? "tp-q" : ""}">${tot.w}</b><span>${st.w} in all</span></div>`;
+    board.innerHTML = h;
+  }
+
+  // Learning: build the ratio with sliders, type what you know, then step through.
+  const TL = { step: 0 };
+  function tlState() {
+    const st = GROUPS[$("tStory").value], a = Number($("tA").value), b = Number($("tB").value);
+    const know = $("tKnow").value, v = read($("tVal"));
+    const parts = know === "a" ? a : know === "b" ? b : a + b;
+    return { st, a, b, know, v, parts, u: v / parts };
+  }
+  function tKnowOptions() {
+    const st = GROUPS[$("tStory").value], keep = $("tKnow").value || "w";
+    $("tKnow").innerHTML = `<option value="w">All ${st.w}</option><option value="a">${cap(st.a)}</option><option value="b">${cap(st.b)}</option>`;
+    $("tKnow").value = keep;
+  }
+  function tlPlan(s) {
+    const { st, a, b, know, v, parts, u } = s;
+    const A = `<span class="c-a">${st.a}</span>`, B = `<span class="c-b">${st.b}</span>`;
+    const plan = [];
+    if (know === "w") plan.push({ l: `<span class="c-a">${a}</span> + <span class="c-b">${b}</span>`, r: `${a + b} parts`, why: "Count the parts" });
+    else plan.push({ l: know === "a" ? A : B, r: `${parts} parts`, why: "Count the parts" });
+    plan.push({ l: frac(fmt(v), parts), r: fmt(u), why: "One part", part: true });
+    for (const k of ["a", "b", "w"]) {
+      if (k === know) continue;
+      const n = k === "a" ? a : k === "b" ? b : a + b, cls = k === "a" ? "c-a" : k === "b" ? "c-b" : "c-green";
+      plan.push({ l: `<span class="${cls}">${n} × ${fmt(u)}</span>`, r: `<span class="${cls}">${fmt(n * u)}</span>`, why: k === "w" ? `All ${st.w}` : cap(st[k]), tot: k });
+    }
+    return plan;
+  }
+  function renderTL() {
+    const s = tlState(), { st, a, b, know, v, u } = s;
+    $("tALbl").textContent = cap(st.a); $("tBLbl").textContent = cap(st.b);
+    $("tAOut").textContent = a; $("tBOut").textContent = b;
+    const ok = v > 0;
+    const plan = ok ? tlPlan(s) : [];
+    const done = plan.slice(0, TL.step);
+    const tot = { a: "?", b: "?", w: "?" };
+    if (ok) tot[know] = fmt(v);
+    for (const p of done) if (p.tot) tot[p.tot] = fmt((p.tot === "a" ? a : p.tot === "b" ? b : a + b) * u);
+    const partShown = done.some(p => p.part);
+    drawTape(`<span class="c-a">${cap(st.a)}</span> : <span class="c-b">${st.b}</span> = <span class="c-a">${a}</span> : <span class="c-b">${b}</span>`, st, a, b, partShown ? fmt(u) : "", tot, null, false);
+    $("tSteps").innerHTML = ok ? done.map((p, i) => stepRow(p.l, p.r, p.why, i === done.length - 1)).join("") : "";
+    if (!ok) $("tSteps").innerHTML = `<span class="why" style="grid-column:1/-1;justify-self:start">Type the amount you know.</span>`;
+    $("tNext").disabled = !ok || TL.step >= plan.length;
+    $("tBack").disabled = TL.step === 0;
+  }
+  $("tNext").onclick = () => { TL.step++; renderTL(); };
+  $("tBack").onclick = () => { TL.step = Math.max(0, TL.step - 1); renderTL(); };
+  $("tReset").onclick = () => { TL.step = 0; renderTL(); };
+  for (const id of ["tA", "tB", "tVal"]) $(id).addEventListener("input", () => { TL.step = 0; renderTL(); });
+  $("tKnow").onchange = () => { TL.step = 0; renderTL(); };
+  $("tStory").onchange = () => { tKnowOptions(); TL.step = 0; renderTL(); };
+
+  // Practice: a word problem. Build the tape with the sliders, then find one part and the answer.
+  const TP = { solved: 0 };
+  function newTP() {
+    const st = pick(GROUPS);
+    let a, b; do { a = rnd(1, 6); b = rnd(1, 6); } while (a === b);
+    const u = rnd(2, 12);
+    const [know, ask] = pick([["w", "a"], ["w", "b"], ["a", "b"], ["b", "a"], ["a", "w"], ["b", "w"]]);
+    const val = { a: a * u, b: b * u, w: (a + b) * u };
+    Object.assign(TP, { st, a, b, u, know, ask, val, shown: 0, done: false, gave: false });
+    const given = know === "w" ? `There are ${val.w} ${st.w} in all.` : `There are ${val[know]} ${st[know]}.`;
+    const q = ask === "w" ? `How many ${st.w} are there in all?` : `How many ${st[ask]} are there?`;
+    TP.say = `The ratio of ${st.a} to ${st.b} ${st.at} is ${a} : ${b}. ${given}`;
+    TP.q = q;
+    $("tpALbl").textContent = cap(st.a); $("tpBLbl").textContent = cap(st.b);
+    $("tpA").value = 1; $("tpB").value = 1;
+    for (const id of ["tpPart", "tpAns"]) { $(id).value = ""; $(id).readOnly = false; }
+    $("tpAskLbl").textContent = ask === "w" ? `All ${st.w} =` : `${cap(st[ask])} =`;
+    $("tpFb").hidden = true; $("tpStepsCard").hidden = true; $("tpSteps").innerHTML = "";
+    $("tpShow").textContent = "Show me"; $("tpShow").disabled = false;
+    renderTP();
+  }
+  function renderTP(fresh) {
+    const pa = Number($("tpA").value), pb = Number($("tpB").value), { st, know, ask, val } = TP;
+    $("tpAOut").textContent = pa; $("tpBOut").textContent = pb;
+    const tot = { a: "", b: "", w: "" };
+    tot[know] = String(val[know]); tot[ask] = TP.answerShown ? String(val[ask]) : "?";
+    drawTape(TP.say + `</span><span class="q">${TP.q}`, st, pa, pb, TP.partShown ? TP.u : "", tot, ask, fresh);
+  }
+  for (const id of ["tpA", "tpB"]) $(id).addEventListener("input", () => renderTP());
+  $("tpCheck").onclick = () => {
+    const { a, b, u, val, ask, st } = TP;
+    const pa = Number($("tpA").value), pb = Number($("tpB").value), part = read($("tpPart")), ans = read($("tpAns"));
+    const msgs = [];
+    const tapeOk = pa === a && pb === b;
+    if (!tapeOk) msgs.push(`Set the sliders so the tape shows ${a} : ${b}.`);
+    if (isNaN(part)) msgs.push("Type how much one part is.");
+    else if (part !== u) msgs.push("One part is not right yet. Share the amount you know equally over its parts.");
+    if (isNaN(ans)) msgs.push("Type your answer.");
+    else if (ans !== val[ask]) msgs.push(part === u ? `Count the ${ask === "w" ? "parts in the whole tape" : "parts for " + st[ask]} and multiply by one part.` : "Check your answer.");
+    if (!msgs.length) {
+      if (!TP.done && !TP.gave) { TP.solved++; $("tpSolved").textContent = TP.solved; }
+      TP.done = true;
+      TP.partShown = true; TP.answerShown = true; renderTP(true);
+      return verdict($("tpFb"), true, `There ${ask === "w" ? "are" : "are"} ${val[ask]} ${ask === "w" ? st.w + " in all" : st[ask]}.`);
+    }
+    verdict($("tpFb"), false, msgs.join(" "));
+  };
+  $("tpShow").onclick = () => {
+    const { a, b, u, val, know, ask, st } = TP;
+    const parts = k => (k === "a" ? a : k === "b" ? b : a + b);
+    const cls = k => (k === "a" ? "c-a" : k === "b" ? "c-b" : "c-green");
+    const name = k => (k === "w" ? `All ${st.w}` : cap(st[k]));
+    const plan = [
+      { l: know === "w" ? `<span class="c-a">${a}</span> + <span class="c-b">${b}</span>` : `<span class="${cls(know)}">${st[know]}</span>`, r: `${parts(know)} parts`, why: "Count the parts", tape: true },
+      { l: frac(val[know], parts(know)), r: u, why: "One part", part: true },
+      { l: `<span class="${cls(ask)}">${parts(ask)} × ${u}</span>`, r: `<span class="${cls(ask)}">${val[ask]}</span>`, why: name(ask), ans: true },
+    ];
+    if (TP.shown >= plan.length) return;
+    TP.gave = true;
+    const p = plan[TP.shown++];
+    $("tpStepsCard").hidden = false;
+    $("tpSteps").querySelectorAll(".new").forEach(e => e.classList.remove("new"));
+    $("tpSteps").insertAdjacentHTML("beforeend", stepRow(p.l, p.r, p.why, true));
+    if (p.tape) { $("tpA").value = a; $("tpB").value = b; }
+    if (p.part) { TP.partShown = true; $("tpPart").value = u; }
+    if (p.ans) { TP.answerShown = true; $("tpAns").value = val[ask]; }
+    $("tpFb").hidden = true;
+    renderTP(p.part);
+    $("tpShow").textContent = TP.shown >= plan.length ? "All shown" : "Next step";
+    $("tpShow").disabled = TP.shown >= plan.length;
+  };
+  $("tpNew").onclick = () => { TP.partShown = false; TP.answerShown = false; newTP(); };
+
+  /* ---------------- Tabs, mode, keys ---------------- */
+  const started = {};
+  function show() {
+    for (const p of document.querySelectorAll(".panel")) p.hidden = !(p.dataset.tab === S.tab && p.dataset.mode === S.mode);
+    const key = S.tab + S.mode;
+    const fresh = !started[key]; started[key] = true;
+    if (S.mode === "learn") ({ dnl: renderDL, pw: renderWL, tp: renderTL })[S.tab]();
+    else if (fresh) ({ dnl: newDP, pw: newWP, tp: () => { TP.partShown = false; TP.answerShown = false; newTP(); } })[S.tab]();
+    else ({ dnl: () => restore("dnl"), pw: () => restore("pw"), tp: () => renderTP() })[S.tab]();
+  }
+  // Coming back to a practice question keeps it on the board.
+  const saved = {};
+  function restore(tab) { if (saved[tab]) board.replaceChildren(...saved[tab]); }
+  function stash() { if (S.mode === "practice" && S.tab !== "tp") saved[S.tab] = [...board.childNodes]; }
+  $("tabs").onclick = e => { const b = e.target.closest("button"); if (!b) return; stash(); seg($("tabs"), b); S.tab = b.dataset.tab; show(); };
+  $("mode").onclick = e => { const b = e.target.closest("button"); if (!b) return; stash(); seg($("mode"), b); S.mode = b.dataset.mode; show(); };
+  // Enter checks the answer in practice.
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter" || S.mode !== "practice" || !e.target.matches("input")) return;
+    ({ dnl: $("dpCheck"), pw: $("wpCheck"), tp: $("tpCheck") })[S.tab].click();
+  });
+
+  fillSelect($("dStory"), LINES); fillSelect($("wStory"), GROUPS); fillSelect($("tStory"), GROUPS);
+  tKnowOptions();
+  show();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Ratio Models (ratiomodels.html). */
+window.I18N_PAGE = {
+ "Ratio Models": "Modèles de rapports",
+ "Double Number Line": "Droite numérique double",
+ "Part and Whole": "Partie et tout",
+ "Tape Diagram": "Diagramme en bandes",
+ "Learning": "Apprentissage",
+ "Ratio": "Rapport",
+ "Story": "Histoire",
+ "Equivalent ratios": "Rapports équivalents",
+ "Ratios in this story": "Les rapports de cette histoire",
+ "Build the tape": "Construis la bande",
+ "1. Build the tape": "1. Construis la bande",
+ "2. Solve": "2. Résous",
+ "Solve with the tape": "Résous avec la bande",
+ "I know": "Je connais",
+ "One part =": "Une partie =",
+ "Level": "Niveau",
+ "Level 1": "Niveau 1",
+ "Level 2": "Niveau 2",
+ "Show me": "Montre-moi",
+ "All shown": "Tout est affiché",
+ "Solved:": "Résolues :",
+ "Solved: {0}": "Résolues : {0}",
+ "Not yet": "Pas encore",
+ "1st": "1er",
+ "2nd": "2e",
+ "Fill in the empty boxes.": "Remplis les cases vides.",
+ "The first tick is one group. Multiply both numbers by the same number.": "Le premier trait est un groupe. Multiplie les deux nombres par le même nombre.",
+ "Find one group first: split the full pair into equal groups.": "Trouve d’abord un groupe : sépare la paire complète en groupes égaux.",
+ "Type the amount you know.": "Écris la quantité que tu connais.",
+
+ // Story names
+ "Flour and eggs": "Farine et œufs",
+ "Apples and cost": "Pommes et coût",
+ "Laps and minutes": "Tours et minutes",
+ "Red and white paint": "Peinture rouge et blanche",
+ "Juice and water": "Jus et eau",
+ "Cats and dogs": "Chats et chiens",
+ "Girls and boys": "Filles et garçons",
+ "Wins and losses": "Victoires et défaites",
+ "Pencils and pens": "Crayons et stylos",
+ "Cars and trucks": "Autos et camions",
+
+ // Number line names
+ "Flour (cups)": "Farine (tasses)", "flour (cups)": "farine (tasses)",
+ "Eggs": "Œufs", "eggs": "œufs",
+ "Apples": "Pommes", "apples": "pommes",
+ "Cost ($)": "Coût ($)", "cost ($)": "coût ($)",
+ "Laps": "Tours", "laps": "tours",
+ "Minutes": "Minutes", "minutes": "minutes",
+ "Red paint (L)": "Peinture rouge (L)", "red paint (L)": "peinture rouge (L)",
+ "White paint (L)": "Peinture blanche (L)", "white paint (L)": "peinture blanche (L)",
+ "Juice (cups)": "Jus (tasses)", "juice (cups)": "jus (tasses)",
+ "Water (cups)": "Eau (tasses)", "water (cups)": "eau (tasses)",
+
+ // Groups
+ "Cats": "Chats", "cats": "chats", "Dogs": "Chiens", "dogs": "chiens", "animals": "animaux",
+ "Girls": "Filles", "girls": "filles", "Boys": "Garçons", "boys": "garçons", "students": "élèves",
+ "Wins": "Victoires", "wins": "victoires", "Losses": "Défaites", "losses": "défaites", "games": "matchs",
+ "Pencils": "Crayons", "pencils": "crayons", "Pens": "Stylos", "pens": "stylos", "writing tools": "outils pour écrire",
+ "Cars": "Autos", "cars": "autos", "Trucks": "Camions", "trucks": "camions", "vehicles": "véhicules",
+
+ // Step names
+ "Part to part": "Partie à partie",
+ "Part to whole": "Partie au tout",
+ "Whole to part": "Tout à partie",
+ "The whole": "Le tout",
+ "Count the parts": "Compte les parties",
+ "One part": "Une partie",
+ "1 group": "1 groupe",
+ "{n} groups": "{n} groupes",
+ "{n} parts": "{n} parties",
+
+ // Sentences on the board
+ "~A recipe uses (\\d+) cups? of flour for every (\\d+) eggs?\\.": "Une recette utilise $1 tasse(s) de farine pour $2 œuf(s).",
+ "~(\\d+) apples? costs? \\$(\\d+)\\.": "$1 pomme(s) coûte(nt) $2 $.",
+ "~Sam runs (\\d+) laps? every (\\d+) minutes?\\.": "Sam court $1 tour(s) toutes les $2 minute(s).",
+ "Mix {n} L of red paint with every {n} L of white paint.": "Mélange {n} L de peinture rouge pour chaque {n} L de peinture blanche.",
+ "~Mix (\\d+) cups? of juice with every (\\d+) cups? of water\\.": "Mélange $1 tasse(s) de jus pour chaque $2 tasse(s) d’eau.",
+ "An animal shelter has {n} cats and {n} dogs.": "Un refuge a {n} chats et {n} chiens.",
+ "A class has {n} girls and {n} boys.": "Une classe a {n} filles et {n} garçons.",
+ "A hockey team has {n} wins and {n} losses.": "Une équipe de hockey a {n} victoires et {n} défaites.",
+ "A drawer has {n} pencils and {n} pens.": "Un tiroir contient {n} crayons et {n} stylos.",
+ "A parking lot has {n} cars and {n} trucks.": "Un stationnement a {n} autos et {n} camions.",
+ "The ratio of cats to dogs at an animal shelter is {n} : {n}.": "Dans un refuge, le rapport des chats aux chiens est {n} : {n}.",
+ "The ratio of girls to boys in a class is {n} : {n}.": "Dans une classe, le rapport des filles aux garçons est {n} : {n}.",
+ "The ratio of wins to losses for a hockey team is {n} : {n}.": "Pour une équipe de hockey, le rapport des victoires aux défaites est {n} : {n}.",
+ "The ratio of pencils to pens in a drawer is {n} : {n}.": "Dans un tiroir, le rapport des crayons aux stylos est {n} : {n}.",
+ "The ratio of cars to trucks in a parking lot is {n} : {n}.": "Dans un stationnement, le rapport des autos aux camions est {n} : {n}.",
+ "~There are (\\d+) (.+) in all\\.": "Il y a $1 $2 en tout.",
+ "~There are (\\d+) (.+)\\.": "Il y a $1 $2.",
+ "~How many (.+) are there in all\\?": "Combien y a-t-il de $1 en tout ?",
+ "~How many (.+) are there\\?": "Combien y a-t-il de $1 ?",
+ "~Write the ratio of (.+) to (.+)\\.": "Écris le rapport de $1 à $2.",
+ "~(.+) in all": "$1 en tout",
+ "~All (.+)": "Tous les $1",
+ "~all (.+)": "tous les $1",
+ "~1 group of (.+)": "1 groupe de $1",
+ "~(.+) =": "$1 =",
+
+ // Feedback
+ "Fill in every box first. {n} still empty.": "Remplis d’abord toutes les cases. Encore {n} vide(s).",
+ "Every pair is the same ratio as {n} : {n}.": "Chaque paire est le même rapport que {n} : {n}.",
+ "It looks like you added. Each tick is one more group, so multiply both numbers by the same number.": "On dirait que tu as additionné. Chaque trait est un groupe de plus, alors multiplie les deux nombres par le même nombre.",
+ "{n} of {n} boxes are right. Fix the red ones.": "{n} cases sur {n} sont bonnes. Corrige les rouges.",
+ "Type a number in both boxes.": "Écris un nombre dans les deux cases.",
+ "~(.+) to (.+) is (\\d+) : (\\d+)\\.": "Le rapport de $1 à $2 est $3 : $4.",
+ "In simplest form it is {n} : {n}.": "Sous sa forme la plus simple, c’est {n} : {n}.",
+ "{n} : {n} is the same ratio as {n} : {n}.": "{n} : {n} est le même rapport que {n} : {n}.",
+ "Check the order.": "Vérifie l’ordre.",
+ "~The first number should be the (.+)\\.": "Le premier nombre doit être : $1.",
+ "~The question asks about all (.+)\\.": "La question parle de tous les $1.",
+ "Add both groups to find the whole.": "Additionne les deux groupes pour trouver le tout.",
+ "This one is part to part.": "Celle-ci est partie à partie.",
+ "~Compare the (.+) and the (.+), not the whole\\.": "Compare les $1 et les $2, pas le tout.",
+ "Not quite.": "Pas tout à fait.",
+ "Count each group again.": "Compte encore chaque groupe.",
+ "~Set the sliders so the tape shows (\\d+) : (\\d+)\\.": "Règle les curseurs pour que la bande montre $1 : $2.",
+ "Type how much one part is.": "Écris la valeur d’une partie.",
+ "One part is not right yet.": "Une partie n’est pas encore bonne.",
+ "Share the amount you know equally over its parts.": "Partage la quantité connue également entre ses parties.",
+ "Type your answer.": "Écris ta réponse.",
+ "Count the parts in the whole tape and multiply by one part.": "Compte les parties de toute la bande et multiplie par une partie.",
+ "~Count the parts for (.+) and multiply by one part\\.": "Compte les parties pour les $1 et multiplie par une partie.",
+ "Check your answer.": "Vérifie ta réponse.",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
