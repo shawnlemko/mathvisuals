@@ -178,6 +178,10 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
 .solved b { font-family: var(--font-num); color: var(--ink); font-size: 1.3rem; }
 .task { margin: 0 0 12px; font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; line-height: 1.3; }
 .tag { display: inline-block; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; border: 2px solid var(--green); color: var(--green); margin-bottom: 8px; }
+.eqv { display: grid; grid-template-columns: auto auto auto; justify-content: center; align-items: center; column-gap: 18px; row-gap: 6px; font-family: var(--font-num); font-weight: 700; font-size: 2.6rem; line-height: 1.1; text-align: center; }
+.eqv .eqv-n { font-family: var(--font-display); font-size: 1rem; }
+.eqv .eqv-x { font-size: 1.5rem; color: var(--green); }
+.eqv .eqv-say { grid-column: 1 / -1; margin: 10px 0 0; font-family: var(--font-body); font-weight: 400; font-size: 1.05rem; }
 .togs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
 .big-tog { font-family: var(--font-display); font-size: 1.25rem; min-height: 64px; padding: 10px 14px; border: 3px solid var(--green); border-radius: 12px; background: var(--sheet); color: var(--green); }
 .big-tog[aria-pressed="true"] { background: var(--green); color: var(--sheet); }
@@ -292,7 +296,7 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
       </section>
       <section class="card">
         <p class="label">Equivalent ratios</p>
-        <div class="steps" id="dSteps"></div>
+        <div class="eqv" id="dSteps"></div>
         <p class="hint">Drag the green slider along the lines (or use the arrow keys).</p>
       </section>
     </div>
@@ -671,9 +675,14 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
     drawDnl(st.say(a, b), st, top, bot, chips, DL.fresh, shown);
     DL.fresh = null;
     if (focused) board.querySelector(".knob").focus();
-    let s = stepRow(`<span class="c-a">${st.a}</span> : <span class="c-b">${st.b}</span>`, `<span class="c-a">${a}</span> : <span class="c-b">${b}</span>`, "1 group", false);
-    for (let k = 2; k <= shown; k++) s += stepRow(`<span class="c-a">${a} × ${k}</span> : <span class="c-b">${b} × ${k}</span>`, `<span class="c-a">${a * k}</span> : <span class="c-b">${b * k}</span>`, `${k} groups`, k === shown);
-    $("dSteps").innerHTML = s;
+    // One picture only: the starting ratio, the same multiplier on both numbers, the new ratio.
+    const k = shown;
+    $("dSteps").innerHTML =
+      `<span class="eqv-n c-a">${st.a}</span><span></span><span class="eqv-n c-b">${st.b}</span>` +
+      `<span class="c-a">${a}</span><span>:</span><span class="c-b">${b}</span>` +
+      `<span class="eqv-x">↓ × ${k}</span><span></span><span class="eqv-x">↓ × ${k}</span>` +
+      `<span class="c-a">${a * k}</span><span>:</span><span class="c-b">${b * k}</span>` +
+      `<p class="eqv-say"><b>${a} : ${b}</b> and <b>${a * k} : ${b * k}</b> are equivalent.</p>`;
   }
   // Drag anywhere on the board: the slider jumps to the nearest tick (1 to 6 groups).
   function dlSet(k) {
@@ -1174,6 +1183,7 @@ window.I18N_PAGE = {
  "1st": "1er",
  "2nd": "2e",
  "Fill in the empty boxes.": "Remplis les cases vides.",
+ "{0} and {1} are equivalent.": "{0} et {1} sont équivalents.",
  "Drag the green slider along the lines (or use the arrow keys).": "Glisse le curseur vert le long des droites (ou utilise les flèches).",
  "Number of groups": "Nombre de groupes",
  "The first tick is one group. Multiply both numbers by the same number.": "Le premier trait est un groupe. Multiplie les deux nombres par le même nombre.",
