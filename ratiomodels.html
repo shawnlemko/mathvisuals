@@ -178,7 +178,11 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
 .solved b { font-family: var(--font-num); color: var(--ink); font-size: 1.3rem; }
 .task { margin: 0 0 12px; font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; line-height: 1.3; }
 .tag { display: inline-block; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px; border: 2px solid var(--green); color: var(--green); margin-bottom: 8px; }
-.verdict.ok .pill { color: var(--green); } .verdict.no .pill { color: var(--warn); }
+.togs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.big-tog { font-family: var(--font-display); font-size: 1.25rem; min-height: 64px; padding: 10px 14px; border: 3px solid var(--green); border-radius: 12px; background: var(--sheet); color: var(--green); }
+.big-tog[aria-pressed="true"] { background: var(--green); color: var(--sheet); }
+.big-tog[aria-pressed="true"]::before { content: "✓ "; }
+& { color: var(--green); } .verdict.no .pill { color: var(--warn); }
 .verdict p { margin: 0; }
 .slider { grid-template-columns: 5.5em minmax(0, 1fr) 2.2em; }
 .slider label { overflow-wrap: anywhere; }
@@ -327,12 +331,11 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
       </section>
       <section class="card">
         <p class="label">Ratios in this story</p>
-        <div class="steps" id="wSteps"></div>
-        <div class="btns">
-          <button type="button" id="wBack">Back</button>
-          <button type="button" id="wNext" class="go">Next step</button>
-          <button type="button" id="wReset">Start over</button>
+        <div class="togs">
+          <button type="button" class="big-tog" id="wPP" aria-pressed="false">Part to part</button>
+          <button type="button" class="big-tog" id="wPW" aria-pressed="false">Part to whole</button>
         </div>
+        <div class="steps" id="wSteps"></div>
       </section>
     </div>
 
@@ -797,7 +800,7 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
     h += `</div><div class="pw-under"></div><div class="pw-wl">${ord("w") ? `<span class="ord">${ord("w")}</span> ` : ""}${wholeCount ? `<b>${wholeCount}</b> ` : ""}<span>${st.w} in all</span></div></div></div>`;
     board.innerHTML = h;
   }
-  const WL = { step: 0 };
+  const WL = { pp: false, pw: false };
   function wCounts() {
     const c = el => { let v = Math.round(read(el)); if (!(v >= 1)) v = 1; if (v > 15) v = 15; return v; };
     return [c($("wA")), c($("wB"))];
@@ -813,17 +816,14 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
       { l: `${A} : ${W}`, r: `<span class="c-a">${a}</span> : <span class="c-green">${w}</span>`, why: "Part to whole", f: "a", s: "w" },
       { l: `${B} : ${W}`, r: `<span class="c-b">${b}</span> : <span class="c-green">${w}</span>`, why: "Part to whole", f: "b", s: "w" },
     ];
-    let s = "";
-    for (let i = 0; i < WL.step; i++) s += stepRow(rows[i].l, rows[i].r, rows[i].why, i === WL.step - 1);
-    $("wSteps").innerHTML = s;
-    const cur = rows[WL.step - 1] || {};
-    drawPW(st.has(a, b), st, a, b, cur.f, cur.s, WL.step >= 3, WL.step >= 3 ? w : 0);
-    $("wNext").disabled = WL.step >= rows.length;
-    $("wBack").disabled = WL.step === 0;
+    const on = rows.filter((r, i) => (i < 2 ? WL.pp : WL.pw));
+    $("wSteps").innerHTML = on.map(r => stepRow(r.l, r.r, r.why, false)).join("");
+    drawPW(st.has(a, b), st, a, b, null, null, WL.pw, WL.pw ? w : 0);
+    $("wPP").setAttribute("aria-pressed", WL.pp); $("wPW").setAttribute("aria-pressed", WL.pw);
   }
-  $("wNext").onclick = () => { WL.step = Math.min(5, WL.step + 1); renderWL(); };
-  $("wBack").onclick = () => { WL.step = Math.max(0, WL.step - 1); renderWL(); };
-  $("wReset").onclick = () => { WL.step = 0; renderWL(); };
+  // Two big on/off buttons: tap to show or hide each kind of ratio.
+  $("wPP").onclick = () => { WL.pp = !WL.pp; renderWL(); };
+  $("wPW").onclick = () => { WL.pw = !WL.pw; renderWL(); };
   for (const id of ["wA", "wB"]) { $(id).addEventListener("input", renderWL); $(id).addEventListener("change", () => { const [a, b] = wCounts(); $("wA").value = a; $("wB").value = b; renderWL(); }); }
   $("wStory").onchange = renderWL;
 
