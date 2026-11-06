@@ -210,7 +210,13 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
 .dn-v input.ok { border-color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--sheet)); }
 .dn-v input.no { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--sheet)); }
 .dn-v input.shown { border-style: dashed; border-color: var(--green); }
-.dn-x { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 3.4); color: var(--green); background: var(--sheet); border: 2px solid var(--green); border-radius: 999px; padding: 0.05em 0.45em; white-space: nowrap; }
+.dn-x { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 5.6); color: var(--green); background: var(--sheet); border: 2px solid var(--green); border-radius: 999px; padding: 0.05em 0.45em; white-space: nowrap; }
+.dn-v, .dn-x { z-index: 1; }
+.dn-bar { position: absolute; z-index: 0; width: calc(var(--u) * 2.4); transform: translateX(-50%); background: var(--green); opacity: 0.3; border-radius: 999px; pointer-events: none; }
+.dn-x.knob { background: var(--green); color: var(--sheet); cursor: grab; box-shadow: 0 3px 10px rgba(0,0,0,.25); touch-action: none; }
+.dn-x.knob:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+.rb.drag { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.rb.drag.grabbing, .rb.drag.grabbing .knob { cursor: grabbing; }
 .dn-x.new, .tp-box.new, .tp-tot.new { animation: pop .35s ease-out; }
 
 /* Part and whole: the two groups as squares */
@@ -283,11 +289,7 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
       <section class="card">
         <p class="label">Equivalent ratios</p>
         <div class="steps" id="dSteps"></div>
-        <div class="btns">
-          <button type="button" id="dBack">Back</button>
-          <button type="button" id="dNext" class="go">Next step</button>
-          <button type="button" id="dReset">Start over</button>
-        </div>
+        <p class="hint">Drag the green slider along the lines (or use the arrow keys).</p>
       </section>
     </div>
 
@@ -628,7 +630,7 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
   const xAt = i => 22 + i * (72 / N); // percent across the board
   const Y_TOP = 40, Y_BOT = 70;
   // cells: arrays of length N+1, each {v} (a number), {input:true}, or {empty:true}; chips: array of labels or null
-  function drawDnl(say, names, top, bot, chips, fresh) {
+  function drawDnl(say, names, top, bot, chips, fresh, knob) {
     let h = `<p class="say"><span>${say}</span></p>`;
     h += `<div class="dn-name c-a" style="top:${Y_TOP}%">${names.a}</div><div class="dn-name c-b" style="top:${Y_BOT}%">${names.b}</div>`;
     h += `<div class="dn-line a" style="top:${Y_TOP}%"></div><div class="dn-line b" style="top:${Y_BOT}%"></div>`;
@@ -642,12 +644,13 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
       h += `<div class="dn-tick" style="left:${x}%;top:${Y_TOP}%"></div><div class="dn-tick" style="left:${x}%;top:${Y_BOT}%"></div>`;
       h += `<div class="dn-v top" style="left:${x}%;top:calc(${Y_TOP}% - var(--u) * 3.4)">${cell(top[i], i, "a")}</div>`;
       h += `<div class="dn-v bot" style="left:${x}%;top:calc(${Y_BOT}% + var(--u) * 3.4)">${cell(bot[i], i, "b")}</div>`;
-      if (chips && chips[i]) h += `<div class="dn-x${fresh === i ? " new" : ""}" style="left:${x}%;top:${(Y_TOP + Y_BOT) / 2}%">${chips[i]}</div>`;
+      if (knob === i) h += `<div class="dn-bar" style="left:${x}%;top:calc(${Y_TOP}% - var(--u) * 12);height:calc(${Y_BOT - Y_TOP}% + var(--u) * 24)"></div>`;
+      if (chips && chips[i]) h += `<div class="dn-x${knob === i ? " knob" : ""}${fresh === i ? " new" : ""}" style="left:${x}%;top:${(Y_TOP + Y_BOT) / 2}%"${knob === i ? ` tabindex="0" role="slider" aria-label="Number of groups" aria-valuemin="1" aria-valuemax="${N}" aria-valuenow="${i}"` : ""}>${chips[i]}</div>`;
     }
     board.innerHTML = h;
   }
 
-  // Learning: pick a ratio, then Next step adds one more group at a time.
+  // Learning: pick a ratio, then drag the slider along the lines to make more groups.
   const DL = { step: 0 };
   function dRatio() {
     const clamp = el => { let v = Math.round(read(el)); if (!(v >= 1)) v = 1; if (v > 12) v = 12; return v; };
@@ -659,19 +662,41 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
     const top = [], bot = [], chips = [];
     for (let i = 0; i <= N; i++) {
       if (i <= shown) { top.push({ v: a * i }); bot.push({ v: b * i }); } else { top.push({ empty: true }); bot.push({ empty: true }); }
-      chips.push(i >= 2 && i <= shown ? `× ${i}` : null);
+      chips.push(i >= 1 && i <= shown ? `× ${i}` : null);
     }
-    drawDnl(st.say(a, b), st, top, bot, chips, shown >= 2 ? shown : null);
+    const focused = document.activeElement && document.activeElement.classList.contains("knob");
+    drawDnl(st.say(a, b), st, top, bot, chips, DL.fresh, shown);
+    DL.fresh = null;
+    if (focused) board.querySelector(".knob").focus();
     let s = stepRow(`<span class="c-a">${st.a}</span> : <span class="c-b">${st.b}</span>`, `<span class="c-a">${a}</span> : <span class="c-b">${b}</span>`, "1 group", false);
     for (let k = 2; k <= shown; k++) s += stepRow(`<span class="c-a">${a} × ${k}</span> : <span class="c-b">${b} × ${k}</span>`, `<span class="c-a">${a * k}</span> : <span class="c-b">${b * k}</span>`, `${k} groups`, k === shown);
     $("dSteps").innerHTML = s;
-    $("dNext").disabled = shown >= N;
-    $("dBack").disabled = DL.step === 0;
   }
-  $("dNext").onclick = () => { if (DL.step < N - 1) DL.step++; renderDL(); };
-  $("dBack").onclick = () => { if (DL.step > 0) DL.step--; renderDL(); };
-  $("dReset").onclick = () => { DL.step = 0; renderDL(); };
-  for (const id of ["dA", "dB"]) { $(id).addEventListener("input", () => { DL.step = 0; renderDL(); }); $(id).addEventListener("change", () => { const [a, b] = dRatio(); $("dA").value = a; $("dB").value = b; renderDL(); }); }
+  // Drag anywhere on the board: the slider jumps to the nearest tick (1 to 6 groups).
+  function dlSet(k) {
+    k = Math.max(1, Math.min(N, k));
+    if (k - 1 === DL.step) return;
+    DL.fresh = k > DL.step + 1 ? k : null;
+    DL.step = k - 1; renderDL();
+  }
+  const dlOn = () => S.tab === "dnl" && S.mode === "learn";
+  function dlPoint(e) {
+    const r = board.getBoundingClientRect(), pct = ((e.clientX - r.left) / r.width) * 100;
+    dlSet(Math.round((pct - 22) / (72 / N)));
+  }
+  board.addEventListener("pointerdown", e => {
+    if (!dlOn() || e.target.closest("input, select, button")) return;
+    board.setPointerCapture(e.pointerId); board.classList.add("grabbing"); dlPoint(e); e.preventDefault();
+  });
+  board.addEventListener("pointermove", e => { if (dlOn() && board.hasPointerCapture(e.pointerId)) dlPoint(e); });
+  const dlUp = e => { board.classList.remove("grabbing"); if (board.hasPointerCapture(e.pointerId)) board.releasePointerCapture(e.pointerId); };
+  board.addEventListener("pointerup", dlUp); board.addEventListener("pointercancel", dlUp);
+  document.addEventListener("keydown", e => {
+    if (!dlOn() || e.target.matches("input, select")) return;
+    const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
+    if (d) { e.preventDefault(); dlSet(DL.step + 1 + d); }
+  });
+  for (const id of ["dA", "dB"]) { $(id).addEventListener("input", renderDL); $(id).addEventListener("change", () => { const [a, b] = dRatio(); $("dA").value = a; $("dB").value = b; renderDL(); }); }
   $("dStory").onchange = renderDL;
 
   // Practice: fill in the empty boxes.
@@ -1008,6 +1033,7 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
   const started = {};
   function show() {
     for (const p of document.querySelectorAll(".panel")) p.hidden = !(p.dataset.tab === S.tab && p.dataset.mode === S.mode);
+    board.classList.toggle("drag", S.tab === "dnl" && S.mode === "learn");
     const key = S.tab + S.mode;
     const fresh = !started[key]; started[key] = true;
     if (S.mode === "learn") ({ dnl: renderDL, pw: renderWL, tp: renderTL })[S.tab]();
@@ -1148,6 +1174,8 @@ window.I18N_PAGE = {
  "1st": "1er",
  "2nd": "2e",
  "Fill in the empty boxes.": "Remplis les cases vides.",
+ "Drag the green slider along the lines (or use the arrow keys).": "Glisse le curseur vert le long des droites (ou utilise les flèches).",
+ "Number of groups": "Nombre de groupes",
  "The first tick is one group. Multiply both numbers by the same number.": "Le premier trait est un groupe. Multiplie les deux nombres par le même nombre.",
  "Find one group first: split the full pair into equal groups.": "Trouve d’abord un groupe : sépare la paire complète en groupes égaux.",
  "Type the amount you know.": "Écris la quantité que tu connais.",
