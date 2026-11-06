@@ -250,19 +250,17 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
 .ord:empty { visibility: hidden; }
 
 /* Tape diagram */
-.tp-name { position: absolute; left: 1.5%; width: 15%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4.2); line-height: 1.1; overflow-wrap: anywhere; }
-.tp-name.a { color: var(--pt); } .tp-name.b { color: var(--orange); }
-.tp-tape { position: absolute; transform: translateY(-50%); display: flex; border: max(3px, calc(var(--u) * 0.5)) solid var(--ink); }
-.tp-box { flex: 1 1 0; display: flex; align-items: center; justify-content: center; min-width: 0;
-  font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 5.2); color: #fff; overflow: hidden; }
-.tp-box + .tp-box { border-left: max(3px, calc(var(--u) * 0.5)) solid var(--ink); }
-.tp-tape.a .tp-box { background: var(--pt); } .tp-tape.b .tp-box { background: var(--orange); }
-.tp-tot { position: absolute; transform: translateY(-50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 6); white-space: nowrap; }
-.tp-tot.a { color: var(--pt); } .tp-tot.b { color: var(--orange); }
+.tp-col { position: absolute; transform: translateX(-50%); display: flex; flex-direction: column; border: max(3px, calc(var(--u) * 0.5)) solid var(--ink); border-bottom: 0; }
+.tp-box { flex: 1 1 0; display: flex; align-items: center; justify-content: center; min-height: 0; font-family: var(--font-num); font-weight: 700; color: #fff; overflow: hidden; }
+.tp-box + .tp-box { border-top: max(2px, calc(var(--u) * 0.4)) solid var(--ink); }
+.tp-box.a { background: var(--pt); } .tp-box.b { background: var(--orange); }
+.tp-tot { position: absolute; transform: translate(-50%, -100%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 6); line-height: 1; white-space: nowrap; }
+.tp-tot.a { color: var(--pt); } .tp-tot.b { color: var(--orange); } .tp-tot.w { color: var(--green); }
 .tp-tot.ask { color: var(--green); }
-.tp-brace { position: absolute; width: calc(var(--u) * 3); border: max(3px, calc(var(--u) * 0.6)) solid var(--green); border-left: 0; border-radius: 0 12px 12px 0; }
-.tp-wl { position: absolute; max-width: 16%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 800; color: var(--green); font-size: calc(var(--u) * 3.6); line-height: 1.1; text-align: left; }
-.tp-wl b { display: block; font-family: var(--font-num); font-size: calc(var(--u) * 6); }
+.tp-name { position: absolute; transform: translateX(-50%); font-family: var(--font-display); font-weight: 800; font-size: calc(var(--u) * 4); line-height: 1.1; text-align: center; width: 22%; }
+.tp-name.a { color: var(--pt); } .tp-name.b { color: var(--orange); } .tp-name.w { color: var(--green); }
+.tp-op { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-num); font-weight: 700; font-size: calc(var(--u) * 7); color: var(--muted); }
+.tp-base { position: absolute; left: 6%; right: 6%; top: 84%; height: max(3px, calc(var(--u) * 0.6)); background: var(--ink); border-radius: 2px; }
 .tp-q { color: var(--green); }
 </style>
 
@@ -893,24 +891,34 @@ select { font: inherit; font-size: 1rem; padding: 8px 10px; border: 2px solid va
   $("wpNew").onclick = newWP;
 
   /* ---------------- Tape diagram ---------------- */
-  // labels: per box value (number or "?"), totals: {a, b, w} strings or "" ; ask: which total is the question
-  const T_A = 38, T_B = 64, T_H = 17; // row centres and box height (percent of the board)
+  // Tapes stand up side by side like growing bars: first part + second part = the whole (both stacked).
+  // part: the value shown in each box ("" for none); tot: {a, b, w} labels over each tape ("" hides it; w "" hides the whole)
+  const T_BASE = 84, T_W = 12; // baseline and tape width (percent of the board)
   function drawTape(say, st, pa, pb, part, tot, ask, fresh) {
-    const m = Math.max(pa, pb), bw = Math.min(54 / m, 11), x0 = 18;
+    const showW = tot.w !== "";
+    const tall = showW ? pa + pb : Math.max(pa, pb);
+    const top = say.length > 60 ? 34 : 24; // room for the story above
+    const bh = Math.min((T_BASE - top - 8) / tall, 12);
+    const fs = `min(calc(var(--u) * 5.2), ${(bh * 0.62).toFixed(2)}cqh)`;
+    const X = showW ? { a: 24, b: 46, w: 74 } : { a: 34, b: 60 };
     let h = `<p class="say"><span>${say}</span></p>`;
-    h += `<div class="tp-name a" style="top:${T_A}%">${cap(st.a)}</div><div class="tp-name b" style="top:${T_B}%">${cap(st.b)}</div>`;
-    const row = (n, y, k) => {
-      let r = `<div class="tp-tape ${k}" style="left:${x0}%;top:${y}%;width:${n * bw}%;height:${T_H}%">`;
-      for (let i = 0; i < n; i++) r += `<div class="tp-box${fresh ? " new" : ""}">${part}</div>`;
+    const col = (x, boxes, k, name) => {
+      const n = boxes.length, y = T_BASE - n * bh;
+      let r = `<div class="tp-col" style="left:${x}%;top:${y}%;width:${T_W}%;height:${n * bh}%">`;
+      for (const c of boxes) r += `<div class="tp-box ${c}${fresh ? " new" : ""}" style="font-size:${fs}">${part}</div>`;
       r += `</div>`;
-      const t = tot[k];
-      if (t !== "") r += `<div class="tp-tot ${ask === k ? "ask" : k}" style="left:${x0 + n * bw + 2}%;top:${y}%">${t}</div>`;
+      if (tot[k] !== "") r += `<div class="tp-tot ${ask === k ? "ask" : k}" style="left:${x}%;top:calc(${y}% - var(--u) * 1)">${tot[k]}</div>`;
+      r += `<div class="tp-name ${k}" style="left:${x}%;top:calc(${T_BASE}% + var(--u) * 1.5)">${name}</div>`;
       return r;
     };
-    h += row(pa, T_A, "a") + row(pb, T_B, "b");
-    const bx = x0 + m * bw + 13;
-    if (tot.w !== "") h += `<div class="tp-brace" style="left:${bx}%;top:${T_A - T_H / 2}%;height:${T_B - T_A + T_H}%"></div>`;
-    if (tot.w !== "") h += `<div class="tp-wl" style="left:calc(${bx}% + var(--u) * 4.5);top:${(T_A + T_B) / 2}%"><b class="${ask === "w" ? "tp-q" : ""}">${tot.w}</b><span>${st.w} in all</span></div>`;
+    h += col(X.a, Array(pa).fill("a"), "a", cap(st.a));
+    h += col(X.b, Array(pb).fill("b"), "b", cap(st.b));
+    h += `<div class="tp-op" style="left:${(X.a + X.b) / 2}%;top:${T_BASE - 4}%">+</div>`;
+    if (showW) {
+      h += `<div class="tp-op" style="left:${(X.b + X.w) / 2}%;top:${T_BASE - 4}%">=</div>`;
+      h += col(X.w, [...Array(pb).fill("b"), ...Array(pa).fill("a")], "w", `All ${st.w}`);
+    }
+    h += `<div class="tp-base"></div>`;
     board.innerHTML = h;
   }
 
