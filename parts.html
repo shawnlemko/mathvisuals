@@ -1,0 +1,1591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Building Foundations of Parts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Building Foundations of Parts (K-6 and 7-9, Number; Shawn 2026-11-08). Eight tools on one page, one tab at a time:
+   1 The Whole Matters, 2 Fraction of a Set, 3 Growing Number Line, 4 Equivalence Stack, 5 Hundred Grid,
+   6 Part of a Part (multiply), 7 How Many Fit? (divide), 8 Parts Truck Problems (card generator that reuses tools 1 to 7 as models).
+   Rules from Shawn: fractions always stacked, never a slash or the division sign (division is a fraction bar; a complex fraction's
+   main bar is longer and thicker). Every tool has Show answer (hidden by default) and Reset in the same spot.
+   White background, dark text, one accent colour (blue). Shaded = light blue with dark blue stripes so it still reads in black and white. */
+:root { --paper: #ffffff; --acc: #2f5fd0; --acc-dark: #1d3f99; --acc-soft: #c9d6f6; --grey: #cfd6de; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #ffffff; --sheet: #ffffff; --grid: #dbe5ee; --grid-major: #b9c9d8; --ink: #1b2733; --muted: #5b6b7a; --line: #1b2733;
+    --green: #1f7a5a; --orange: #c2571a; --pt: #2f5fd0; --pt-ring: #ffffff; --chip: #eaf0f6; --warn: #a3263c; color-scheme: light;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #ffffff; --sheet: #ffffff; --grid: #dbe5ee; --grid-major: #b9c9d8; --ink: #1b2733; --muted: #5b6b7a; --line: #1b2733;
+  --green: #1f7a5a; --orange: #c2571a; --pt: #2f5fd0; --pt-ring: #ffffff; --chip: #eaf0f6; --warn: #a3263c; color-scheme: light;
+}
+h1 { font-size: clamp(1.4rem, 2.4vw, 2.1rem); }
+header { margin-bottom: 8px; }
+
+/* Tab bar: one button per tool. */
+.tabs { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+.tabs button { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 4px 8px; border: 2px solid var(--grid-major); border-radius: 12px;
+  background: var(--sheet); text-align: left; line-height: 1.1; font-size: 0.92rem; }
+.tabs .n { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--chip); font-family: var(--font-num); font-size: 1.05rem; }
+.tabs button[aria-selected="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+.tabs button[aria-selected="true"] .n { background: #fff; color: var(--acc); }
+@media (max-width: 1100px) { .tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+@media (min-width: 861px) and (min-height: 520px) {
+  .wrap > .tool { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .wrap > .tool > .stage { flex: 1 1 auto; min-height: 0; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .stage > .panel { overflow-y: auto; }
+  .board { justify-content: flex-start; }
+}
+
+/* Board: the visual, then the symbols right under it. */
+.board { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; }
+.board svg { touch-action: none; }
+svg text { fill: var(--ink); font-family: var(--font-num); font-weight: 700; }
+svg text.w { font-family: var(--font-body); }
+svg text.mu { fill: var(--muted); }
+svg text.ac, svg .ac text { fill: var(--acc-dark); }
+svg text.wa { fill: var(--warn); }
+svg text.wh { fill: #fff; }
+svg .bar { stroke: var(--ink); }
+svg .ac .bar { stroke: var(--acc-dark); }
+svg .mu .bar { stroke: var(--muted); }
+svg .mu text { fill: var(--muted); }
+.halo, svg .halo text { paint-order: stroke; stroke: #fff; stroke-width: 6px; stroke-linejoin: round; }
+.slide { animation: slide 0.9s ease both; }
+@keyframes slide { from { transform: translate(var(--dx), var(--dy)); opacity: 0.4; } }
+@media (prefers-reduced-motion: reduce) { .slide { animation: none; } }
+
+.sym { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px 2px; border-top: 1px dashed var(--grid-major);
+  font-size: clamp(1.2rem, 1.7vw, 1.9rem); text-align: center; }
+.sym .m { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.2em 0.4em; font-weight: 700; line-height: 1.15; }
+.board > svg { min-height: 55%; }
+@media (min-width: 861px) and (min-height: 520px) { .sym { min-height: 0; overflow-y: auto; } }
+.sym .work { font-size: 0.85em; }
+.sym .t { font-size: 0.72em; color: var(--muted); max-width: 60ch; }
+.sym .t b { color: var(--ink); }
+.sym .wa { color: var(--warn); }
+.fr { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; vertical-align: middle; font-weight: 700; }
+.fr > :first-child { border-bottom: 0.07em solid currentColor; padding: 0 0.12em 0.04em; }
+.fr > :last-child { padding: 0.04em 0.12em 0; }
+.mx { display: inline-flex; align-items: center; gap: 0.08em; vertical-align: middle; }
+/* Complex fraction: the main bar is longer and thicker than the inner bars. */
+.cf { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; }
+.cf > :first-child { border-bottom: 0.13em solid currentColor; padding: 0 0.45em 0.08em; }
+.cf > :last-child { padding: 0.08em 0.45em 0; }
+.rep { text-decoration: overline; text-decoration-thickness: 0.07em; }
+.qm { display: inline-grid; place-items: center; min-width: 1.4em; padding: 0 0.2em; border: 3px dashed var(--grid-major); border-radius: 10px; color: var(--muted); line-height: 1.2; }
+.hid { font-family: var(--font-body); font-size: 0.7em; color: var(--muted); font-style: italic; }
+/* Worked steps: one step per line, = signs lined up, step names in a column on the right. */
+.work { display: grid; grid-template-columns: auto auto auto; column-gap: 0.45em; row-gap: 0.3em; align-items: center; font-weight: 700; }
+.work .wl { justify-self: end; display: flex; align-items: center; gap: 0.3em; }
+.work .wr { justify-self: start; display: flex; align-items: center; gap: 0.3em; }
+.work .wn { justify-self: start; font-family: var(--font-body); font-weight: 400; font-size: 0.6em; color: var(--muted); padding-left: 0.8em; text-align: left; }
+
+/* Panel: controls on top, Show answer and Reset always at the bottom. */
+.panel { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+.panel .label { margin: 0 0 6px; }
+.ctrls { display: flex; flex-direction: column; gap: 10px; }
+.panel button { min-height: 48px; font-size: 1rem; border-radius: 10px; border: 2px solid var(--grid-major); background: var(--sheet); }
+.panel button:hover { border-color: var(--acc); }
+.panel button:disabled { opacity: 0.4; cursor: default; }
+.panel button[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+.seg { display: flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { flex: 1 1 0; border: 0; border-radius: 0; min-height: 48px; padding: 4px 6px; font-size: 0.95rem; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.stprow { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; align-items: center; gap: 8px; }
+.stprow button { font-size: 1.6rem; line-height: 1; padding: 0; }
+.stprow output { text-align: center; font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; display: flex; justify-content: center; }
+.fp { display: grid; gap: 4px; justify-items: stretch; }
+.fpbar { height: 4px; background: var(--ink); border-radius: 2px; margin: 0 58px; }
+.sl { display: grid; grid-template-columns: minmax(0, 1fr) 2.2em; gap: 8px; align-items: center; }
+.sl output { font-family: var(--font-num); font-weight: 700; font-size: 1.4rem; text-align: right; }
+input[type=range] { height: 40px; accent-color: var(--acc); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.presets button { flex: 1 1 auto; font-size: 1.05rem; padding: 4px 10px; display: inline-flex; align-items: center; justify-content: center; gap: 0.3em; }
+.presets .fr, .presets .cf { font-size: 0.85em; }
+.big { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem !important; min-height: 56px !important; }
+.go { background: var(--acc) !important; border-color: var(--acc) !important; color: #fff; }
+.layers { display: grid; gap: 5px; }
+.layers button { display: flex; align-items: center; gap: 10px; text-align: left; min-height: 46px; padding: 4px 10px; }
+.layers .n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: var(--chip); color: var(--ink); font-family: var(--font-num); flex: none; }
+.layers button.top { outline: 3px solid var(--acc-dark); outline-offset: 1px; }
+.foot { position: sticky; bottom: -14px; background: var(--sheet); padding-bottom: 2px; z-index: 1; margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 6px; border-top: 1px dashed var(--grid-major); }
+.foot button { min-height: 56px; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.hint { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+/* Parts Truck: the card sits on top of the board, the model under it when shown. */
+#tab8 .sym { order: -1; border-top: 0; flex: 1 1 auto; justify-content: center; }
+#tab8 .board.withmodel .sym { flex: 0 1 auto; min-height: 0; overflow-y: auto; border-bottom: 1px dashed var(--grid-major); padding-bottom: 8px; }
+#tab8 .board:not(.withmodel) > svg { display: none; }
+.tcard { width: 100%; max-width: 980px; display: flex; flex-direction: column; gap: 0.5em; }
+.tcard .th svg { display: inline-block; width: 40px; height: 24px; flex: none; }
+.tcard .th { font-family: var(--font-display); font-weight: 800; font-size: 0.75em; color: var(--acc-dark); display: flex; align-items: center; justify-content: center; gap: 0.4em; }
+.tcard .tp { font-family: var(--font-body); font-size: 1.05em; line-height: 1.6; }
+.tcard .tp .fr { font-size: 0.95em; margin: 0 0.1em; }
+.board.withmodel .tcard .tp { font-size: 0.85em; }
+.tcard .ta { display: flex; flex-direction: column; align-items: center; gap: 0.4em; font-size: 0.9em; }
+.tcard .end { font-family: var(--font-body); font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.3em; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="pk-sh" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="14" height="14" fill="#c9d6f6"/><line x1="3" y1="0" x2="3" y2="14" stroke="#2f5fd0" stroke-width="5"/>
+    </pattern>
+    <pattern id="pk-hk" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <line x1="3" y1="0" x2="3" y2="12" stroke="#1b2733" stroke-width="2.6"/>
+    </pattern>
+  </defs>
+</svg>
+
+<div class="wrap" id="wrap">
+  <header>
+    <div>
+      <a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+      <h1>Building Foundations of Parts</h1>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Tools"></nav>
+</div>
+
+<script>
+(function () {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+const lcm = (a, b) => a / gcd(a, b) * b;
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const NUMW = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const DENW = { 1: ["whole", "wholes"], 2: ["half", "halves"], 3: ["third", "thirds"], 4: ["fourth", "fourths"], 5: ["fifth", "fifths"], 6: ["sixth", "sixths"],
+  7: ["seventh", "sevenths"], 8: ["eighth", "eighths"], 9: ["ninth", "ninths"], 10: ["tenth", "tenths"], 11: ["eleventh", "elevenths"], 12: ["twelfth", "twelfths"] };
+const denWord = (d, plural = true) => DENW[d] ? DENW[d][plural ? 1 : 0] : d + (plural ? "ths" : "th");
+const fracWords = (n, d) => (NUMW[n] || n) + " " + denWord(d, n !== 1);
+
+/* ---------- Math as HTML: stacked fractions only ---------- */
+const F = (n, d, c = "") => `<span class="fr${c ? " " + c : ""}"><span>${n}</span><span>${d}</span></span>`;
+const Q = '<span class="qm">?</span>';
+const CF = (t, b) => `<span class="cf"><span>${t}</span><span>${b}</span></span>`;
+const MXr = (w, n, d) => n ? (w ? `<span class="mx">${w}${F(n, d)}</span>` : F(n, d)) : "" + w;
+function MX(n, d) { const g = gcd(n, d); n /= g; d /= g; if (d === 1) return "" + n; return MXr(Math.floor(n / d), n % d, d); }
+const tail = (n, d) => gcd(n, d) > 1 || n >= d ? " = " + MX(n, d) : ""; // " = simplest" only when it says something new
+const FW = (n, d) => d === 1 ? "" + n : F(n, d); // a fraction as given, a whole number when the denominator is 1
+function decParts(n, d) {
+  const w = Math.floor(n / d); let r = n % d;
+  if (!r) return { s: "" + w, rep: -1 };
+  const seen = new Map(), digs = [];
+  while (r && !seen.has(r) && digs.length < 6) { seen.set(r, digs.length); r *= 10; digs.push(Math.floor(r / d)); r %= d; }
+  const s = w + "." + digs.join("");
+  if (r && seen.has(r)) return { s, rep: (w + ".").length + seen.get(r) };
+  return { s, rep: -1 };
+}
+function decHTML(n, d) { const p = decParts(n, d); return p.rep < 0 ? p.s : p.s.slice(0, p.rep) + `<span class="rep">${p.s.slice(p.rep)}</span>`; }
+const tenth = x => x % 10 ? (x / 10).toFixed(1) : "" + x / 10;
+const hund = x => x % 100 === 0 ? "" + x / 100 : (x / 100).toFixed(2);
+function WORK(rows) {
+  return `<div class="work">${rows.map(r => `<span class="wl">${r[0] || ""}</span><span class="wr">${r[1] === "" ? "" : "= " + r[1]}</span><span class="wn">${r[2] || ""}</span>`).join("")}</div>`;
+}
+// Rows that rename a/b in simplest form (empty when it is already simplest).
+function simpRows(n, d, lhs) {
+  const g = gcd(n, d); if (g === 1) return [];
+  return [[lhs || "", F(`${n / g} × ${g}`, `${d / g} × ${g}`), `common factor ${g}`], ["", MX(n, d), "simplest form"]];
+}
+
+/* ---------- SVG helpers ---------- */
+function E(tag, at, par) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (par) par.appendChild(e); return e; }
+function T(par, x, y, s, size, cls, anchor) {
+  const t = E("text", { x, y, "font-size": size, "text-anchor": anchor || "middle", "dominant-baseline": "central" }, par);
+  if (cls) t.setAttribute("class", cls); t.textContent = s; return t;
+}
+const fw = (n, d, size) => Math.max(String(n).length, String(d).length) * size * 0.62 + size * 0.35;
+// Stacked fraction centred on (x, y), where y is the fraction bar.
+function SF(par, x, y, n, d, size, cls) {
+  const g = E("g", cls ? { class: cls } : {}, par), w = fw(n, d, size);
+  T(g, x, y - size * 0.6, n, size); T(g, x, y + size * 0.64, d, size);
+  E("line", { x1: x - w / 2, x2: x + w / 2, y1: y, y2: y, "stroke-width": Math.max(2, size * 0.09), class: "bar" }, g);
+  return g;
+}
+// Whole, proper or mixed value (simplified) centred on x.
+function SV(par, x, y, n, d, size, cls, keep) {
+  if (!keep) { const g = gcd(n, d); n /= g; d /= g; }
+  if (d === 1 || n % d === 0) return T(par, x, y, n / d, size * 1.15, cls);
+  const w = Math.floor(n / d), r = n % d;
+  if (!w) return SF(par, x, y, r, d, size, cls);
+  const ww = String(w).length * size * 0.66, f = fw(r, d, size), tot = ww + f + 4;
+  const g = E("g", cls ? { class: cls } : {}, par);
+  T(g, x - tot / 2 + ww / 2, y, w, size * 1.15); SF(g, x + tot / 2 - f / 2, y, r, d, size);
+  return g;
+}
+const mixW = (n, d, size) => { const w = Math.floor(n / d); return (w ? String(w).length * size * 0.66 + 4 : 0) + fw(n % d, d, size); };
+// Decimal text with a bar over repeating digits (monospace digits make the bar easy to place).
+function SD(par, x, y, n, d, size, cls) {
+  const p = decParts(n, d), g = E("g", cls ? { class: cls } : {}, par);
+  T(g, x, y, p.s, size);
+  if (p.rep >= 0) {
+    const cw = size * 0.6, left = x - p.s.length * cw / 2;
+    E("line", { x1: left + p.rep * cw + 1, x2: left + p.s.length * cw - 1, y1: y - size * 0.6, y2: y - size * 0.6, "stroke-width": 2.2, class: "bar" }, g);
+  }
+  return p.s.length * size * 0.6;
+}
+function sp(svg, e) { return new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse()); }
+const INK = "#1b2733", ACC = "#2f5fd0", ACCD = "#1d3f99", WARN = "#a3263c", GRID = "#b9c9d8", MUTED = "#5b6b7a";
+
+/* ---------- Panel controls ---------- */
+function el(html) { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+const val = (f, S) => typeof f === "function" ? f(S) : f;
+function seg(t, P, key, opts, label) {
+  const box = el(`<div class="ctl">${label ? `<p class="label">${label}</p>` : ""}<div class="seg" role="group">${opts.map(o => `<button type="button" data-v="${o[0]}">${o[1]}</button>`).join("")}</div></div>`);
+  P.appendChild(box);
+  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { let v = b.dataset.v; if (/^-?\d+$/.test(v)) v = +v; t.set({ [key]: v }); }));
+  t.syncs.push(S => box.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(String(b.dataset.v) === String(S[key])))));
+  return box;
+}
+function stepper(t, P, label, key, min, max, fmt) {
+  const box = el(`<div class="ctl"><p class="label">${label}</p><div class="stprow"><button type="button" aria-label="Less">−</button><output></output><button type="button" aria-label="More">+</button></div></div>`);
+  P.appendChild(box);
+  const [mi, pl] = box.querySelectorAll("button"), out = box.querySelector("output");
+  const go = s => { const S = t.S, v = clamp(S[key] + s, val(min, S), val(max, S)); if (v !== S[key]) t.set({ [key]: v }); };
+  mi.addEventListener("click", () => go(-1)); pl.addEventListener("click", () => go(1));
+  t.syncs.push(S => { out.innerHTML = fmt ? fmt(S[key], S) : S[key]; mi.disabled = S[key] <= val(min, S); pl.disabled = S[key] >= val(max, S); });
+  return box;
+}
+function fracPick(t, P, label, nk, dk, nmin, nmax, dmin, dmax) {
+  const row = w => `<div class="stprow"><button type="button" data-k="${w}" data-s="-1" aria-label="${w === "n" ? "Numerator" : "Denominator"} down">−</button><output data-o="${w}"></output><button type="button" data-k="${w}" data-s="1" aria-label="${w === "n" ? "Numerator" : "Denominator"} up">+</button></div>`;
+  const box = el(`<div class="ctl"><p class="label">${label}</p><div class="fp">${row("n")}<div class="fpbar"></div>${row("d")}</div></div>`);
+  P.appendChild(box);
+  const lim = (w, S) => w === "n" ? [val(nmin, S), val(nmax, S)] : [val(dmin, S), val(dmax, S)];
+  box.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    const S = t.S, w = b.dataset.k, key = w === "n" ? nk : dk, [lo, hi] = lim(w, S), v = clamp(S[key] + +b.dataset.s, lo, hi);
+    if (v !== S[key]) t.set({ [key]: v });
+  }));
+  t.syncs.push(S => {
+    box.querySelector('[data-o="n"]').textContent = S[nk]; box.querySelector('[data-o="d"]').textContent = S[dk];
+    box.querySelectorAll("button").forEach(b => { const w = b.dataset.k, key = w === "n" ? nk : dk, [lo, hi] = lim(w, S); b.disabled = +b.dataset.s < 0 ? S[key] <= lo : S[key] >= hi; });
+  });
+  return box;
+}
+function slider(t, P, label, key, min, max) {
+  const box = el(`<div class="ctl"><p class="label">${label}</p><div class="sl"><input type="range" min="${min}" max="${max}" step="1" aria-label="${label}"><output></output></div></div>`);
+  P.appendChild(box);
+  const inp = box.querySelector("input"), out = box.querySelector("output");
+  inp.addEventListener("input", () => t.set({ [key]: +inp.value }));
+  t.syncs.push(S => { inp.value = S[key]; out.textContent = S[key]; });
+  return box;
+}
+function btn(P, html, fn, cls) { const b = el(`<button type="button"${cls ? ` class="${cls}"` : ""}>${html}</button>`); b.addEventListener("click", fn); P.appendChild(b); return b; }
+function presets(t, P, label, list) {
+  const box = el(`<div class="ctl"><p class="label">${label}</p><div class="presets"></div></div>`); P.appendChild(box);
+  list.forEach(([html, patch]) => btn(box.lastElementChild, html, () => { t.S = Object.assign(t.mod.def(), typeof patch === "function" ? patch() : patch); t.mod.fix && t.mod.fix(t.S); t.render(); }));
+  return box;
+}
+const showIf = (t, elm, f) => t.syncs.push(S => { elm.hidden = !f(S); });
+
+/* =====================================================================
+   TAB 1: THE WHOLE MATTERS
+   ===================================================================== */
+const T1 = {
+  name: "The Whole Matters",
+  def: () => ({ shape: "pizza", a: 4, b: 9, n: 1, d: 2, cmp: 0, show: false }),
+  fix(S) { S.d = clamp(S.d, 2, 12); S.n = clamp(S.n, 1, S.d); },
+  controls(P, t) {
+    seg(t, P, "shape", [["pizza", "Pizza"], ["rect", "Rectangle"], ["strip", "Strip"]], "Whole");
+    slider(t, P, "Size of Whole A", "a", 2, 10);
+    slider(t, P, "Size of Whole B", "b", 2, 10);
+    fracPick(t, P, "Fraction shaded", "n", "d", 1, S => S.d, 2, 12);
+    const c = btn(P, "Compare amounts", () => t.set({ cmp: t.S.cmp ? 0 : 1 }), "big");
+    t.syncs.push(S => c.setAttribute("aria-pressed", String(!!S.cmp)));
+    presets(t, P, "Preset", [[`${F(1, 2)} small pizza, ${F(1, 2)} large pizza`, { shape: "pizza", a: 4, b: 9, n: 1, d: 2 }]]);
+  },
+  geom(shape, cx, cy, s) {
+    if (shape === "pizza") { const r = 21 * s; return { shape, cx, cy, r, x: cx - r, y: cy - r, W: 2 * r, H: 2 * r }; }
+    if (shape === "rect") { const W = 42 * s, H = 30 * s; return { shape, x: cx - W / 2, y: cy - H / 2, W, H }; }
+    const W = 46 * s, H = 74; return { shape, x: cx - W / 2, y: cy - H / 2, W, H };
+  },
+  // The shaded part as one outline (for the compare overlay).
+  partPath(g, n, d) {
+    if (g.shape === "pizza") {
+      if (n === d) return `M${g.cx - g.r} ${g.cy}a${g.r} ${g.r} 0 1 0 ${2 * g.r} 0a${g.r} ${g.r} 0 1 0 ${-2 * g.r} 0Z`;
+      const a0 = -Math.PI / 2, a1 = a0 + 2 * Math.PI * n / d;
+      return `M${g.cx} ${g.cy}L${g.cx + g.r * Math.cos(a0)} ${g.cy + g.r * Math.sin(a0)}A${g.r} ${g.r} 0 ${n / d > 0.5 ? 1 : 0} 1 ${g.cx + g.r * Math.cos(a1)} ${g.cy + g.r * Math.sin(a1)}Z`;
+    }
+    return `M${g.x} ${g.y}h${g.W * n / d}v${g.H}h${-g.W * n / d}Z`;
+  },
+  drawWhole(svg, g, n, d) {
+    for (let k = 0; k < d; k++) {
+      const fill = k < n ? "url(#pk-sh)" : "#fff";
+      if (g.shape === "pizza") {
+        const a0 = -Math.PI / 2 + 2 * Math.PI * k / d, a1 = a0 + 2 * Math.PI / d;
+        E("path", { d: `M${g.cx} ${g.cy}L${g.cx + g.r * Math.cos(a0)} ${g.cy + g.r * Math.sin(a0)}A${g.r} ${g.r} 0 0 1 ${g.cx + g.r * Math.cos(a1)} ${g.cy + g.r * Math.sin(a1)}Z`,
+          fill, stroke: INK, "stroke-width": 3, "stroke-linejoin": "round" }, svg);
+      } else {
+        E("rect", { x: g.x + g.W * k / d, y: g.y, width: g.W / d, height: g.H, fill, stroke: INK, "stroke-width": 3 }, svg);
+      }
+    }
+    if (g.shape === "pizza") E("circle", { cx: g.cx, cy: g.cy, r: g.r, fill: "none", stroke: INK, "stroke-width": 6 }, svg);
+    else E("rect", { x: g.x, y: g.y, width: g.W, height: g.H, fill: "none", stroke: INK, "stroke-width": 5 }, svg);
+  },
+  draw(svg, S) {
+    svg.setAttribute("viewBox", "0 0 1000 560");
+    const cy = 300;
+    if (S.single) { const g = T1.geom(S.shape, 500, 280, 10); T1.drawWhole(svg, g, S.n, S.d); return; }
+    const gs = [T1.geom(S.shape, 250, cy, S.a), T1.geom(S.shape, 750, cy, S.b)];
+    gs.forEach((g, i) => { T(svg, i ? 750 : 250, 40, i ? "Whole B" : "Whole A", 32, "w"); T1.drawWhole(svg, g, S.n, S.d); });
+    if (S.cmp) {
+      // Lift the smaller whole's shaded part onto the bigger whole's shaded part.
+      const small = S.a <= S.b ? 0 : 1, big = 1 - small, gS = gs[small], gB = gs[big];
+      const dx = gS.shape === "pizza" ? gB.cx - gS.cx : gB.x - gS.x, dy = gS.shape === "pizza" ? 0 : gB.y - gS.y;
+      const outer = E("g", { transform: `translate(${dx} ${dy})` }, svg);
+      const g = E("g", { class: "slide", style: `--dx:${-dx}px;--dy:${-dy}px` }, outer);
+      E("path", { d: T1.partPath(gS, S.n, S.d), fill: ACC, "fill-opacity": 0.85, stroke: INK, "stroke-width": 5, "stroke-dasharray": "14 8", "stroke-linejoin": "round" }, g);
+      const lx = gS.shape === "pizza" ? gS.cx : gS.x + gS.W * S.n / S.d / 2, ly = gS.shape === "pizza" ? gS.cy - gS.r * 0.45 : gS.y + gS.H / 2;
+      T(g, lx, ly, small ? "B" : "A", 30, "wh");
+    }
+  },
+  sym(S) {
+    const f = F(S.n, S.d);
+    let ans;
+    if (S.a === S.b) ans = `Neither. The wholes are the same size, so both ${f} are the same amount.`;
+    else { const w = S.a > S.b ? "A" : "B"; ans = `Whole ${w}. Same fraction, but Whole ${w} is bigger, so its ${f} is more food.`; }
+    const cmpNote = S.cmp ? `<div class="t">The dark dashed piece is ${f} of the smaller whole, laid on top of ${f} of the bigger whole.</div>` : "";
+    return `<div class="m">Both wholes show ${f}. Which shaded part is more food?</div>${cmpNote}<div class="m">${S.show ? `<span class="t" style="font-size:.8em;color:var(--ink)">${ans}</span>` : Q}</div>`;
+  }
+};
+
+/* =====================================================================
+   TAB 2: FRACTION OF A SET
+   ===================================================================== */
+const T2 = {
+  name: "Fraction of a Set",
+  def: () => ({ N: 12, n: 2, d: 3, step: 0, show: false }),
+  fix(S) { S.N = clamp(S.N, 1, 36); S.d = clamp(S.d, 2, 12); S.n = clamp(S.n, 1, S.d); S.step = clamp(S.step, 0, 2); },
+  controls(P, t) {
+    stepper(t, P, "Counters", "N", 1, 36);
+    fracPick(t, P, "Fraction", "n", "d", 1, S => S.d, 2, 12);
+    const nx = btn(P, "", () => t.set({ step: t.S.step >= 2 ? 0 : t.S.step + 1 }), "big go");
+    t.syncs.push(S => { nx.textContent = S.step === 0 ? `Next step: circle ${S.d} equal groups` : S.step === 1 ? (S.N % S.d ? "Back to rows" : `Next step: shade ${S.n} ${S.n === 1 ? "group" : "groups"}`) : "Back to rows"; });
+    presets(t, P, "Presets", [[`${F(2, 3)} of 12`, { N: 12, n: 2, d: 3 }], [`${F(3, 4)} of 8`, { N: 8, n: 3, d: 4 }], [`${F(1, 3)} of 12`, { N: 12, n: 1, d: 3 }]]);
+  },
+  // Lay out groups (sizes) in a W×H box so the counters are as big as possible.
+  layout(sizes, W, H, pad) {
+    const G = sizes.length, k = Math.max(1, ...sizes); let best = null;
+    for (let kc = 1; kc <= k; kc++) {
+      const kr = Math.ceil(k / kc);
+      for (let gc = 1; gc <= G; gc++) {
+        const gr = Math.ceil(G / gc), s = Math.min((W / gc - pad) / kc, (H / gr - pad) / kr);
+        if (!best || s > best.s + 0.01) best = { s, kc, kr, gc, gr };
+      }
+    }
+    return best;
+  },
+  draw(svg, S) {
+    const W = 1000, H = 540; svg.setAttribute("viewBox", `0 0 ${W} ${H + 20}`);
+    const { N, n, d } = S, ok = N % d === 0, q = Math.floor(N / d), r = N % d;
+    const grouped = S.step >= 1;
+    const sizes = grouped ? Array(d).fill(q).concat(r ? [r] : []) : [N];
+    const pad = grouped ? 44 : 0, L = T2.layout(sizes, W, H, pad), s = Math.min(L.s, 130), rad = s * 0.38;
+    const cw = W / L.gc, ch = H / L.gr;
+    sizes.forEach((sz, gi) => {
+      const left = gi >= d, shaded = S.step >= 2 && ok && gi < n;
+      const cx = (gi % L.gc + 0.5) * cw, cy = 10 + (Math.floor(gi / L.gc) + 0.5) * ch;
+      const kc = Math.min(L.kc, Math.max(sz, 1)), kr = Math.max(1, Math.ceil(sz / L.kc));
+      const bw = Math.max(kc, 1) * s, bh = kr * s;
+      if (grouped) {
+        const m = 12;
+        E("rect", { x: cx - bw / 2 - m, y: cy - bh / 2 - m, width: bw + 2 * m, height: bh + 2 * m, rx: 22,
+          fill: shaded ? "#e6ecfb" : "#fff", stroke: left ? WARN : INK, "stroke-width": left ? 4 : 4, "stroke-dasharray": left ? "10 7" : "none" }, svg);
+        if (left) T(svg, cx, cy - bh / 2 - m - 16, "left over", 24, "w wa halo");
+      }
+      for (let i = 0; i < sz; i++) {
+        const x = cx - bw / 2 + (i % L.kc + 0.5) * s, y = cy - bh / 2 + (Math.floor(i / L.kc) + 0.5) * s;
+        E("circle", { cx: x, cy: y, r: rad, fill: shaded ? ACC : "#fff", stroke: shaded ? ACCD : (left ? WARN : INK), "stroke-width": 4 }, svg);
+      }
+    });
+  },
+  sym(S) {
+    const { N, n, d } = S, ok = N % d === 0, q = Math.floor(N / d), r = N % d;
+    let status;
+    if (S.step === 0) status = `Press Next step to circle ${d} equal groups.`;
+    else if (!ok) status = `<span class="wa">${N} counters do not split into ${d} equal groups.</span> ${d} groups of ${q} use ${q * d}, and ${r} ${r === 1 ? "is" : "are"} left over. Try ${N - r ? (N - r) + " or " : ""}${N - r + d} counters.`;
+    else if (S.step === 1) status = `${d} equal groups of ${q}. Each group is ${F(1, d)} of the set.`;
+    else status = `Shade ${n} of the ${d} groups: that is ${F(n, d)} of the set.`;
+    const ans = S.show ? (ok ? "" + n * q : `<span class="t wa">No whole number: ${N} does not split into ${d} equal groups.</span>`) : Q;
+    return `<div class="t">${fracWords(n, d)} of ${N}</div><div class="m">${F(n, d)} of ${N} = ${ans}</div><div class="t">${status}</div>`;
+  }
+};
+
+/* =====================================================================
+   TAB 3: GROWING NUMBER LINE (0 to 3)
+   ===================================================================== */
+const LAYERS = ["Wholes", "Unit fractions", "Improper and mixed", "Equivalent names", "Decimals", "Jumps"];
+const T3 = {
+  name: "Growing Number Line",
+  def: () => ({ d: 4, level: 1, jm: "add", a: 1, b: 2, k: 3, pts: [], show: false }),
+  fix(S) {
+    S.d = clamp(S.d, 2, 12); S.level = clamp(S.level, 1, 6); const M = 3 * S.d;
+    if (S.only) return; // a fixed model drawn by the Parts Truck (a subtraction jump goes left)
+    if (S.jm === "add") { S.a = clamp(S.a, 0, M - 1); S.b = clamp(S.b, 1, M - S.a); }
+    else if (S.jm === "mul") { S.b = clamp(S.b, 1, M); S.k = clamp(S.k, 1, Math.floor(M / S.b)); }
+    else { S.a = clamp(S.a, 1, M); S.b = clamp(S.b, 1, S.a); }
+  },
+  controls(P, t) {
+    stepper(t, P, "Parts in each whole", "d", 2, 12, v => `${v} <span style="font-size:.6em;align-self:center;margin-left:.4em;font-family:var(--font-body)">(${denWord(v)})</span>`);
+    const box = el(`<div class="ctl"><p class="label">Layers (each one stays on)</p><div class="layers"></div></div>`); P.appendChild(box);
+    const lay = box.lastElementChild;
+    LAYERS.forEach((name, i) => btn(lay, `<span class="n">${i + 1}</span>${name}`, () => t.set({ level: t.S.level === i + 1 ? Math.max(1, i) : i + 1 })));
+    t.syncs.push(S => lay.querySelectorAll("button").forEach((b, i) => { b.setAttribute("aria-pressed", String(i < S.level)); b.classList.toggle("top", i + 1 === S.level); }));
+    const jb = el(`<div class="ctrls"></div>`); P.appendChild(jb); showIf(t, jb, S => S.level >= 6);
+    seg(t, jb, "jm", [["add", "Add"], ["mul", "Multiply"], ["div", "Divide"]], "Jump");
+    const f = (v, S) => v === 0 ? "0" : F(v, S.d);
+    const sA = stepper(t, jb, "Start at", "a", 0, S => 3 * S.d - 1, f); showIf(t, sA, S => S.jm === "add");
+    const sT = stepper(t, jb, "Total", "a", 1, S => 3 * S.d, f); showIf(t, sT, S => S.jm === "div");
+    const sB = stepper(t, jb, "Jump size", "b", 1, S => S.jm === "add" ? 3 * S.d - S.a : S.jm === "div" ? S.a : 3 * S.d, f);
+    const sK = stepper(t, jb, "Number of jumps", "k", 1, S => Math.floor(3 * S.d / S.b)); showIf(t, sK, S => S.jm === "mul");
+    const pb = el(`<div class="ctl"><p class="hint">Tap the line to place a point. Tap a point to remove it.</p></div>`); P.appendChild(pb);
+    btn(pb, "Clear points", () => t.set({ pts: [] }));
+  },
+  X: v => 70 + v * (1060 / 3),
+  draw(svg, S) {
+    svg.setAttribute("viewBox", "0 0 1200 640");
+    const d = S.d, M = 3 * d, U = 1060 / 3, u = U / d, Y = 360, X = T3.X;
+    const on = S.only ? new Set(S.only) : new Set([1, 2, 3, 4, 5, 6].filter(i => i <= S.level));
+    const sz = Math.min(26, Math.max(15, u * 0.5));
+    // Jumps first, so the labels sit on top of the arcs.
+    if (on.has(6)) T3.drawJumps(svg, S, Y);
+    E("line", { x1: X(0), x2: X(3), y1: Y, y2: Y, stroke: INK, "stroke-width": 5, "stroke-linecap": "round" }, svg);
+    if (on.has(2)) for (let k = 1; k < M; k++) if (k % d) E("line", { x1: X(k / d), x2: X(k / d), y1: Y - 15, y2: Y + 15, stroke: INK, "stroke-width": 3 }, svg);
+    for (let w = 0; w <= 3; w++) { E("line", { x1: X(w), x2: X(w), y1: Y - 28, y2: Y + 28, stroke: INK, "stroke-width": 5 }, svg); T(svg, X(w), Y + 52, w, 38); }
+    let below = Y + 82;
+    if (on.has(3)) {
+      for (let k = 1; k <= M; k++) SF(svg, X(k / d), 232, k, d, sz, "halo");
+      const stag = mixW(M - 1, d, sz) > u - 8;
+      for (let k = 1; k < M; k++) if (k % d) SV(svg, X(k / d), Y + 112 + (stag && k % 2 === 0 ? 62 : 0), k, d, sz, "", true);
+      below = Y + 112 + (stag ? 62 : 0) + 58;
+    }
+    if (on.has(4)) {
+      for (let k = 1; k <= M; k++) {
+        const names = [];
+        for (let b = 2; b <= 12 && names.length < 3; b++) if (b !== d && (k * b) % d === 0) names.push([k * b / d, b]);
+        names.forEach(([a, b], j) => SF(svg, X(k / d), 232 - (j + 1) * sz * 2.4, a, b, sz, "mu halo"));
+      }
+    }
+    if (on.has(5)) {
+      const dz = Math.min(24, Math.max(14, u * 0.42)), wid = decParts(1, d).s.length * dz * 0.6, stag = wid > u - 6;
+      for (let k = 1; k < M; k++) if (k % d) SD(svg, X(k / d), below + (stag && k % 2 === 0 ? 34 : 0), k, d, dz, "halo");
+    }
+    // Points students placed.
+    (S.pts || []).forEach(p => {
+      const x = X(p.n / p.d);
+      E("circle", { cx: x, cy: Y, r: 12, fill: ACC, stroke: "#fff", "stroke-width": 3 }, svg);
+      E("rect", { x: x - 20, y: Y - 84, width: 40, height: 40, rx: 10, fill: "#fff", stroke: ACC, "stroke-width": 4 }, svg);
+      E("line", { x1: x, x2: x, y1: Y - 44, y2: Y - 13, stroke: ACC, "stroke-width": 3 }, svg);
+      T(svg, x, Y - 64, p.L, 26, "ac");
+    });
+    return { Y, u, d };
+  },
+  arc(svg, from, to, Y, opt = {}) {
+    const xa = T3.X(from), xb = T3.X(to), mx = (xa + xb) / 2, h = Math.min(80, 24 + Math.abs(xb - xa) * 0.42);
+    E("path", { d: `M${xa} ${Y}Q${mx} ${Y - 2 * h} ${xb} ${Y}`, fill: "none", stroke: opt.dash ? MUTED : ACC, "stroke-width": 5, "stroke-dasharray": opt.dash ? "10 8" : "none" }, svg);
+    let ux = xb - mx, uy = 2 * h; const L = Math.hypot(ux, uy); ux /= L; uy /= L;
+    E("path", { d: `M${xb} ${Y}L${xb - ux * 18 - uy * 9} ${Y - uy * 18 + ux * 9}L${xb - ux * 18 + uy * 9} ${Y - uy * 18 - ux * 9}Z`, fill: opt.dash ? MUTED : ACC }, svg);
+    if (opt.label && Math.abs(xb - xa) > 30) { const g = E("g", { class: "halo" }, svg); T(g, mx, Y - h + 22, opt.label, 22, "ac"); }
+    return { mx, top: Y - h };
+  },
+  drawJumps(svg, S, Y) {
+    const d = S.d;
+    if (S.jm === "add") {
+      T3.arc(svg, S.a / d, (S.a + S.b) / d, Y);
+      E("circle", { cx: T3.X(S.a / d), cy: Y, r: 9, fill: INK }, svg);
+    } else if (S.jm === "mul") {
+      for (let j = 0; j < S.k; j++) T3.arc(svg, j * S.b / d, (j + 1) * S.b / d, Y, { label: j + 1 });
+    } else {
+      E("line", { x1: T3.X(0), x2: T3.X(S.a / d), y1: Y + 12, y2: Y + 12, stroke: ACC, "stroke-width": 10, "stroke-linecap": "round", opacity: 0.55 }, svg);
+      const full = Math.floor(S.a / S.b);
+      for (let j = 0; j < full; j++) T3.arc(svg, j * S.b / d, (j + 1) * S.b / d, Y, { label: j + 1 });
+      if (S.a % S.b && S.show) T3.arc(svg, full * S.b / d, (full + 1) * S.b / d, Y, { dash: true });
+    }
+  },
+  down(t, p) {
+    const S = t.S, g = t.geo; if (!g || p.y < g.Y - 140 || p.y > g.Y + 70) return false;
+    const k = Math.round((p.x - 70) / g.u); if (k < 0 || k > 3 * S.d) return false;
+    const pts = S.pts.slice(), i = pts.findIndex(q => q.n * S.d === k * q.d);
+    if (i >= 0) pts.splice(i, 1);
+    else { const used = new Set(pts.map(q => q.L)); let L = "A"; while (used.has(L)) L = String.fromCharCode(L.charCodeAt(0) + 1); pts.push({ n: k, d: S.d, L }); }
+    t.set({ pts }); return false;
+  },
+  sym(S) {
+    const d = S.d, lines = [
+      `Wholes: 0, 1, 2 and 3.`,
+      `Each whole is cut into ${d} equal parts. Each part is ${F(1, d)}.`,
+      `Improper fractions above the line, mixed numbers below.`,
+      `Other names for the same point are stacked above (in grey).`,
+      `Decimal names are under the mixed numbers.`];
+    let out = S.level < 6 ? `<div class="t">${lines[S.level - 1]}</div>` : "";
+    if (S.level >= 6) {
+      const A = F(S.a, d), B = F(S.b, d);
+      if (S.jm === "add") out += `<div class="m">${A} + ${B} = ${S.show ? F(S.a + S.b, d) + tail(S.a + S.b, d) : Q}</div><div class="t">Start at ${A} and make one jump of ${B}.</div>`;
+      else if (S.jm === "mul") out += `<div class="m">${S.k} × ${B} = ${S.show ? F(S.k * S.b, d) + tail(S.k * S.b, d) : Q}</div><div class="t">${S.k} equal jumps of ${B}, starting at 0.</div>`;
+      else {
+        const full = Math.floor(S.a / S.b), rem = S.a % S.b;
+        out += `<div class="m">${CF(A, B)} = ${S.show ? MX(S.a, S.b) : Q}</div><div class="t">How many jumps of ${B} fit in ${A}?${S.show ? (rem ? ` ${full} full ${full === 1 ? "jump" : "jumps"} and ${MX(rem, S.b)} of a jump.` : ` Exactly ${full}.`) : ""}</div>`;
+      }
+    }
+    if (S.pts.length) out += `<div class="m" style="font-size:.85em">${S.pts.slice().sort((a, b) => a.L < b.L ? -1 : 1).map(p => `<span>${p.L} = ${S.show ? (p.n % p.d ? F(p.n, p.d) + (p.n > p.d ? " = " + MX(p.n, p.d) : "") : p.n / p.d) : Q}</span>`).join('<span style="width:1em"></span>')}</div>`;
+    return out;
+  }
+};
+
+/* =====================================================================
+   TAB 4: EQUIVALENCE STACK
+   ===================================================================== */
+const T4 = {
+  name: "Equivalence Stack",
+  def: () => ({ cnt: 3, d0: 2, d1: 4, d2: 8, d3: 6, vn: 1, vd: 2, mode: "explore", pa: 3, pb: 4, qa: 2, qb: 3, show: false }),
+  fix(S) {
+    ["d0", "d1", "d2", "d3", "pb", "qb"].forEach(k => S[k] = clamp(S[k], 2, 12));
+    S.pa = clamp(S.pa, 1, S.pb - 1); S.qa = clamp(S.qa, 1, S.qb - 1);
+    const g = gcd(S.vn, S.vd); S.vn /= g; S.vd /= g;
+  },
+  lines(S) { return S.mode === "common" ? [S.pb, S.qb, lcm(S.pb, S.qb)] : [S.d0, S.d1, S.d2, S.d3].slice(0, S.cnt); },
+  controls(P, t) {
+    const ex = el(`<div class="ctrls"></div>`); P.appendChild(ex); showIf(t, ex, S => S.mode !== "common");
+    seg(t, ex, "cnt", [[3, "3 lines"], [4, "4 lines"]], "Number lines");
+    for (let i = 0; i < 4; i++) { const s = stepper(t, ex, `Line ${i + 1}`, "d" + i, 2, 12, v => denWord(v)); s.querySelector("output").style.fontSize = "1.25rem"; if (i === 3) showIf(t, s, S => S.cnt === 4 && S.mode !== "common"); }
+    const r = el(`<div class="row2"></div>`); P.appendChild(r);
+    const b1 = btn(r, "Simplest name", () => t.set({ mode: t.S.mode === "simp" ? "explore" : "simp", show: false }));
+    const b2 = btn(r, "Common denominator", () => t.set({ mode: t.S.mode === "common" ? "explore" : "common", show: false }));
+    t.syncs.push(S => { b1.setAttribute("aria-pressed", String(S.mode === "simp")); b2.setAttribute("aria-pressed", String(S.mode === "common")); });
+    const cm = el(`<div class="row2"></div>`); P.appendChild(cm); showIf(t, cm, S => S.mode === "common");
+    fracPick(t, cm, "First", "pa", "pb", 1, S => S.pb - 1, 2, 12);
+    fracPick(t, cm, "Second", "qa", "qb", 1, S => S.qb - 1, 2, 12);
+    const h = el(`<p class="hint">Drag or tap anywhere on the lines to move the blue line. It snaps to tick marks.</p>`); P.appendChild(h); showIf(t, h, S => S.mode !== "common");
+  },
+  draw(svg, S) {
+    svg.setAttribute("viewBox", "0 0 1100 580");
+    const L = T4.lines(S), n = L.length, x0 = 190, W = 860, top = 130, bot = 530, gap = (bot - top) / (n - 1), X = v => x0 + W * v;
+    const hideLast = S.mode === "common" && !S.show;
+    const v = S.vn / S.vd;
+    L.forEach((den, i) => {
+      const y = top + i * gap, hidden = hideLast && i === 2;
+      T(svg, 20, y, hidden ? "?" : denWord(den), 26, "w", "start");
+      E("line", { x1: X(0), x2: X(1), y1: y, y2: y, stroke: INK, "stroke-width": 4, "stroke-linecap": "round" }, svg);
+      if (!hidden) for (let k = 1; k < den; k++) E("line", { x1: X(k / den), x2: X(k / den), y1: y - 13, y2: y + 13, stroke: INK, "stroke-width": den > 30 ? 1.5 : 3 }, svg);
+      [0, 1].forEach(w => { E("line", { x1: X(w), x2: X(w), y1: y - 20, y2: y + 20, stroke: INK, "stroke-width": 4 }, svg); T(svg, X(w), y + 38, w, 24, "mu"); });
+    });
+    if (S.mode !== "common") {
+      const x = X(v);
+      E("line", { x1: x, x2: x, y1: top - 100, y2: bot + 26, stroke: ACC, "stroke-width": 4 }, svg);
+      E("circle", { cx: x, cy: top - 100, r: 20, fill: ACC }, svg);
+      T(svg, x, top - 100, "↔", 24, "wh");
+      L.forEach((den, i) => {
+        if ((S.vn * den) % S.vd) return;
+        const y = top + i * gap, k = S.vn * den / S.vd;
+        E("line", { x1: x, x2: x, y1: y - 24, y2: y + 24, stroke: ACCD, "stroke-width": 9, "stroke-linecap": "round" }, svg);
+        if (k > 0 && k < den) SF(svg, x + (v > 0.85 ? -44 : 44), y - 42, k, den, 30, "ac halo");
+      });
+    } else {
+      const marks = [[S.pa, S.pb, 0], [S.qa, S.qb, 1]];
+      marks.forEach(([a, b, i]) => {
+        const y = top + i * gap, x = X(a / b);
+        E("circle", { cx: x, cy: y, r: 13, fill: ACC, stroke: "#fff", "stroke-width": 3 }, svg);
+        SF(svg, x, y - 52, a, b, 30, "ac halo");
+        if (!hideLast) {
+          const y3 = top + 2 * gap, D = L[2], k = a * D / b;
+          E("line", { x1: x, x2: x, y1: y + 16, y2: y3 - 14, stroke: ACC, "stroke-width": 2.5, "stroke-dasharray": "8 6" }, svg);
+          E("circle", { cx: x, cy: y3, r: 13, fill: ACC, stroke: "#fff", "stroke-width": 3 }, svg);
+          SF(svg, x, y3 - 52, k, D, 30, "ac halo");
+        }
+      });
+    }
+    return { x0, W, L: hideLast ? L.slice(0, 2) : L };
+  },
+  snap(t, p) {
+    const S = t.S, g = t.geo; if (!g || S.mode === "common") return;
+    const tv = clamp((p.x - g.x0) / g.W, 0, 1); let best = null;
+    g.L.forEach(den => { const k = Math.round(tv * den), e = Math.abs(k / den - tv); if (!best || e < best.e - 1e-9) best = { e, k, den }; });
+    if (best && best.k * S.vd !== S.vn * best.den) t.set({ vn: best.k, vd: best.den });
+  },
+  down(t, p) { if (t.S.mode === "common") return false; T4.snap(t, p); return true; },
+  move(t, p) { T4.snap(t, p); },
+  litNames(S) {
+    const out = []; T4.lines(S).forEach(den => { if ((S.vn * den) % S.vd === 0) { const k = S.vn * den / S.vd; if (!out.some(o => o[1] === den)) out.push([k, den]); } });
+    return out;
+  },
+  sym(S) {
+    if (S.mode === "common") {
+      const D = lcm(S.pb, S.qb), m1 = D / S.pb, m2 = D / S.qb;
+      const ask = `<div class="m">${F(S.pa, S.pb)} and ${F(S.qa, S.qb)}</div><div class="t">Find one line where both fractions land on a tick mark.</div>`;
+      if (!S.show) return ask + `<div class="m">${Q}</div>`;
+      const rows = [];
+      rows.push([F(S.pa, S.pb), m1 === 1 ? F(S.pa, S.pb) : F(`${S.pa} × ${m1}`, `${S.pb} × ${m1}`), m1 === 1 ? "already on this line" : `multiply top and bottom by ${m1}`]);
+      if (m1 !== 1) rows.push(["", F(S.pa * m1, D), denWord(D)]);
+      rows.push([F(S.qa, S.qb), m2 === 1 ? F(S.qa, S.qb) : F(`${S.qa} × ${m2}`, `${S.qb} × ${m2}`), m2 === 1 ? "already on this line" : `multiply top and bottom by ${m2}`]);
+      if (m2 !== 1) rows.push(["", F(S.qa * m2, D), denWord(D)]);
+      return ask.replace(/<div class="t">.*?<\/div>/, "") + WORK(rows) + `<div class="t">Both land on the <b>${denWord(D)}</b> line: common denominator ${D}.</div>`;
+    }
+    const lit = T4.litNames(S), names = lit.map(([k, d]) => k === 0 ? "0" : k === d ? F(k, d) : F(k, d)).join(" = ");
+    let out = `<div class="m">${S.vn === 0 ? "0" : names}</div>`;
+    if (S.mode === "simp") {
+      const big = lit.reduce((a, b) => b[1] > a[1] ? b : a, lit[0]);
+      const [k, d] = big;
+      out += `<div class="t">What is the simplest name for ${F(k, d)}?</div>`;
+      if (!S.show) out += `<div class="m">${Q}</div>`;
+      else if (k === 0 || k === d) out += `<div class="m">${F(k, d)} = ${k / d}</div>`;
+      else { const r = simpRows(k, d, F(k, d)); out += r.length ? WORK(r) : `<div class="t">${F(k, d)} is already in simplest form.</div>`; }
+    } else out += `<div class="t">Every line with a tick at the blue line lights up and shows its name.</div>`;
+    return out;
+  }
+};
+
+/* =====================================================================
+   TAB 5: HUNDRED GRID
+   ===================================================================== */
+const fillN = c => Array.from({ length: 100 }, (_, i) => i < c ? 1 : 0); // cells numbered down each column, left to right
+const T5 = {
+  name: "Hundred Grid",
+  def: () => ({ A: fillN(0), B: fillN(0), cmp: 0, tenths: 0, show: false }),
+  controls(P, t) {
+    seg(t, P, "cmp", [[0, "One grid"], [1, "Compare"]], "Mode");
+    seg(t, P, "tenths", [[0, "Squares"], [1, "Columns (tenths)"]], "Tap shades");
+    presets(t, P, "Preset", [["0.6 and 0.58", { A: fillN(60), B: fillN(58), cmp: 1 }], ["0.35", { A: fillN(35), cmp: 0 }]]);
+    P.appendChild(el(`<p class="hint">Tap or drag across squares to shade. Drag over shaded squares to clear them.</p>`));
+  },
+  draw(svg, S) {
+    const grids = S.cmp ? [["A", 40, 70, 500], ["B", 620, 70, 500]] : [["A", 30, 30, 540]];
+    svg.setAttribute("viewBox", S.cmp ? "0 0 1160 600" : "0 0 600 600");
+    grids.forEach(([key, gx, gy, size]) => {
+      const c = size / 10, arr = S[key];
+      if (S.cmp) T(svg, gx + size / 2, 34, "Grid " + key, 30, "w");
+      for (let i = 0; i < 100; i++) {
+        const col = Math.floor(i / 10), row = i % 10;
+        E("rect", { x: gx + col * c, y: gy + row * c, width: c, height: c, fill: arr[i] ? "url(#pk-sh)" : "#fff", stroke: GRID, "stroke-width": 1.5 }, svg);
+      }
+      for (let k = 1; k < 10; k++) E("line", { x1: gx + k * c, x2: gx + k * c, y1: gy, y2: gy + size, stroke: S.tenths ? INK : MUTED, "stroke-width": S.tenths ? 3 : 1.5 }, svg);
+      E("rect", { x: gx, y: gy, width: size, height: size, fill: "none", stroke: INK, "stroke-width": 4 }, svg);
+    });
+    return { grids };
+  },
+  cellAt(t, p) {
+    for (const [key, gx, gy, size] of t.geo.grids || []) {
+      if (p.x >= gx && p.x < gx + size && p.y >= gy && p.y < gy + size) { const c = size / 10; return { key, col: Math.floor((p.x - gx) / c), row: Math.floor((p.y - gy) / c) }; }
+    }
+    return null;
+  },
+  paint(t, h, v) {
+    const arr = t.S[h.key].slice();
+    if (t.S.tenths) for (let r = 0; r < 10; r++) arr[h.col * 10 + r] = v; else arr[h.col * 10 + h.row] = v;
+    t.set({ [h.key]: arr });
+  },
+  down(t, p) {
+    const h = T5.cellAt(t, p); if (!h) return false;
+    const arr = t.S[h.key];
+    const v = t.S.tenths ? (arr.slice(h.col * 10, h.col * 10 + 10).every(x => x) ? 0 : 1) : (arr[h.col * 10 + h.row] ? 0 : 1);
+    t.drag5 = { key: h.key, v, last: { x: p.x, y: p.y } }; T5.paint(t, h, v); return true;
+  },
+  move(t, p) {
+    if (!t.drag5) return;
+    // Fill in every square between the last point and this one, so a fast swipe leaves no gaps.
+    const l = t.drag5.last || p, n = Math.max(1, Math.ceil(Math.hypot(p.x - l.x, p.y - l.y) / 10));
+    for (let i = 1; i <= n; i++) { const h = T5.cellAt(t, { x: l.x + (p.x - l.x) * i / n, y: l.y + (p.y - l.y) * i / n }); if (h && h.key === t.drag5.key) T5.paint(t, h, t.drag5.v); }
+    t.drag5.last = { x: p.x, y: p.y };
+  },
+  readout(c, show) {
+    const dec = c % 10 === 0 && c > 0 && c < 100 ? `${tenth(c / 10)} = ${hund(c)}` : hund(c);
+    return `${F(c, 100)} = ${show ? `${c && c < 100 && gcd(c, 100) > 1 ? MX(c, 100) + " = " : ""}${dec} = ${c}%` : Q}`;
+  },
+  sym(S) {
+    const a = S.A.reduce((s, x) => s + x, 0);
+    if (!S.cmp) return `<div class="t">Shaded squares out of 100</div><div class="m">${T5.readout(a, S.show)}</div><div class="t">${S.show ? "Fraction, simplest form, decimal and percent" : "Show answer for simplest form, decimal and percent."}</div>`;
+    const b = S.B.reduce((s, x) => s + x, 0);
+    const cmp = a === b ? "=" : a > b ? "&gt;" : "&lt;";
+    const note = (a % 10 === 0 && a < 100 && a > 0) ? ` ${tenth(a / 10)} = ${hund(a)}: ${a / 10} tenths cover the same space as ${a} hundredths.` : "";
+    return `<div class="m" style="font-size:.85em">A: ${T5.readout(a, S.show)}</div><div class="m" style="font-size:.85em">B: ${T5.readout(b, S.show)}</div>` +
+      `<div class="m">Which grid shows more? ${S.show ? `${hund(a)} ${cmp} ${hund(b)}` : Q}</div>${S.show && note ? `<div class="t">${note}</div>` : ""}`;
+  }
+};
+
+/* =====================================================================
+   TAB 6: PART OF A PART (MULTIPLY)
+   ===================================================================== */
+const T6 = {
+  name: "Part of a Part",
+  def: () => ({ mode: "frac", a: 2, b: 3, c: 3, e: 4, x: 3, y: 4, step: 1, show: false }),
+  fix(S) { S.b = clamp(S.b, 2, 12); S.e = clamp(S.e, 2, 12); S.a = clamp(S.a, 1, S.b); S.c = clamp(S.c, 1, S.e); S.x = clamp(S.x, 1, 10); S.y = clamp(S.y, 1, 10); S.step = clamp(S.step, 1, 3); },
+  dims(S) { return S.mode === "dec" ? { A: S.x, B: 10, C: S.y, E: 10 } : { A: S.a, B: S.b, C: S.c, E: S.e }; },
+  controls(P, t) {
+    seg(t, P, "mode", [["frac", "Fractions"], ["dec", "Decimals"]], "Numbers");
+    const fr = el(`<div class="row2"></div>`); P.appendChild(fr); showIf(t, fr, S => S.mode === "frac");
+    fracPick(t, fr, "Step 1: columns", "a", "b", 1, S => S.b, 2, 12);
+    fracPick(t, fr, "Step 2: rows", "c", "e", 1, S => S.e, 2, 12);
+    const dc = el(`<div class="ctrls"></div>`); P.appendChild(dc); showIf(t, dc, S => S.mode === "dec");
+    stepper(t, dc, "Step 1: columns", "x", 1, 10, v => tenth(v));
+    stepper(t, dc, "Step 2: rows", "y", 1, 10, v => tenth(v));
+    const nx = btn(P, "", () => t.set({ step: t.S.step >= 3 ? 1 : t.S.step + 1 }), "big go");
+    t.syncs.push(S => { nx.textContent = S.step === 1 ? "Next step: hatch the rows" : S.step === 2 ? "Next step: count the overlap" : "Start again"; });
+    presets(t, P, "Presets", [[`${F(2, 3)} × ${F(3, 4)}`, { a: 2, b: 3, c: 3, e: 4 }], ["0.3 × 0.4", { mode: "dec", x: 3, y: 4 }]]);
+  },
+  draw(svg, S) {
+    svg.setAttribute("viewBox", "0 0 1000 620");
+    const { A, B, C, E: En } = T6.dims(S), X0 = 270, Y0 = 90, Z = 500, cw = Z / B, rh = Z / En;
+    E("rect", { x: X0, y: Y0, width: Z, height: Z, fill: "#fff" }, svg);
+    E("rect", { x: X0, y: Y0, width: A * cw, height: Z, fill: "#cfd6de" }, svg);
+    if (S.step >= 2) E("rect", { x: X0, y: Y0, width: A * cw, height: C * rh, fill: "url(#pk-hk)" }, svg);
+    if (S.step >= 3) {
+      E("rect", { x: X0, y: Y0, width: A * cw, height: C * rh, fill: "url(#pk-sh)" }, svg);
+      E("rect", { x: X0, y: Y0, width: A * cw, height: C * rh, fill: "url(#pk-hk)", opacity: 0.35 }, svg);
+    }
+    for (let k = 1; k < B; k++) E("line", { x1: X0 + k * cw, x2: X0 + k * cw, y1: Y0, y2: Y0 + Z, stroke: INK, "stroke-width": B > 10 ? 1.5 : 2.5 }, svg);
+    if (S.step >= 2) for (let k = 1; k < En; k++) E("line", { x1: X0, x2: X0 + Z, y1: Y0 + k * rh, y2: Y0 + k * rh, stroke: INK, "stroke-width": En > 10 ? 1.5 : 2.5 }, svg);
+    if (S.step >= 3) {
+      E("rect", { x: X0, y: Y0, width: A * cw, height: C * rh, fill: "none", stroke: ACCD, "stroke-width": 7 }, svg);
+      if (cw >= 34 && rh >= 34) { let i = 0; for (let r = 0; r < C; r++) for (let c = 0; c < A; c++) { i++; const g = E("g", { class: "halo" }, svg); T(g, X0 + (c + 0.5) * cw, Y0 + (r + 0.5) * rh, i, Math.min(28, rh * 0.5)); } }
+    }
+    E("rect", { x: X0, y: Y0, width: Z, height: Z, fill: "none", stroke: INK, "stroke-width": 5 }, svg);
+    // Factor labels: the first across the top of the grey columns, the second down the side of the hatched rows.
+    const lab = (x, y, which) => S.mode === "dec" ? T(svg, x, y, tenth(which ? S.y : S.x), 32, "ac") : SF(svg, x, y, which ? S.c : S.a, which ? S.e : S.b, 28, "ac");
+    E("path", { d: `M${X0} ${Y0 - 12}v-10h${A * cw}v10`, fill: "none", stroke: ACCD, "stroke-width": 3.5 }, svg);
+    lab(X0 + A * cw / 2, Y0 - 52, 0);
+    if (S.step >= 2) { E("path", { d: `M${X0 - 12} ${Y0}h-10v${C * rh}h10`, fill: "none", stroke: ACCD, "stroke-width": 3.5 }, svg); lab(X0 - 70, Y0 + C * rh / 2, 1); }
+  },
+  sym(S) {
+    const { A, B, C, E: En } = T6.dims(S), dec = S.mode === "dec";
+    const f1 = dec ? tenth(S.x) : F(S.a, S.b), f2 = dec ? tenth(S.y) : F(S.c, S.e);
+    const hint = S.step === 1 ? `Step 1: shade ${f1} of the whole grey (${A} of ${B} columns).`
+      : S.step === 2 ? `Step 2: hatch ${f2} of the grey part (${C} of ${En} rows).`
+      : `Step 3: the overlap is ${f2} of ${f1}. Count the overlap pieces and all the pieces.`;
+    let ans = Q;
+    if (S.show) {
+      const p = A * C, t = B * En;
+      const rows = dec ? [[`${f1} × ${f2}`, F(p, 100), `${p} hundredths`], ["", hund(p), "decimal"]]
+        : [[`${f1} × ${f2}`, F(p, t), "overlap pieces over total pieces"], ...simpRows(p, t).slice(1)];
+      const v1 = A / B, v2 = C / En, pr = v1 * v2;
+      const verdict = pr < v1 && pr < v2 ? "Smaller than both factors: we took a part of a part."
+        : pr === v1 && pr === v2 ? "The same as both factors: one whole of one whole."
+        : `The same as one factor, because the other factor is 1 whole.`;
+      ans = WORK(rows) + `<div class="t"><b>${verdict}</b></div>`;
+    }
+    return `${S.show ? "" : `<div class="m">${f1} × ${f2} = ${Q}</div>`}<div class="t">${hint}</div><div class="t">Is the product bigger or smaller than each factor?</div>${S.show ? ans : ""}`;
+  }
+};
+
+/* =====================================================================
+   TAB 7: HOW MANY FIT? (DIVIDE)
+   ===================================================================== */
+const T7 = {
+  name: "How Many Fit?",
+  def: () => ({ mode: "frac", p: 5, q: 6, r: 1, s: 3, dp: 12, dr: 3, placed: 0, show: false }),
+  fix(S) {
+    S.q = clamp(S.q, 1, 12); S.s = clamp(S.s, 1, 12); S.p = clamp(S.p, 1, 3 * S.q); S.r = clamp(S.r, 1, 3 * S.s);
+    S.dp = clamp(S.dp, 1, 30); S.dr = clamp(S.dr, 1, 30);
+    const sig = [S.mode, S.p, S.q, S.r, S.s, S.dp, S.dr].join();
+    if (S._sig !== undefined && S._sig !== sig) S.placed = 0;
+    S._sig = sig; S.placed = clamp(S.placed, 0, T7.nums(S).max);
+  },
+  // Dividend D and divisor V as fractions; the quotient is num over den.
+  nums(S) {
+    const D = S.mode === "dec" ? [S.dp, 10] : [S.p, S.q], V = S.mode === "dec" ? [S.dr, 10] : [S.r, S.s];
+    const num = D[0] * V[1], den = D[1] * V[0];
+    return { D, V, num, den, full: Math.floor(num / den), max: Math.min(Math.ceil(num / den), 48) };
+  },
+  html(S, which) { const [n, d] = T7.nums(S)[which]; return S.mode === "dec" ? tenth(n) : FW(n, d); },
+  controls(P, t) {
+    seg(t, P, "mode", [["frac", "Fractions"], ["dec", "Decimals"]], "Numbers");
+    const fr = el(`<div class="row2"></div>`); P.appendChild(fr); showIf(t, fr, S => S.mode === "frac");
+    fracPick(t, fr, "Bar (dividend)", "p", "q", 1, S => 3 * S.q, 1, 12);
+    fracPick(t, fr, "Scoop (divisor)", "r", "s", 1, S => 3 * S.s, 1, 12);
+    const dc = el(`<div class="ctrls"></div>`); P.appendChild(dc); showIf(t, dc, S => S.mode === "dec");
+    stepper(t, dc, "Bar (dividend)", "dp", 1, 30, v => tenth(v));
+    stepper(t, dc, "Scoop (divisor)", "dr", 1, 30, v => tenth(v));
+    const r = el(`<div class="row2"></div>`); P.appendChild(r);
+    const add = btn(r, "Add a scoop", () => t.set({ placed: t.S.placed + 1 }), "go");
+    const rem = btn(r, "Take one off", () => t.set({ placed: t.S.placed - 1 }));
+    t.syncs.push(S => { add.disabled = S.placed >= T7.nums(S).max; rem.disabled = S.placed <= 0; });
+    presets(t, P, "Presets", [
+      [CF("3", F(1, 4)), { p: 3, q: 1, r: 1, s: 4 }], [CF(F(3, 4), F(1, 8)), { p: 3, q: 4, r: 1, s: 8 }],
+      [CF(F(5, 6), F(1, 3)), { p: 5, q: 6, r: 1, s: 3 }], [CF("1.2", "0.3"), { mode: "dec", dp: 12, dr: 3 }]]);
+  },
+  draw(svg, S, tool) {
+    svg.setAttribute("viewBox", "0 0 1200 560");
+    const N = T7.nums(S), Dv = N.D[0] / N.D[1], Vv = N.V[0] / N.V[1], placed = Math.min(S.placed, N.max);
+    const Lw = Math.max(1, Math.ceil(N.max * Vv - 1e-9)), x0 = 60, U = 1080 / Lw, X = v => x0 + v * U, Y = 330;
+    const unit = S.mode === "dec" ? 10 : lcm(N.D[1], N.V[1]);
+    // Bar
+    E("rect", { x: X(0), y: 226, width: Dv * U, height: 76, fill: "url(#pk-sh)", stroke: ACCD, "stroke-width": 3 }, svg);
+    const lx = X(Dv / 2);
+    if (S.mode === "dec") T(svg, lx, 190, tenth(S.dp), 32, "ac halo"); else if (N.D[1] === 1) T(svg, lx, 190, N.D[0], 34, "ac halo"); else SF(svg, lx, 180, N.D[0], N.D[1], 30, "ac halo");
+    // Scoops laid end to end
+    for (let j = 0; j < placed; j++) {
+      const a = j * Vv, b = (j + 1) * Vv, inside = Math.min(b, Dv);
+      E("rect", { x: X(a) + 2, y: 236, width: Math.max(0, (inside - a) * U - 4), height: 56, rx: 6, fill: "#fff", stroke: INK, "stroke-width": 4 }, svg);
+      if (b > Dv + 1e-9) {
+        E("rect", { x: X(Dv), y: 236, width: (b - Dv) * U - 2, height: 56, rx: 6, fill: "none", stroke: INK, "stroke-width": 3, "stroke-dasharray": "9 7" }, svg);
+        const g = E("g", { class: "halo" }, svg), cx = X((a + Dv) / 2);
+        E("path", { d: `M${X(a) + 2} 400v12h${(Dv - a) * U - 4}v-12`, fill: "none", stroke: ACCD, "stroke-width": 3 }, svg);
+        if (S.show) { const rn = N.num - N.full * N.den; SF(g, cx - 50, 446, rn / gcd(rn, N.den), N.den / gcd(rn, N.den), 22, "ac"); T(g, cx + 40, 446, "of a scoop", 22, "w ac"); }
+        else T(g, cx, 446, "? of a scoop", 24, "w mu");
+      } else if ((b - a) * U >= 34) T(svg, X((a + b) / 2), 264, j + 1, Math.min(30, (b - a) * U * 0.5));
+    }
+    // Number line
+    E("line", { x1: X(0), x2: X(Lw), y1: Y, y2: Y, stroke: INK, "stroke-width": 5, "stroke-linecap": "round" }, svg);
+    if (unit * Lw <= 72) for (let k = 1; k < unit * Lw; k++) if (k % unit) E("line", { x1: X(k / unit), x2: X(k / unit), y1: Y - 12, y2: Y + 12, stroke: INK, "stroke-width": 2.5 }, svg);
+    for (let w = 0; w <= Lw; w++) { E("line", { x1: X(w), x2: X(w), y1: Y - 22, y2: Y + 22, stroke: INK, "stroke-width": 5 }, svg); T(svg, X(w), Y + 46, w, 32); }
+    // Tray with the scoop
+    const sw = Math.min(Vv * U, 1080), tx = 600 - sw / 2, full = placed >= N.max;
+    T(svg, 600, 482, full ? "The bar is covered." : "Scoop: drag it up to the bar, or tap it", 22, "w mu");
+    E("rect", { x: tx, y: 500, width: sw, height: 54, rx: 6, fill: full ? "#eef1f4" : "#fff", stroke: full ? GRID : ACC, "stroke-width": 4, "stroke-dasharray": full ? "6 6" : "none" }, svg);
+    if (sw >= 56) { if (S.mode === "dec") T(svg, 600, 527, tenth(S.dr), 26, "ac"); else if (N.V[1] === 1) T(svg, 600, 527, N.V[0], 28, "ac"); else SF(svg, 600, 527, N.V[0], N.V[1], 21, "ac"); }
+    if (tool && tool.ghost) E("rect", { x: tool.ghost.x - sw / 2, y: tool.ghost.y - 28, width: sw, height: 56, rx: 6, fill: ACC, "fill-opacity": 0.35, stroke: ACC, "stroke-width": 4 }, svg);
+    return { tray: [tx, 490, sw, 70], bar: [X(0), 210, Math.max(Dv, placed * Vv) * U, 110], full };
+  },
+  down(t, p) {
+    const g = t.geo, [tx, ty, tw, th] = g.tray, [bx, by, bw, bh] = g.bar;
+    if (!g.full && p.x >= tx - 10 && p.x <= tx + tw + 10 && p.y >= ty && p.y <= ty + th + 10) { t.ghost = { x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false }; t.render(); return true; }
+    if (p.x >= bx && p.x <= bx + bw + 20 && p.y >= by && p.y <= by + bh) {
+      const N = T7.nums(t.S), Vv = N.V[0] / N.V[1], end = 60 + t.S.placed * Vv * (1080 / Math.max(1, Math.ceil(N.max * Vv - 1e-9)));
+      t.set({ placed: p.x < end ? t.S.placed - 1 : t.S.placed + 1 });
+    }
+    return false;
+  },
+  move(t, p) { if (!t.ghost) return; t.ghost.x = p.x; t.ghost.y = p.y; if (Math.hypot(p.x - t.ghost.sx, p.y - t.ghost.sy) > 10) t.ghost.moved = true; t.render(); },
+  up(t, p) { if (!t.ghost) return; const g = t.ghost; t.ghost = null; if (!g.moved || p.y < 420) t.set({ placed: t.S.placed + 1 }); else t.render(); },
+  work(S) {
+    const N = T7.nums(S), rows = [];
+    const lhs = CF(T7.html(S, "D"), T7.html(S, "V"));
+    if (S.mode === "dec") {
+      rows.push([lhs, CF(F(S.dp, 10), F(S.dr, 10)), "tenths"]);
+      rows.push(["", F(S.dp, S.dr), `how many ${S.dr} tenths fit in ${S.dp} tenths`]);
+      rows.push(["", MX(S.dp, S.dr), S.dp % S.dr ? "full scoops and part of a scoop" : "full scoops"]);
+      return rows;
+    }
+    const [p, q] = N.D, [r, s] = N.V, L = lcm(q, s), P = p * L / q, R = r * L / s;
+    if (q !== s) rows.push([lhs, CF(F(P, L), F(R, L)), "same-size pieces"]);
+    rows.push([q !== s ? "" : lhs, F(P, R), `how many ${R} ${denWord(L, R !== 1)} fit in ${P} ${denWord(L, P !== 1)}`]);
+    if (R !== 1) rows.push(["", MX(P, R), P % R ? "full scoops and part of a scoop" : "full scoops"]);
+    else rows[rows.length - 1][1] = "" + P;
+    return rows;
+  },
+  sym(S) {
+    const N = T7.nums(S), placed = Math.min(S.placed, N.max), fullPlaced = Math.min(placed, N.full);
+    const rn = N.num - N.full * N.den;
+    let status = `Full scoops: <b>${fullPlaced}</b>`;
+    if (placed > N.full) status += `. Leftover: ${S.show ? F(rn / gcd(rn, N.den), N.den / gcd(rn, N.den)) : Q} of a scoop`;
+    let out = `<div class="m">${CF(T7.html(S, "D"), T7.html(S, "V"))} = ${S.show ? MX(N.num, N.den) : Q}</div><div class="t">How many scoops of ${T7.html(S, "V")} fit in ${T7.html(S, "D")}? ${status}.</div>`;
+    if (S.show) out += WORK(T7.work(S));
+    return out;
+  }
+};
+
+/* =====================================================================
+   TAB 8: PARTS TRUCK PROBLEMS
+   ===================================================================== */
+const DAYS = ["Parts of a whole", "Number line", "Equivalence", "Decimals", "Add and subtract", "Multiply", "Divide"];
+const decT = n => tenth(n), decH = h => hund(h);
+function gen(day) {
+  if (day === 1) {
+    if (Math.random() < 0.5) {
+      const d = pick([4, 6, 8, 10, 12]), n = rnd(1, d - 1);
+      const rows = [["Sold", F(n, d), "slices sold over all the slices"], ...simpRows(n, d).slice(1),
+        ["Left", `${F(d, d)} − ${F(n, d)}`, "one whole pizza minus what was sold"], ["", F(d - n, d), "subtract the numerators"], ...simpRows(d - n, d).slice(1)];
+      return { text: `The Parts Truck cut a pizza into ${d} equal slices. Students bought ${n} ${n === 1 ? "slice" : "slices"}. What fraction of the pizza was sold? What fraction is left?`,
+        rows, end: `Sold: ${MX(n, d)}. Left: ${MX(d - n, d)}.`, model: { tab: 0, S: { shape: "pizza", n, d, single: true } } };
+    }
+    const d = pick([2, 3, 4, 6]), per = rnd(2, d <= 3 ? 6 : 4), N = d * per, n = rnd(1, d - 1);
+    return { text: `A pan holds ${N} brownies. ${F(n, d)} of them were sold before lunch. How many brownies were sold?`,
+      rows: [[`${F(n, d)} of ${N}`, `${n} × ${F(N, d)}`, `split ${N} into ${d} equal groups`], ["", `${n} × ${per}`, `each group has ${per}`], ["", "" + n * per, `${n} ${n === 1 ? "group" : "groups"}`]],
+      end: `${n * per} brownies were sold.`, model: { tab: 1, S: { N, n, d, step: 2 } } };
+  }
+  if (day === 2) {
+    const d = pick([2, 3, 4, 5, 6, 8]); let k; do k = rnd(d + 1, 3 * d - 1); while (k % d === 0);
+    const w = Math.floor(k / d), r = k % d;
+    const rows = [[F(k, d), `${F(w * d, d)} + ${F(r, d)}`, "wholes plus parts"], ["", `${w} + ${F(r, d)}`, `${F(w * d, d)} is ${w} ${w === 1 ? "whole" : "wholes"}`], ["", MXr(w, r, d), "mixed number"]];
+    if (gcd(r, d) > 1) rows.push(["", MX(k, d), "simplest form"]);
+    return { text: `The Parts Truck parks ${F(k, d)} km from the school. Which two whole numbers is that between? Write it as a mixed number.`,
+      rows, end: `It is between ${w} and ${w + 1} km. Point A is the truck.`, model: { tab: 2, S: { d, only: [1, 2, 3], pts: [{ n: k, d, L: "A" }] } } };
+  }
+  if (day === 3) {
+    if (Math.random() < 0.55) {
+      const y = pick([2, 3, 4]), x = rnd(1, y - 1), ms = [1, 2, 3, 4, 6].filter(m => y * m <= 12);
+      let m1 = pick(ms), m2; do m2 = pick(ms); while (m2 === m1);
+      const b = y * m1, a = x * m1, e = y * m2; let c = x * m2; const same = Math.random() < 0.6;
+      if (!same) c = c + 1 < e ? c + 1 : c - 1;
+      const rows = [];
+      [[a, b], [c, e]].forEach(([n, d]) => { const r = simpRows(n, d, F(n, d)); if (r.length) rows.push(...r); else rows.push([F(n, d), "", "already in simplest form"]); });
+      const cmp = a * e - c * b;
+      return { text: `Mia ate ${F(a, b)} of a pan of brownies. Leo ate ${F(c, e)} of a pan the same size. Did they eat the same amount?`, rows,
+        end: cmp === 0 ? `Yes. Both ate ${F(x, y)} of a pan.` : `No. ${cmp > 0 ? "Mia" : "Leo"} ate more.`,
+        model: { tab: 3, S: { cnt: 3, d0: b, d1: e, d2: y === b || y === e ? lcm(b, e) <= 12 ? lcm(b, e) : 12 : y, vn: a, vd: b } } };
+    }
+    const y = pick([2, 3, 4, 5, 6]); let x; do x = rnd(1, y - 1); while (gcd(x, y) > 1);
+    const m = pick([2, 3, 4, 5, 6].filter(m => y * m <= 12)), a = x * m, b = y * m;
+    return { text: `A receipt says ${F(a, b)} of the pizzas are left. What is the simplest name for ${F(a, b)}?`, rows: simpRows(a, b, F(a, b)),
+      end: `${F(a, b)} = ${F(x, y)}`, model: { tab: 3, S: { cnt: 3, d0: y, d1: b, d2: b <= 6 ? b * 2 : 12, vn: a, vd: b, mode: "simp" } } };
+  }
+  if (day === 4) {
+    if (Math.random() < 0.55) {
+      const t = rnd(2, 9); let h; do h = t * 10 + pick([-8, -6, -5, -3, -2, -1, 1, 2, 3, 5, 7]); while (h % 10 === 0 || h < 1 || h > 99);
+      const big = t * 10 > h;
+      return { text: `On Monday the Parts Truck used ${decT(t)} of a bag of flour. On Tuesday it used ${decH(h)} of a bag. Which day used more flour?`,
+        rows: [[decT(t), F(t, 10), "tenths"], ["", F(t * 10, 100), "multiply top and bottom by 10"], ["", decH(t * 10), "hundredths"]],
+        end: `${decH(t * 10)} ${big ? "&gt;" : "&lt;"} ${decH(h)}, so ${big ? "Monday" : "Tuesday"} used more.`, model: { tab: 4, S: { A: fillN(t * 10), B: fillN(h), cmp: 1 } } };
+    }
+    let h; do h = rnd(5, 95); while (h % 10 === 0);
+    const rows = [[decH(h), F(h, 100), "hundredths"], ...simpRows(h, 100).slice(1), [decH(h), h + "%", "out of 100"]];
+    return { text: `A smoothie cup is ${decH(h)} full. Write this as a fraction in simplest form and as a percent.`, rows,
+      end: `${decH(h)} = ${MX(h, 100)} = ${h}%`, model: { tab: 4, S: { A: fillN(h), cmp: 0 } } };
+  }
+  if (day === 5) {
+    const D = [2, 3, 4, 5, 6, 8, 10, 12]; let b, e, a, c;
+    const sub = Math.random() < 0.5;
+    do { b = pick(D); e = pick(D); a = rnd(1, b - 1); c = rnd(1, e - 1); } while (lcm(b, e) > 12 || b === e || (sub && a * e <= c * b));
+    const L = lcm(b, e), A = a * L / b, C = c * L / e, R = sub ? A - C : A + C, op = sub ? "−" : "+";
+    const rows = [[`${F(a, b)} ${op} ${F(c, e)}`, `${F(A, L)} ${op} ${F(C, L)}`, "common denominator"], ["", F(R, L), sub ? "subtract the numerators" : "add the numerators"]];
+    if (gcd(R, L) > 1 || R > L) rows.push(["", MX(R, L), R > L ? "mixed number" : "simplest form"]);
+    return { text: sub ? `The Parts Truck had ${F(a, b)} of a bag of flour. The cooks used ${F(c, e)} of a bag. How much flour is left?`
+        : `The Parts Truck needs ${F(a, b)} of a bag of flour for pizza dough and ${F(c, e)} of a bag for cookies. How much flour is that in all?`,
+      rows, end: `${MX(R, L)} of a bag ${sub ? "is left" : "in all"}.`, model: { tab: 2, S: { d: L, only: [1, 2, 6], jm: "add", a: A, b: sub ? -C : C } } };
+  }
+  if (day === 6) {
+    if (Math.random() < 0.6) {
+      const b = pick([2, 3, 4, 5, 6]), e = pick([2, 3, 4, 5, 6]), a = rnd(1, b - 1), c = rnd(1, e - 1);
+      return { text: `${F(a, b)} of a pan of brownies is left. The class eats ${F(c, e)} of what is left. What fraction of the whole pan did the class eat?`,
+        rows: [[`${F(c, e)} of ${F(a, b)}`, `${F(a, b)} × ${F(c, e)}`, "of means multiply"], ["", F(a * c, b * e), "overlap pieces over total pieces"], ...simpRows(a * c, b * e).slice(1)],
+        end: `The class ate ${MX(a * c, b * e)} of the pan.`, model: { tab: 5, S: { mode: "frac", a, b, c, e, step: 3 } } };
+    }
+    const x = rnd(2, 9), y = rnd(2, 9);
+    return { text: `A smoothie cup holds ${decT(x)} L. Sam drinks ${decT(y)} of the cup. How many litres did Sam drink?`,
+      rows: [[`${decT(x)} × ${decT(y)}`, F(x * y, 100), `${x * y} hundredths`], ["", decH(x * y), "decimal"]],
+      end: `Sam drank ${decH(x * y)} L.`, model: { tab: 5, S: { mode: "dec", x, y, step: 3 } } };
+  }
+  // Day 7: divide
+  const kind = rnd(1, 4); let S, text, unit = "servings";
+  if (kind === 1) { const W = rnd(2, 3), s = pick([2, 3, 4, 6]); S = { p: W, q: 1, r: 1, s }; text = `The Parts Truck has ${W} pizzas. Each serving is ${F(1, s)} of a pizza. How many servings can it sell?`; }
+  else if (kind === 2) { let s, b; do { s = pick([4, 6, 8, 10, 12]); b = pick([2, 3, 4, 5, 6]); } while (s % b || s === b); const a = rnd(1, b - 1); S = { p: a, q: b, r: 1, s }; text = `There is ${F(a, b)} of a pan of brownies left. Each student gets ${F(1, s)} of a pan. How many students get brownies?`; unit = "students"; }
+  else if (kind === 3) { let b, s, a; do { b = pick([4, 6, 8, 12]); s = pick([2, 3, 4]); a = rnd(1, b - 1); } while (b % s || (a * s) % b === 0); S = { p: a, q: b, r: 1, s }; text = `How many servings of ${F(1, s)} of a pan are in ${F(a, b)} of a pan of brownies?`; }
+  else { const dr = pick([2, 3, 4, 5]), k = rnd(2, 6), half = dr % 2 === 0 && Math.random() < 0.4; const dp = dr * k + (half ? dr / 2 : 0); S = { mode: "dec", dp, dr }; text = `The Parts Truck has ${decT(dp)} L of smoothie. Each cup holds ${decT(dr)} L. How many cups can it fill?`; unit = "cups"; }
+  S = Object.assign(T7.def(), S); T7.fix(S);
+  const N = T7.nums(S);
+  return { text, rows: T7.work(S), end: `${MX(N.num, N.den)} ${unit}.`, model: { tab: 6, S: Object.assign({}, S, { placed: 99 }) } };
+}
+const T8 = {
+  name: "Parts Truck Problems",
+  def: () => ({ day: 1, card: gen(1), model: 0, show: false }),
+  controls(P, t) {
+    const box = el(`<div class="ctl"><p class="label">Pick a day</p><div class="layers"></div></div>`); P.appendChild(box);
+    DAYS.forEach((name, i) => btn(box.lastElementChild, `<span class="n">${i + 1}</span>${name}`, () => t.set({ day: i + 1, card: gen(i + 1), show: false })));
+    t.syncs.push(S => box.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", String(i + 1 === S.day))));
+    const r = el(`<div class="row2"></div>`); P.appendChild(r);
+    btn(r, "New card", () => t.set({ card: gen(t.S.day), show: false }), "go");
+    const m = btn(r, "Show model", () => t.set({ model: t.S.model ? 0 : 1 }));
+    t.syncs.push(S => { m.setAttribute("aria-pressed", String(!!S.model)); m.textContent = S.model ? "Hide model" : "Show model"; t.sec.querySelector(".board").classList.toggle("withmodel", !!S.model); });
+  },
+  draw(svg, S) {
+    if (!S.model) return;
+    const m = S.card.model, mod = TOOLS[m.tab], st = Object.assign(mod.def(), m.S, { show: S.show });
+    mod.fix && mod.fix(st); if (m.S.placed) st.placed = Math.min(m.S.placed, T7.nums(st).max);
+    mod.draw(svg, st);
+  },
+  sym(S) {
+    const c = S.card;
+    return `<div class="tcard"><div class="th"><svg viewBox="0 0 40 24" width="40" height="24" aria-hidden="true"><rect x="1" y="4" width="24" height="14" rx="2" fill="${ACC}"/><path d="M25 8h7l5 5v5H25z" fill="${ACCD}"/><circle cx="9" cy="19" r="3.5" fill="${INK}"/><circle cx="31" cy="19" r="3.5" fill="${INK}"/></svg>The Parts Truck · Day ${S.day}: ${DAYS[S.day - 1]}</div>` +
+      `<div class="tp">${c.text}</div><div class="ta">${S.show ? WORK(c.rows) + `<div class="end">${c.end}</div>` : `<span class="hid">Answer hidden</span>`}</div></div>`;
+  }
+};
+
+/* ---------- Mount every tool ---------- */
+const TOOLS = [T1, T2, T3, T4, T5, T6, T7, T8];
+const wrap = document.getElementById("wrap"), tabs = document.getElementById("tabs");
+const mounted = TOOLS.map((mod, i) => {
+  const sec = el(`<section class="tool" id="tab${i + 1}" role="tabpanel" aria-label="${mod.name}" hidden><div class="stage"><div class="board"><svg role="img" aria-label="${mod.name}"></svg><div class="sym" aria-live="polite"></div></div><div class="card panel"><div class="ctrls"></div><div class="foot"><button type="button" class="ansbtn" aria-pressed="false">Show answer</button><button type="button" class="resetbtn">Reset</button></div></div></div></section>`);
+  wrap.appendChild(sec);
+  const svg = sec.querySelector("svg"), sym = sec.querySelector(".sym"), ans = sec.querySelector(".ansbtn");
+  const t = { mod, sec, svg, S: mod.def(), syncs: [], geo: {} };
+  mod.fix && mod.fix(t.S);
+  t.set = patch => { Object.assign(t.S, patch); mod.fix && mod.fix(t.S); t.render(); };
+  t.render = () => {
+    const S = t.S; t.syncs.forEach(f => f(S));
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    t.geo = mod.draw(svg, S, t) || {};
+    sym.innerHTML = mod.sym(S);
+    ans.setAttribute("aria-pressed", String(!!S.show)); ans.textContent = S.show ? "Hide answer" : "Show answer";
+  };
+  mod.controls(sec.querySelector(".ctrls"), t);
+  ans.addEventListener("click", () => t.set({ show: !t.S.show }));
+  sec.querySelector(".resetbtn").addEventListener("click", () => { t.ghost = null; t.S = mod.def(); mod.fix && mod.fix(t.S); t.render(); });
+  let drag = false;
+  svg.addEventListener("pointerdown", e => {
+    if (!mod.down) return; e.preventDefault();
+    if (mod.down(t, sp(svg, e), e)) { drag = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} }
+  });
+  svg.addEventListener("pointermove", e => { if (drag && mod.move) mod.move(t, sp(svg, e)); });
+  const end = e => { if (!drag) return; drag = false; t.drag5 = null; if (mod.up) mod.up(t, sp(svg, e)); };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  t.render();
+  const tb = el(`<button type="button" role="tab" aria-controls="tab${i + 1}" aria-selected="false"><span class="n">${i + 1}</span><span>${mod.name}</span></button>`);
+  tb.addEventListener("click", () => select(i)); tabs.appendChild(tb);
+  return t;
+});
+function select(i) {
+  mounted.forEach((t, j) => { t.sec.hidden = j !== i; tabs.children[j].setAttribute("aria-selected", String(j === i)); });
+  try { localStorage.setItem("parts-tab", i); } catch (e) {}
+  if (history.replaceState) history.replaceState(null, "", "#" + (i + 1));
+}
+let start = 0;
+const h = parseInt(location.hash.slice(1), 10);
+if (h >= 1 && h <= 8) start = h - 1; else { try { const s = parseInt(localStorage.getItem("parts-tab"), 10); if (s >= 0 && s < 8) start = s; } catch (e) {} }
+select(start);
+window.__parts = mounted; // for testing
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Building Foundations of Parts (parts.html). Static labels; live sentences stay in English for now. */
+window.I18N_PAGE = {
+  "Building Foundations of Parts": "Bâtir les fondements des parties",
+  "The Whole Matters": "Le tout compte",
+  "Fraction of a Set": "Fraction d'un ensemble",
+  "Growing Number Line": "Droite numérique qui grandit",
+  "Equivalence Stack": "Pile d'équivalences",
+  "Hundred Grid": "Grille de cent",
+  "Part of a Part": "Partie d'une partie",
+  "How Many Fit?": "Combien de fois ça entre?",
+  "Parts Truck Problems": "Problèmes du camion des parties",
+  "Show answer": "Montrer la réponse",
+  "Hide answer": "Cacher la réponse",
+  "Reset": "Réinitialiser",
+  "Whole": "Tout",
+  "Pizza": "Pizza",
+  "Rectangle": "Rectangle",
+  "Strip": "Bande",
+  "Size of Whole A": "Taille du tout A",
+  "Size of Whole B": "Taille du tout B",
+  "Whole A": "Tout A",
+  "Whole B": "Tout B",
+  "Fraction shaded": "Fraction ombrée",
+  "Compare amounts": "Comparer les quantités",
+  "Preset": "Exemple",
+  "Presets": "Exemples",
+  "Counters": "Jetons",
+  "Fraction": "Fraction",
+  "Back to rows": "Retour aux rangées",
+  "left over": "reste",
+  "Parts in each whole": "Parties dans chaque tout",
+  "Layers (each one stays on)": "Couches (chacune reste affichée)",
+  "Wholes": "Touts",
+  "Unit fractions": "Fractions unitaires",
+  "Improper and mixed": "Impropres et fractionnaires",
+  "Equivalent names": "Noms équivalents",
+  "Decimals": "Nombres décimaux",
+  "Jumps": "Sauts",
+  "Jump": "Saut",
+  "Add": "Additionner",
+  "Multiply": "Multiplier",
+  "Divide": "Diviser",
+  "Start at": "Départ",
+  "Total": "Total",
+  "Jump size": "Taille du saut",
+  "Number of jumps": "Nombre de sauts",
+  "Tap the line to place a point. Tap a point to remove it.": "Touche la droite pour placer un point. Touche un point pour l'enlever.",
+  "Clear points": "Effacer les points",
+  "Number lines": "Droites numériques",
+  "3 lines": "3 droites",
+  "4 lines": "4 droites",
+  "Line {n}": "Droite {n}",
+  "Simplest name": "Forme la plus simple",
+  "Common denominator": "Dénominateur commun",
+  "First": "Première",
+  "Second": "Deuxième",
+  "Drag or tap anywhere on the lines to move the blue line. It snaps to tick marks.": "Glisse ou touche les droites pour déplacer la ligne bleue. Elle s'accroche aux graduations.",
+  "Mode": "Mode",
+  "One grid": "Une grille",
+  "Compare": "Comparer",
+  "Tap shades": "Toucher ombre",
+  "Squares": "Carrés",
+  "Columns (tenths)": "Colonnes (dixièmes)",
+  "Tap or drag across squares to shade. Drag over shaded squares to clear them.": "Touche ou glisse sur les carrés pour les ombrer. Glisse sur les carrés ombrés pour les effacer.",
+  "Grid A": "Grille A",
+  "Grid B": "Grille B",
+  "Numbers": "Nombres",
+  "Fractions": "Fractions",
+  "Step 1: columns": "Étape 1 : colonnes",
+  "Step 2: rows": "Étape 2 : rangées",
+  "Next step: hatch the rows": "Étape suivante : hachurer les rangées",
+  "Next step: count the overlap": "Étape suivante : compter la partie commune",
+  "Start again": "Recommencer",
+  "Is the product bigger or smaller than each factor?": "Le produit est-il plus grand ou plus petit que chaque facteur?",
+  "Bar (dividend)": "Barre (dividende)",
+  "Scoop (divisor)": "Pelle (diviseur)",
+  "Add a scoop": "Ajouter une pelle",
+  "Take one off": "En enlever une",
+  "The bar is covered.": "La barre est couverte.",
+  "Scoop: drag it up to the bar, or tap it": "Pelle : glisse-la jusqu'à la barre ou touche-la",
+  "Pick a day": "Choisis un jour",
+  "Parts of a whole": "Parties d'un tout",
+  "Number line": "Droite numérique",
+  "Equivalence": "Équivalence",
+  "Add and subtract": "Additionner et soustraire",
+  "New card": "Nouvelle carte",
+  "Show model": "Montrer le modèle",
+  "Hide model": "Cacher le modèle",
+  "Answer hidden": "Réponse cachée"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
