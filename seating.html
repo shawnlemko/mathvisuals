@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Seating Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Seating Planner (All grades, Classroom tools; Shawn 2026-11-13).
+   A room you arrange: + Add a desk, or paste names (new lines or commas) to make one desk per name.
+   Move tool: tap to pick, drag to move (everything picked moves together), drag on empty floor to box-pick several,
+   Shift/Ctrl-tap adds to the pick. Tap a picked desk again (or double-tap) to type its name. Drop on the recycle bin to remove.
+   Room items: whiteboard, teacher's desk, text box. Pen and Eraser draw on the floor (the eraser takes a whole line).
+   Zoom: − / Fit / + buttons, mouse wheel, two-finger pinch (two fingers also slide the room). Middle mouse or Space + drag also slides.
+   Randomize seats shuffles the names across the desks that are already placed. Undo (Ctrl+Z) covers every change.
+   The whole plan is kept in this browser (localStorage "seating-plan"). Names are in <code> so the French switch never translates them. */
+:root { --wood: #f1dfbd; --wood-edge: #b58a4c; --chair: #9aa9b8; --tdesk: #d9b98a; --wb: #ffffff; --wb-edge: #7b8794; --floor-dot: #d3dde7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --wood: #ead6b0; --wood-edge: #c49a5c; --chair: #6d7d8d; --tdesk: #cfae7c; --wb: #e9eef3; --wb-edge: #9aabbb; --floor-dot: #253442; } }
+:root[data-theme="dark"] { --wood: #ead6b0; --wood-edge: #c49a5c; --chair: #6d7d8d; --tdesk: #cfae7c; --wb: #e9eef3; --wb-edge: #9aabbb; --floor-dot: #253442; }
+
+.stage { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } .board { height: 72vh; } }
+
+.panel { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px; }
+@media (min-height: 800px) { .panel { gap: 10px; } }
+.panel .label { margin: 2px 0 -5px; }
+.panel button { min-height: 48px; font-size: 1.05rem; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.panel button svg { width: 26px; height: 26px; flex: none; }
+#add { background: var(--pt); border-color: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; min-height: 52px; border-radius: 12px; }
+#names { width: 100%; flex: 0 0 auto; height: 3.6em; resize: none; font: inherit; font-size: 1rem; line-height: 1.35;
+  color: var(--ink); background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 10px; padding: 8px 10px; }
+#names:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.qg { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
+.qg .x { font-size: 1.6rem; font-weight: 700; color: var(--muted); padding-top: 4px; }
+.gs { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 4px; flex: 1; text-align: center; }
+.gs button { min-height: 44px; min-width: 0; padding: 0; font-size: 1.5rem; }
+.gs button:disabled { opacity: 0.4; cursor: default; }
+.gs output { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; line-height: 1; }
+.gs small { grid-column: 1 / -1; color: var(--muted); font-size: 0.85rem; margin-top: -2px; }
+.room { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.room button { flex-direction: column; gap: 0; min-height: 56px; font-size: 0.85rem; line-height: 1.15; padding: 6px 4px; }
+#shuffle { margin-top: 4px; min-height: 58px; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; background: var(--green); border-color: var(--green); color: var(--sheet); border-radius: 12px; }
+#shuffle:disabled, #make:disabled { opacity: 0.45; cursor: default; }
+.foot { display: flex; justify-content: space-between; align-items: center; color: var(--muted); margin-top: auto; padding-top: 4px; }
+.foot b { font-family: var(--font-num); color: var(--ink); font-size: 1.15rem; }
+.foot button { min-height: 36px; background: none; border: 0; color: var(--warn); font-size: 0.95rem; padding: 4px 6px; }
+
+/* Board: toolbar on top, the room underneath. */
+.board { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+@media (min-width: 861px) and (min-height: 520px) { .board { justify-content: flex-start; } }
+.tb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex: none; }
+.tb button { min-height: 46px; min-width: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 1rem; }
+.tb button svg { width: 22px; height: 22px; }
+.tb button[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.tb button:disabled { opacity: 0.4; cursor: default; }
+.tb .sep { width: 1px; align-self: stretch; background: var(--grid-major); margin: 4px 4px; }
+.tb .grow { flex: 1 1 auto; }
+.tb .pct { font-family: var(--font-num); font-weight: 700; min-width: 3.4em; text-align: center; color: var(--muted); }
+.colors { display: inline-flex; gap: 6px; }
+.colors button { min-width: 40px; min-height: 40px; width: 40px; border-radius: 50%; padding: 0; background: var(--c); border: 3px solid var(--sheet); box-shadow: 0 0 0 1px var(--grid-major); }
+.colors button[aria-pressed="true"] { background: var(--c); border-color: var(--sheet); box-shadow: 0 0 0 3px var(--pt); }
+.selbar[hidden] { display: none !important; }
+.selbar { position: absolute; left: 12px; bottom: 12px; z-index: 2; display: flex; gap: 6px; align-items: center; padding: 6px; background: var(--sheet); border: 2px solid var(--pt); border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+.selbar button { min-height: 44px; font-size: 1rem; }
+.selbar .n { font-weight: 700; color: var(--pt); padding: 0 4px; }
+
+.vp { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: 8px; background-color: var(--sheet);
+  background-image: radial-gradient(circle, var(--floor-dot) 1.4px, transparent 1.6px);
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: default; }
+.vp.pen { cursor: crosshair; }
+.vp.eraser { cursor: cell; }
+.vp.panning { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.vp svg.ink { position: absolute; left: 0; top: 0; width: 10px; height: 10px; max-width: none; overflow: visible; pointer-events: none; }
+.vp svg.shape { width: auto; height: auto; max-width: none; display: block; }
+.ink path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+.it { position: absolute; }
+.it .shape { position: absolute; left: 0; top: 0; overflow: visible; }
+.it .lab { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; pointer-events: none; }
+.it code { font: inherit; font-family: var(--font-display); font-weight: 800; color: #1b2733; line-height: 1.05; overflow-wrap: anywhere; padding: 0 4px; outline: none; }
+.it.desk code:empty::before { content: "empty"; color: #8f9ba6; font-weight: 600; font-size: 0.7em; }
+.it.text code:empty::before { content: "Type here"; color: var(--muted); font-weight: 600; }
+.it.text code { color: var(--ink); white-space: pre; padding: 2px 8px; }
+.it.text .lab { position: static; overflow: visible; }
+.it code[contenteditable="true"] { pointer-events: auto; cursor: text; background: #fff; color: #1b2733; border-radius: 6px; box-shadow: 0 0 0 3px var(--pt); user-select: text; -webkit-user-select: text; }
+.it.sel::after { content: ""; position: absolute; inset: -6px; border: 3px solid var(--pt); border-radius: 12px; pointer-events: none; }
+.it.text.sel::after { border-style: dashed; }
+.it.flip code { animation: flip 0.5s ease both; }
+@keyframes flip { 0% { opacity: 0; transform: rotateX(90deg); } 100% { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .it.flip code { animation: none; } }
+
+.marq { position: absolute; border: 2px dashed var(--pt); background: color-mix(in srgb, var(--pt) 10%, transparent); pointer-events: none; }
+.bin { position: absolute; right: 12px; bottom: 12px; width: 92px; height: 92px; border-radius: 16px; display: grid; place-items: center; align-content: center;
+  background: var(--chip); border: 2px dashed var(--grid-major); color: var(--muted); font-size: 0.8rem; font-weight: 700; gap: 2px; pointer-events: none; transition: transform 0.12s, background 0.12s; }
+.bin svg { width: 40px; height: 40px; }
+.vp.dragging .bin { border-color: var(--warn); color: var(--warn); }
+.bin.hot { background: var(--warn); color: var(--sheet) !important; border-style: solid; transform: scale(1.15); }
+.hint0 { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100% - 260px); margin: 0; pointer-events: none; color: var(--ink); background: var(--chip); border-radius: 12px; font-size: 1.2rem; text-align: center; padding: 10px 18px; }
+@media (max-width: 860px) { .hint0 { left: 12px; transform: none; max-width: calc(100% - 130px); } }
+.hint0[hidden] { display: none; }
+
+@media print {
+  .panel, .tb, .bin, header a, #lang-switch, .hint0 { display: none !important; }
+  .stage { display: block; }
+  body .wrap { height: auto; padding: 0; }
+  .board { border: 0; height: 95vh; }
+  .vp { background-image: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+      <h1>Seating Planner</h1>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="card panel">
+      <button type="button" id="add"><span aria-hidden="true">+</span> Add a desk</button>
+
+      <p class="label">Paste names</p>
+      <textarea id="names" spellcheck="false" placeholder="One name per line, or commas between names"></textarea>
+      <button type="button" id="make">Make desks</button>
+
+      <p class="label">Quick grid</p>
+      <div class="qg">
+        <span class="gs"><button type="button" id="gaM" aria-label="Fewer across">−</button><output id="ga">5</output><button type="button" id="gaP" aria-label="More across">+</button><small>across</small></span>
+        <span class="x" aria-hidden="true">×</span>
+        <span class="gs"><button type="button" id="gdM" aria-label="Fewer down">−</button><output id="gd">4</output><button type="button" id="gdP" aria-label="More down">+</button><small>down</small></span>
+      </div>
+      <button type="button" id="makeGrid">Make a grid of <span id="gridN">20</span> desks</button>
+
+      <p class="label">Room</p>
+      <div class="room">
+        <button type="button" id="addWb"><svg viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="6" width="22" height="12" rx="2" fill="#fff" stroke="currentColor" stroke-width="2"/><path d="M8 22l5-4 5 4" fill="none" stroke="currentColor" stroke-width="2"/></svg>Whiteboard</button>
+        <button type="button" id="addTd"><svg viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="7" width="22" height="10" rx="2" fill="#d9b98a" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="21.5" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>Teacher's desk</button>
+        <button type="button" id="addTx"><svg viewBox="0 0 26 26" aria-hidden="true"><path d="M5 6h16M13 6v15M9 21h8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Text box</button>
+      </div>
+
+      <button type="button" id="shuffle">Randomize seats</button>
+
+      <div class="foot"><span><b id="n">0</b> <span id="nword">desks</span></span><button type="button" id="clear">Clear room</button></div>
+    </div>
+
+    <div class="board">
+      <div class="tb">
+        <button type="button" data-tool="move" aria-pressed="true" title="Move and pick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.5L10 19z" fill="currentColor"/></svg>Move</button>
+        <button type="button" data-tool="pen" aria-pressed="false" title="Pen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1-5L16 4l4 4L9 19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Pen</button>
+        <button type="button" data-tool="eraser" aria-pressed="false" title="Eraser"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20h12M4 15l9-10 7 7-8 8H9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Eraser</button>
+        <span class="colors" id="colors" hidden>
+          <button type="button" style="--c:#1b2733" data-c="#1b2733" aria-pressed="true" aria-label="Black"></button>
+          <button type="button" style="--c:#2f5fd0" data-c="#2f5fd0" aria-pressed="false" aria-label="Blue"></button>
+          <button type="button" style="--c:#c62828" data-c="#c62828" aria-pressed="false" aria-label="Red"></button>
+          <button type="button" style="--c:#1f7a5a" data-c="#1f7a5a" aria-pressed="false" aria-label="Green"></button>
+        </span>
+        <span class="grow"></span>
+        <button type="button" id="undo" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+        <span class="sep"></span>
+        <button type="button" id="zout" aria-label="Zoom out">−</button>
+        <span class="pct" id="pct">100%</span>
+        <button type="button" id="zin" aria-label="Zoom in">+</button>
+        <button type="button" id="fit" title="Show the whole room">Fit</button>
+        <button type="button" id="print" title="Print the plan">Print</button>
+      </div>
+      <div class="vp" id="vp">
+        <div class="world" id="world"><svg class="ink" id="ink"></svg></div>
+          <div class="selbar" id="selbar" hidden>
+          <span class="n" id="seln"></span>
+          <button type="button" id="rename" title="Type the name">✎ Name</button>
+          <button type="button" id="turn" title="Turn a quarter turn">⟳ Turn</button>
+          <button type="button" id="del" title="Remove">Remove</button>
+        </div>
+        <p class="hint0" id="hint0">Press <b>+ Add a desk</b> or paste names to start.</p>
+        <div class="bin" id="bin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Recycle</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const vp = $("vp"), world = $("world"), ink = $("ink"), bin = $("bin");
+  const KEY = "seating-plan";
+  const NS = "http://www.w3.org/2000/svg";
+  const SIZE = { desk: [140, 112], board: [460, 46], teacher: [210, 110], text: [120, 50] };
+  const LABEL = { board: "Whiteboard", teacher: "Teacher" };
+  const GRID = 10;                     // desks snap to this many room units
+  const COLS = 6, X0 = 40, Y0 = 220, DX = 170, DY = 140; // where new desks go: rows of 6
+
+  let items = [], strokes = [], nextId = 1;
+  let view = { s: 1, x: 0, y: 0 };
+  let tool = "move", penColor = "#1b2733";
+  const sel = new Set();
+  const undoStack = [];
+  const els = new Map();               // id -> element
+
+  /* ---------- saving, undo ---------- */
+  const snap = () => JSON.stringify({ items, strokes, nextId });
+  function restore(s) { const d = JSON.parse(s); items = d.items || []; strokes = d.strokes || []; nextId = d.nextId || 1; }
+  function save() { try { localStorage.setItem(KEY, snap()); } catch (e) {} }
+  function remember() { undoStack.push(snap()); if (undoStack.length > 60) undoStack.shift(); $("undo").disabled = false; }
+  function undo() {
+    if (!undoStack.length) return;
+    stopEdit(false);
+    restore(undoStack.pop());
+    sel.clear();
+    $("undo").disabled = !undoStack.length;
+    render(); save();
+  }
+
+  /* ---------- geometry ---------- */
+  const rotated = it => it.rot === 90 || it.rot === 270;
+  const effW = it => rotated(it) ? it.h : it.w;
+  const effH = it => rotated(it) ? it.w : it.h;
+  const box = it => ({ x: it.x, y: it.y, w: effW(it), h: effH(it) });
+  const overlap = (a, b, m = 0) => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
+  // A rectangle inside the unturned item, moved to where it sits once the item is turned.
+  function turnRect(it, r) {
+    const w = it.w, h = it.h;
+    const p = (x, y) => it.rot === 90 ? [h - y, x] : it.rot === 180 ? [w - x, h - y] : it.rot === 270 ? [y, w - x] : [x, y];
+    const a = p(r.x, r.y), b = p(r.x + r.w, r.y + r.h);
+    return { x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]), h: Math.abs(a[1] - b[1]) };
+  }
+  const labelRect = it => it.type === "desk" ? { x: 4, y: 4, w: it.w - 8, h: 72 } : it.type === "teacher" ? { x: 6, y: 6, w: it.w - 12, h: 70 } : { x: 4, y: 2, w: it.w - 8, h: it.h - 4 };
+  const toWorld = (cx, cy) => { const r = vp.getBoundingClientRect(); return [(cx - r.left - view.x) / view.s, (cy - r.top - view.y) / view.s]; };
+  const snapTo = v => Math.round(v / GRID) * GRID;
+
+  /* ---------- drawing items ---------- */
+  function shapeSVG(it) {
+    const w = it.w, h = it.h;
+    if (it.type === "desk") return `<rect x="1.5" y="1.5" width="${w - 3}" height="76" rx="8" fill="var(--wood)" stroke="var(--wood-edge)" stroke-width="3"/>` +
+      `<rect x="${w / 2 - 32}" y="86" width="64" height="22" rx="9" fill="var(--chair)"/><rect x="${w / 2 - 26}" y="${h - 6}" width="52" height="5" rx="2.5" fill="var(--chair)"/>`;
+    if (it.type === "teacher") return `<rect x="1.5" y="1.5" width="${w - 3}" height="76" rx="8" fill="var(--tdesk)" stroke="var(--wood-edge)" stroke-width="3"/>` +
+      `<circle cx="${w / 2}" cy="${h - 14}" r="13" fill="var(--chair)"/>`;
+    if (it.type === "board") return `<rect x="1.5" y="1.5" width="${w - 3}" height="${h - 9}" rx="4" fill="var(--wb)" stroke="var(--wb-edge)" stroke-width="3"/>` +
+      `<rect x="20" y="${h - 8}" width="${w - 40}" height="6" rx="2" fill="var(--wb-edge)"/>`;
+    return "";
+  }
+
+  function build(it) {
+    const el = document.createElement("div");
+    el.className = "it " + it.type;
+    el.dataset.id = it.id;
+    if (it.type !== "text") {
+      const s = document.createElementNS(NS, "svg");
+      s.setAttribute("class", "shape");
+      el.appendChild(s);
+    }
+    const lab = document.createElement("div");
+    lab.className = "lab";
+    const c = document.createElement("code");
+    c.setAttribute("translate", "no");
+    lab.appendChild(c);
+    el.appendChild(lab);
+    world.appendChild(el);
+    els.set(it.id, el);
+    return el;
+  }
+
+  function fitText(it, el) {
+    const c = el.querySelector("code"), lab = el.querySelector(".lab");
+    const key = it.type + "|" + (it.name || "") + "|" + it.rot;
+    if (el.__fit === key) return;
+    el.__fit = key;
+    if (it.type === "text") { c.style.fontSize = (it.size || 30) + "px"; return; }
+    let lo = 12, hi = it.type === "board" ? 30 : 34;
+    c.style.fontSize = hi + "px";
+    if (lab.scrollWidth <= lab.clientWidth + 1 && lab.scrollHeight <= lab.clientHeight + 1 && c.scrollWidth <= lab.clientWidth + 1) return;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      c.style.fontSize = mid + "px";
+      if (lab.scrollWidth <= lab.clientWidth + 1 && lab.scrollHeight <= lab.clientHeight + 1 && c.scrollWidth <= lab.clientWidth + 1) lo = mid; else hi = mid;
+    }
+    c.style.fontSize = lo + "px";
+  }
+
+  function place(it) {
+    const el = els.get(it.id) || build(it);
+    el.style.left = it.x + "px"; el.style.top = it.y + "px";
+    el.classList.toggle("sel", sel.has(it.id));
+    const c = el.querySelector("code");
+    const txt = it.type === "desk" || it.type === "text" ? (it.name || "") : LABEL[it.type];
+    if (c.getAttribute("contenteditable") !== "true" && c.textContent !== txt) c.textContent = txt;
+    if (it.type === "text") {
+      fitText(it, el);
+      it.w = Math.max(40, el.offsetWidth); it.h = Math.max(30, el.offsetHeight); it.rot = 0;
+      return;
+    }
+    const W = effW(it), H = effH(it);
+    el.style.width = W + "px"; el.style.height = H + "px";
+    const s = el.querySelector(".shape");
+    const sk = it.w + "|" + it.h + "|" + it.rot;
+    if (s.__k !== sk) {
+      s.__k = sk;
+      s.setAttribute("width", it.w); s.setAttribute("height", it.h);
+      s.setAttribute("viewBox", `0 0 ${it.w} ${it.h}`);
+      s.style.left = (W - it.w) / 2 + "px"; s.style.top = (H - it.h) / 2 + "px";
+      s.style.transform = `rotate(${it.rot || 0}deg)`;
+      s.innerHTML = shapeSVG(it);
+      const r = turnRect(it, labelRect(it)), lab = el.querySelector(".lab");
+      Object.assign(lab.style, { left: r.x + "px", top: r.y + "px", width: r.w + "px", height: r.h + "px" });
+      el.__fit = null;
+    }
+    fitText(it, el);
+  }
+
+  function drawInk() {
+    ink.innerHTML = "";
+    strokes.forEach(st => ink.appendChild(strokePath(st)));
+  }
+  function strokePath(st) {
+    const p = document.createElementNS(NS, "path");
+    p.setAttribute("d", st.pts.map((q, i) => (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1)).join("") + (st.pts.length === 1 ? "l0.01 0" : ""));
+    p.setAttribute("stroke", st.c); p.setAttribute("stroke-width", st.w);
+    return p;
+  }
+
+  function render() {
+    const ids = new Set(items.map(i => i.id));
+    for (const [id, el] of els) if (!ids.has(id)) { el.remove(); els.delete(id); }
+    for (const id of [...sel]) if (!ids.has(id)) sel.delete(id);
+    // Room items first, then desks, then text on top.
+    const order = { board: 0, teacher: 1, desk: 2, text: 3 };
+    items.slice().sort((a, b) => order[a.type] - order[b.type]).forEach(it => { place(it); world.insertBefore(els.get(it.id), ink); }); // pen lines stay on top
+    drawInk();
+    status();
+  }
+
+  function status() {
+    const desks = items.filter(i => i.type === "desk");
+    $("n").textContent = desks.length;
+    $("nword").textContent = desks.length === 1 ? "desk" : "desks";
+    $("shuffle").disabled = desks.filter(d => d.name).length < 2;
+    $("hint0").hidden = desks.length > 0;
+    const n = sel.size;
+    $("selbar").hidden = !n || tool !== "move";
+    $("seln").textContent = n === 1 ? "1 picked" : n + " picked";
+    const one = n === 1 ? items.find(i => sel.has(i.id)) : null;
+    $("rename").hidden = !(one && (one.type === "desk" || one.type === "text"));
+    $("turn").hidden = [...sel].every(id => (items.find(i => i.id === id) || {}).type === "text");
+  }
+
+  /* ---------- view ---------- */
+  function applyView() {
+    world.style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.s})`;
+    const g = 30 * view.s;
+    vp.style.backgroundSize = `${g}px ${g}px`;
+    vp.style.backgroundPosition = `${view.x}px ${view.y}px`;
+    $("pct").textContent = Math.round(view.s * 100) + "%";
+  }
+  function zoomAt(f, cx, cy) {
+    const r = vp.getBoundingClientRect();
+    if (cx == null) { cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
+    const s = Math.min(4, Math.max(0.2, view.s * f));
+    const [wx, wy] = toWorld(cx, cy);
+    view.s = s;
+    view.x = cx - r.left - wx * s; view.y = cy - r.top - wy * s;
+    applyView();
+  }
+  function fit() {
+    const r = vp.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    let b = items.length ? null : { x: 0, y: 0, w: 1100, h: 700 };
+    items.forEach(it => { const q = box(it); b = b ? { x: Math.min(b.x, q.x), y: Math.min(b.y, q.y), w: Math.max(b.x + b.w, q.x + q.w) - Math.min(b.x, q.x), h: Math.max(b.y + b.h, q.y + q.h) - Math.min(b.y, q.y) } : q; });
+    strokes.forEach(st => st.pts.forEach(([x, y]) => { const nx = Math.min(b.x, x), ny = Math.min(b.y, y); b = { x: nx, y: ny, w: Math.max(b.x + b.w, x) - nx, h: Math.max(b.y + b.h, y) - ny }; }));
+    const pad = 16, binW = 110;
+    // Leave room on the right for the recycle bin.
+    const s = Math.min(1.8, (r.width - pad * 2 - binW) / b.w, (r.height - pad * 2) / b.h);
+    view.s = Math.max(0.2, s);
+    view.x = (r.width - binW - b.w * view.s) / 2 - b.x * view.s;
+    view.y = (r.height - b.h * view.s) / 2 - b.y * view.s;
+    applyView();
+  }
+
+  /* ---------- adding ---------- */
+  function freeSlot(taken) {
+    const all = items.map(box).concat(taken || []);
+    for (let k = 0; k < 400; k++) {
+      const r = { x: X0 + (k % COLS) * DX, y: Y0 + Math.floor(k / COLS) * DY, w: SIZE.desk[0], h: SIZE.desk[1] };
+      if (!all.some(q => overlap(q, r, 6))) return r;
+    }
+    return { x: X0, y: Y0, w: SIZE.desk[0], h: SIZE.desk[1] };
+  }
+  function newItem(type, x, y, name) {
+    const [w, h] = SIZE[type];
+    const it = { id: nextId++, type, x, y, w, h, rot: 0 };
+    if (type === "desk" || type === "text") it.name = name || "";
+    items.push(it);
+    return it;
+  }
+  // Puts the new item where you can see it, at the middle of the room view.
+  function viewMiddle(w, h) {
+    const r = vp.getBoundingClientRect();
+    const [cx, cy] = toWorld(r.left + r.width / 2, r.top + r.height / 2);
+    return [snapTo(cx - w / 2), snapTo(cy - h / 2)];
+  }
+  // Is this room rectangle fully on screen right now? (Leaves room for the recycle bin.)
+  function onScreen(q) {
+    const r = vp.getBoundingClientRect();
+    const x = q.x * view.s + view.x, y = q.y * view.s + view.y;
+    return x >= 0 && y >= 0 && x + q.w * view.s <= r.width - 100 && y + q.h * view.s <= r.height;
+  }
+  // The free spot closest to the middle of the screen, so adding never moves or zooms the view (Shawn 2026-11-13).
+  function nearMiddle(w, h) {
+    const [mx, my] = viewMiddle(w, h);
+    const all = items.map(box);
+    const free = q => !all.some(b => overlap(b, q, 6));
+    for (let rad = 0; rad <= 3000; rad += 20) {
+      const ring = [];
+      for (let dx = -rad; dx <= rad; dx += 20) for (const dy of rad ? [-rad, rad] : [0]) ring.push([dx, dy]);
+      for (let dy = -rad + 20; dy <= rad - 20; dy += 20) ring.push([-rad, dy], [rad, dy]);
+      ring.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
+      for (const [dx, dy] of ring) { const q = { x: mx + dx, y: my + dy, w, h }; if (free(q)) return [q.x, q.y]; }
+    }
+    return [mx, my];
+  }
+  // Use the tidy spot if you can see it; otherwise the free spot nearest the middle of the screen.
+  function spotFor(w, h, tidy) {
+    const all = items.map(box);
+    if (tidy && onScreen({ ...tidy, w, h }) && !all.some(b => overlap(b, { ...tidy, w, h }, 6))) return [tidy.x, tidy.y];
+    return nearMiddle(w, h);
+  }
+
+  function addDesk() {
+    stopEdit(true);
+    remember();
+    const [x, y] = spotFor(SIZE.desk[0], SIZE.desk[1], freeSlot());
+    const it = newItem("desk", x, y, "");
+    sel.clear(); sel.add(it.id);
+    render(); save();
+    startEdit(it);
+  }
+  function makeDesks() {
+    const list = $("names").value.split(/[\n,;\t]+/).map(s => s.trim()).filter(Boolean);
+    if (!list.length) return;
+    stopEdit(true);
+    remember();
+    const made = [], taken = [];
+    // Fill any empty desks first, then add new ones.
+    const empty = items.filter(i => i.type === "desk" && !i.name).sort((a, b) => a.y - b.y || a.x - b.x);
+    list.forEach(name => {
+      const e = empty.shift();
+      if (e) { e.name = name; made.push(e); return; }
+      const slot = freeSlot(taken);
+      taken.push(slot);
+      made.push(newItem("desk", slot.x, slot.y, name));
+    });
+    $("names").value = "";
+    $("make").disabled = true;
+    sel.clear();
+    render(); fit(); save();
+  }
+  // Quick grid: lays out Across x Down desks in rows under the whiteboard. Names already on desks move into the
+  // new grid in reading order; if there are more names than seats, extra rows are added so nobody is lost.
+  const grid = { across: 5, down: 4 };
+  function makeGrid() {
+    stopEdit(true);
+    remember();
+    const old = items.filter(i => i.type === "desk").sort((a, b) => a.y - b.y || a.x - b.x);
+    const names = old.map(d => d.name || "").filter(Boolean);
+    items = items.filter(i => i.type !== "desk");
+    const n = Math.max(grid.across * grid.down, names.length);
+    // Centred under the whiteboard's usual spot, below the teacher's desk.
+    const left = X0 + Math.max(0, (COLS - grid.across) * DX / 2);
+    const top = Y0;
+    for (let k = 0; k < n; k++) newItem("desk", snapTo(left + (k % grid.across) * DX), snapTo(top + Math.floor(k / grid.across) * DY), names[k] || "");
+    sel.clear();
+    render(); fit(); save();
+  }
+  function showGrid() {
+    $("ga").textContent = grid.across; $("gd").textContent = grid.down;
+    $("gaM").disabled = grid.across <= 1; $("gaP").disabled = grid.across >= 10;
+    $("gdM").disabled = grid.down <= 1; $("gdP").disabled = grid.down >= 10;
+    $("gridN").textContent = grid.across * grid.down;
+  }
+  function addRoom(type) {
+    stopEdit(true);
+    remember();
+    const [w, h] = SIZE[type];
+    const tidy = type === "board" ? { x: snapTo(X0 + (COLS * DX - 30 - w) / 2), y: 20 } : type === "teacher" ? { x: X0, y: 80 } : null;
+    const [x, y] = spotFor(w, h, tidy);
+    const it = newItem(type, x, y, type === "text" ? "" : undefined);
+    sel.clear(); sel.add(it.id);
+    render(); save();
+    if (type === "text") startEdit(it);
+  }
+
+  /* ---------- typing names ---------- */
+  let editing = null;
+  function startEdit(it) {
+    stopEdit(true);
+    const el = els.get(it.id); if (!el) return;
+    const c = el.querySelector("code");
+    editing = { it, before: it.name || "", undoSnap: snap() };
+    c.setAttribute("contenteditable", "true");
+    c.setAttribute("spellcheck", "false");
+    c.textContent = it.name || "";
+    c.focus();
+    const rg = document.createRange(); rg.selectNodeContents(c);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(rg);
+  }
+  function stopEdit(keep) {
+    if (!editing) return;
+    const { it, before, undoSnap } = editing;
+    editing = null;
+    const el = els.get(it.id);
+    const c = el && el.querySelector("code");
+    let v = c ? c.textContent.replace(/\s+/g, " ").trim() : before;
+    if (!keep) v = before;
+    if (c) { c.removeAttribute("contenteditable"); }
+    if (v !== before) { undoStack.push(undoSnap); $("undo").disabled = false; }
+    it.name = v;
+    if (it.type === "text" && !v) items = items.filter(i => i !== it);
+    render(); save();
+  }
+  world.addEventListener("keydown", e => {
+    if (!editing) return;
+    if (e.key === "Enter") { e.preventDefault(); stopEdit(true); }
+    else if (e.key === "Escape") { e.preventDefault(); stopEdit(false); }
+    e.stopPropagation();
+  });
+  world.addEventListener("input", () => { if (editing && editing.it.type === "text") { const el = els.get(editing.it.id); editing.it.w = el.offsetWidth; editing.it.h = el.offsetHeight; } });
+  world.addEventListener("focusout", e => { if (editing && e.target.closest && e.target.closest("code")) setTimeout(() => { if (editing && !editing.it.__keepFocus) stopEdit(true); }, 0); });
+  world.addEventListener("paste", e => { if (!editing) return; e.preventDefault(); const t = (e.clipboardData || window.clipboardData).getData("text").replace(/\s+/g, " "); document.execCommand("insertText", false, t); });
+
+  /* ---------- removing, turning, shuffling ---------- */
+  function removeSel() {
+    if (!sel.size) return;
+    stopEdit(true);
+    remember();
+    items = items.filter(i => !sel.has(i.id));
+    sel.clear();
+    render(); save();
+  }
+  function turnSel() {
+    if (!sel.size) return;
+    remember();
+    items.filter(i => sel.has(i.id) && i.type !== "text").forEach(it => {
+      // Turn about the item's centre, then snap.
+      const cx = it.x + effW(it) / 2, cy = it.y + effH(it) / 2;
+      it.rot = ((it.rot || 0) + 90) % 360;
+      it.x = snapTo(cx - effW(it) / 2); it.y = snapTo(cy - effH(it) / 2);
+    });
+    render(); save();
+  }
+  function shuffleSeats() {
+    stopEdit(true);
+    const desks = items.filter(i => i.type === "desk");
+    const names = desks.map(d => d.name || "");
+    if (names.filter(Boolean).length < 2) return;
+    remember();
+    let out = names.slice();
+    for (let tries = 0; tries < 20; tries++) {
+      for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+      if (out.some((n, i) => n !== names[i])) break;
+    }
+    desks.forEach((d, i) => d.name = out[i]);
+    sel.clear();
+    render(); save();
+    desks.slice().sort((a, b) => a.y - b.y || a.x - b.x).forEach((d, i) => {
+      const el = els.get(d.id); el.classList.remove("flip");
+      el.querySelector("code").style.animationDelay = Math.min(i * 0.03, 0.9) + "s";
+      void el.offsetWidth; el.classList.add("flip");
+    });
+  }
+  function clearRoom() {
+    if (!items.length && !strokes.length) return;
+    stopEdit(true);
+    remember();
+    items = []; strokes = []; sel.clear();
+    render(); fit(); save();
+  }
+
+  /* ---------- pointer: move, pick, draw, erase, zoom ---------- */
+  const ptrs = new Map();
+  let act = null;   // the gesture in progress
+  let spaceDown = false;
+  let lastTap = { id: null, t: 0 };
+
+  function overBin(cx, cy) { const r = bin.getBoundingClientRect(); return cx >= r.left - 10 && cx <= r.right + 10 && cy >= r.top - 10 && cy <= r.bottom + 10; }
+
+  function eraseAt(wx, wy) {
+    const R = 16 / view.s;
+    const hit = st => st.pts.some((p, i) => {
+      const q = st.pts[i + 1] || p;
+      const dx = q[0] - p[0], dy = q[1] - p[1], L = dx * dx + dy * dy;
+      const t = L ? Math.max(0, Math.min(1, ((wx - p[0]) * dx + (wy - p[1]) * dy) / L)) : 0;
+      const ex = p[0] + t * dx - wx, ey = p[1] + t * dy - wy;
+      return ex * ex + ey * ey <= (R + st.w / 2) ** 2;
+    });
+    const before = strokes.length;
+    strokes = strokes.filter(st => !hit(st));
+    if (strokes.length !== before) { if (!act.changed) { undoStack.push(act.snap); $("undo").disabled = false; act.changed = true; } drawInk(); }
+  }
+
+  function cancelAct() {
+    if (!act) return;
+    if (act.kind === "drag" && act.moved) act.start.forEach(([it, x, y]) => { it.x = x; it.y = y; });
+    if (act.kind === "drag" && act.moved) undoStack.pop();
+    if (act.kind === "pen" && act.stroke) { strokes = strokes.filter(s => s !== act.stroke); }
+    if (act.marq) act.marq.remove();
+    vp.classList.remove("dragging"); bin.classList.remove("hot");
+    act = null;
+    render();
+  }
+
+  vp.addEventListener("pointerdown", e => {
+    if (e.target.closest(".selbar")) return;
+    if (editing && e.target.closest("code[contenteditable='true']")) return; // place the caret
+    if (editing) stopEdit(true);
+    vp.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 2) {               // two fingers: pinch and slide
+      cancelAct();
+      const [a, b] = [...ptrs.values()];
+      act = { kind: "pinch", d0: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, s0: view.s, w0: toWorld((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) };
+      return;
+    }
+    if (ptrs.size > 2) return;
+    const [wx, wy] = toWorld(e.clientX, e.clientY);
+    if (e.button === 1 || e.button === 2 || spaceDown) {
+      e.preventDefault();
+      act = { kind: "pan", cx: e.clientX, cy: e.clientY, x0: view.x, y0: view.y }; vp.classList.add("panning"); return;
+    }
+    if (tool === "pen") {
+      act = { kind: "pen", stroke: { pts: [[wx, wy]], c: penColor, w: 5 }, snap: snap() };
+      strokes.push(act.stroke);
+      act.path = strokePath(act.stroke); ink.appendChild(act.path);
+      return;
+    }
+    if (tool === "eraser") { act = { kind: "erase", snap: snap(), changed: false }; eraseAt(wx, wy); return; }
+
+    const el = e.target.closest(".it");
+    if (el) {
+      const id = +el.dataset.id, it = items.find(i => i.id === id);
+      const add = e.shiftKey || e.ctrlKey || e.metaKey;
+      const wasOnly = sel.size === 1 && sel.has(id);
+      if (add) { if (sel.has(id)) sel.delete(id); else sel.add(id); status(); render(); act = null; return; }
+      if (!sel.has(id)) { sel.clear(); sel.add(id); }
+      const now = Date.now();
+      const dbl = lastTap.id === id && now - lastTap.t < 400;
+      lastTap = { id, t: now };
+      act = { kind: "drag", wx, wy, cx: e.clientX, cy: e.clientY, moved: false, it, wasOnly, dbl, start: items.filter(i => sel.has(i.id)).map(i => [i, i.x, i.y]) };
+      render();
+      return;
+    }
+    // Empty floor: draw a box to pick several.
+    if (!(e.shiftKey || e.ctrlKey || e.metaKey)) sel.clear();
+    const m = document.createElement("div"); m.className = "marq"; vp.appendChild(m);
+    act = { kind: "box", wx, wy, cx: e.clientX, cy: e.clientY, marq: m, base: new Set(sel) };
+    render();
+  });
+
+  vp.addEventListener("pointermove", e => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (!act) return;
+    const [wx, wy] = toWorld(e.clientX, e.clientY);
+    if (act.kind === "pinch") {
+      const [a, b] = [...ptrs.values()];
+      if (!b) return;
+      const r = vp.getBoundingClientRect();
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      view.s = Math.min(4, Math.max(0.2, act.s0 * d / act.d0));
+      const mx = (a[0] + b[0]) / 2 - r.left, my = (a[1] + b[1]) / 2 - r.top;
+      view.x = mx - act.w0[0] * view.s; view.y = my - act.w0[1] * view.s;
+      applyView(); return;
+    }
+    if (act.kind === "pan") { view.x = act.x0 + e.clientX - act.cx; view.y = act.y0 + e.clientY - act.cy; applyView(); return; }
+    if (act.kind === "pen") {
+      const pts = act.stroke.pts, last = pts[pts.length - 1];
+      if (Math.hypot(wx - last[0], wy - last[1]) * view.s < 2) return;
+      pts.push([wx, wy]);
+      act.path.setAttribute("d", act.path.getAttribute("d").replace(/l0\.01 0$/, "") + "L" + wx.toFixed(1) + " " + wy.toFixed(1));
+      return;
+    }
+    if (act.kind === "erase") { eraseAt(wx, wy); return; }
+    if (act.kind === "drag") {
+      if (!act.moved && Math.hypot(e.clientX - act.cx, e.clientY - act.cy) < 6) return;
+      if (!act.moved) { act.moved = true; undoStack.push(snap()); $("undo").disabled = false; vp.classList.add("dragging"); }
+      const dx = wx - act.wx, dy = wy - act.wy;
+      act.start.forEach(([it, x, y]) => { it.x = x + dx; it.y = y + dy; const el = els.get(it.id); el.style.left = it.x + "px"; el.style.top = it.y + "px"; });
+      bin.classList.toggle("hot", overBin(e.clientX, e.clientY));
+      return;
+    }
+    if (act.kind === "box") {
+      const r = vp.getBoundingClientRect();
+      const x1 = Math.min(act.cx, e.clientX), y1 = Math.min(act.cy, e.clientY), x2 = Math.max(act.cx, e.clientX), y2 = Math.max(act.cy, e.clientY);
+      Object.assign(act.marq.style, { left: x1 - r.left + "px", top: y1 - r.top + "px", width: x2 - x1 + "px", height: y2 - y1 + "px" });
+      const q = { x: Math.min(act.wx, wx), y: Math.min(act.wy, wy), w: Math.abs(wx - act.wx), h: Math.abs(wy - act.wy) };
+      sel.clear(); act.base.forEach(id => sel.add(id));
+      items.forEach(it => { if (overlap(box(it), q)) sel.add(it.id); });
+      items.forEach(it => els.get(it.id).classList.toggle("sel", sel.has(it.id)));
+      status();
+    }
+  });
+
+  function endPtr(e) {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.delete(e.pointerId);
+    if (!act) return;
+    if (act.kind === "pinch") { if (ptrs.size === 0) act = null; return; }
+    const a = act; act = null;
+    vp.classList.remove("panning", "dragging");
+    if (a.kind === "pen") { if (a.stroke.pts.length) { undoStack.push(a.snap); $("undo").disabled = false; } save(); return; }
+    if (a.kind === "erase") { save(); return; }
+    if (a.kind === "box") { a.marq.remove(); status(); return; }
+    if (a.kind === "drag") {
+      if (a.moved) {
+        bin.classList.remove("hot");
+        if (e.type !== "pointercancel" && overBin(e.clientX, e.clientY)) {
+          items = items.filter(i => !sel.has(i.id)); sel.clear();
+        } else {
+          a.start.forEach(([it]) => { it.x = snapTo(it.x); it.y = snapTo(it.y); });
+        }
+        render(); save();
+      } else if ((a.wasOnly || a.dbl) && (a.it.type === "desk" || a.it.type === "text")) {
+        startEdit(a.it);                // tap a picked desk again to type its name
+      }
+    }
+  }
+  vp.addEventListener("pointerup", endPtr);
+  vp.addEventListener("pointercancel", endPtr);
+  vp.addEventListener("contextmenu", e => e.preventDefault());
+  vp.addEventListener("wheel", e => {
+    e.preventDefault();
+    const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    zoomAt(Math.exp(-d * (e.ctrlKey ? 0.01 : 0.0015)), e.clientX, e.clientY);
+  }, { passive: false });
+
+  /* ---------- buttons and keys ---------- */
+  function setTool(t) {
+    stopEdit(true);
+    tool = t;
+    document.querySelectorAll("[data-tool]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tool === t)));
+    $("colors").hidden = t !== "pen";
+    vp.classList.toggle("pen", t === "pen"); vp.classList.toggle("eraser", t === "eraser");
+    if (t !== "move") sel.clear();
+    render();
+  }
+  document.querySelectorAll("[data-tool]").forEach(b => b.addEventListener("click", () => setTool(b.dataset.tool)));
+  document.querySelectorAll("#colors button").forEach(b => b.addEventListener("click", () => {
+    penColor = b.dataset.c;
+    document.querySelectorAll("#colors button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+  $("add").addEventListener("click", () => { setTool("move"); addDesk(); });
+  $("make").addEventListener("click", () => { setTool("move"); makeDesks(); });
+  $("names").addEventListener("input", () => $("make").disabled = !$("names").value.trim());
+  $("make").disabled = true;
+  $("addWb").addEventListener("click", () => { setTool("move"); addRoom("board"); });
+  $("addTd").addEventListener("click", () => { setTool("move"); addRoom("teacher"); });
+  $("addTx").addEventListener("click", () => { setTool("move"); addRoom("text"); });
+  $("shuffle").addEventListener("click", shuffleSeats);
+  [["gaM", "across", -1], ["gaP", "across", 1], ["gdM", "down", -1], ["gdP", "down", 1]].forEach(([id, k, d]) =>
+    $(id).addEventListener("click", () => { grid[k] = Math.min(10, Math.max(1, grid[k] + d)); showGrid(); }));
+  $("makeGrid").addEventListener("click", () => { setTool("move"); makeGrid(); });
+  showGrid();
+  $("clear").addEventListener("click", clearRoom);
+  $("del").addEventListener("click", removeSel);
+  $("turn").addEventListener("click", turnSel);
+  $("rename").addEventListener("click", () => { const it = items.find(i => sel.has(i.id)); if (it) startEdit(it); });
+  $("undo").addEventListener("click", undo);
+  $("zin").addEventListener("click", () => zoomAt(1.25));
+  $("zout").addEventListener("click", () => zoomAt(0.8));
+  $("fit").addEventListener("click", fit);
+  $("print").addEventListener("click", () => { stopEdit(true); sel.clear(); render(); print(); });
+  addEventListener("beforeprint", () => setTimeout(fit, 0));
+  addEventListener("afterprint", fit);
+
+  addEventListener("keydown", e => {
+    if (editing || e.target.closest && e.target.closest("textarea, input")) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+    else if (e.key === "Delete" || e.key === "Backspace") { if (sel.size) { e.preventDefault(); removeSel(); } }
+    else if (e.key === "Escape") { sel.clear(); render(); }
+    else if (e.key === " ") { spaceDown = true; if (e.target === document.body) e.preventDefault(); }
+    else if (e.key === "Enter" && sel.size === 1) { const it = items.find(i => sel.has(i.id)); if (it && (it.type === "desk" || it.type === "text")) { e.preventDefault(); startEdit(it); } }
+  });
+  addEventListener("keyup", e => { if (e.key === " ") spaceDown = false; });
+
+  // Refit when the window changes width (not when a tablet keyboard opens and only the height changes).
+  let rt, lastW = 0;
+  new ResizeObserver(() => { const w = vp.clientWidth; if (Math.abs(w - lastW) < 20 && lastW) return; lastW = w; clearTimeout(rt); rt = setTimeout(fit, 80); }).observe(vp);
+
+  /* ---------- start ---------- */
+  try { const s = localStorage.getItem(KEY); if (s) restore(s); } catch (e) {}
+  if (!items.length && !strokes.length) {
+    // A new room starts with the whiteboard at the front and the teacher's desk.
+    newItem("board", X0 + (COLS * DX - 30 - SIZE.board[0]) / 2, 20);
+    newItem("teacher", X0, 80);
+  }
+  render();
+  applyView();
+  requestAnimationFrame(fit);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Seating Planner (seating.html). Names and typed text sit in <code> and are never translated. */
+window.I18N_PAGE = {
+  "Seating Planner": "Plan de classe",
+  "Add a desk": "Ajouter un pupitre",
+  "+ Add a desk": "+ Ajouter un pupitre",
+  "Paste names": "Coller des noms",
+  "One name per line, or commas between names": "Un nom par ligne, ou des virgules entre les noms",
+  "Make desks": "Créer les pupitres",
+  "Room": "Classe",
+  "Quick grid": "Grille rapide",
+  "across": "de large",
+  "down": "de haut",
+  "Fewer across": "Moins de large", "More across": "Plus de large",
+  "Fewer down": "Moins de haut", "More down": "Plus de haut",
+  "Make a grid of {0} desks": "Faire une grille de {0} pupitres",
+  "Whiteboard": "Tableau blanc",
+  "Teacher's desk": "Bureau de l'enseignant",
+  "Teacher": "Enseignant",
+  "Text box": "Zone de texte",
+  "Randomize seats": "Places au hasard",
+  "desks": "pupitres",
+  "desk": "pupitre",
+  "Clear room": "Vider la classe",
+  "Move": "Déplacer",
+  "Move and pick": "Déplacer et choisir",
+  "Pen": "Crayon",
+  "Eraser": "Gomme",
+  "Black": "Noir", "Blue": "Bleu", "Red": "Rouge", "Green": "Vert",
+  "{n} picked": "{n} choisis",
+  "✎ Name": "✎ Nom",
+  "Type the name": "Écrire le nom",
+  "⟳ Turn": "⟳ Tourner",
+  "Turn a quarter turn": "Tourner d'un quart de tour",
+  "Remove": "Retirer",
+  "↶ Undo": "↶ Annuler",
+  "Undo (Ctrl+Z)": "Annuler (Ctrl+Z)",
+  "Zoom out": "Zoom arrière",
+  "Zoom in": "Zoom avant",
+  "Fit": "Tout voir",
+  "Show the whole room": "Voir toute la classe",
+  "Print": "Imprimer",
+  "Print the plan": "Imprimer le plan",
+  "Recycle": "Recycler",
+  "Press {0} or paste names to start.": "Appuie sur {0} ou colle des noms pour commencer."
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
