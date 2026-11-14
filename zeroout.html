@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Zero Out Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Zero Out Game (Shawn 2026-11-14): an original integer card game for two players or class vs teacher on one screen.
+   Cards are +1 to +10 (green) and −1 to −10 (red with dark stripes, so they still differ on a black and white print),
+   three of each, plus 4 Take away cards (Shawn 2026-11-14): a Take away card removes one of your cards from your total,
+   and the scoring shows it as subtracting, then adding the opposite (a − b = a + (−b), grade 7). Each player has 8 cards face down in 2 rows of 4. Turn: take the deck's top card or the discard pile's,
+   then swap it for one of your cards, or (deck card only) discard it and flip one of yours. Opposites in a column glow
+   as a zero pair. When one player has every card face up, the other gets one last turn. Points = how far the total is
+   from 0; fewest points after all rounds wins. The round ends with step-by-step scoring, one line per step, = aligned. */
+:root { --pos: #5cbf7a; --neg: #ef6b6b; --neg-dark: #8f2424; --card-ink: #1b2733; --back: #2f5fd0; }
+.stage { --cw: min(8.2vw, 16vh); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.player, .center { background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
+.player.turn { border: 4px solid var(--pt); box-shadow: 0 0 0 4px color-mix(in srgb, var(--pt) 18%, transparent); }
+.player.wait { opacity: 0.78; }
+.pname { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 800; font-size: 1.7rem; line-height: 1.1; }
+.pill-turn { font-family: var(--font-body); font-size: 0.95rem; font-weight: 700; background: var(--pt); color: var(--sheet); border-radius: 999px; padding: 4px 12px; }
+.pill-last { background: var(--orange); }
+.hand { display: grid; grid-template-columns: repeat(4, var(--cw)); gap: 10px; }
+.col { display: grid; grid-template-rows: auto auto; gap: 10px; border-radius: 12px; padding: 4px; margin: -4px; outline: 4px dashed transparent; position: relative; transition: outline-color 0.3s; }
+.col.zp { outline-color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, transparent); }
+.col .zbadge { display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; background: var(--orange); color: #fff; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--cw) * 0.2); border-radius: 999px; padding: 0 10px; border: 3px solid var(--sheet); white-space: nowrap; }
+.col.zp .zbadge { display: block; }
+.ptotal { font-size: 1.2rem; font-weight: 700; color: var(--muted); min-height: 1.6em; }
+.ptotal b { font-family: var(--font-num); font-size: 1.6rem; color: var(--ink); }
+
+/* Playing cards */
+.pc { width: var(--cw); aspect-ratio: 5 / 7; border-radius: 12px; border: 3px solid var(--card-ink); padding: 0; display: grid; place-items: center; cursor: default; position: relative; font: inherit; color: var(--card-ink); background: var(--back); transition: transform 0.15s; }
+.pc.pos { background: var(--pos); }
+.pc.neg { background: repeating-linear-gradient(45deg, var(--neg) 0 7px, var(--neg-dark) 7px 10px); }
+.pc.back { background: repeating-linear-gradient(-45deg, #2f5fd0 0 10px, #3d6ee0 10px 20px); }
+.pc .face { background: #fff; border: 2px solid var(--card-ink); border-radius: 10px; font-family: var(--font-num); font-weight: 700; font-size: calc(var(--cw) * 0.36); line-height: 1; padding: 0.14em 0.12em; min-width: 72%; text-align: center; letter-spacing: -0.04em; }
+.pc .q { color: #fff; font-family: var(--font-display); font-weight: 800; font-size: calc(var(--cw) * 0.42); opacity: 0.9; }
+.pc.ta { background: #fff; border-style: dashed; border-width: 4px; }
+.pc.ta .tatext { font-family: var(--font-display); font-weight: 800; font-size: calc(var(--cw) * 0.2); line-height: 1.05; text-align: center; color: var(--card-ink); }
+.pc.ta .tatext b { display: block; font-size: 1.6em; color: var(--orange); }
+.pc .gonetag { position: absolute; left: 6%; right: 6%; bottom: 5%; background: #fff; border: 3px solid var(--orange); color: var(--orange); font-weight: 800; font-size: calc(var(--cw) * 0.12); line-height: 1.2; text-align: center; border-radius: 6px; padding: 2px 0; }
+.pc.gone { outline: 5px dashed var(--orange); outline-offset: 2px; }
+.pc.gone .face { text-decoration: line-through 5px var(--orange); }
+.pc.empty { background: var(--chip); border: 3px dashed var(--grid-major); }
+.pc.empty .lbl { color: var(--muted); font-weight: 700; font-size: calc(var(--cw) * 0.13); text-align: center; padding: 6px; }
+.pc.can { cursor: pointer; box-shadow: 0 0 0 4px var(--pt); }
+.pc.can:hover { transform: translateY(-4px); }
+.pc:focus-visible { outline: 4px solid var(--orange); outline-offset: 3px; }
+.pc.flipin { animation: flipin 0.35s ease-out; }
+@keyframes flipin { from { transform: scaleX(0.05); } to { transform: scaleX(1); } }
+.pc.shake { animation: shake 0.35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.pc .count { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: #fff; font-weight: 700; font-size: calc(var(--cw) * 0.12); }
+
+.center { width: calc(var(--cw) * 2 + 60px); justify-content: flex-start; }
+.prompt { text-align: center; min-height: 6.2em; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.prompt .who { font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; color: var(--pt); }
+.prompt .what { font-weight: 700; font-size: 1.15rem; line-height: 1.3; }
+.prompt .note { font-weight: 700; color: var(--orange); font-size: 1.05rem; }
+.piles { display: grid; grid-template-columns: repeat(2, var(--cw)); gap: 14px; }
+.pile { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pile span, .held span { font-weight: 700; color: var(--muted); font-size: 0.95rem; }
+.held { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.held .pc { box-shadow: 0 0 0 5px var(--orange); }
+.acts { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn { font: inherit; font-weight: 700; font-size: 1.1rem; min-height: 52px; padding: 8px 18px; border-radius: 10px; border: 2px solid var(--grid-major); background: var(--sheet); color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: var(--pt); color: var(--pt); }
+.btn.go { background: var(--pt); border-color: var(--pt); color: var(--sheet); }
+.btn.go:hover { background: var(--sheet); color: var(--pt); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.roundtag { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; }
+
+/* Overlays: setup, scoring, scoreboard */
+.ov { position: fixed; inset: 0; background: color-mix(in srgb, var(--paper) 70%, transparent); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.sheet { background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 16px; padding: 22px 28px; width: min(1500px, 100%); max-height: 100%; overflow: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.18); }
+.sheet.narrow { width: min(820px, 100%); }
+.sheet h2 { font-family: var(--font-display); font-weight: 800; font-size: 2rem; margin: 0 0 8px; }
+.sheet .lead { font-size: 1.25rem; margin: 0 0 14px; }
+.rules { margin: 0 0 16px; padding-left: 1.4em; font-size: 1.15rem; line-height: 1.45; }
+.rules li + li { margin-top: 4px; }
+.opt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0; }
+.opt > span { font-weight: 700; min-width: 7em; }
+.seg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { font: inherit; font-weight: 700; font-size: 1.1rem; min-height: 50px; padding: 6px 18px; border: 0; background: var(--sheet); color: var(--ink); cursor: pointer; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.sheet .acts { justify-content: flex-start; margin-top: 18px; }
+
+/* Scoring work: one line per step, = signs in one column, step names in a right column. */
+.work { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 10px 14px; align-items: baseline; font-family: var(--font-num); font-weight: 700; font-size: min(1.65rem, 1.9vw); margin-top: 10px; }
+.work > .row { display: contents; }
+.work .lab { text-align: right; font-family: var(--font-body); }
+.work .stepname { font-family: var(--font-body); font-size: 0.7em; max-width: 13em; color: var(--muted); padding-left: 18px; border-left: 2px solid var(--grid); line-height: 1.2; }
+.work .hide { visibility: hidden; }
+.work .t { white-space: nowrap; }
+.work .tp { color: var(--green); } .work .tn { color: var(--warn); }
+.work .t.cut { text-decoration: line-through 4px var(--orange); opacity: 0.55; }
+.work .t.tk { outline: 3px dashed var(--orange); outline-offset: 2px; border-radius: 4px; }
+.work .res { background: var(--chip); border-radius: 8px; padding: 0 10px; }
+.board-table { border-collapse: collapse; font-size: 1.3rem; margin: 8px 0; }
+.board-table th, .board-table td { border: 2px solid var(--grid-major); padding: 8px 22px; text-align: center; }
+.board-table td { font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; }
+.board-table tr.tot td, .board-table tr.tot th { background: var(--chip); }
+.winner { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; color: var(--green); margin: 10px 0 0; }
+
+@media (max-width: 860px) {
+  .stage { --cw: 19vw; grid-template-columns: 1fr; }
+  .center { width: auto; }
+  .work { font-size: 1.05rem; }
+}
+@media (prefers-reduced-motion: reduce) { .pc.flipin, .pc.shake { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Zero Out Game</h1></div>
+    <div class="tools">
+      <span class="roundtag" id="roundtag"></span>
+      <button class="btn" id="totals" aria-pressed="false">Show totals</button>
+      <button class="btn" id="howto">How to play</button>
+      <button class="btn" id="newgame">New game</button>
+    </div>
+  </header>
+
+  <section class="stage">
+    <div class="player" id="p0"></div>
+    <div class="center">
+      <div class="prompt" id="prompt"></div>
+      <div class="piles">
+        <div class="pile"><button class="pc back" id="deck" aria-label="Deck"><span class="q">?</span><span class="count" id="deckcount"></span></button><span>Deck</span></div>
+        <div class="pile"><button class="pc" id="pile" aria-label="Discard pile"></button><span>Discard pile</span></div>
+      </div>
+      <div class="held" id="held" hidden><div id="heldcard"></div><span>Your new card</span></div>
+      <div class="acts">
+        <button class="btn" id="toss" hidden>Discard it</button>
+        <button class="btn" id="putback" hidden>Put it back</button>
+      </div>
+    </div>
+    <div class="player" id="p1"></div>
+  </section>
+</div>
+
+<div class="ov" id="setup">
+  <div class="sheet narrow">
+    <h2>Zero Out Game</h2>
+    <p class="lead">Get the total of your 8 cards as close to 0 as you can.</p>
+    <ol class="rules" id="rulelist">
+      <li>Each player has 8 cards face down. Start by flipping any 2 of yours.</li>
+      <li>On your turn, take the top card from the deck or the discard pile.</li>
+      <li>Swap it for one of your cards. If it came from the deck, you can discard it and flip one of your cards instead.</li>
+      <li>Opposites like +4 and −4 make a zero pair: they add to 0. Line one up in a column to see it glow.</li>
+      <li>A <b>Take away</b> card removes one of your cards from your total. Taking away a negative makes your total bigger!</li>
+      <li>When a player has every card face up, the other player gets one last turn.</li>
+      <li>Your points are how far your total is from 0. Fewest points after the last round wins.</li>
+    </ol>
+    <div class="opt"><span>Players</span><div class="seg" id="who">
+      <button aria-pressed="true" data-v="0">Class vs Teacher</button><button aria-pressed="false" data-v="1">Player 1 vs Player 2</button></div></div>
+    <div class="opt"><span>Rounds</span><div class="seg" id="nrounds">
+      <button aria-pressed="false" data-v="1">1</button><button aria-pressed="true" data-v="3">3</button><button aria-pressed="false" data-v="5">5</button></div></div>
+    <div class="acts"><button class="btn go" id="start">Start the game ▶</button><button class="btn" id="closehow" hidden>Back to the game</button></div>
+  </div>
+</div>
+
+<div class="ov" id="scoring" hidden>
+  <div class="sheet" id="scoresheet"></div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MINUS = "−";
+  const sgn = v => v > 0 ? "+" + v : v < 0 ? MINUS + (-v) : "0";
+  const term = v => "(" + sgn(v) + ")";
+  const NAMES = [["Class", "Teacher"], ["Player 1", "Player 2"]];
+
+  let G = null;            // the game
+  let names = NAMES[0], rounds = 3, showTotals = false;
+
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function newDeck() { const d = []; for (let k = 0; k < 3; k++) for (let v = 1; v <= 10; v++) d.push(v, -v); d.push("T", "T", "T", "T"); return shuffle(d); }
+  const TA = "T"; // a Take away card
+
+  function newGame() {
+    G = { round: 0, scores: [[], []] };
+    nextRound();
+  }
+  function nextRound() {
+    G.round++;
+    G.deck = newDeck();
+    const deal = () => { const i = G.deck.findIndex(v => v !== TA); return G.deck.splice(i, 1)[0]; };
+    G.hands = [0, 1].map(() => Array.from({ length: 8 }, () => ({ v: deal(), up: false })));
+    G.discard = [deal()];
+    G.held = null; G.from = null; G.ender = null;
+    G.starter = (G.round - 1) % 2; G.turn = G.starter;
+    G.phase = "start"; G.note = "";
+    $("scoring").hidden = true;
+    render();
+  }
+
+  const upCount = p => G.hands[p].filter(c => c.up).length;
+  const allUp = p => upCount(p) === 8;
+
+  function draw() {
+    if (!G.deck.length) { const top = G.discard.pop(); G.deck = shuffle(G.discard); G.discard = [top]; }
+    return G.deck.pop();
+  }
+
+  // ---------- Clicks ----------
+  function clickHand(p, i) {
+    const c = G.hands[p][i];
+    if (G.phase === "start") {
+      if (c.up || upCount(p) >= 2) return nope(p, i);
+      c.up = true; c.flip = true;
+      if (upCount(0) === 2 && upCount(1) === 2) G.phase = "pick";
+      return render();
+    }
+    if (p !== G.turn) return nope(p, i);
+    if ((G.phase === "deck" || G.phase === "pile") && G.held === TA) {
+      if (c.gone) return nope(p, i);
+      c.flip = !c.up; c.up = true; c.gone = true; G.held = null;
+      return endTurn();
+    }
+    if (G.phase === "deck" || G.phase === "pile") {
+      const old = c.v;
+      G.hands[p][i] = { v: G.held, up: true, flip: !c.up };
+      G.discard.push(old); G.held = null;
+      return endTurn();
+    }
+    if (G.phase === "flip") {
+      if (c.up) return nope(p, i);
+      c.up = true; c.flip = true;
+      return endTurn();
+    }
+    nope(p, i);
+  }
+  function nope(p, i) {
+    const el = document.querySelector(`#p${p} .pc[data-i="${i}"]`);
+    if (!el) return;
+    el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+  }
+  $("deck").onclick = () => {
+    if (G.phase !== "pick") return;
+    G.held = draw(); G.from = "deck"; G.phase = "deck"; render();
+  };
+  $("pile").onclick = () => {
+    if (G.phase === "pick" && G.discard.length) { G.held = G.discard.pop(); G.from = "pile"; G.phase = "pile"; return render(); }
+    if (G.phase === "deck") toss();
+  };
+  function toss() {
+    G.discard.push(G.held); G.held = null;
+    if (allUp(G.turn)) return endTurn();
+    G.phase = "flip"; render();
+  }
+  $("toss").onclick = toss;
+  $("putback").onclick = () => { if (G.phase !== "pile") return; G.discard.push(G.held); G.held = null; G.phase = "pick"; render(); };
+
+  function endTurn() {
+    G.note = "";
+    if (G.ender === null && allUp(G.turn)) {
+      G.ender = G.turn;
+      G.note = "lastturn";
+    }
+    G.turn = 1 - G.turn;
+    if (G.ender !== null && G.turn === G.ender) return endRound();
+    G.phase = "pick";
+    render();
+  }
+
+  function endRound() {
+    G.phase = "reveal"; render();
+    const hidden = [];
+    [0, 1].forEach(p => G.hands[p].forEach((c, i) => { if (!c.up) hidden.push(c); }));
+    let k = 0;
+    const step = () => {
+      if (k < hidden.length) { hidden[k].up = true; hidden[k].flip = true; k++; render(); setTimeout(step, 260); }
+      else setTimeout(() => { G.scoreFor = 0; G.shown = 0; G.points = [0, 1].map(p => Math.abs(G.hands[p].reduce((s, c) => s + (c.gone ? 0 : c.v), 0))); openScoring(); }, 900);
+    };
+    setTimeout(step, 400);
+  }
+
+  // ---------- Board drawing ----------
+  function cardEl(v, up, extra) {
+    const b = document.createElement("button");
+    if (v === TA) { b.className = "pc ta" + (extra ? " " + extra : ""); b.innerHTML = `<span class="tatext"><b>✕</b>Take away</span>`; b.setAttribute("aria-label", "Take away card"); return b; }
+    b.className = "pc " + (up ? (v > 0 ? "pos" : "neg") : "back") + (extra ? " " + extra : "");
+    if (up) { b.innerHTML = `<span class="face">${sgn(v)}</span>`; b.setAttribute("aria-label", sgn(v)); }
+    else { b.innerHTML = `<span class="q">?</span>`; b.setAttribute("aria-label", "Face-down card"); }
+    return b;
+  }
+
+  function canClick(p, c) {
+    if (G.phase === "start") return !c.up && upCount(p) < 2;
+    if (p !== G.turn) return false;
+    if (G.phase === "deck" || G.phase === "pile") return G.held !== TA || !c.gone;
+    if (G.phase === "flip") return !c.up;
+    return false;
+  }
+
+  function renderPlayer(p) {
+    const box = $("p" + p);
+    const active = G.phase !== "reveal" && G.phase !== "start" && p === G.turn;
+    box.className = "player" + (active ? " turn" : (G.phase === "start" || G.phase === "reveal" ? "" : " wait"));
+    box.innerHTML = "";
+    const head = document.createElement("div"); head.className = "pname";
+    const nm = document.createElement("span"); nm.textContent = names[p]; head.append(nm);
+    if (active) {
+      const pill = document.createElement("span");
+      const last = G.ender !== null;
+      pill.className = "pill-turn" + (last ? " pill-last" : "");
+      pill.textContent = last ? "Last turn!" : "Your turn";
+      head.append(pill);
+    }
+    box.append(head);
+    const hand = document.createElement("div"); hand.className = "hand";
+    for (let col = 0; col < 4; col++) {
+      const cd = document.createElement("div"); cd.className = "col";
+      const a = G.hands[p][col], b = G.hands[p][col + 4];
+      if (a.up && b.up && !a.gone && !b.gone && a.v === -b.v) cd.classList.add("zp");
+      [col, col + 4].forEach(i => {
+        const c = G.hands[p][i];
+        const el = cardEl(c.v, c.up, (canClick(p, c) ? "can" : "") + (c.flip ? " flipin" : "") + (c.gone ? " gone" : ""));
+        c.flip = false;
+        if (c.gone) el.insertAdjacentHTML("beforeend", `<span class="gonetag">Taken away</span>`);
+        el.dataset.i = i;
+        el.onclick = () => clickHand(p, i);
+        cd.append(el);
+      });
+      const z = document.createElement("span"); z.className = "zbadge"; z.textContent = "= 0"; cd.append(z);
+      hand.append(cd);
+    }
+    box.append(hand);
+    const t = document.createElement("div"); t.className = "ptotal";
+    if (showTotals) {
+      const ups = G.hands[p].filter(c => c.up && !c.gone);
+      const s = ups.reduce((x, c) => x + c.v, 0);
+      t.innerHTML = `<span>Face-up total:</span> <b>${ups.length ? sgn(s) : "0"}</b>`;
+    }
+    box.append(t);
+  }
+
+  function renderPrompt() {
+    const pr = $("prompt"); pr.innerHTML = "";
+    const add = (cls, txt) => { const d = document.createElement("div"); d.className = cls; d.textContent = txt; pr.append(d); };
+    if (G.phase === "start") {
+      add("who", "Flip 2 cards");
+      add("what", "Each player: flip any 2 of your own cards.");
+      return;
+    }
+    if (G.phase === "reveal") { add("who", "Round over!"); add("what", "Turning over every card…"); return; }
+    if (G.note === "lastturn") add("note", names[1 - G.turn] + " has every card face up.");
+    add("who", names[G.turn]);
+    const say = {
+      pick: "Take the top card from the deck or the discard pile.",
+      deck: G.held === TA ? "Tap one of your cards to take it away, or discard the Take away card." : "Tap one of your cards to swap, or discard the new card.",
+      pile: G.held === TA ? "Tap one of your cards to take it away." : "Tap one of your cards to swap with it.",
+      flip: "Flip one of your face-down cards."
+    }[G.phase];
+    add("what", say);
+  }
+
+  function render() {
+    $("roundtag").textContent = `Round ${G.round} of ${rounds}`;
+    renderPlayer(0); renderPlayer(1); renderPrompt();
+    $("deckcount").textContent = G.deck.length;
+    const deck = $("deck"); deck.classList.toggle("can", G.phase === "pick");
+    const pile = $("pile"); const top = G.discard[G.discard.length - 1];
+    pile.className = "pc " + (top === undefined ? "empty" : top === TA ? "ta" : top > 0 ? "pos" : "neg") + ((G.phase === "pick" && top !== undefined) || G.phase === "deck" ? " can" : "");
+    pile.innerHTML = top === undefined ? `<span class="lbl">Empty</span>` : top === TA ? `<span class="tatext"><b>✕</b>Take away</span>` : `<span class="face">${sgn(top)}</span>`;
+    pile.setAttribute("aria-label", top === undefined ? "Discard pile" : "Discard pile: " + (top === TA ? "Take away" : sgn(top)));
+    const held = G.held !== null;
+    $("held").hidden = !held;
+    const hc = $("heldcard"); hc.innerHTML = "";
+    if (held) { const c = cardEl(G.held, true); c.tabIndex = -1; hc.append(c); }
+    $("toss").hidden = G.phase !== "deck";
+    $("putback").hidden = G.phase !== "pile";
+  }
+
+  // ---------- Scoring ----------
+  // Lines for one player: all 8 cards, zero pairs cancelled, positives and negatives grouped, combined,
+  // then any Take away cards as subtracting, rewritten as adding the opposite, and finally the points.
+  // A term is { v, op } where op is the sign written before it ("+" or "−"); the first term has none.
+  function scoreLines(p) {
+    const hand = G.hands[p], vals = hand.map(c => c.v);
+    const order = [0, 1, 2, 3, 4, 5, 6, 7];
+    const gone = order.filter(i => hand[i].gone);
+    const cut = new Set();
+    const free = i => !cut.has(i) && !hand[i].gone;
+    for (let c = 0; c < 4; c++) if (free(c) && free(c + 4) && vals[c] === -vals[c + 4]) { cut.add(c); cut.add(c + 4); } // columns first
+    for (const i of order) { if (!free(i)) continue; for (const j of order) { if (j > i && free(j) && vals[i] === -vals[j]) { cut.add(i); cut.add(j); break; } } }
+    const rem = order.filter(i => !cut.has(i)).map(i => vals[i]);
+    const S = vals.reduce((a, b) => a + b, 0);
+    const P = rem.filter(v => v > 0).reduce((a, b) => a + b, 0), N = rem.filter(v => v < 0).reduce((a, b) => a + b, 0);
+    const plus = list => list.map((t, k) => Object.assign({ op: k ? "+" : "" }, t));
+    const lines = [{ lab: "Total", terms: plus(vals.map((v, i) => ({ v, i, tk: hand[i].gone }))), step: "Add all 8 cards" }];
+    if (cut.size) lines.push(rem.length ? { terms: plus(rem.map(v => ({ v }))), step: "Zero pairs cancel" } : { res: "0", step: "Zero pairs cancel" });
+    if (rem.length > 2 && P && N) lines.push({ terms: plus([{ v: P }, { v: N }]), step: "Add the positives and the negatives" });
+    if (rem.length >= 2) lines.push({ res: sgn(S), step: P && N ? "Combine" : "Add" });
+    let total = S;
+    if (gone.length) {
+      const g = gone.map(i => vals[i]);
+      lines.push({ terms: [{ v: S }].concat(g.map(v => ({ v, op: MINUS, tk: true }))), step: "Take away" });
+      lines.push({ terms: [{ v: S }].concat(g.map(v => ({ v: -v, op: "+" }))), step: "Add the opposite" });
+      total = S - g.reduce((a, b) => a + b, 0);
+      lines.push({ res: sgn(total), step: "Add" });
+    }
+    lines.push({ lab: "Points", res: String(Math.abs(total)), step: "Distance from 0" });
+    return { lines, cut };
+  }
+
+  function openScoring() {
+    $("scoring").hidden = false;
+    const p = G.scoreFor;
+    const { lines, cut } = scoreLines(p);
+    const sh = $("scoresheet"); sh.innerHTML = "";
+    const h = document.createElement("h2"); h.textContent = `Round ${G.round} score: ${names[p]}`; sh.append(h);
+    const work = document.createElement("div"); work.className = "work";
+    lines.forEach((L, k) => {
+      const row = document.createElement("div"); row.className = "row";
+      const show = k < G.shown;
+      const cell = (cls, html) => { const d = document.createElement("div"); d.className = cls + (show ? "" : " hide"); d.innerHTML = html; row.append(d); return d; };
+      cell("lab", L.lab ? `<span>${L.lab}</span>` : "");
+      cell("eqs", "<span>=</span>");
+      let html;
+      if (L.terms) html = L.terms.map(t => (t.op ? ` <span>${t.op}</span> ` : "") + `<span class="t ${t.v > 0 ? "tp" : t.v < 0 ? "tn" : ""}${t.i !== undefined && cut.has(t.i) && G.shown > 1 ? " cut" : ""}${t.tk ? " tk" : ""}">${term(t.v)}</span>`).join("");
+      else html = `<span class="res">${L.res}</span>`;
+      cell("ex", html);
+      cell("stepname", `<span>${L.step}</span>`);
+      work.append(row);
+    });
+    sh.append(work);
+    const acts = document.createElement("div"); acts.className = "acts";
+    const btn = (txt, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = txt; b.onclick = fn; acts.append(b); return b; };
+    if (G.shown < lines.length) {
+      btn("Next step ▶", "go", () => { G.shown++; openScoring(); });
+      btn("Show all", "", () => { G.shown = lines.length; openScoring(); });
+    } else if (p === 0) {
+      btn(`Next: ${names[1]} ▶`, "go", () => { G.scoreFor = 1; G.shown = 0; openScoring(); });
+    } else {
+      btn("See the scoreboard ▶", "go", () => { G.scores[0].push(G.points[0]); G.scores[1].push(G.points[1]); scoreboard(); });
+    }
+    btn("Look at the cards", "", () => { $("scoring").hidden = true; peekBtn(); });
+    sh.append(acts);
+    const first = acts.querySelector("button"); if (first) first.focus();
+  }
+  // While scoring, the board stays readable: one button brings the scores back.
+  function peekBtn() {
+    const pr = $("prompt"); pr.innerHTML = "";
+    const b = document.createElement("button"); b.className = "btn go"; b.textContent = "Back to the scores";
+    b.onclick = () => { $("scoring").hidden = false; render(); G.phase = "reveal"; renderPrompt(); };
+    pr.append(b);
+  }
+
+  function scoreboard() {
+    G.phase = "board";
+    const sh = $("scoresheet"); sh.innerHTML = "";
+    const over = G.round >= rounds;
+    const h = document.createElement("h2"); h.textContent = over ? "Final scoreboard" : "Scoreboard"; sh.append(h);
+    const lead = document.createElement("p"); lead.className = "lead"; lead.textContent = "Points are how far each total is from 0. Fewest points wins."; sh.append(lead);
+    const tb = document.createElement("table"); tb.className = "board-table";
+    let html = `<tr><th>Round</th><th>${names[0]}</th><th>${names[1]}</th></tr>`;
+    G.scores[0].forEach((s, r) => { html += `<tr><th>${r + 1}</th><td>${s}</td><td>${G.scores[1][r]}</td></tr>`; });
+    const T = [0, 1].map(p => G.scores[p].reduce((a, b) => a + b, 0));
+    html += `<tr class="tot"><th>Total</th><td>${T[0]}</td><td>${T[1]}</td></tr>`;
+    tb.innerHTML = html; sh.append(tb);
+    if (over) {
+      const w = document.createElement("p"); w.className = "winner";
+      w.textContent = T[0] === T[1] ? "It's a tie!" : `${names[T[0] < T[1] ? 0 : 1]} wins!`;
+      sh.append(w);
+    }
+    const acts = document.createElement("div"); acts.className = "acts";
+    const b = document.createElement("button"); b.className = "btn go";
+    b.textContent = over ? "Play again ▶" : `Play round ${G.round + 1} ▶`;
+    b.onclick = () => over ? newGame() : nextRound();
+    acts.append(b); sh.append(acts); b.focus();
+  }
+
+  // ---------- Setup and header ----------
+  function segPick(id, fn) {
+    $(id).querySelectorAll("button").forEach(b => b.onclick = () => {
+      $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+      fn(b.dataset.v);
+    });
+  }
+  segPick("who", v => names = NAMES[+v]);
+  segPick("nrounds", v => rounds = +v);
+  function showSetup(asHelp) {
+    $("setup").hidden = false;
+    $("setup").querySelectorAll(".opt").forEach(o => o.hidden = asHelp);
+    $("start").hidden = asHelp; $("closehow").hidden = !asHelp;
+  }
+  $("start").onclick = () => { $("setup").hidden = true; newGame(); };
+  $("closehow").onclick = () => { $("setup").hidden = true; };
+  $("howto").onclick = () => showSetup(true);
+  $("newgame").onclick = () => { $("scoring").hidden = true; showSetup(false); };
+  $("totals").onclick = () => { showTotals = !showTotals; $("totals").setAttribute("aria-pressed", showTotals); $("totals").textContent = showTotals ? "Hide totals" : "Show totals"; if (G) render(); };
+
+  // A board shows behind the setup card from the start.
+  newGame();
+  showSetup(false);
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for the Zero Out Game (zeroout.html). */
+window.I18N_PAGE = {
+ "Zero Out Game": "Jeu Zéro pile",
+ "Show totals": "Afficher les totaux",
+ "Hide totals": "Masquer les totaux",
+ "How to play": "Comment jouer",
+ "New game": "Nouvelle partie",
+ "Round {n} of {n}": "Manche {n} sur {n}",
+ "Deck": "Paquet",
+ "Discard pile": "Défausse",
+ "Your new card": "Ta nouvelle carte",
+ "Discard it": "La défausser",
+ "Put it back": "La remettre",
+ "Get the total of your 8 cards as close to 0 as you can.": "Rends le total de tes 8 cartes le plus proche possible de 0.",
+ "Each player has 8 cards face down. Start by flipping any 2 of yours.": "Chaque joueur a 8 cartes face cachée. Commence par retourner 2 de tes cartes.",
+ "On your turn, take the top card from the deck or the discard pile.": "À ton tour, prends la carte du dessus du paquet ou de la défausse.",
+ "Swap it for one of your cards. If it came from the deck, you can discard it and flip one of your cards instead.": "Échange-la contre une de tes cartes. Si elle vient du paquet, tu peux plutôt la défausser et retourner une de tes cartes.",
+ "Opposites like +4 and −4 make a zero pair: they add to 0. Line one up in a column to see it glow.": "Les opposés comme +4 et −4 forment une paire nulle : leur somme est 0. Place-les dans une même colonne pour les voir briller.",
+ "A {0} card removes one of your cards from your total. Taking away a negative makes your total bigger!": "Une carte {0} retire une de tes cartes de ton total. Retirer un nombre négatif fait augmenter ton total!",
+ "Take away": "Retire",
+ "When a player has every card face up, the other player gets one last turn.": "Quand un joueur a toutes ses cartes face visible, l’autre joueur joue un dernier tour.",
+ "Your points are how far your total is from 0. Fewest points after the last round wins.": "Tes points sont la distance entre ton total et 0. Le moins de points après la dernière manche gagne.",
+ "Players": "Joueurs",
+ "Rounds": "Manches",
+ "Class vs Teacher": "Classe contre enseignant",
+ "Player 1 vs Player 2": "Joueur 1 contre joueur 2",
+ "Class": "Classe",
+ "Teacher": "Enseignant",
+ "Player {n}": "Joueur {n}",
+ "Start the game ▶": "Commencer la partie ▶",
+ "Back to the game": "Retour au jeu",
+ "Your turn": "Ton tour",
+ "Last turn!": "Dernier tour!",
+ "Face-up total:": "Total visible :",
+ "Flip 2 cards": "Retourne 2 cartes",
+ "Each player: flip any 2 of your own cards.": "Chaque joueur : retourne 2 de tes cartes.",
+ "Round over!": "Fin de la manche!",
+ "Turning over every card…": "On retourne toutes les cartes…",
+ "~(.+) has every card face up\\.": "$1 a toutes ses cartes face visible.",
+ "Take the top card from the deck or the discard pile.": "Prends la carte du dessus du paquet ou de la défausse.",
+ "Tap one of your cards to swap, or discard the new card.": "Touche une de tes cartes pour l’échanger, ou défausse la nouvelle carte.",
+ "Tap one of your cards to swap with it.": "Touche une de tes cartes pour l’échanger.",
+ "Tap one of your cards to take it away, or discard the Take away card.": "Touche une de tes cartes pour la retirer, ou défausse la carte Retire.",
+ "Tap one of your cards to take it away.": "Touche une de tes cartes pour la retirer.",
+ "Flip one of your face-down cards.": "Retourne une de tes cartes face cachée.",
+ "~Round (\\d+) score: (.+)": "Points de la manche $1 : $2",
+ "Total": "Total",
+ "Points": "Points",
+ "Add all 8 cards": "Additionne les 8 cartes",
+ "Zero pairs cancel": "Les paires nulles s’annulent",
+ "Add the positives and the negatives": "Additionne les positifs et les négatifs",
+ "Combine": "Combine",
+ "Add": "Additionne",
+ "Add the opposite": "Additionne l’opposé",
+ "Distance from 0": "Distance de 0",
+ "Next step ▶": "Étape suivante ▶",
+ "Show all": "Tout montrer",
+ "~Next: (.+) ▶": "Suivant : $1 ▶",
+ "See the scoreboard ▶": "Voir le tableau des points ▶",
+ "Look at the cards": "Regarder les cartes",
+ "Back to the scores": "Retour aux points",
+ "Scoreboard": "Tableau des points",
+ "Final scoreboard": "Tableau final",
+ "Points are how far each total is from 0. Fewest points wins.": "Les points sont la distance entre chaque total et 0. Le moins de points gagne.",
+ "Round": "Manche",
+ "It's a tie!": "Égalité!",
+ "~(.+) wins!": "$1 gagne!",
+ "Play again ▶": "Rejouer ▶",
+ "Play round {n} ▶": "Jouer la manche {n} ▶",
+ "Face-down card": "Carte face cachée",
+ "Take away card": "Carte Retire",
+ "Taken away": "Retirée",
+ "Empty": "Vide"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
