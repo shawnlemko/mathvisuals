@@ -150,7 +150,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 :root { --purple: #7b3fc4; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b48cff; } }
 :root[data-theme="dark"] { --purple: #b48cff; }
-.k-r { color: var(--pt); } .k-D { color: var(--green); } .k-C { color: var(--orange); } .k-A { color: var(--purple); }
+.k-r { color: var(--pt); } .k-b { color: var(--orange); } .k-D { color: var(--green); } .k-C { color: var(--orange); } .k-A { color: var(--purple); }
 
 .main { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
 .board { display: flex; flex-direction: column; gap: 6px; }
@@ -177,7 +177,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .lbl { font-family: var(--font-num); font-weight: 700; font-size: 32px; paint-order: stroke; stroke: var(--sheet); stroke-width: 7px; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; }
 .lbl.r { fill: var(--pt); } .lbl.D { fill: var(--green); } .lbl.C { fill: var(--orange); } .lbl.A { fill: var(--purple); }
 .lbl.small { font-size: 24px; }
-.note { font-family: var(--font-body); font-size: 22px; fill: var(--muted); }
+.num { font-family: var(--font-num); font-weight: 700; font-size: 17px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.key { font-family: var(--font-body); font-weight: 700; font-size: 24px; fill: var(--ink); dominant-baseline: central; }
 
 /* Header: Learn / Practice */
 .seg { display: inline-flex; }
@@ -222,6 +223,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .work .other { grid-column: 1 / -1; border-top: 2px dashed var(--grid-major); margin-top: 4px; }
 .work .ans { font-weight: 700; }
 .work input { width: 4.2em; height: 1.65em; font-family: var(--font-num); font-weight: 700; font-size: 1.35rem; color: var(--ink); background: var(--paper); border: 2px solid var(--grid-major); border-radius: 8px; text-align: center; padding: 0 4px; }
+.work select { font-family: var(--font-num); font-weight: 700; font-size: 1.25rem; height: 1.75em; padding: 0 6px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--paper); color: var(--ink); }
+.work select.bad { border-color: var(--warn); } .work select.ok { border-color: var(--green); } .work select.shown { border-color: var(--orange); }
 .work input.bad { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--paper)); }
 .work input.ok { border-color: var(--green); }
 .work input.shown { border-color: var(--orange); }
@@ -299,7 +302,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
           <button type="button" class="next" id="next">Next step</button>
         </div>
         <div class="work" id="lwork"></div>
-        <a class="more" id="pizzaLink" href="pizza.html" hidden>Why is A = πr²? See Creating the Area Formula →</a>
       </div>
     </div>
 
@@ -360,19 +362,24 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   // ---------- Board geometry ----------
   // The drawing matches the board's shape, so the circle is as big as the board allows.
-  let W = 1000, H = 620, HOME, RR, GROUND, X0, ROLL;
+  // The grid never stretches: 1 square is always 1 cm (or 1 m), and the circle grows on it.
+  let W = 1000, H = 620, UH, UP, UR, GROUND;
   function layout() {
     const b = svg.getBoundingClientRect();
     H = 620; W = b.width > 50 && b.height > 50 ? Math.max(560, Math.min(1500, H * b.width / b.height)) : 1000;
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    HOME = { cx: W / 2, cy: H / 2 + 6, R: Math.min(W / 2 - 40, H / 2 - 50) };   // the circle, big and centred
-    RR = Math.min(150, (W - 60) / (2 * Math.PI + 2)); GROUND = Math.min(H - 120, H / 2 + RR - 30); X0 = RR + 30;   // rolling out the circumference
-    ROLL = { cx: X0, cy: GROUND - RR, R: RR };
+    const fit = Math.min(W / 2 - 40, H / 2 - 60);
+    UH = fit / 10;   // Learn: pixels per cm, so the biggest circle (r = 10) just fits
+    UP = fit / 12;   // Practice: radius up to 12
+    UR = Math.min(150, (W - 60) / (2 * Math.PI + 2)) / 10;   // rolling out the circumference needs a smaller square
+    GROUND = Math.min(H - 140, H / 2 + 10 * UR - 40);
   }
   layout();
 
-  function grid(g, r) {
-    const u = g.R / r;   // pixels per cm: the circle's radius is always r squares
+  const home = (rad, u) => ({ cx: W / 2, cy: H / 2 + 6, R: rad * u, u });
+  const rollStart = () => ({ cx: 30 + r * UR, cy: GROUND - r * UR, R: r * UR, u: UR });
+  function grid(g) {
+    const u = g.u;
     const ox = g.gx ?? g.cx, oy = g.gy ?? g.cy;
     for (let x = ox - Math.floor(ox / u) * u; x <= W; x += u) el("line", { x1: x, y1: 0, x2: x, y2: H, class: "gl" });
     for (let y = oy - Math.floor(oy / u) * u; y <= H; y += u) el("line", { x1: 0, y1: y, x2: W, y2: y, class: "gl" });
@@ -385,6 +392,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       const mx = (g.cx + x) / 2, my = (g.cy + y) / 2, nx = -Math.sin(a), ny = Math.cos(a);
       text(mx - nx * 40, my - ny * 40, label, "lbl r");
     }
+  }
+  // A clear key in the corner: one square, drawn at the real size, and what it stands for.
+  function legend(u, unit) {
+    const h = 50, y = H - h - 8;
+    el("rect", { x: 8, y, width: 330, height: h, rx: 10, fill: "var(--sheet)", stroke: "var(--grid-major)", "stroke-width": 2 });
+    el("rect", { x: 22, y: y + h / 2 - u / 2, width: u, height: u, fill: "var(--chip)", stroke: "var(--ink)", "stroke-width": 3 });
+    text(22 + u + 12, y + h / 2 + 1, `1 square = 1 ${unit} by 1 ${unit}`, "key");
   }
   function centre(g) { el("circle", { cx: g.cx, cy: g.cy, r: 8, class: "ctr" }); }
   function rim(g, cls = "rim") { return el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: cls }); }
@@ -423,10 +437,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       ];
     }
     const f = { l: "A", r: "πr²", n: "Formula" };
+    const pb = { l: "b", r: "πr", n: "Base: half of C" }, pa = { l: "A", r: "πr × r", n: "Base × height" };
     return [
       { cap: "The area is all the space inside the circle.", rows: [given] },
-      { cap: `A radius square has sides of r. Its area is r × r = ${r} × ${r} = ${r * r} cm².`, rows: [given] },
-      { cap: "Four radius squares cover more than the circle. The circle fills about 3.14 of them: π squares.", rows: [given, f] },
+      { cap: "Cut the circle into 16 equal slices.", rows: [given] },
+      { cap: "Line the slices up, one pointing up, one pointing down. They make a shape like a parallelogram.", rows: [given] },
+      { cap: "The base is half the circumference: πr. The height is the radius: r.", rows: [given, pb] },
+      { cap: "Area of a parallelogram is base × height.", rows: [given, pb, pa] },
+      { cap: "πr × r is πr². That is the area formula for a circle.", rows: [given, pb, pa, f] },
       { cap: "Put in the radius. Use 3.14 for π.", rows: [given, f, { l: "A", r: `3.14 × ${r}²`, n: "Substitute" }] },
       { cap: `r² means r × r: ${r} × ${r} = ${r * r}.`, rows: [given, f, { l: "A", r: `3.14 × ${r}²`, n: "Substitute" }, { l: "A", r: `3.14 × ${r * r}`, n: "Square the radius" }] },
       { cap: `The area is ${fmt(A)} cm². Area is in square units.`, rows: [given, f, { l: "A", r: `3.14 × ${r}²`, n: "Substitute" }, { l: "A", r: `3.14 × ${r * r}`, n: "Square the radius" }, { l: "A", r: `${fmt(A)} cm²`, n: "Answer", ans: 1 }] },
@@ -452,12 +470,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     };
     anim = requestAnimationFrame(tick);
   }
-  const lerp = (a, b, k) => ({ cx: a.cx + (b.cx - a.cx) * k, cy: a.cy + (b.cy - a.cy) * k, R: a.R + (b.R - a.R) * k });
+  const lerp = (a, b, k) => ({ cx: a.cx + (b.cx - a.cx) * k, cy: a.cy + (b.cy - a.cy) * k, R: a.R + (b.R - a.R) * k, u: a.u + (b.u - a.u) * k });
 
   // Circumference rolling out: after rolling a share k of one turn, the orange left on the circle is the rest.
   function rolled(k, showD) {
-    const g = { cx: X0 + k * 2 * Math.PI * RR, cy: GROUND - RR, R: RR, gx: X0, gy: GROUND };
-    grid(g, r);
+    const RR = r * UR, X0 = 30 + RR;
+    const g = { cx: X0 + k * 2 * Math.PI * RR, cy: GROUND - RR, R: RR, u: UR, gx: X0, gy: GROUND };
+    grid(g);
     el("line", { x1: 20, y1: GROUND, x2: W - 20, y2: GROUND, stroke: "var(--grid-major)", "stroke-width": 3 });
     rim(g);
     const th = k * 2 * Math.PI, a1 = Math.PI / 2 + th, a2 = Math.PI / 2 + 2 * Math.PI;
@@ -466,10 +485,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       el("path", { d: `M${x1} ${y1} A${RR} ${RR} 0 ${2 * Math.PI - th > Math.PI ? 1 : 0} 1 ${x2} ${y2}`, class: "rimC" });
     }
     if (k > 0) el("line", { x1: X0, y1: GROUND, x2: g.cx, y2: GROUND, class: "rimC" });
+    // Number the grid along the line, in cm, starting where the roll starts.
+    const every = UR >= 24 ? 1 : UR >= 12 ? 2 : 5;
+    for (let n = 0; X0 + n * UR <= W - 20; n += every) {
+      el("line", { x1: X0 + n * UR, y1: GROUND, x2: X0 + n * UR, y2: GROUND + 8, stroke: "var(--ink)", "stroke-width": 2 });
+      text(X0 + n * UR, GROUND + 20, String(n), "num");
+    }
     radius(g, a1, "", "thin");
     centre(g);
     if (showD) {
-      const y = GROUND + 34, L2 = 2 * RR;
+      const y = GROUND + 50, L2 = 2 * RR;
       for (let i = 0; i < 3; i++) {
         const xa = X0 + i * L2, xb = xa + L2;
         el("line", { x1: xa + 3, y1: y, x2: xb - 3, y2: y, class: "ln D" });
@@ -479,52 +504,90 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       }
       const xs = X0 + 3 * L2, xe = X0 + 2 * Math.PI * RR;
       el("line", { x1: xs + 3, y1: y, x2: xe, y2: y, class: "ln D", opacity: .55 });
-      text((xs + xe) / 2 + 6, y + 42, "0.14", "lbl D small");
+      text(Math.max((xs + xe) / 2 + 6, xs + 30), y + 42, "0.14", "lbl D small");
       // the same diameter, inside the rolled circle
       el("line", { x1: g.cx - RR, y1: g.cy, x2: g.cx + RR, y2: g.cy, class: "ln D" });
-      text(g.cx, g.cy - 30, "D", "lbl D");
-      text(X0 + Math.PI * RR, GROUND - 32, `C ≈ 3.14 × D`, "lbl C");
+      text(g.cx, g.cy - RR - 26, "D", "lbl D");
+      text(Math.max(X0 + Math.PI * RR, 170), GROUND - 32, `C ≈ 3.14 × D`, "lbl C");
+    }
+    legend(UR, "cm");
+  }
+
+  // Area: 16 slices of the circle slide into a row, alternating up and down, to make a parallelogram.
+  const N = 16;
+  function slices(g, k, labels) {
+    const a = 2 * Math.PI / N, h = a / 2, R = g.R, c = 2 * R * Math.sin(h), hc = R * Math.cos(h);
+    const x0 = g.cx - (N / 2 + .5) * c / 2, ybot = g.cy + hc / 2, ytop = ybot - hc;
+    const shape = `M0 0 L${R * Math.cos(-h)} ${R * Math.sin(-h)} A${R} ${R} 0 0 1 ${R * Math.cos(h)} ${R * Math.sin(h)} Z`;
+    const arc = `M${R * Math.cos(-h)} ${R * Math.sin(-h)} A${R} ${R} 0 0 1 ${R * Math.cos(h)} ${R * Math.sin(h)}`;
+    const ease = x => x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+    for (let i = 0; i < N; i++) {
+      const m = (i + .5) * a, bottom = i < N / 2;
+      // bottom-half slices end up pointing up (arc on the bottom); top-half slices point down (arc on top)
+      const j = bottom ? N / 2 - 1 - i : i - N / 2;
+      const tx = bottom ? x0 + (j + 1) * c : x0 + (j + .5) * c, ty = bottom ? ytop : ybot;
+      const tr = bottom ? Math.PI / 2 : 3 * Math.PI / 2;
+      const kk = ease(Math.min(1, Math.max(0, k * 1.6 - (i % (N / 2)) * .6 / (N / 2))));   // slices move one after another
+      const x = g.cx + (tx - g.cx) * kk, y = g.cy + (ty - g.cy) * kk, rot = (m + (tr - m) * kk) * 180 / Math.PI;
+      const grp = el("g", { transform: `translate(${x} ${y}) rotate(${rot})` });
+      el("path", { d: shape, fill: "var(--purple)", "fill-opacity": bottom ? .22 : .45, stroke: "var(--sheet)", "stroke-width": 2, "stroke-linejoin": "round" }, grp);
+      el("path", { d: arc, fill: "none", stroke: "var(--orange)", "stroke-width": 5, "stroke-linecap": "round" }, grp);
+    }
+    if (k === 0) centre(g);
+    if (labels) {
+      const xl = x0 + .5 * c, xr = x0 + (N / 2) * c;
+      el("line", { x1: x0, y1: ytop - 26, x2: xr, y2: ytop - 26, class: "ln C", "stroke-width": 4 });
+      el("line", { x1: x0, y1: ytop - 38, x2: x0, y2: ytop - 14, class: "tick", stroke: "var(--orange)" });
+      el("line", { x1: xr, y1: ytop - 38, x2: xr, y2: ytop - 14, class: "tick", stroke: "var(--orange)" });
+      text((x0 + xr) / 2, ytop - 58, "base = half of C = πr", "lbl C small");
+      el("line", { x1: xl, y1: ybot, x2: xl, y2: ytop, class: "ln r", "stroke-width": 5 });
+      text(xl - 14, (ytop + ybot) / 2, "height = r", "lbl r small").setAttribute("text-anchor", "end");
     }
   }
 
   function drawLearn(animate) {
     stopAnim();
     svg.innerHTML = "";
-    const g = HOME, t = L.t, s = L.step, D = 2 * r;
+    const g = home(r, UH), t = L.t, s = L.step, D = 2 * r, small = g.R < 110;
     if (t === "C" && s >= 1) {
       if (animate && s === 1) {
-        tween(700, k => { svg.innerHTML = ""; const h = lerp(HOME, ROLL, k); grid(h, r); rim(h); el("circle", { cx: h.cx, cy: h.cy, r: h.R, class: "rimC" }); centre(h); },
+        tween(700, k => { svg.innerHTML = ""; const h = lerp(home(r, UH), rollStart(), k); grid(h); rim(h); el("circle", { cx: h.cx, cy: h.cy, r: h.R, class: "rimC" }); centre(h); },
           () => tween(2600, k => { svg.innerHTML = ""; rolled(k, false); }));
       } else rolled(1, s >= 2);
       return;
     }
-    grid(g, r);
-    if (t === "A") el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "fillA" + (animate && s === 0 ? " fade" : "") });
+    grid(g);
     if (t === "A" && s >= 1) {
-      const sqs = s >= 2 ? [[0, -1], [-1, -1], [-1, 0], [0, 0]] : [[0, -1]];
-      sqs.forEach(([i, j], n) => el("rect", { x: g.cx + i * g.R, y: g.cy + j * g.R, width: g.R, height: g.R, class: "sq" + (n ? " dash" : "") }));
-      text(g.cx + g.R / 2, g.cy - g.R / 2, `r² = ${r * r} cm²`, "lbl A small");
+      if (s === 2 && animate) tween(2200, k => { svg.innerHTML = ""; grid(g); slices(g, k, false); legend(UH, "cm"); });
+      else { slices(g, s >= 2 ? 1 : 0, s >= 3); legend(UH, "cm"); }
+      return;
     }
+    if (t === "A") el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "fillA" + (animate && s === 0 ? " fade" : "") });
     rim(g);
-    if (t === "C") { const c = el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "rimC" + (animate ? " trace" : ""), pathLength: 100, transform: `rotate(90 ${g.cx} ${g.cy})` }); text(g.cx, g.cy - g.R - 2 + 34, "C", "lbl C"); }
+    if (t === "C") { const c = el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "rimC" + (animate ? " trace" : ""), pathLength: 100, transform: `rotate(90 ${g.cx} ${g.cy})` }); text(g.cx, small ? g.cy - g.R - 26 : g.cy - g.R + 32, "C", "lbl C"); }
     if (t === "r") {
       if (s >= 1) for (let i = 1; i < 8; i++) radius(g, -Math.PI / 5 + i * Math.PI / 4, "", "thin");
       radius(g, -Math.PI / 5, `r = ${r} cm`);
     }
     if (t === "D") {
       el("line", { x1: g.cx - g.R, y1: g.cy, x2: g.cx + g.R, y2: g.cy, class: "ln D" });
-      text(g.cx, g.cy + 42, s >= 3 ? `D = ${D} cm` : "D", "lbl D");
+      text(g.cx, small ? g.cy + g.R + 30 : g.cy + 42, s >= 3 ? `D = ${D} cm` : "D", "lbl D");
       if (s >= 1) {
         el("line", { x1: g.cx - g.R, y1: g.cy - 14, x2: g.cx - 6, y2: g.cy - 14, class: "ln r", "stroke-width": 5 });
         el("line", { x1: g.cx + 6, y1: g.cy - 14, x2: g.cx + g.R, y2: g.cy - 14, class: "ln r", "stroke-width": 5 });
-        text(g.cx - g.R / 2, g.cy - 48, s >= 2 ? `r = ${r}` : "r", "lbl r");
-        text(g.cx + g.R / 2, g.cy - 48, s >= 2 ? `r = ${r}` : "r", "lbl r");
+        if (small) {
+          text(g.cx - g.R - 14, g.cy - 14, s >= 2 ? `r = ${r}` : "r", "lbl r").setAttribute("text-anchor", "end");
+          text(g.cx + g.R + 14, g.cy - 14, s >= 2 ? `r = ${r}` : "r", "lbl r").setAttribute("text-anchor", "start");
+        } else {
+          text(g.cx - g.R / 2, g.cy - 48, s >= 2 ? `r = ${r}` : "r", "lbl r");
+          text(g.cx + g.R / 2, g.cy - 48, s >= 2 ? `r = ${r}` : "r", "lbl r");
+        }
       }
     }
-    if (t === "A" && s === 0) text(g.cx, g.cy + g.R / 2, "A", "lbl A");
+    if (t === "A" && s === 0) text(g.cx, small ? g.cy + g.R + 30 : g.cy + g.R / 2, "A", "lbl A");
     if (t === "A") radius(g, Math.PI * 0.75, s >= 1 ? "r" : "");
     centre(g);
-    text(16, H - 14, "Each grid square is 1 cm by 1 cm.", "note");
+    legend(UH, "cm");
   }
 
   let lastRows = 0;
@@ -537,7 +600,6 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     $("next").disabled = L.step === all.length - 1;
     workRows($("lwork"), s.rows, animate ? lastRows : s.rows.length);
     lastRows = s.rows.length;
-    $("pizzaLink").hidden = !(L.t === "A" && L.step === all.length - 1);
     drawLearn(animate);
   }
   document.querySelectorAll(".term").forEach(b => b.addEventListener("click", () => {
@@ -575,38 +637,43 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     const T = TASKS[i], useD = !T.rev && Math.random() < .5;
     const rr = rnd(2, 12), D = 2 * rr, u = T.u;
     const q = { ...T, r: rr, D, useD, C: PI * D, A: PI * rr * rr };
-    // The given measure and the work rows. Each blank: { a: answer }.
+    // The given measure and the work rows. Blanks: { a: number } or { s: text, opts } for a pick list.
+    // Nothing is pre-worked: students choose what the formula needs, do each calculation and pick the units.
+    const units = { s: T.f === "A" && !T.rev ? `${u}²` : u, opts: [u, `${u}²`], unit: 1 };
+    const need = T.f === "C" ? "D" : "r", needVal = need === "D" ? D : rr;
+    const needRow = { l: { s: need, opts: ["r", "D"], need: 1 }, r: [{ a: needVal, needV: 1 }], n: "What the formula needs" };
     if (T.rev) {
       q.given = `${fmt(q.C)} ${u}`;
       q.ask = "D";
       q.rows = [
         { l: "C", r: ["πD"], n: "Formula" },
-        { l: { b: fmt(q.C) }, r: ["3.14 × D"], n: "Substitute", lhsBlank: 1 },
-        { l: "D", r: [frac(fmt(q.C), "3.14")], n: "Divide both sides by 3.14" },
-        { l: "D", r: [{ a: D }, ` ${u}`], n: "Answer" },
+        { l: { a: q.C }, r: ["3.14 × D"], n: "Substitute" },
+        { l: "D", r: [{ frac: [{ a: q.C }, { a: PI }] }], n: "Get D alone" },
+        { l: "D", r: [{ a: D, ans: 1 }, units], n: "Answer" },
       ];
     } else if (T.f === "C") {
       q.given = useD ? `diameter of ${D} ${u}` : `radius of ${rr} ${u}`;
       q.ask = "C";
       q.rows = [
-        ...(useD ? [] : [{ l: "D", r: [`2 × ${rr} =`, { a: D }], n: "Find the diameter" }]),
+        needRow,
         { l: "C", r: ["πD"], n: "Formula" },
         { l: "C", r: ["3.14 ×", { a: D }], n: "Substitute" },
-        { l: "C", r: [{ a: q.C }, ` ${u}`], n: "Answer" },
+        { l: "C", r: [{ a: q.C, ans: 1 }, units], n: "Answer" },
       ];
     } else {
       q.given = useD ? `diameter of ${D} ${u}` : `radius of ${rr} ${u}`;
       q.ask = "A";
       q.rows = [
-        ...(useD ? [{ l: "r", r: [frac(D, 2), "=", { a: rr }], n: "Find the radius" }] : []),
+        needRow,
         { l: "A", r: ["πr²"], n: "Formula" },
         { l: "A", r: ["3.14 ×", { a: rr, sq: 1 }], n: "Substitute" },
         { l: "A", r: ["3.14 ×", { a: rr * rr }], n: "Square the radius" },
-        { l: "A", r: [{ a: q.A }, ` ${u}²`], n: "Answer" },
+        { l: "A", r: [{ a: q.A, ans: 1 }, units], n: "Answer" },
       ];
     }
     q.blanks = [];
-    q.rows.forEach(w => { if (w.l.b) q.blanks.push({ a: +w.l.b, w }); w.r.forEach(p => { if (typeof p === "object") q.blanks.push(Object.assign(p, { w })); }); });
+    const add = (p, w) => { if (typeof p !== "object") return; if (p.frac) return p.frac.forEach(x => add(x, w)); q.blanks.push(Object.assign(p, { w })); };
+    q.rows.forEach(w => [w.l, ...w.r].forEach(p => add(p, w)));
     q.blanks.forEach((b, i) => b.i = i);
     P.q = q; P.step = 1; P.firstTry = true; P.solved = false; P.counted = false;
     const sentence = T.s.replace("{g}", q.given);
@@ -622,13 +689,18 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   function renderWork() {
     const q = P.q;
+    const part = p => typeof p !== "object" ? p
+      : p.frac ? `<span class="frac"><span>${part(p.frac[0])}</span><span>${part(p.frac[1])}</span></span>`
+      : p.sq ? `<span style="white-space:nowrap">${inputFor(p)}²</span>` : inputFor(p);
     $("pwork").innerHTML = q.rows.map(w => {
-      const lhs = w.l.b !== undefined ? inputFor(q.blanks.find(b => b.w === w && b.a === +w.l.b)) : w.l;
-      const rhs = w.r.map(p => typeof p === "object" ? (p.sq ? `<span style="white-space:nowrap">${inputFor(p)}²</span>` : inputFor(p)) : p).join(" ");
-      return `<span class="lhs${w.l.b ? "" : " k-" + w.l}">${lhs}</span><span>=</span><span class="rhs">${rhs}</span><span class="name">${w.n}</span>`;
+      const lhs = part(w.l), rhs = w.r.map(part).join(" ");
+      return `<span class="lhs${typeof w.l === "object" ? "" : " k-" + w.l}">${lhs}</span><span>=</span><span class="rhs">${rhs}</span><span class="name">${w.n}</span>`;
     }).join("");
   }
-  const inputFor = b => `<input data-b="${b.i}" inputmode="decimal" data-pad="dec" autocomplete="off" aria-label="Answer box">`;
+  const inputFor = b => b.opts ? `<select data-b="${b.i}" aria-label="${b.unit ? "Units" : "Radius or diameter"}"><option value="">?</option>${b.opts.map(o => `<option>${o}</option>`).join("")}</select>`
+    : `<input data-b="${b.i}" inputmode="decimal" data-pad="dec" autocomplete="off" aria-label="Answer box">`;
+  const empty = e => e.value.trim() === "";
+  const right = (e, b) => b.s ? e.value === b.s : val(e) !== null && near(val(e), b.a);
 
   function setSteps() {
     const s1 = $("ps1"), s2 = $("ps2");
@@ -639,25 +711,26 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function drawPractice() {
     stopAnim();
     svg.innerHTML = "";
-    const g = HOME, q = P.q;
-    grid(g, q.r);
+    const q = P.q, g = home(q.r, UP), small = g.R < 110;
+    grid(g);
     const known = P.step >= 2, done = P.solved, u = q.u;
     if (q.ask === "A" && known) el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "fillA" });
     rim(g);
     if (q.rev || (q.ask === "C" && known)) el("circle", { cx: g.cx, cy: g.cy, r: g.R, class: "rimC" });
     if (q.rev) {
-      text(g.cx, g.cy - g.R + 44, `C = ${fmt(q.C)} ${u}`, "lbl C");
+      text(g.cx, g.cy - g.R - 24, `C = ${fmt(q.C)} ${u}`, "lbl C");
       if (known) {
         el("line", { x1: g.cx - g.R, y1: g.cy, x2: g.cx + g.R, y2: g.cy, class: "ln D" });
-        text(g.cx, g.cy + 42, done ? `D = ${q.D} ${u}` : "D = ?", "lbl D");
+        text(g.cx, small ? g.cy + g.R + 30 : g.cy + 42, done ? `D = ${q.D} ${u}` : "D = ?", "lbl D");
       }
     } else if (q.useD) {
       el("line", { x1: g.cx - g.R, y1: g.cy, x2: g.cx + g.R, y2: g.cy, class: "ln D" });
-      text(g.cx, g.cy + 42, `D = ${q.D} ${u}`, "lbl D");
+      text(g.cx, small ? g.cy + g.R + 30 : g.cy + 42, `D = ${q.D} ${u}`, "lbl D");
     } else radius(g, -Math.PI / 5, `r = ${q.r} ${u}`);
-    if (known && q.ask === "C") text(g.cx, g.cy - g.R + 44, done ? `C = ${fmt(q.C)} ${u}` : "C = ?", "lbl C");
-    if (known && q.ask === "A") text(g.cx, g.cy + g.R * .55, done ? `A = ${fmt(q.A)} ${u}²` : "A = ?", "lbl A");
+    if (known && q.ask === "C") text(g.cx, g.cy - g.R - 24, done ? `C = ${fmt(q.C)} ${u}` : "C = ?", "lbl C");
+    if (known && q.ask === "A") text(g.cx, small ? g.cy + g.R + 30 : g.cy + g.R * .55, done ? `A = ${fmt(q.A)} ${u}²` : "A = ?", "lbl A");
     centre(g);
+    legend(UP, u);
     $("caption").textContent = P.step === 1 ? "Read the question. Does it ask for the distance around, or the space inside?"
       : done ? "Solved!" : q.ask === "D" ? "You know the circumference. Work back to the diameter."
       : q.ask === "C" ? "Distance around: the circumference." : "Space inside: the area.";
@@ -686,7 +759,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   const val = inp => { const s = inp.value.trim().replace(",", "."); return s === "" || isNaN(+s) ? null : +s; };
   const near = (a, b) => Math.abs(a - b) < 0.006;
   function why(b, v) {
-    const q = P.q, last = b.i === q.blanks.length - 1;
+    const q = P.q, last = !!b.ans;
+    if (b.need) return q.f === "C" ? "C = πD uses the diameter, D." : "A = πr² uses the radius, r.";
+    if (b.unit) return q.ask === "A" ? "Area covers a surface, so it is in square units." : "This is a length, so it is not in square units.";
+    if (b.needV && q.f === "C" && near(v, q.r)) return "That is the radius. The diameter is 2 radii.";
+    if (b.needV && q.f === "A" && near(v, q.D)) return "That is the diameter. The radius is half the diameter.";
     if (q.ask === "C" && last) {
       if (near(v, PI * q.r)) return "That used the radius. C = πD needs the diameter.";
       if (near(v, q.A)) return "That is the area. This question asks for the distance around.";
@@ -697,13 +774,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       if (near(v, q.C)) return "That is the circumference. This question asks for the space inside.";
     }
     if (q.ask === "A" && b.a === q.r * q.r && near(v, q.r * 2)) return "r² means r × r, not r × 2.";
-    if (q.ask === "C" && b.a === q.D && near(v, q.r) && b.w.n === "Substitute") return "C = πD needs the diameter, not the radius.";
+    if (q.ask === "C" && !b.needV && b.a === q.D && near(v, q.r) && b.w.n === "Substitute") return "C = πD needs the diameter, not the radius.";
     if (q.ask === "D" && last && near(v, q.C * PI)) return "D is the circumference over 3.14. Divide, don't multiply.";
     return null;
   }
   function hintFor(b) {
     const q = P.q, n = b.w.n;
-    if (n === "Find the diameter") return `The diameter is 2 radii: 2 × ${q.r}.`;
+    if (b.need) return "Look at the formula you picked. Which letter is in it, r or D?";
+    if (b.needV) return q.f === "C" ? (q.useD ? "The question gives the diameter." : `The diameter is 2 radii: 2 × ${q.r}.`)
+      : (q.useD ? `The radius is half the diameter: ${q.D} over 2.` : "The question gives the radius.");
+    if (b.unit) return q.ask === "A" ? "Area is in square units." : "A length is not in square units.";
+    if (n === "Get D alone") return b === b.w.r[0].frac[0] ? "The top is the circumference." : "Divide both sides by 3.14.";    if (n === "Find the diameter") return `The diameter is 2 radii: 2 × ${q.r}.`;
     if (n === "Find the radius") return `The radius is half the diameter: ${q.D} over 2.`;
     if (n === "Substitute" && q.ask === "D") return "Put the circumference in for C.";
     if (n === "Substitute" && q.ask === "C") return `Put the diameter in for D. D = ${q.D}.`;
@@ -713,16 +794,16 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     if (q.ask === "C") return `Multiply: 3.14 × ${q.D}.`;
     return `Multiply: 3.14 × ${q.r * q.r}.`;
   }
-  const inputs = () => [...$("pwork").querySelectorAll("input")];
+  const inputs = () => [...$("pwork").querySelectorAll("input, select")];
   function check() {
     if (P.step !== 2 || P.solved) return;
     const q = P.q, fb = $("fb2");
-    let bad = null, empty = null;
+    let bad = null, emptyEl = null;
     inputs().forEach(inp => {
-      const b = q.blanks[+inp.dataset.b], v = val(inp);
+      const b = q.blanks[+inp.dataset.b];
       inp.classList.remove("bad", "ok");
-      if (v === null) { if (!empty) empty = inp; return; }
-      if (near(v, b.a)) inp.classList.add("ok"); else { inp.classList.add("bad"); if (!bad) bad = inp; }
+      if (empty(inp)) { if (!emptyEl) emptyEl = inp; return; }
+      if (right(inp, b)) inp.classList.add("ok"); else { inp.classList.add("bad"); if (!bad) bad = inp; }
     });
     if (bad) {
       P.firstTry = false;
@@ -730,7 +811,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       fb.className = "fb bad"; fb.textContent = why(b, val(bad)) || "Not yet. Check the red box. " + hintFor(b);
       bad.focus(); return;
     }
-    if (empty) { fb.className = "fb tip"; fb.textContent = "Good so far. Fill in the next box."; empty.focus(); return; }
+    if (emptyEl) { fb.className = "fb tip"; fb.textContent = "Good so far. Fill in the next box."; emptyEl.focus(); return; }
     solved();
   }
   function solved() {
@@ -745,10 +826,11 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     drawPractice();
   }
   $("pCheck").addEventListener("click", check);
+  $("pwork").addEventListener("change", e => { if (e.target.tagName === "SELECT") e.target.classList.remove("bad", "ok"); });
   $("pwork").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
   $("pHint").addEventListener("click", () => {
     if (P.step !== 2 || P.solved) return;
-    const q = P.q, inp = inputs().find(i => val(i) === null || !near(val(i), q.blanks[+i.dataset.b].a));
+    const q = P.q, inp = inputs().find(i => !right(i, q.blanks[+i.dataset.b]));
     if (!inp) return check();
     $("fb2").className = "fb tip"; $("fb2").textContent = hintFor(q.blanks[+inp.dataset.b]);
     inp.focus();
@@ -756,13 +838,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   // Show me fills one box at a time, top to bottom.
   $("pShow").addEventListener("click", () => {
     if (P.step !== 2 || P.solved) return;
-    const q = P.q, inp = inputs().find(i => val(i) === null || !near(val(i), q.blanks[+i.dataset.b].a));
+    const q = P.q, inp = inputs().find(i => !right(i, q.blanks[+i.dataset.b]));
     if (!inp) return check();
     P.firstTry = false;
     const b = q.blanks[+inp.dataset.b];
-    inp.value = fmt(b.a); inp.classList.remove("bad"); inp.classList.add("shown");
+    inp.value = b.s ?? fmt(b.a); inp.classList.remove("bad"); inp.classList.add("shown");
     $("fb2").className = "fb tip"; $("fb2").textContent = hintFor(b);
-    if (inputs().every(i => val(i) !== null && near(val(i), q.blanks[+i.dataset.b].a))) solved();
+    if (inputs().every(i => right(i, q.blanks[+i.dataset.b]))) solved();
   });
   $("newQ").addEventListener("click", newQuestion);
 
@@ -1056,7 +1138,8 @@ window.I18N_PAGE = (() => {
     "Area": "Aire",
     "Step {n} of {n}": "Étape {n} sur {n}",
     "Show me": "Montre-moi",
-    "Each grid square is {n} cm by {n} cm.": "Chaque carré de la grille mesure {n} cm sur {n} cm.",
+    "1 square = 1 cm by 1 cm": "1 carré = 1 cm sur 1 cm",
+    "1 square = 1 m by 1 m": "1 carré = 1 m sur 1 m",
     "Why is A = πr²? See Creating the Area Formula →": "Pourquoi A = πr²? Voir Créer la formule de l’aire →",
 
     // Definitions
@@ -1093,6 +1176,38 @@ window.I18N_PAGE = (() => {
     "The area is {n} cm².": "L’aire mesure {n} cm².",
     "Area is in square units.": "L’aire est en unités carrées.",
 
+    "Cut the circle into {n} equal slices.": "Coupe le cercle en {n} parts égales.",
+    "Line the slices up, one pointing up, one pointing down.": "Aligne les parts, une vers le haut, une vers le bas.",
+    "They make a shape like a parallelogram.": "Elles forment une figure semblable à un parallélogramme.",
+    "The base is half the circumference: πr.": "La base est la moitié de la circonférence : πr.",
+    "The height is the radius: r.": "La hauteur est le rayon : r.",
+    "Area of a parallelogram is base × height.": "L’aire d’un parallélogramme est base × hauteur.",
+    "πr × r is πr².": "πr × r donne πr².",
+    "That is the area formula for a circle.": "C’est la formule de l’aire d’un cercle.",
+    "base = half of C = πr": "base = moitié de C = πr",
+    "height = r": "hauteur = r",
+    "Base: half of C": "Base : moitié de C",
+    "Base × height": "Base × hauteur",
+    "What the formula needs": "Ce dont la formule a besoin",
+    "Get D alone": "Isoler D",
+    "Units": "Unités",
+    "Radius or diameter": "Rayon ou diamètre",
+    "C = πD uses the diameter, D.": "C = πD utilise le diamètre, D.",
+    "A = πr² uses the radius, r.": "A = πr² utilise le rayon, r.",
+    "Area covers a surface, so it is in square units.": "L’aire couvre une surface, donc elle est en unités carrées.",
+    "This is a length, so it is not in square units.": "C’est une longueur, donc elle n’est pas en unités carrées.",
+    "That is the radius.": "C’est le rayon.",
+    "The diameter is {n} radii.": "Le diamètre vaut {n} rayons.",
+    "That is the diameter.": "C’est le diamètre.",
+    "The radius is half the diameter.": "Le rayon est la moitié du diamètre.",
+    "Look at the formula you picked.": "Regarde la formule que tu as choisie.",
+    "Which letter is in it, r or D?": "Quelle lettre contient-elle, r ou D?",
+    "The question gives the diameter.": "La question donne le diamètre.",
+    "The question gives the radius.": "La question donne le rayon.",
+    "Area is in square units.": "L’aire est en unités carrées.",
+    "A length is not in square units.": "Une longueur n’est pas en unités carrées.",
+    "The top is the circumference.": "Le haut est la circonférence.",
+    "Divide both sides by {n}.": "Divise les deux côtés par {n}.",
     // Work column
     "Given": "Donnée",
     "Formula": "Formule",
