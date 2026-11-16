@@ -278,7 +278,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   <div class="main">
     <div class="board">
-      <p class="caption" id="caption" aria-live="polite"></p>
+      <div style="display:flex;gap:10px;align-items:flex-start"><p class="caption" id="caption" aria-live="polite" style="flex:1"></p>
+      <button type="button" id="zoom" hidden style="flex:none;font-size:1.1rem;padding:8px 16px">Zoom in</button></div>
       <svg id="bd" viewBox="0 0 1000 620" role="img" aria-label="A circle with its measures"></svg>
     </div>
 
@@ -377,7 +378,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   layout();
 
   const home = (rad, u) => ({ cx: W / 2, cy: H / 2 + 6, R: rad * u, u });
-  const rollStart = () => ({ cx: 30 + r * UR, cy: GROUND - r * UR, R: r * UR, u: UR });
+  // Zoom in: the rolled-out line fills the board for this radius (the grid squares get bigger, still 1 cm each).
+  let zoomed = false;
+  const ur = () => zoomed ? Math.min(10 * UR / r, (GROUND - 40) / (2 * r)) : UR;
+  const rollStart = () => ({ cx: 30 + r * ur(), cy: GROUND - r * ur(), R: r * ur(), u: ur() });
   function grid(g) {
     const u = g.u;
     const ox = g.gx ?? g.cx, oy = g.gy ?? g.cy;
@@ -474,8 +478,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 
   // Circumference rolling out: after rolling a share k of one turn, the orange left on the circle is the rest.
   function rolled(k, showD) {
-    const RR = r * UR, X0 = 30 + RR;
-    const g = { cx: X0 + k * 2 * Math.PI * RR, cy: GROUND - RR, R: RR, u: UR, gx: X0, gy: GROUND };
+    const U = ur(), RR = r * U, X0 = 30 + RR;
+    const g = { cx: X0 + k * 2 * Math.PI * RR, cy: GROUND - RR, R: RR, u: U, gx: X0, gy: GROUND };
     grid(g);
     el("line", { x1: 20, y1: GROUND, x2: W - 20, y2: GROUND, stroke: "var(--grid-major)", "stroke-width": 3 });
     rim(g);
@@ -486,10 +490,10 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     }
     if (k > 0) el("line", { x1: X0, y1: GROUND, x2: g.cx, y2: GROUND, class: "rimC" });
     // Number the grid along the line, in cm, starting where the roll starts.
-    const every = UR >= 24 ? 1 : UR >= 12 ? 2 : 5;
-    for (let n = 0; X0 + n * UR <= W - 20; n += every) {
-      el("line", { x1: X0 + n * UR, y1: GROUND, x2: X0 + n * UR, y2: GROUND + 8, stroke: "var(--ink)", "stroke-width": 2 });
-      text(X0 + n * UR, GROUND + 20, String(n), "num");
+    const every = U >= 24 ? 1 : U >= 12 ? 2 : 5;
+    for (let n = 0; X0 + n * U <= W - 20; n += every) {
+      el("line", { x1: X0 + n * U, y1: GROUND, x2: X0 + n * U, y2: GROUND + 8, stroke: "var(--ink)", "stroke-width": 2 });
+      text(X0 + n * U, GROUND + 20, String(n), "num");
     }
     radius(g, a1, "", "thin");
     centre(g);
@@ -510,7 +514,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       text(g.cx, g.cy - RR - 26, "D", "lbl D");
       text(Math.max(X0 + Math.PI * RR, 170), GROUND - 32, `C ≈ 3.14 × D`, "lbl C");
     }
-    legend(UR, "cm");
+    legend(U, "cm");
   }
 
   // Area: 16 slices of the circle slide into a row, alternating up and down, to make a parallelogram.
@@ -549,6 +553,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     stopAnim();
     svg.innerHTML = "";
     const g = home(r, UH), t = L.t, s = L.step, D = 2 * r, small = g.R < 110;
+    $("zoom").hidden = !(t === "C" && s >= 1 && !$("learnPanel").hidden);
+    $("zoom").textContent = zoomed ? "Zoom out" : "Zoom in";
     if (t === "C" && s >= 1) {
       if (animate && s === 1) {
         tween(700, k => { svg.innerHTML = ""; const h = lerp(home(r, UH), rollStart(), k); grid(h); rim(h); el("circle", { cx: h.cx, cy: h.cy, r: h.R, class: "rimC" }); centre(h); },
@@ -607,6 +613,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
     document.querySelectorAll(".term").forEach(x => x.setAttribute("aria-pressed", x === b));
     showLearn();
   }));
+  $("zoom").addEventListener("click", () => { zoomed = !zoomed; drawLearn(false); });
   $("next").addEventListener("click", () => { if (L.step < steps(L.t).length - 1) { L.step++; showLearn(); } });
   $("back").addEventListener("click", () => { if (L.step > 0) { L.step--; lastRows = 99; showLearn(); } });
   $("rad").addEventListener("input", e => { r = +e.target.value; $("rval").textContent = `r = ${r} cm`; showLearn(false); });
@@ -852,6 +859,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   function setMode(m) {
     document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
     $("learnPanel").hidden = m !== "learn";
+    $("zoom").hidden = true;
     $("practice").hidden = m !== "practice";
     if (m === "learn") showLearn(false);
     else if (!P.q) newQuestion(); else drawPractice();
@@ -1208,6 +1216,8 @@ window.I18N_PAGE = (() => {
     "A length is not in square units.": "Une longueur n’est pas en unités carrées.",
     "The top is the circumference.": "Le haut est la circonférence.",
     "Divide both sides by {n}.": "Divise les deux côtés par {n}.",
+    "Zoom in": "Zoom avant",
+    "Zoom out": "Zoom arrière",
     // Work column
     "Given": "Donnée",
     "Formula": "Formule",
