@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Squares, Cubes and Roots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Colours: side / edge / root = orange, area / volume = green, the shape itself = blue. */
+:root { --sq: #cfe0fb; --sq-line: #6f93d8; --cf: #bcd3f7; --ct: #e3edfd; --cs: #8fb0ea; --ce: #3d5f9e; --ghost: #e4ecf3; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --sq: #24406e; --sq-line: #5f86d4; --cf: #2b4b80; --ct: #3b62a3; --cs: #1d355e; --ce: #9dbaf0; --ghost: #1b2631; }
+}
+:root[data-theme="dark"] { --sq: #24406e; --sq-line: #5f86d4; --cf: #2b4b80; --ct: #3b62a3; --cs: #1d355e; --ce: #9dbaf0; --ghost: #1b2631; }
+
+header .seg-btns { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+header .seg-btns button { border: 0; border-radius: 0; background: var(--sheet); font-family: var(--font-display); font-size: 1.2rem; min-height: 48px; padding: 6px 18px; }
+header .seg-btns button + button { border-left: 2px solid var(--grid-major); }
+header .seg-btns button.on { background: var(--pt); color: var(--sheet); }
+header .switches { display: flex; flex-wrap: wrap; gap: 10px; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 14px; }
+.seg button + button { border-left: 2px solid var(--grid-major); }
+.seg button.on { background: var(--pt); color: var(--sheet); }
+
+/* Board drawing */
+.ghost { fill: none; stroke: var(--ghost); stroke-width: 1.5; }
+.sq { fill: var(--sq); stroke: var(--ce); stroke-width: 3; }
+.cell { stroke: var(--sq-line); stroke-width: 1.5; }
+.f-front { fill: var(--cf); } .f-top { fill: var(--ct); } .f-side { fill: var(--cs); }
+.cube-face { stroke: var(--ce); stroke-width: 1.5; stroke-linejoin: round; }
+.solid { stroke: var(--ce); stroke-width: 3; stroke-linejoin: round; }
+.dim { stroke: var(--orange); stroke-width: 3; }
+.dim-t { fill: var(--orange); font-family: var(--font-num); font-weight: 700; font-size: 34px; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; }
+.cap { fill: var(--green); font-family: var(--font-num); font-weight: 700; font-size: 36px; }
+.cap .w { fill: var(--ink); font-family: var(--font-body); font-size: 30px; font-weight: 700; }
+
+/* Slider card */
+.size-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.size-row output { font-family: var(--font-num); font-weight: 700; font-size: 2.4rem; color: var(--orange); min-width: 2ch; text-align: right; }
+.size-row input[type=range] { height: 40px; accent-color: var(--orange); }
+.chips { display: grid; gap: 5px; margin-top: 12px; }
+.chips button { font-family: var(--font-num); font-size: 1.1rem; min-width: 0; min-height: 44px; padding: 3px 0; background: var(--sheet); color: var(--green); border: 2px solid var(--grid-major); }
+.chips button.past { background: var(--chip); }
+.chips button.on { background: var(--green); color: var(--sheet); border-color: var(--green); }
+
+/* Math lines: one step per line, = signs lined up, step name in the right column. */
+.card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.card-top .label { margin: 0; }
+.hide-btn { font-family: var(--font-display); font-size: 1rem; padding: 8px 14px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.hide-btn:hover { background: var(--sheet); color: var(--pt); }
+.sub { margin: 14px 0 6px; font-weight: 700; color: var(--muted); }
+.sub:first-of-type { margin-top: 4px; }
+.steps { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); align-items: center; column-gap: 12px; row-gap: 6px; font-family: var(--font-num); font-size: 1.7rem; font-weight: 700; }
+.steps .l { justify-self: end; font-family: var(--font-body); font-size: 1.15rem; }
+.steps .why { font-family: var(--font-body); font-size: 0.95rem; font-weight: 400; color: var(--muted); justify-self: end; text-align: right; }
+.steps .new { animation: pop .35s ease-out; }
+@keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.o { color: var(--orange); } .g { color: var(--green); } .q { color: var(--muted); font-style: italic; }
+sup { font-size: 0.6em; vertical-align: 0.75em; line-height: 0; }
+/* Radical: √ with a bar over the number; a cube root has a small 3 in the notch. */
+.rad { display: inline-block; position: relative; white-space: nowrap; padding: 6px 4px 0 0.72em; line-height: 1.15; }
+.rad svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.rad svg line { stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.rad .ri { position: absolute; left: 0.02em; top: 0.05em; font-size: 0.45em; line-height: 1; }
+
+/* Practice */
+.p-task { margin: 0 0 12px; font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
+.p-entry { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-family: var(--font-num); font-size: 2.2rem; font-weight: 700; }
+.p-entry input { width: 4.5ch; font-family: var(--font-num); font-size: 2.2rem; font-weight: 700; text-align: center; padding: 2px 6px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.p-unit { font-family: var(--font-body); font-size: 1.1rem; font-weight: 700; color: var(--muted); }
+.go { font-family: var(--font-display); font-size: 1.15rem; padding: 10px 22px; min-height: 48px; background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.go:hover { background: var(--sheet); color: var(--pt); }
+.p-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.p-btns button { font-size: 1.05rem; min-height: 46px; padding: 8px 16px; }
+.p-btns button:disabled { opacity: 0.45; cursor: default; }
+.solved { margin-left: auto; font-weight: 700; color: var(--muted); }
+.solved b { font-family: var(--font-num); color: var(--ink); font-size: 1.3rem; }
+.verdict.ok .pill { color: var(--green); } .verdict.no .pill { color: var(--warn); }
+.verdict p { font-size: 1.1rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Squares, Cubes and Roots</h1></div>
+    <div class="switches">
+      <div class="seg-btns" id="shape" role="group" aria-label="Shape">
+        <button type="button" data-v="sq" class="on" aria-pressed="true">Square</button><button type="button" data-v="cu" aria-pressed="false">Cube</button>
+      </div>
+      <div class="seg-btns" id="mode" role="group" aria-label="Mode">
+        <button type="button" data-v="learn" class="on" aria-pressed="true">Learning</button><button type="button" data-v="practice" aria-pressed="false">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board">
+      <svg id="pic" viewBox="0 0 640 620" role="img" aria-label="Square made of unit squares"></svg>
+    </div>
+
+    <!-- Learning: one slider grows the shape; the panel links the picture, the power and the root. -->
+    <div class="panel" id="learnPanel">
+      <section class="card">
+        <p class="label" id="sizeLbl">Side length</p>
+        <div class="size-row">
+          <input type="range" id="size" min="1" max="12" step="1" value="4" aria-label="Side length">
+          <output id="sizeOut">4</output>
+        </div>
+        <p class="sub" id="chipsLbl">Perfect squares</p>
+        <div class="chips" id="chips"></div>
+      </section>
+      <section class="card" aria-live="polite">
+        <div class="card-top"><p class="label" id="mathLbl">Square it, then undo it</p>
+          <button type="button" class="hide-btn" id="hideBtn" aria-pressed="false">Hide answers</button></div>
+        <p class="sub" id="fwdLbl">From side length to area</p>
+        <div class="steps" id="fwd"></div>
+        <p class="sub" id="backLbl">From area back to side length</p>
+        <div class="steps" id="back"></div>
+      </section>
+    </div>
+
+    <!-- Practice: a shape asks for its area / volume, or an area / volume asks for its root. -->
+    <div class="panel" id="practicePanel" hidden>
+      <section class="card">
+        <div class="seg" id="dir" role="group" aria-label="Question type">
+          <button type="button" data-v="up">Find the area</button><button type="button" data-v="down">Find the side</button><button type="button" data-v="mix" class="on">Mix</button>
+        </div>
+      </section>
+      <section class="card">
+        <p class="p-task" id="pTask"></p>
+        <div class="p-entry"><span id="pLeft"></span><span>=</span>
+          <input id="pIn" type="text" inputmode="numeric" autocomplete="off" data-pad aria-label="Your answer">
+          <span class="p-unit" id="pUnit"></span>
+          <button type="button" id="pCheck" class="go">Check</button></div>
+        <div class="verdict" id="pFb" aria-live="polite" hidden><span class="pill" id="pPill"></span><p id="pNote"></p></div>
+        <div class="p-btns">
+          <button type="button" id="pShow">Show me</button>
+          <button type="button" id="pNew">New question</button>
+          <span class="solved">Solved: <b id="pSolved">0</b></span>
+        </div>
+      </section>
+      <section class="card" id="pStepsCard" hidden>
+        <p class="label">Show me</p>
+        <div class="steps" id="pSteps" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
+})();
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("pic");
+  const MAX = { sq: 12, cu: 5 };          // curriculum: perfect squares within 144, perfect cubes within 125
+  const size = { sq: 4, cu: 3 };          // remembered per shape
+  let shape = "sq", mode = "learn", hidden = false;
+  const pow = (n, s) => s === "sq" ? n * n : n * n * n;
+
+  // ---------- small builders ----------
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  function text(x, y, str, cls, anchor, parent) {
+    const t = el("text", { x, y, class: cls, "text-anchor": anchor || "middle" }, parent);
+    t.textContent = str;
+    return t;
+  }
+  // Dimension line beside an edge (a to b), pushed out by (ox, oy), with the number at its middle.
+  function dim(ax, ay, bx, by, ox, oy, label, lx, ly, anchor) {
+    const tick = 9, len = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / len * tick, ny = (bx - ax) / len * tick;
+    const A = [ax + ox, ay + oy], B = [bx + ox, by + oy];
+    el("line", { x1: A[0], y1: A[1], x2: B[0], y2: B[1], class: "dim" });
+    for (const P of [A, B]) el("line", { x1: P[0] - nx, y1: P[1] - ny, x2: P[0] + nx, y2: P[1] + ny, class: "dim" });
+    text((A[0] + B[0]) / 2 + lx, (A[1] + B[1]) / 2 + ly, label, "dim-t", anchor);
+  }
+  const sup = (b, e) => `${b}<sup>${e}</sup>`;
+  // Radical drawn as one connected line: lead-in, down stroke, up stroke, then the bar over the number.
+  const rad = (s, v) => `<span class="rad"><svg aria-hidden="true"><line x1="0.02em" y1="62%" x2="0.16em" y2="55%"/><line x1="0.16em" y1="55%" x2="0.34em" y2="96%"/><line x1="0.34em" y1="96%" x2="0.62em" y2="1.5"/><line x1="0.62em" y1="1.5" x2="100%" y2="1.5"/></svg>${s === "cu" ? '<span class="ri">3</span>' : ""}${v}</span>`;
+  const times = (n, s) => s === "sq" ? `${n} × ${n}` : `${n} × ${n} × ${n}`;
+
+  // ---------- the picture ----------
+  // Fixed scale: the shape really grows as the slider moves. Anchored bottom-left.
+  const SQ = { x0: 80, y0: 555, u: 475 / MAX.sq };
+  const CU = { x0: 90, y0: 555, u: 70 };
+  CU.d = CU.u * 0.42; // depth step (drawn up and to the right)
+
+  // opts: grid (show unit lines), side (label text), cap (caption parts) , ghost (faint max frame)
+  function drawSquare(n, o) {
+    const { x0, y0, u } = SQ, s = n * u;
+    if (o.ghost) for (let i = 0; i <= MAX.sq; i++) {
+      el("line", { x1: x0 + i * u, y1: y0, x2: x0 + i * u, y2: y0 - MAX.sq * u, class: "ghost" });
+      el("line", { x1: x0, y1: y0 - i * u, x2: x0 + MAX.sq * u, y2: y0 - i * u, class: "ghost" });
+    }
+    el("rect", { x: x0, y: y0 - s, width: s, height: s, class: "sq" });
+    if (o.grid) for (let i = 1; i < n; i++) {
+      el("line", { x1: x0 + i * u, y1: y0, x2: x0 + i * u, y2: y0 - s, class: "cell" });
+      el("line", { x1: x0, y1: y0 - i * u, x2: x0 + s, y2: y0 - i * u, class: "cell" });
+    }
+    el("rect", { x: x0, y: y0 - s, width: s, height: s, class: "sq", "fill-opacity": 0 });
+    dim(x0, y0, x0 + s, y0, 0, 16, o.side, 0, 34);                 // bottom
+    dim(x0, y0 - s, x0, y0, -16, 0, o.side, -12, 12, "end");              // left
+    if (o.cap) caption(o.cap, Math.max(190, x0 + s / 2), Math.max(44, y0 - s - 24));
+  }
+  function P(x, y, z) { return [CU.x0 + x * CU.u + z * CU.d, CU.y0 - y * CU.u - z * CU.d]; }
+  function poly(pts, cls) { el("polygon", { points: pts.map(p => p.join(",")).join(" "), class: cls }); }
+  function drawCube(n, o) {
+    if (o.grid) {
+      // Painter's order: back to front, bottom to top, left to right.
+      for (let k = n - 1; k >= 0; k--) for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+        // Only faces on the outside can be seen.
+        if (k === 0) poly([P(i, j, k), P(i + 1, j, k), P(i + 1, j + 1, k), P(i, j + 1, k)], "cube-face f-front");
+        if (j === n - 1) poly([P(i, j + 1, k), P(i + 1, j + 1, k), P(i + 1, j + 1, k + 1), P(i, j + 1, k + 1)], "cube-face f-top");
+        if (i === n - 1) poly([P(i + 1, j, k), P(i + 1, j, k + 1), P(i + 1, j + 1, k + 1), P(i + 1, j + 1, k)], "cube-face f-side");
+      }
+    }
+    // Whole-cube outline: filled faces when there are no unit cubes, just the edges when there are.
+    el("polygon", { points: [P(0, 0, 0), P(n, 0, 0), P(n, n, 0), P(0, n, 0)].join(" "), class: "solid" + (o.grid ? "" : " f-front"), ...(o.grid ? { fill: "none" } : {}) });
+    el("polygon", { points: [P(0, n, 0), P(n, n, 0), P(n, n, n), P(0, n, n)].join(" "), class: "solid" + (o.grid ? "" : " f-top"), ...(o.grid ? { fill: "none" } : {}) });
+    el("polygon", { points: [P(n, 0, 0), P(n, 0, n), P(n, n, n), P(n, n, 0)].join(" "), class: "solid" + (o.grid ? "" : " f-side"), ...(o.grid ? { fill: "none" } : {}) });
+    const [ax, ay] = P(0, 0, 0), [bx, by] = P(n, 0, 0), [cx, cy] = P(n, 0, n), [tx, ty] = P(0, n, 0);
+    dim(ax, ay, bx, by, 0, 16, o.side, 0, 34);                     // front bottom edge
+    dim(tx, ty, ax, ay, -16, 0, o.side, -12, 12, "end");                  // front left edge
+    dim(bx, by, cx, cy, 13, 13, o.side, 26, 22);                   // depth edge
+    if (o.cap) caption(o.cap, Math.max(190, (P(0, n, n)[0] + P(n, n, n)[0]) / 2), Math.max(44, P(0, n, n)[1] - 24));
+  }
+  // Caption: [word, value] e.g. ["Area", "16"]
+  function caption([word, val], x, y) {
+    const t = el("text", { x, y, class: "cap", "text-anchor": "middle" });
+    const w = document.createElementNS(NS, "tspan"); w.setAttribute("class", "w"); w.textContent = word + " = ";
+    const v = document.createElementNS(NS, "tspan"); v.textContent = val;
+    t.append(w, v);
+  }
+
+  // ---------- Learning ----------
+  function words(s) {
+    return s === "sq"
+      ? { size: "Side length", chips: "Perfect squares", math: "Square it, then undo it", fwd: "From side length to area", back: "From area back to side length",
+          big: "Area", small: "Side", unit: "square units" }
+      : { size: "Edge length", chips: "Perfect cubes", math: "Cube it, then undo it", fwd: "From edge length to volume", back: "From volume back to edge length",
+          big: "Volume", small: "Edge", unit: "cubic units" };
+  }
+  // rows: [left word or "", right html, why]
+  function rows(box, list, fresh) {
+    box.replaceChildren();
+    list.forEach((r, i) => {
+      const l = document.createElement("span"); l.className = "l"; l.textContent = r[0];
+      const eq = document.createElement("span"); eq.textContent = "=";
+      const v = document.createElement("span"); v.innerHTML = r[1];
+      const w = document.createElement("span"); w.className = "why"; w.textContent = r[2];
+      if (fresh && i === list.length - 1) [l, eq, v, w].forEach(x => x.classList.add("new"));
+      box.append(l, eq, v, w);
+    });
+  }
+  function renderLearn() {
+    const n = size[shape], v = pow(n, shape), W = words(shape);
+    $("sizeLbl").textContent = W.size; $("size").setAttribute("aria-label", W.size);
+    $("chipsLbl").textContent = W.chips; $("mathLbl").textContent = W.math;
+    $("fwdLbl").textContent = W.fwd; $("backLbl").textContent = W.back;
+    $("size").max = MAX[shape]; $("size").value = n; $("sizeOut").textContent = n;
+
+    // Chips: every perfect square / cube; the ones the shape has already grown through are shaded.
+    const chips = $("chips"); chips.replaceChildren();
+    chips.style.gridTemplateColumns = `repeat(${MAX[shape]}, minmax(0, ${shape === "sq" ? "1fr" : "70px"}))`;
+    for (let k = 1; k <= MAX[shape]; k++) {
+      const b = document.createElement("button"); b.type = "button";
+      b.textContent = hidden && k === n ? "?" : pow(k, shape);
+      b.className = k === n ? "on" : k < n ? "past" : "";
+      b.setAttribute("aria-label", `${pow(k, shape)}`);
+      b.onclick = () => { size[shape] = k; renderLearn(); };
+      chips.append(b);
+    }
+
+    const ans = x => hidden ? `<span class="q">?</span>` : x;
+    const exp = shape === "sq" ? 2 : 3;
+    rows($("fwd"), [
+      [W.big, `<span class="o">${times(n, shape)}</span>`, shape === "sq" ? "side × side" : "edge × edge × edge"],
+      ["", `<span class="o">${sup(n, exp)}</span>`, `base ${n}, exponent ${exp}`],
+      ["", `<span class="g">${ans(v)}</span>`, hidden ? "" : (shape === "sq" ? "a perfect square" : "a perfect cube")],
+    ]);
+    rows($("back"), [
+      [W.small, `<span class="g">${rad(shape, v)}</span>`, shape === "sq" ? "square root" : "cube root"],
+      ["", `<span class="o">${ans(n)}</span>`, hidden ? "" : `because ${times(n, shape)} = ${v}`],
+    ]);
+
+    svg.replaceChildren();
+    const o = { grid: true, ghost: true, side: String(n) };
+    if (shape === "sq") drawSquare(n, o); else drawCube(n, o);
+    svg.setAttribute("aria-label", shape === "sq" ? `Square made of ${v} unit squares, ${n} on each side` : `Cube made of ${v} unit cubes, ${n} on each edge`);
+  }
+  $("size").addEventListener("input", e => { size[shape] = +e.target.value; renderLearn(); });
+  $("hideBtn").addEventListener("click", () => {
+    hidden = !hidden;
+    $("hideBtn").textContent = hidden ? "Show answers" : "Hide answers";
+    $("hideBtn").setAttribute("aria-pressed", String(hidden));
+    renderLearn();
+  });
+
+  // ---------- Practice ----------
+  let dir = "mix", q = null, step = 0, solved = 0, done = false;
+  function newQ() {
+    const max = MAX[shape];
+    let n, d;
+    do { n = 1 + Math.floor(Math.random() * max); d = dir === "mix" ? (Math.random() < 0.5 ? "up" : "down") : dir; }
+    while (q && q.shape === shape && n === q.n && max > 1);
+    if (n === 1 && Math.random() < 0.6) n = 2 + Math.floor(Math.random() * (max - 1)); // 1 only now and then
+    q = { shape, n, d, v: pow(n, shape) };
+    step = 0; done = false;
+    $("pIn").value = ""; $("pFb").hidden = true; $("pStepsCard").hidden = true;
+    $("pShow").textContent = "Show me"; $("pShow").disabled = false;
+    renderPractice();
+  }
+  function renderPractice() {
+    const { n, d, v } = q, W = words(q.shape), sq = q.shape === "sq";
+    const exp = sq ? 2 : 3;
+    if (d === "up") {
+      $("pTask").textContent = sq ? "What is the area of this square?" : "What is the volume of this cube?";
+      $("pLeft").innerHTML = `<span class="o">${sup(n, exp)}</span>`;
+      $("pUnit").textContent = W.unit;
+    } else {
+      $("pTask").textContent = sq ? "What is the side length of this square?" : "What is the edge length of this cube?";
+      $("pLeft").innerHTML = `<span class="g">${rad(q.shape, v)}</span>`;
+      $("pUnit").textContent = "units";
+    }
+    // Picture: solid shape until Show me draws the unit squares / cubes.
+    svg.replaceChildren();
+    const o = {
+      grid: step > 0, ghost: false,
+      side: d === "up" || step >= 3 || done ? String(n) : "?",
+      cap: [W.big, d === "up" && !(step >= 3 || done) ? "?" : String(v)],
+    };
+    if (sq) drawSquare(n, o); else drawCube(n, o);
+    svg.setAttribute("aria-label", sq ? "A square" : "A cube");
+
+    // Show me steps, one line at a time.
+    const all = d === "up" ? [
+      [W.big, `<span class="o">${sup(n, exp)}</span>`, `${n} ${sq ? "squared" : "cubed"}`],
+      ["", `<span class="o">${times(n, q.shape)}</span>`, sq ? "side × side" : "edge × edge × edge"],
+      ["", `<span class="g">${v}</span>`, sq ? "count the unit squares" : "count the unit cubes"],
+    ] : [
+      [W.small, `<span class="g">${rad(q.shape, v)}</span>`, sq ? "what number times itself makes " + v + "?" : "what number used 3 times makes " + v + "?"],
+      ["", `<span class="o">${times(n, q.shape)}</span>`, `this makes ${v}`],
+      ["", `<span class="o">${n}</span>`, sq ? "the side length" : "the edge length"],
+    ];
+    $("pStepsCard").hidden = step === 0;
+    rows($("pSteps"), all.slice(0, step), true);
+  }
+  function check() {
+    if (done) return;
+    const raw = $("pIn").value.trim().replace(/\s/g, "");
+    const fb = $("pFb"), pill = $("pPill"), note = $("pNote");
+    fb.hidden = false;
+    if (!/^\d+$/.test(raw)) { fb.className = "verdict no"; pill.textContent = "Try again"; note.textContent = "Type a whole number first."; return; }
+    const a = +raw, { n, v, d } = q, sq = q.shape === "sq";
+    if ((d === "up" && a === v) || (d === "down" && a === n)) {
+      fb.className = "verdict ok"; pill.textContent = "Correct";
+      note.textContent = `Yes! ${times(n, q.shape)} = ${v}.`;
+      if (step < 3) solved++;
+      $("pSolved").textContent = solved;
+      done = true; step = 3; $("pShow").disabled = true; renderPractice();
+      return;
+    }
+    fb.className = "verdict no"; pill.textContent = "Not yet";
+    if (d === "up") {
+      if (a === n * exp(q)) note.textContent = sq ? `That is ${n} × 2. Squaring means ${n} × ${n}.` : `That is ${n} × 3. Cubing means ${n} × ${n} × ${n}.`;
+      else if (!sq && a === n * n) note.textContent = `That is ${n} × ${n}. A cube needs one more: ${n} × ${n} × ${n}.`;
+      else note.textContent = sq ? `Not quite. Multiply ${n} × ${n}.` : `Not quite. Multiply ${n} × ${n} × ${n}.`;
+    } else {
+      const g = pow(a, q.shape);
+      note.textContent = `${times(a, q.shape)} = ${g}, not ${v}.` + (g > v ? " Try a smaller number." : " Try a bigger number.");
+    }
+  }
+  const exp = qq => qq.shape === "sq" ? 2 : 3;
+  $("pCheck").addEventListener("click", check);
+  $("pIn").addEventListener("keydown", e => { if (e.key === "Enter") check(); });
+  $("pShow").addEventListener("click", () => {
+    if (step < 3) step++;
+    $("pShow").textContent = step < 3 ? "Next step" : "Show me";
+    if (step >= 3) { done = true; $("pShow").disabled = true; }
+    renderPractice();
+  });
+  $("pNew").addEventListener("click", newQ);
+  $("dir").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    dir = b.dataset.v; setDirLabels(); newQ();
+  });
+  function setDirLabels() {
+    const btns = $("dir").querySelectorAll("button");
+    btns[0].textContent = shape === "sq" ? "Find the area" : "Find the volume";
+    btns[1].textContent = shape === "sq" ? "Find the side" : "Find the edge";
+    btns.forEach(b => { const on = b.dataset.v === dir; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+  }
+
+  // ---------- switches ----------
+  function setSeg(id, v) {
+    $(id).querySelectorAll("button").forEach(x => { const on = x.dataset.v === v; x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); });
+  }
+  function render() {
+    $("learnPanel").hidden = mode !== "learn";
+    $("practicePanel").hidden = mode !== "practice";
+    if (mode === "learn") renderLearn();
+    else { setDirLabels(); if (!q || q.shape !== shape) newQ(); else renderPractice(); }
+  }
+  $("shape").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.v === shape) return; shape = b.dataset.v; setSeg("shape", shape); render(); });
+  $("mode").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.v === mode) return; mode = b.dataset.v; setSeg("mode", mode); render(); });
+  render();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Squares, Cubes and Roots (squarecube.html). */
+window.I18N_PAGE = {
+ "Squares, Cubes and Roots": "Carrés, cubes et racines",
+ "Square": "Carré",
+ "Cube": "Cube",
+ "Shape": "Forme",
+ "Side length": "Longueur du côté",
+ "Edge length": "Longueur de l’arête",
+ "Perfect squares": "Carrés parfaits",
+ "Perfect cubes": "Cubes parfaits",
+ "Square it, then undo it": "Élève au carré, puis défais-le",
+ "Cube it, then undo it": "Élève au cube, puis défais-le",
+ "From side length to area": "De la longueur du côté à l’aire",
+ "From area back to side length": "De l’aire à la longueur du côté",
+ "From edge length to volume": "De la longueur de l’arête au volume",
+ "From volume back to edge length": "Du volume à la longueur de l’arête",
+ "Hide answers": "Masquer les réponses",
+ "Show answers": "Afficher les réponses",
+ "Area": "Aire",
+ "Side": "Côté",
+ "Volume": "Volume",
+ "Edge": "Arête",
+ "Area =": "Aire =",
+ "Volume =": "Volume =",
+ "side × side": "côté × côté",
+ "edge × edge × edge": "arête × arête × arête",
+ "base {n}, exponent {n}": "base {n}, exposant {n}",
+ "a perfect square": "un carré parfait",
+ "a perfect cube": "un cube parfait",
+ "square root": "racine carrée",
+ "cube root": "racine cubique",
+ "because {n} × {n} = {n}": "car {n} × {n} = {n}",
+ "because {n} × {n} × {n} = {n}": "car {n} × {n} × {n} = {n}",
+ "~Square made of (\\d+) unit squares, (\\d+) on each side": "Carré formé de $1 carrés-unités, $2 de chaque côté",
+ "~Cube made of (\\d+) unit cubes, (\\d+) on each edge": "Cube formé de $1 cubes-unités, $2 sur chaque arête",
+ "Square made of unit squares": "Carré formé de carrés-unités",
+ "A square": "Un carré",
+ "A cube": "Un cube",
+ /* Practice */
+ "Question type": "Type de question",
+ "Find the area": "Trouve l’aire",
+ "Find the side": "Trouve le côté",
+ "Find the volume": "Trouve le volume",
+ "Find the edge": "Trouve l’arête",
+ "Mix": "Mélange",
+ "Learning": "Apprentissage",
+ "Mode": "Mode",
+ "What is the area of this square?": "Quelle est l’aire de ce carré?",
+ "What is the volume of this cube?": "Quel est le volume de ce cube?",
+ "What is the side length of this square?": "Quelle est la longueur du côté de ce carré?",
+ "What is the edge length of this cube?": "Quelle est la longueur de l’arête de ce cube?",
+ "square units": "unités carrées",
+ "cubic units": "unités cubes",
+ "units": "unités",
+ "Your answer": "Ta réponse",
+ "Show me": "Montre-moi",
+ "Solved: {0}": "Réussis : {0}",
+ "Correct": "Bravo",
+ "Not yet": "Pas encore",
+ "Try again": "Essaie encore",
+ "Type a whole number first.": "Écris d’abord un nombre entier.",
+ "Yes! {n} × {n} = {n}.": "Oui! {n} × {n} = {n}.",
+ "Yes! {n} × {n} × {n} = {n}.": "Oui! {n} × {n} × {n} = {n}.",
+ "That is {n} × {n}. Squaring means {n} × {n}.": "C’est {n} × {n}. Élever au carré, c’est {n} × {n}.",
+ "That is {n} × {n}. Cubing means {n} × {n} × {n}.": "C’est {n} × {n}. Élever au cube, c’est {n} × {n} × {n}.",
+ "That is {n} × {n}. A cube needs one more: {n} × {n} × {n}.": "C’est {n} × {n}. Un cube en demande un de plus : {n} × {n} × {n}.",
+ "Not quite. Multiply {n} × {n}.": "Pas tout à fait. Multiplie {n} × {n}.",
+ "Not quite. Multiply {n} × {n} × {n}.": "Pas tout à fait. Multiplie {n} × {n} × {n}.",
+ "{n} × {n} = {n}, not {n}.": "{n} × {n} = {n}, pas {n}.",
+ "{n} × {n} × {n} = {n}, not {n}.": "{n} × {n} × {n} = {n}, pas {n}.",
+ "Try a smaller number.": "Essaie un plus petit nombre.",
+ "Try a bigger number.": "Essaie un plus grand nombre.",
+ "{n} squared": "{n} au carré",
+ "{n} cubed": "{n} au cube",
+ "count the unit squares": "compte les carrés-unités",
+ "count the unit cubes": "compte les cubes-unités",
+ "what number times itself makes {n}?": "quel nombre multiplié par lui-même donne {n}?",
+ "what number used 3 times makes {n}?": "quel nombre utilisé 3 fois donne {n}?",
+ "this makes {n}": "cela donne {n}",
+ "the side length": "la longueur du côté",
+ "the edge length": "la longueur de l’arête"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
