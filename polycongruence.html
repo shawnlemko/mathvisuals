@@ -1,0 +1,1709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Congruent Polygons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+:root { --purple: #7a3fc4; --purple-fill: rgba(122, 63, 196, 0.13); --blue-fill: rgba(47, 95, 208, 0.13); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --purple: #b98cff; --purple-fill: rgba(185, 140, 255, 0.16); --blue-fill: rgba(122, 162, 255, 0.16); } }
+:root[data-theme="dark"] { --purple: #b98cff; --purple-fill: rgba(185, 140, 255, 0.16); --blue-fill: rgba(122, 162, 255, 0.16); }
+[hidden] { display: none !important; }
+h1 .m { color: var(--purple); }
+.c-purple { color: var(--purple); font-weight: 700; }
+.c-blue { color: var(--pt); font-weight: 700; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; font-size: 1.05rem; padding: 10px 18px; }
+.seg button:first-child { border-radius: 10px 0 0 10px; }
+.seg button:last-child { border-radius: 0 10px 10px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.grade { display: inline-flex; align-items: center; gap: 8px; }
+.grade > span { font-weight: 700; font-size: 1.05rem; }
+.grade .seg button { font-family: var(--font-num); font-weight: 700; font-size: 1.15rem; padding: 9px 16px; }
+#levelSeg button[aria-pressed="true"] { background: var(--pt); border-color: var(--pt); }
+.lvl { display: flex; } .lvl button { flex: 1; }
+section[data-view] { display: flex; flex-direction: column; gap: 10px; }
+#pfbcard:has(.fb:empty):has(.work:empty) { display: none; }
+.main { grid-template-columns: minmax(0, 1.5fr) minmax(360px, 0.9fr); gap: 16px; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+.panel { gap: 10px; }
+.panel .card { padding: 12px 16px; }
+.panel .label { margin: 0 0 6px; }
+.goal { margin: 0; font-size: 1.15rem; line-height: 1.4; }
+.small { margin: 6px 0 0; color: var(--muted); font-size: 0.98rem; line-height: 1.35; }
+/* Buttons */
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.row + .row { margin-top: 8px; }
+.big { font-size: 1.15rem; padding: 12px 16px; border-radius: 10px; }
+.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); }
+.go:hover { background: var(--sheet); color: var(--pt); }
+button:disabled { opacity: 0.45; cursor: default; }
+.move { flex: 1 1 0; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; font-size: 1.05rem; padding: 10px 8px; border-radius: 10px; }
+.move .ic { font-size: 1.9rem; line-height: 1; color: var(--pt); }
+/* Feedback */
+.fb { margin: 0; font-size: 1.15rem; font-weight: 700; line-height: 1.35; min-height: 1.4em; }
+.fb:empty { display: none; }
+.fb.ok { color: var(--green); }
+.fb.no { color: var(--warn); }
+.fb .plain { font-weight: 400; color: var(--ink); }
+/* Notation */
+.ov { text-decoration: overline; text-decoration-thickness: 2px; }
+.nota { font-family: var(--font-num); font-weight: 700; }
+.q { font-family: var(--font-num); font-weight: 700; font-size: 2.3rem; line-height: 1.15; display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; }
+.q .A { color: var(--purple); } .q .B { color: var(--pt); }
+.match { font-family: var(--font-num); font-weight: 700; font-size: 2rem; line-height: 1.2; }
+.match .A { color: var(--purple); } .match .B { color: var(--pt); }
+.meas { font-family: var(--font-num); font-size: 1.25rem; margin: 6px 0 0; }
+.stmt { font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; }
+.stmt .A { color: var(--purple); } .stmt .B { color: var(--pt); }
+.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.choices button { font-family: var(--font-num); font-size: 1.6rem; padding: 10px 6px; border-radius: 10px; }
+.choices.wide { grid-template-columns: 1fr; }
+.choices button.right { background: var(--green); color: var(--sheet); border-color: var(--green); }
+.choices button.wrong { border: 2px solid var(--warn); color: var(--warn); }
+/* Answer box */
+.ans { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-weight: 700; font-size: 1.7rem; }
+.ans input { font: inherit; width: 4.2em; padding: 6px 10px; border: 2px solid var(--grid-major); border-radius: 10px; background: var(--sheet); color: var(--ink); text-align: center; }
+.ans input.ok { border-color: var(--green); }
+.ans input.no { border-color: var(--warn); }
+.ans button { font-family: var(--font-body); font-size: 1.15rem; padding: 10px 16px; }
+/* Worked steps: one line per step, = signs lined up, step names on the right */
+.work { display: grid; grid-template-columns: auto auto auto 1fr; gap: 6px 10px; align-items: center; font-family: var(--font-num); font-size: 1.25rem; margin-top: 8px; }
+.work .l { text-align: right; } .work .r { text-align: left; }
+.work .why { font-family: var(--font-body); font-size: 0.88rem; line-height: 1.2; color: var(--muted); padding-left: 10px; border-left: 2px solid var(--grid); }
+.work .frac { vertical-align: middle; }
+.perim { display: grid; grid-template-columns: auto auto 1fr; gap: 4px 10px; font-family: var(--font-num); font-size: 1.2rem; align-items: center; }
+.perim .nm { font-weight: 700; }
+.score { margin: 0; color: var(--muted); font-size: 1rem; }
+/* Board drawing */
+#svg text { font-family: var(--font-num); font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 6px; stroke-linejoin: round; pointer-events: none; }
+.polyA { fill: var(--purple-fill); stroke: var(--purple); stroke-width: 5; stroke-linejoin: round; }
+.polyB { fill: var(--blue-fill); stroke: var(--pt); stroke-width: 5; stroke-linejoin: round; }
+.polyB.top { fill: rgba(47, 95, 208, 0.05); stroke-dasharray: 14 8; }
+.polyB.fit { stroke: var(--green); fill: rgba(31, 122, 90, 0.18); stroke-dasharray: none; }
+.ghost { fill: none; stroke: var(--muted); stroke-width: 3; stroke-dasharray: 8 8; }
+.vletter { font-size: 34px; }
+.vletter.A { fill: var(--purple); } .vletter.B { fill: var(--pt); }
+.mlabel { font-size: 29px; fill: var(--ink); }
+.mlabel.ask { fill: var(--orange); }
+.mlabel.long { font-size: 25px; }
+.mark { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.hl-side { stroke: var(--orange); stroke-width: 12; stroke-linecap: round; opacity: 0; fill: none; pointer-events: none; }
+.hl-ang { fill: var(--orange); opacity: 0; pointer-events: none; }
+.hl-side.on { opacity: 1; } .hl-ang.on { opacity: 0.55; }
+.hl-side.good { stroke: var(--green); opacity: 1; } .hl-ang.good { fill: var(--green); opacity: 0.55; }
+.hl-side.bad { stroke: var(--warn); opacity: 1; } .hl-ang.bad { fill: var(--warn); opacity: 0.5; }
+.hit { fill: transparent; stroke: transparent; cursor: pointer; }
+.hit.side { stroke-width: 30; fill: none; stroke-linecap: round; }
+.hit:hover + .hov, .hov.on { opacity: 0.35; }
+.hov { opacity: 0; pointer-events: none; }
+.hov.side { stroke: var(--orange); stroke-width: 12; stroke-linecap: round; fill: none; }
+.hov.ang { fill: var(--orange); }
+.corner { fill: var(--orange); stroke: var(--sheet); stroke-width: 3; }
+.cellname { font-size: 26px; fill: var(--muted); }
+.opt { fill: var(--sheet); stroke: var(--grid-major); stroke-width: 3; cursor: pointer; }
+.opt:hover { stroke: var(--pt); }
+.opt.right { stroke: var(--green); stroke-width: 6; }
+.opt.wrong { stroke: var(--warn); stroke-width: 6; }
+.optname { font-size: 34px; fill: var(--ink); }
+.target { fill: none; stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 6 6; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+    <h1>Congruent <span class="m">Polygons</span></h1></div>
+    <div class="tools">
+      <div class="grade"><span>Grade</span><div class="seg" id="gradeSeg" role="group" aria-label="Grade">
+        <button type="button" data-grade="6" aria-pressed="true">6</button>
+        <button type="button" data-grade="7" aria-pressed="false">7</button>
+      </div></div>
+      <div class="seg" id="modeSeg" role="group" aria-label="Mode">
+        <button type="button" data-mode="learn" aria-pressed="true">Learn</button>
+        <button type="button" data-mode="practice" aria-pressed="false">Practice</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="board"><svg id="svg" viewBox="0 0 1200 720" role="img" aria-label="Two polygons"></svg></div>
+
+    <div class="panel">
+      <!-- Grade 6 Learn -->
+      <section data-view="g6learn" hidden>
+        <div class="card">
+          <p class="goal">Turn or flip the <span class="c-blue">blue shape</span>. Then slide it on top of the <span class="c-purple">purple shape</span>.</p>
+          <p class="small">The orange dots are matching corners.</p>
+        </div>
+        <div class="card">
+          <div class="row">
+            <button type="button" class="move" id="turnL"><span class="ic" aria-hidden="true">↺</span>Turn left</button>
+            <button type="button" class="move" id="turnR"><span class="ic" aria-hidden="true">↻</span>Turn right</button>
+            <button type="button" class="move" id="flip"><span class="ic" aria-hidden="true">⇋</span>Flip</button>
+          </div>
+          <div class="row">
+            <button type="button" class="big go" id="slide" style="flex:1">Slide on top</button>
+          </div>
+        </div>
+        <div class="card"><p class="fb" id="g6fb"></p></div>
+        <div class="row">
+          <button type="button" class="big" id="g6show">Show me</button>
+          <button type="button" class="big" id="g6new">New shape</button>
+        </div>
+      </section>
+
+      <!-- Grade 6 Practice -->
+      <section data-view="g6prac" hidden>
+        <div class="card">
+          <p class="goal">Which shape is <b>congruent</b> to the target?</p>
+          <p class="small">Congruent means the same size and the same shape. It can be turned or flipped.</p>
+        </div>
+        <div class="card"><p class="fb" id="g6pfb">Tap A, B or C.</p></div>
+        <div class="row">
+          <button type="button" class="big" id="g6pshow">Show me</button>
+          <button type="button" class="big go" id="g6pnext">Next</button>
+        </div>
+        <p class="score" id="g6pscore"></p>
+      </section>
+
+      <!-- Grade 7 Learn -->
+      <section data-view="g7learn" hidden>
+        <div class="card">
+          <p class="label">Corresponding parts</p>
+          <div class="match" id="lmatch"></div>
+          <p class="meas" id="lmeas"></p>
+          <p class="small" id="lwhy">Point to a side or an angle on either shape.</p>
+        </div>
+        <div class="card">
+          <p class="label">Congruence statement</p>
+          <div class="stmt" id="lstmt"></div>
+          <p class="small">Matching corners are written in the same order.</p>
+        </div>
+        <div class="card">
+          <div class="row"><button type="button" class="big" id="lper">Show perimeters</button></div>
+          <div id="lperbox" hidden>
+            <div class="perim" id="lperim" style="margin-top:10px"></div>
+            <p class="small">Congruent polygons have equal perimeters.</p>
+          </div>
+        </div>
+        <div class="row"><button type="button" class="big" id="lnew">New shapes</button></div>
+      </section>
+
+      <!-- Grade 7 Practice -->
+      <section data-view="g7prac" hidden>
+        <div class="seg lvl" id="levelSeg" role="group" aria-label="Level">
+          <button type="button" data-level="1" aria-pressed="true">Level 1</button>
+          <button type="button" data-level="2" aria-pressed="false">Level 2</button>
+          <button type="button" data-level="3" aria-pressed="false">Level 3</button>
+        </div>
+        <div class="card">
+          <p class="label" id="pkind"></p>
+          <div class="q" id="pq"></div>
+          <p class="small" id="psub"></p>
+        </div>
+        <div class="card" id="pchoicecard">
+          <div class="choices" id="pchoices"></div>
+        </div>
+        <div class="card" id="panscard">
+          <div class="ans"><span id="plbl"></span><input id="pin" inputmode="numeric" autocomplete="off" aria-label="Your answer" data-pad><span id="punit"></span><button type="button" class="go" id="pcheck">Check</button></div>
+        </div>
+        <div class="row">
+          <button type="button" class="big" id="pmarks">Show marks</button>
+          <button type="button" class="big" id="pshow">Show me</button>
+          <button type="button" class="big go" id="pnext">Next</button>
+        </div>
+        <div class="card" id="pfbcard"><p class="fb" id="pfb"></p><div class="work" id="pwork"></div></div>
+        <p class="score" id="pscore"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Keypad: a big on-screen number pad for tablets, shared by the K-6 tools.
+   Opt in per box: <input data-pad>            digits only
+                   <input data-pad="dec">      digits and a decimal point
+                   <input data-pad="neg">      digits and a minus sign
+                   <input data-pad="dec neg">  both
+   When a box is tapped with a finger or pen, the iPad keyboard stays away and this pad opens beside the box.
+   A mouse click still uses the normal keyboard. Each key is sent to the box as a real key press (keydown, then
+   input), so the tool's own typing rules still apply; ✓ sends Enter. Boxes made later are picked up too.
+   Steppers: <input data-step min="1" max="20"> gets big − and + buttons on its sides (data-step="below": under it).
+   They count by 1 inside min and max and send input and change, like typing would. */
+(function () {
+  const css = `
+.kpad { position: fixed; z-index: 1000; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px;
+  width: 260px; background: var(--sheet, #fff); border: 3px solid var(--grid-major, #b9c9d8); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.kpad[hidden] { display: none; }
+.kpad button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; height: 62px; padding: 0; margin: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--ink, #1b2733);
+  touch-action: manipulation; }
+.kpad button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }
+.kpad .kp-ok { background: var(--green, #1f7a5a); border-color: var(--green, #1f7a5a); color: var(--sheet, #fff); }
+.kpad .kp-x { grid-column: 3; font-size: 1.3rem; height: 40px; }
+.kpad .kp-wide { grid-column: span 2; }
+.kstep { display: inline-flex; align-items: center; gap: 8px; }
+.kstep.below { display: inline-grid; grid-template-columns: 1fr 1fr; }
+.kstep.below > input { grid-column: 1 / -1; order: -1; width: auto !important; }
+.kstep > button { font-family: var(--font-num, inherit); font-size: 2rem; font-weight: 700; line-height: 1; min-width: 52px; height: 52px; padding: 0;
+  border-radius: 12px; border: 2px solid var(--grid-major, #b9c9d8); background: var(--paper, #f5f8fb); color: var(--pt, #2f5fd0); touch-action: manipulation; }
+.kstep > button:active { background: var(--chip, #eaf0f6); border-color: var(--pt, #2f5fd0); }`;
+  const st = document.createElement("style");
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  const pad = document.createElement("div");
+  pad.className = "kpad"; pad.hidden = true;
+  pad.setAttribute("role", "group"); pad.setAttribute("aria-label", "Number keys");
+  let box = null, touch = false;
+
+  function key(label, k, cls) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.k = k;
+    if (cls) b.className = cls;
+    if (k === "Backspace") b.setAttribute("aria-label", "Delete");
+    if (k === "Enter") b.setAttribute("aria-label", "Done");
+    if (k === "Close") b.setAttribute("aria-label", "Close keypad");
+    return b;
+  }
+  function draw(kind) {
+    const dec = /dec/.test(kind), neg = /neg/.test(kind);
+    pad.textContent = "";
+    pad.append(key("✕", "Close", "kp-x"));
+    for (const n of [7, 8, 9, 4, 5, 6, 1, 2, 3]) pad.append(key(String(n), String(n)));
+    // Bottom rows: 0 with the extra keys (. or −) beside it, then delete and ✓.
+    const extra = [];
+    if (neg) extra.push(key("−", "-"));
+    if (dec) extra.push(key(".", "."));
+    pad.append(key("0", "0", extra.length ? "" : "kp-wide"));
+    if (extra.length === 2) { pad.append(...extra); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); }
+    else { if (extra.length) pad.append(extra[0]); pad.append(key("⌫", "Backspace")); pad.append(key("✓", "Enter", "kp-ok kp-wide")); pad.lastChild.style.gridColumn = "1 / -1"; }
+  }
+
+  // The boxes that go together (hour and minute, top and bottom of a fraction), so the pad covers none of them.
+  function area() {
+    let p = box.parentElement;
+    for (let i = 0; i < 3 && p && p.parentElement; i++) {
+      if (p.querySelectorAll("input[data-pad]").length > 1) break;
+      p = p.parentElement;
+    }
+    const els = [...(p ? p.querySelectorAll("input[data-pad]") : [box])].filter(e => e.offsetParent).map(e => e.closest(".kstep") || e);
+    const rs = (els.length ? els : [box]).map(e => e.getBoundingClientRect());
+    const left = Math.min(...rs.map(r => r.left)), right = Math.max(...rs.map(r => r.right)), top = Math.min(...rs.map(r => r.top)), bottom = Math.max(...rs.map(r => r.bottom));
+    return { left, right, top, bottom, width: right - left, height: bottom - top };
+  }
+  // Put the pad beside the box: right, then left, then below, then above; always kept on screen.
+  function place() {
+    if (!box || pad.hidden) return;
+    const r = area(), w = pad.offsetWidth, h = pad.offsetHeight, W = innerWidth, H = innerHeight, g = 12;
+    let x, y;
+    if (r.right + g + w <= W) { x = r.right + g; y = r.top + r.height / 2 - h / 2; }
+    else if (r.left - g - w >= 0) { x = r.left - g - w; y = r.top + r.height / 2 - h / 2; }
+    else { x = r.left + r.width / 2 - w / 2; y = r.bottom + g + h <= H ? r.bottom + g : r.top - g - h; }
+    pad.style.left = Math.max(4, Math.min(W - w - 4, x)) + "px";
+    pad.style.top = Math.max(4, Math.min(H - h - 4, y)) + "px";
+  }
+  function open(el) {
+    if (box !== el || pad.hidden) { box = el; draw(el.dataset.pad || ""); }
+    if (!pad.isConnected) document.body.appendChild(pad);
+    pad.hidden = false; place();
+  }
+  function close() { pad.hidden = true; box = null; }
+
+  // A finger or pen tap on a pad box: no iPad keyboard, and the pad opens once the box has focus.
+  document.addEventListener("pointerdown", e => {
+    if (pad.contains(e.target)) return;
+    const el = e.target.closest && e.target.closest("input[data-pad]");
+    touch = e.pointerType !== "mouse";
+    // Every pad box at once, so a box the tool moves focus to next (like the next digit) also skips the keyboard.
+    document.querySelectorAll("input[data-pad]").forEach(b => b.setAttribute("inputmode", touch ? "none" : b.dataset.pad.includes("dec") ? "decimal" : "numeric"));
+    if (!el && !pad.hidden) close();
+  }, true);
+  document.addEventListener("focusin", e => {
+    const el = e.target;
+    if (el.matches && el.matches("input[data-pad]") && touch && !el.readOnly && !el.disabled) { el.setAttribute("inputmode", "none"); open(el); }
+    else if (!pad.contains(el)) close();
+  });
+  addEventListener("resize", place);
+  addEventListener("scroll", place, true);
+
+  // Keys never take focus from the box.
+  pad.addEventListener("pointerdown", e => e.preventDefault());
+  pad.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || !box) return;
+    const k = b.dataset.k;
+    if (k === "Close") { close(); return; }
+    const el = box;
+    const ev = new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true });
+    if (el.dispatchEvent(ev)) {
+      if (k === "Enter") {
+        el.dispatchEvent(new KeyboardEvent("keyup", { key: k, bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+        if (el.form && el.form.requestSubmit) el.form.requestSubmit();
+      } else {
+        const v = el.value;
+        let s = v.length, t = v.length;
+        // Keys go at the end, unless the tool has selected the box's text (then they replace it).
+        try { if (el.selectionStart != null && el.selectionStart !== el.selectionEnd) { s = el.selectionStart; t = el.selectionEnd; } } catch (_) {}
+        let nv, at;
+        if (k === "Backspace") { if (s === t) s = Math.max(0, s - 1); nv = v.slice(0, s) + v.slice(t); at = s; }
+        else {
+          const max = el.maxLength > 0 ? el.maxLength : Infinity;
+          if (v.length - (t - s) >= max) return;
+          nv = v.slice(0, s) + k + v.slice(t); at = s + 1;
+        }
+        el.value = nv;
+        try { el.setSelectionRange(at, at); } catch (_) {}
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, data: k === "Backspace" ? null : k, inputType: k === "Backspace" ? "deleteContentBackward" : "insertText" }));
+      }
+    }
+    // The tool may have moved focus to another box (or away); follow it.
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (a && a.matches && a.matches("input[data-pad]")) open(a);
+      else if (a !== el) close();
+      else place();
+    });
+  });
+
+  // − and + buttons around a number box.
+  function stepper(el) {
+    const wrap = document.createElement("span");
+    wrap.className = "kstep" + (el.dataset.step === "below" ? " below" : "");
+    el.replaceWith(wrap);
+    const btn = (label, d, name) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label; b.setAttribute("aria-label", name);
+      b.addEventListener("click", () => {
+        const lo = el.hasAttribute("min") ? +el.getAttribute("min") : -Infinity, hi = el.hasAttribute("max") ? +el.getAttribute("max") : Infinity;
+        const v = parseFloat(el.value.replace("−", "-"));
+        const nv = isNaN(v) ? Math.max(lo, Math.min(hi, 0)) : Math.max(lo, Math.min(hi, Math.round(v) + d));
+        el.value = String(nv);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      return b;
+    };
+    wrap.append(btn("−", -1, "One less"), el, btn("+", 1, "One more"));
+  }
+  document.querySelectorAll("input[data-step]").forEach(stepper);
+})();
+</script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = $("svg");
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+  const txt = (s, x, y, cls, parent) => { const t = el("text", { x, y, class: cls, "text-anchor": "middle", "dominant-baseline": "central" }, parent); t.textContent = s; return t; };
+  const rnd = n => Math.floor(Math.random() * n);
+  const pick = a => a[rnd(a.length)];
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const fmt = n => (n < 0 ? "−" + Math.abs(n) : String(n));
+
+  /* ---------- Shapes ----------
+     Convex polygons with no symmetry: every side length is different, so each part has exactly one match.
+     Side lengths are 2 cm per grid unit, angles rounded so they still add to the right total. */
+  const RAW = [
+    [[4, 0], [0, 3], [-3, -2]],
+    [[3, 1], [-3, 2], [2, -3]],
+    [[0, 3], [-3, -1], [1, -3]],
+    [[1, 3], [-4, 0], [-2, -2], [3, -2]],
+    [[0, 4], [-4, 1], [2, -2], [4, 0]],
+    [[3, 2], [-2, 2], [-3, -2], [3, -1]],
+    [[1, 3], [-3, 0], [1, -2], [4, 0]],
+    [[4, 1], [-1, 3], [-4, -1], [-2, -3], [2, -2]],
+    [[4, 2], [-2, 3], [-4, -1], [-1, -3], [2, -3]],
+    [[2, 3], [-2, 3], [-4, 1], [-2, -3], [4, 0]]
+  ];
+  function prep(raw) {
+    let pts = raw.map(([x, y]) => [x, -y]); // screen y points down
+    const n = pts.length;
+    const cx = pts.reduce((s, p) => s + p[0], 0) / n, cy = pts.reduce((s, p) => s + p[1], 0) / n;
+    pts = pts.map(([x, y]) => [x - cx, y - cy]);
+    const sides = pts.map((p, i) => { const q = pts[(i + 1) % n]; return Math.round(2 * Math.hypot(q[0] - p[0], q[1] - p[1])); });
+    const exact = pts.map((p, i) => {
+      const a = pts[(i + n - 1) % n], b = pts[(i + 1) % n];
+      const u = [a[0] - p[0], a[1] - p[1]], w = [b[0] - p[0], b[1] - p[1]];
+      return Math.acos((u[0] * w[0] + u[1] * w[1]) / Math.hypot(...u) / Math.hypot(...w)) * 180 / Math.PI;
+    });
+    const angles = exact.map(Math.floor);
+    let left = (n - 2) * 180 - angles.reduce((s, a) => s + a, 0);
+    exact.map((a, i) => [a - Math.floor(a), i]).sort((p, q) => q[0] - p[0]).slice(0, left).forEach(([, i]) => angles[i]++);
+    const R = Math.max(...pts.map(p => Math.hypot(...p)));
+    return { pts, n, sides, angles, R };
+  }
+  const SHAPES = RAW.map(prep);
+  let lastShape = -1;
+  const newShape = () => { let i; do i = rnd(SHAPES.length); while (i === lastShape); lastShape = i; return SHAPES[i]; };
+
+  /* Placement: centre (x, y), px per unit s, turn rot (degrees, clockwise), flip (mirror first), so (outer mirror used while a flip animates). */
+  function world(pts, st) {
+    const c = Math.cos(st.rot * Math.PI / 180), s = Math.sin(st.rot * Math.PI / 180), so = st.so ?? 1;
+    return pts.map(([x, y]) => {
+      if (st.flip) x = -x;
+      const X = (x * c - y * s) * so, Y = x * s + y * c;
+      return [st.x + st.s * X, st.y + st.s * Y];
+    });
+  }
+  const pathD = w => "M" + w.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L") + "Z";
+
+  /* Animation */
+  let animToken = 0;
+  function tween(ms, step, done) {
+    const tok = ++animToken, t0 = performance.now();
+    const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+    (function frame(now) {
+      if (tok !== animToken) return;
+      const t = Math.min(1, (now - t0) / ms);
+      step(ease(t));
+      if (t < 1) requestAnimationFrame(frame); else if (done) done();
+    })(t0);
+  }
+  const stopAnim = () => { animToken++; };
+  // Flip across a vertical line on screen: animate the outer mirror, then fold it into rot and flip.
+  function animFlip(st, draw, done) {
+    tween(450, t => { st.so = 1 - 2 * t; draw(); }, () => { st.so = 1; st.rot = -st.rot; st.flip = !st.flip; draw(); done && done(); });
+  }
+  function animTo(st, goal, ms, draw, done) {
+    const from = { x: st.x, y: st.y, rot: st.rot };
+    tween(ms, t => { st.x = from.x + (goal.x - from.x) * t; st.y = from.y + (goal.y - from.y) * t; st.rot = from.rot + (goal.rot - from.rot) * t; draw(); }, done);
+  }
+  const norm180 = r => { r = ((r % 360) + 360) % 360; return r > 180 ? r - 360 : r; };
+  // Bring a placement back to the upright, unflipped position at (x, y).
+  function animHome(st, x, y, draw, done) {
+    const go = () => { st.rot = norm180(st.rot); animTo(st, { x, y, rot: 0 }, 900, draw, done); };
+    if (st.flip) animFlip(st, draw, go); else go();
+  }
+  // A random turn and flip; same: true keeps the shape upright and unflipped.
+  function randomPose(same) {
+    if (same) return { rot: 0, flip: false };
+    const flip = Math.random() < 0.5;
+    let rot = (1 + rnd(23)) * 15;
+    if (!flip && rot % 360 < 30) rot += 60;
+    return { rot, flip };
+  }
+  const sameChance = () => Math.random() < 0.1;
+
+  /* ---------- Drawing a lettered polygon (Grade 7) ---------- */
+  const unit = (v) => { const d = Math.hypot(v[0], v[1]) || 1; return [v[0] / d, v[1] / d]; };
+  function geom(w) {
+    const n = w.length;
+    const c = [w.reduce((s, p) => s + p[0], 0) / n, w.reduce((s, p) => s + p[1], 0) / n];
+    const verts = w.map((p, i) => {
+      const u = unit([w[(i + n - 1) % n][0] - p[0], w[(i + n - 1) % n][1] - p[1]]);
+      const v = unit([w[(i + 1) % n][0] - p[0], w[(i + 1) % n][1] - p[1]]);
+      const bis = unit([u[0] + v[0], u[1] + v[1]]);
+      const half = Math.acos(Math.max(-1, Math.min(1, u[0] * v[0] + u[1] * v[1]))) / 2;
+      const cross = u[0] * v[1] - u[1] * v[0];
+      return { p, u, v, bis, half, sweep: cross > 0 ? 1 : 0 };
+    });
+    const sides = w.map((p, i) => {
+      const q = w[(i + 1) % n], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+      const d = unit([q[0] - p[0], q[1] - p[1]]);
+      let nrm = [-d[1], d[0]];
+      if (nrm[0] * (m[0] - c[0]) + nrm[1] * (m[1] - c[1]) < 0) nrm = [-nrm[0], -nrm[1]];
+      return { p, q, m, d, nrm };
+    });
+    return { c, verts, sides };
+  }
+  const arcD = (V, r) => {
+    const a = [V.p[0] + V.u[0] * r, V.p[1] + V.u[1] * r], b = [V.p[0] + V.v[0] * r, V.p[1] + V.v[1] * r];
+    return `M${a[0].toFixed(1)},${a[1].toFixed(1)} A${r},${r} 0 0 ${V.sweep} ${b[0].toFixed(1)},${b[1].toFixed(1)}`;
+  };
+  const wedgeD = (V, r) => `M${V.p[0].toFixed(1)},${V.p[1].toFixed(1)} L` + arcD(V, r).slice(1) + "Z";
+
+  /* opts: cls "A"|"B", letters[], marks (bool), sideLabels {i: text}, angLabels {i: text}, ask {t, i}, onPart(t, i), hover (bool) */
+  function drawLettered(parent, w, opts) {
+    const g = el("g", {}, parent);
+    const G = geom(w);
+    el("path", { d: pathD(w), class: opts.cls === "A" ? "polyA" : "polyB" }, g);
+    const refs = { s: [], a: [] };
+    const hlLayer = el("g", {}, g), markLayer = el("g", {}, g), hitLayer = el("g", {}, g), txtLayer = el("g", {}, g);
+    G.sides.forEach((S, i) => {
+      refs.s[i] = el("line", { x1: S.p[0], y1: S.p[1], x2: S.q[0], y2: S.q[1], class: "hl-side" }, hlLayer);
+      if (opts.marks) {
+        const k = i + 1;
+        for (let j = 0; j < k; j++) {
+          const off = (j - (k - 1) / 2) * 9;
+          const cx = S.m[0] + S.d[0] * off, cy = S.m[1] + S.d[1] * off;
+          el("line", { x1: cx - S.nrm[0] * 12, y1: cy - S.nrm[1] * 12, x2: cx + S.nrm[0] * 12, y2: cy + S.nrm[1] * 12, class: "mark" }, markLayer);
+        }
+      }
+      const lab = opts.sideLabels && opts.sideLabels[i];
+      if (lab != null) {
+        const ask = opts.ask && opts.ask.t === "s" && opts.ask.i === i;
+        // Clear the side and its tick marks: push out by half the label's width or height, whichever faces the side.
+        const W = lab.length * 17.5, off = 24 + Math.abs(S.nrm[0]) * W / 2 + Math.abs(S.nrm[1]) * 16;
+        txt(lab, S.m[0] + S.nrm[0] * off, S.m[1] + S.nrm[1] * off, "mlabel" + (ask ? " ask" : ""), txtLayer);
+      }
+    });
+    G.verts.forEach((V, i) => {
+      refs.a[i] = el("path", { d: wedgeD(V, 46), class: "hl-ang" }, hlLayer);
+      if (opts.marks) for (let j = 0; j <= i; j++) el("path", { d: arcD(V, 30 + j * 7), class: "mark" }, markLayer);
+      const lab = opts.angLabels && opts.angLabels[i];
+      if (lab != null) {
+        const ask = opts.ask && opts.ask.t === "a" && opts.ask.i === i;
+        // Inside the angle, far enough in that the label fits between the two sides, but not past the middle of the shape.
+        const long = lab.length > 5, W = lab.length * (long ? 15 : 17.5);
+        const across = (W / 2) * Math.abs(V.bis[1]) + 16 * Math.abs(V.bis[0]); // half the label's size across the bisector
+        const along = (W / 2) * Math.abs(V.bis[0]) + 16 * Math.abs(V.bis[1]);  // and along it
+        const toMid = Math.hypot(G.c[0] - V.p[0], G.c[1] - V.p[1]);
+        const d = Math.min(Math.max(72, (across + 6) / Math.tan(V.half) + along), toMid * 0.85);
+        txt(lab, V.p[0] + V.bis[0] * d, V.p[1] + V.bis[1] * d, "mlabel" + (ask ? " ask" : "") + (long ? " long" : ""), txtLayer);
+      }
+      txt(opts.letters[i], V.p[0] - V.bis[0] * 28, V.p[1] - V.bis[1] * 28, "vletter " + opts.cls, txtLayer);
+    });
+    if (opts.onPart) {
+      G.sides.forEach((S, i) => {
+        const h = el("line", { x1: S.p[0], y1: S.p[1], x2: S.q[0], y2: S.q[1], class: "hit side" }, hitLayer);
+        if (opts.hover) el("line", { x1: S.p[0], y1: S.p[1], x2: S.q[0], y2: S.q[1], class: "hov side" }, hitLayer);
+        bindPart(h, "s", i, opts);
+      });
+      G.verts.forEach((V, i) => {
+        const h = el("path", { d: wedgeD(V, 62), class: "hit" }, hitLayer);
+        if (opts.hover) el("path", { d: wedgeD(V, 46), class: "hov ang" }, hitLayer);
+        bindPart(h, "a", i, opts);
+      });
+    }
+    return refs;
+  }
+  function bindPart(h, t, i, opts) {
+    h.addEventListener("pointerenter", e => { if (e.pointerType === "mouse" && opts.onHover) opts.onHover(t, i); });
+    h.addEventListener("click", () => opts.onPart(t, i));
+  }
+
+  /* ---------- Names ---------- */
+  const LA = "ABCDE", LB = "PQRST";
+  // Letters for shape B: its corners are named P, Q, R... going around it, starting at a random corner.
+  function lettersB(n) {
+    const k = rnd(n), d = Math.random() < 0.5 ? 1 : n - 1;
+    return Array.from({ length: n }, (_, j) => LB[(k + d * j) % n]);
+  }
+  const ov = s => `<span class="ov">${s}</span>`;
+  const segA = (P, i) => LA[i] + LA[(i + 1) % P.n];
+  function segB(P, i) { // written in alphabetical order around B: PQ, QR, RS, SP
+    const a = LB.indexOf(P.lb[i]), b = LB.indexOf(P.lb[(i + 1) % P.n]);
+    return (a + 1) % P.n === b ? P.lb[i] + P.lb[(i + 1) % P.n] : P.lb[(i + 1) % P.n] + P.lb[i];
+  }
+  const nameA = P => LA.slice(0, P.n);
+  const nameB = P => P.lb.join("");
+
+  /* ---------- State ---------- */
+  let grade = 6, mode = "learn", level = 1;
+  try { const g = +localStorage.getItem("mv-polycongruence-grade"); if (g === 6 || g === 7) grade = g; } catch (e) {}
+  const views = {};
+  document.querySelectorAll("[data-view]").forEach(s => (views[s.dataset.view] = s));
+  const clear = () => { while (svg.firstChild) svg.removeChild(svg.firstChild); };
+  const fit = (R, half) => half / R;
+
+  /* ================= Grade 6 Learn ================= */
+  const L6 = {};
+  function g6learnNew() {
+    stopAnim();
+    const sh = newShape();
+    const s = fit(sh.R, 225);
+    const pose = randomPose(false);
+    pose.rot = rnd(4) * 90; // quarter turns and flips only, so the buttons can always undo it
+    if (pose.rot === 0 && !pose.flip) pose.rot = pick([90, 180, 270]);
+    Object.assign(L6, { sh, s, A: { x: 300, y: 380, s, rot: 0, flip: false }, B: { x: 900, y: 380, s, rot: pose.rot, flip: pose.flip }, onTop: false, busy: false });
+    g6draw();
+    setFb($("g6fb"), "", "");
+    updG6Buttons();
+  }
+  function g6draw() {
+    clear();
+    const { sh } = L6;
+    txt("Shape A", 300, 70, "cellname", svg); txt("Shape B", 900, 70, "cellname", svg);
+    const wa = world(sh.pts, L6.A);
+    el("path", { d: pathD(wa), class: "polyA" }, svg);
+    el("circle", { cx: wa[0][0], cy: wa[0][1], r: 11, class: "corner" }, svg);
+    const wb = world(sh.pts, L6.B);
+    const fitNow = L6.onTop && Math.abs(L6.B.x - L6.A.x) < 1 && g6match();
+    el("path", { d: pathD(wb), class: "polyB" + (L6.onTop ? " top" : "") + (fitNow ? " fit" : "") }, svg);
+    el("circle", { cx: wb[0][0], cy: wb[0][1], r: 11, class: "corner" }, svg);
+  }
+  const g6match = () => ((L6.B.rot % 360) + 360) % 360 === 0 && !L6.B.flip;
+  function updG6Buttons() {
+    ["turnL", "turnR", "flip", "slide", "g6show", "g6new"].forEach(id => ($(id).disabled = L6.busy));
+    $("slide").textContent = L6.onTop ? "Slide back" : "Slide on top";
+  }
+  function g6after() {
+    L6.busy = false; L6.B.rot = ((L6.B.rot % 360) + 360) % 360; g6draw(); updG6Buttons();
+    if (L6.onTop) {
+      if (g6match()) setFb($("g6fb"), "ok", "Perfect fit! The shapes are congruent.", "Same size, same shape. Turning, flipping and sliding do not change a shape.");
+      else setFb($("g6fb"), "no", "Not lined up yet.", "Turn or flip it again, right here on top.");
+    } else setFb($("g6fb"), "", "");
+  }
+  function g6move(kind) {
+    if (L6.busy) return;
+    L6.busy = true; updG6Buttons(); setFb($("g6fb"), "", "");
+    if (kind === "flip") animFlip(L6.B, g6draw, g6after);
+    else animTo(L6.B, { x: L6.B.x, y: L6.B.y, rot: L6.B.rot + (kind === "R" ? 90 : -90) }, 550, g6draw, g6after);
+  }
+  function g6slide(cb) {
+    L6.busy = true; updG6Buttons();
+    L6.onTop = !L6.onTop;
+    animTo(L6.B, { x: L6.onTop ? 300 : 900, y: 380, rot: L6.B.rot }, 800, g6draw, () => { g6after(); cb && cb(); });
+  }
+  function g6showMe() {
+    if (L6.busy) return;
+    const steps = [];
+    if (L6.B.flip) steps.push(next => { L6.busy = true; updG6Buttons(); animFlip(L6.B, g6draw, () => { g6after(); next(); }); });
+    steps.push(next => {
+      const r = norm180(L6.B.rot); L6.B.rot = r;
+      if (r === 0) return next();
+      L6.busy = true; updG6Buttons();
+      animTo(L6.B, { x: L6.B.x, y: L6.B.y, rot: 0 }, 700 + Math.abs(r) * 3, g6draw, () => { g6after(); next(); });
+    });
+    steps.push(next => { if (L6.onTop) return next(); g6slide(next); });
+    const run = i => { if (i < steps.length) setTimeout(() => steps[i](() => run(i + 1)), i ? 250 : 0); };
+    run(0);
+  }
+  $("turnL").onclick = () => g6move("L");
+  $("turnR").onclick = () => g6move("R");
+  $("flip").onclick = () => g6move("flip");
+  $("slide").onclick = () => { if (!L6.busy) { setFb($("g6fb"), "", ""); g6slide(); } };
+  $("g6show").onclick = g6showMe;
+  $("g6new").onclick = g6learnNew;
+
+  /* ================= Grade 6 Practice ================= */
+  const P6 = { right: 0, total: 0 };
+  const CELLS = [{ x: 200, y: 545 }, { x: 600, y: 545 }, { x: 1000, y: 545 }];
+  const TARGET = { x: 600, y: 180 };
+  function convex(pts) {
+    const n = pts.length; let sgn = 0;
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], b = pts[(i + 1) % n], c = pts[(i + 2) % n];
+      const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (Math.abs(cr) < 0.3) return false;
+      if (!sgn) sgn = Math.sign(cr); else if (Math.sign(cr) !== sgn) return false;
+    }
+    return true;
+  }
+  const recentre = pts => { const n = pts.length, cx = pts.reduce((s, p) => s + p[0], 0) / n, cy = pts.reduce((s, p) => s + p[1], 0) / n; return pts.map(([x, y]) => [x - cx, y - cy]); };
+  function altered(pts) {
+    // Move one corner outward by a clear amount, or stretch the shape one way.
+    for (let tries = 0; tries < 20; tries++) {
+      const j = rnd(pts.length), p = pts[j], d = Math.hypot(...p);
+      const k = (1.35 + Math.random() * 0.25) * (Math.random() < 0.3 ? -0.55 : 1);
+      const q = pts.map((v, i) => (i === j ? [v[0] + (v[0] / d) * k, v[1] + (v[1] / d) * k] : v.slice()));
+      if (convex(q)) return recentre(q);
+    }
+    return recentre(pts.map(([x, y]) => [x * 1.35, y * 0.8]));
+  }
+  function g6pracNew() {
+    stopAnim();
+    const sh = newShape();
+    const opts = shuffle([
+      { kind: "yes", pts: sh.pts },
+      { kind: "size", pts: (k => sh.pts.map(([x, y]) => [x * k, y * k]))(Math.random() < 0.5 ? 0.68 : 1.3) },
+      { kind: "shape", pts: altered(sh.pts) }
+    ]);
+    const Rmax = Math.max(...opts.map(o => Math.max(...o.pts.map(p => Math.hypot(...p)))), sh.R);
+    const s = fit(Rmax, 138);
+    opts.forEach((o, i) => {
+      const pose = randomPose(o.kind === "yes" && sameChance());
+      o.st = { x: CELLS[i].x, y: CELLS[i].y, s, rot: pose.rot, flip: pose.flip };
+      o.state = "";
+    });
+    Object.assign(P6, { sh, s, opts, done: false, tried: false, busy: false, moving: null });
+    setFb($("g6pfb"), "", "Tap A, B or C.");
+    $("g6pshow").disabled = false;
+    g6pdraw();
+    g6pscore();
+  }
+  function g6pdraw() {
+    clear();
+    el("rect", { x: 330, y: 22, width: 540, height: 318, rx: 16, class: "target" }, svg);
+    txt("Target", 600, 48, "cellname", svg);
+    el("path", { d: pathD(world(P6.sh.pts, { x: TARGET.x, y: TARGET.y + 12, s: P6.s, rot: 0, flip: false })), class: "polyA" }, svg);
+    P6.opts.forEach((o, i) => {
+      const c = CELLS[i];
+      const r = el("rect", { x: c.x - 185, y: c.y - 168, width: 370, height: 336, rx: 16, class: "opt" + (o.state ? " " + o.state : "") }, svg);
+      r.addEventListener("click", () => g6pick(i));
+      txt("ABC"[i], c.x - 155, c.y - 135, "optname", svg);
+    });
+    P6.opts.forEach((o, i) => {
+      if (P6.moving === i) return;
+      const p = el("path", { d: pathD(world(o.pts, o.st)), class: "polyB" }, svg);
+      p.style.cursor = "pointer";
+      p.addEventListener("click", () => g6pick(i));
+    });
+    if (P6.moving != null) {
+      const o = P6.opts[P6.moving];
+      el("path", { d: pathD(world(o.pts, o.st)), class: "polyB" + (P6.fitted ? " fit" : " top") }, svg);
+    }
+  }
+  function g6pscore() { $("g6pscore").textContent = P6.total ? `First try: ${P6.right} of ${P6.total}` : ""; }
+  function g6flyHome(i, after) {
+    const o = P6.opts[i];
+    P6.moving = i; P6.busy = true; P6.fitted = false;
+    animHome(o.st, TARGET.x, TARGET.y + 12, g6pdraw, () => { P6.fitted = true; P6.busy = false; g6pdraw(); after && after(); });
+  }
+  function g6pick(i) {
+    if (P6.done || P6.busy) return;
+    const o = P6.opts[i];
+    if (o.state) return;
+    const first = !P6.tried;
+    P6.tried = true;
+    if (o.kind === "yes") {
+      if (first) P6.right++;
+      P6.total++; P6.done = true; o.state = "right";
+      setFb($("g6pfb"), "ok", `Yes! ${"ABC"[i]} is congruent.`, explainPose(o));
+      $("g6pshow").disabled = true;
+      g6pscore();
+      g6flyHome(i);
+    } else {
+      o.state = "wrong";
+      setFb($("g6pfb"), "no", `Not ${"ABC"[i]}.`, o.kind === "size" ? "It is the same shape, but a different size." : "It is the same size, but the shape is a little different. Compare the corners.");
+      g6pdraw();
+    }
+  }
+  function explainPose(o) {
+    const r = ((o.st.rot % 360) + 360) % 360;
+    if (!o.st.flip && r === 0) return "It is the same size and shape, and it even faces the same way.";
+    if (o.st.flip) return "Same size and same shape. It was flipped" + (r ? " and turned." : ".");
+    return "Same size and same shape. It was turned.";
+  }
+  $("g6pshow").onclick = () => {
+    if (P6.done || P6.busy) return;
+    const i = P6.opts.findIndex(o => o.kind === "yes");
+    if (!P6.tried) P6.total++;
+    P6.tried = true; P6.done = true; P6.opts[i].state = "right";
+    setFb($("g6pfb"), "ok", `${"ABC"[i]} is congruent.`, explainPose(P6.opts[i]));
+    g6pscore(); $("g6pshow").disabled = true;
+    g6flyHome(i);
+  };
+  $("g6pnext").onclick = g6pracNew;
+
+  /* ================= Grade 7: the pair of shapes ================= */
+  const A7 = { x: 300, y: 375 }, B7 = { x: 900, y: 375 };
+  function makePair() {
+    const sh = newShape();
+    const s = fit(sh.R, 215);
+    const pose = mode === "learn" ? randomPose(false) : randomPose(sameChance());
+    return { sh, n: sh.n, s, lb: lettersB(sh.n), A: { x: A7.x, y: A7.y, s, rot: 0, flip: false }, B: { x: B7.x, y: B7.y, s, rot: pose.rot, flip: pose.flip } };
+  }
+  function drawPair(P, oa, ob) {
+    clear();
+    txt("Shape A", A7.x, 40, "cellname", svg); txt("Shape B", B7.x, 40, "cellname", svg);
+    const ra = drawLettered(svg, world(P.sh.pts, P.A), Object.assign({ cls: "A", letters: LA.slice(0, P.n).split("") }, oa));
+    const rb = drawLettered(svg, world(P.sh.pts, P.B), Object.assign({ cls: "B", letters: P.lb }, ob));
+    return { A: ra, B: rb };
+  }
+
+  /* ================= Grade 7 Learn ================= */
+  const L7 = {};
+  function g7learnNew() {
+    L7.P = makePair(); L7.sel = null; L7.per = false;
+    g7learnDraw();
+  }
+  function g7learnDraw() {
+    const P = L7.P;
+    const onPart = (t, i) => { L7.sel = { t, i }; g7learnDraw(); };
+    const sl = {}, al = {};
+    if (L7.sel) (L7.sel.t === "s" ? sl : al)[L7.sel.i] = L7.sel.t === "s" ? P.sh.sides[L7.sel.i] + " cm" : P.sh.angles[L7.sel.i] + "°";
+    const opt = { marks: true, sideLabels: sl, angLabels: al, onPart, onHover: onPart, hover: true };
+    L7.refs = drawPair(P, opt, opt);
+    if (L7.sel) { const k = L7.sel.t; L7.refs.A[k][L7.sel.i].classList.add("on"); L7.refs.B[k][L7.sel.i].classList.add("on"); }
+    // Panel
+    const sel = L7.sel;
+    if (!sel) {
+      $("lmatch").innerHTML = ""; $("lmeas").textContent = "";
+      $("lwhy").textContent = "Point to a side or an angle on either shape.";
+    } else if (sel.t === "s") {
+      $("lmatch").innerHTML = `<span class="A">${ov(segA(P, sel.i))}</span> ≅ <span class="B">${ov(segB(P, sel.i))}</span>`;
+      $("lmeas").textContent = `${segA(P, sel.i)} = ${P.sh.sides[sel.i]} cm     ${segB(P, sel.i)} = ${P.sh.sides[sel.i]} cm`;
+      $("lwhy").textContent = sel.i === 0 ? "Both sides have 1 tick mark. Corresponding sides are equal." : `Both sides have ${sel.i + 1} tick marks. Corresponding sides are equal.`;
+    } else {
+      $("lmatch").innerHTML = `<span class="A">∠${LA[sel.i]}</span> ≅ <span class="B">∠${P.lb[sel.i]}</span>`;
+      $("lmeas").textContent = `∠${LA[sel.i]} = ${P.sh.angles[sel.i]}°     ∠${P.lb[sel.i]} = ${P.sh.angles[sel.i]}°`;
+      $("lwhy").textContent = sel.i === 0 ? "Both angles have 1 arc. Corresponding angles are equal." : `Both angles have ${sel.i + 1} arcs. Corresponding angles are equal.`;
+    }
+    $("lmeas").style.whiteSpace = "pre";
+    $("lstmt").innerHTML = `<span class="A">${nameA(P)}</span> ≅ <span class="B">${nameB(P)}</span>`;
+    const sum = P.sh.sides.reduce((a, b) => a + b, 0);
+    const terms = P.sh.sides.join(" + ");
+    $("lperim").innerHTML = `<span class="nm c-purple">${nameA(P)}</span><span>${terms} = ${sum} cm</span><span></span>` +
+      `<span class="nm c-blue">${nameB(P)}</span><span>${terms} = ${sum} cm</span><span></span>`;
+    $("lperbox").hidden = !L7.per;
+    $("lper").textContent = L7.per ? "Hide perimeters" : "Show perimeters";
+  }
+  $("lper").onclick = () => { L7.per = !L7.per; g7learnDraw(); };
+  $("lnew").onclick = g7learnNew;
+
+  /* ================= Grade 7 Practice ================= */
+  const Q = { marks: false };
+  const scores = { 1: [0, 0], 2: [0, 0], 3: [0, 0] };
+  function g7pracNew() {
+    const P = makePair();
+    Object.assign(Q, { P, done: false, tried: false, shown: 0, steps: [], pickedWrong: [] });
+    const n = P.n;
+    if (level === 1) {
+      const r = Math.random();
+      Q.type = r < 0.4 ? "s" : r < 0.8 ? "a" : "poly";
+      Q.i = rnd(n);
+    } else if (level === 2) {
+      Q.type = pick(["s", "a", "per"]);
+      Q.i = rnd(n);
+      Q.other = (Q.i + 1 + rnd(n - 1)) % n;
+      if (Q.type === "per") {
+        // Each side length is shown once, on one shape or the other.
+        Q.onA = shuffle(Array.from({ length: n }, (_, i) => i < Math.ceil(n / 2)));
+      }
+    } else {
+      Q.type = Math.random() < 0.6 ? "s" : "a";
+      Q.i = rnd(n);
+      Q.expr = makeExpr(Q.type === "s" ? P.sh.sides[Q.i] : P.sh.angles[Q.i], Q.type);
+    }
+    setFb($("pfb"), "", "");
+    $("pwork").innerHTML = "";
+    $("pin").value = ""; $("pin").className = "";
+    $("pshow").textContent = "Show me"; $("pshow").disabled = false;
+    g7pracDraw();
+    g7pracPanel();
+    g7score();
+  }
+  function makeExpr(val, t) {
+    const out = [];
+    if (t === "s") {
+      for (let a = 2; a <= 5; a++) for (let x = 2; x <= 9; x++) { const b = val - a * x; if (b !== 0 && b >= -9 && b <= 12) out.push({ a, x, b }); }
+    } else {
+      for (let a = 2; a <= 6; a++) for (let x = 5; x <= 40; x++) { const b = val - a * x; if (b !== 0 && b >= -30 && b <= 40) out.push({ a, x, b }); }
+    }
+    return out.length ? pick(out) : { a: 1, x: val - 2, b: 2 };
+  }
+  const exprText = e => `${e.a === 1 ? "" : e.a}x ${e.b < 0 ? "−" : "+"} ${Math.abs(e.b)}`;
+
+  function g7pracDraw() {
+    const P = Q.P, n = P.n;
+    const oa = { marks: Q.marks, sideLabels: {}, angLabels: {} }, ob = { marks: Q.marks, sideLabels: {}, angLabels: {} };
+    if (level === 1) {
+      if (Q.type !== "poly" && !Q.done) {
+        ob.onPart = (t, i) => { if (t === Q.type) l1answer(i); };
+        ob.hover = true;
+      }
+    } else if (level === 2) {
+      if (Q.type === "s") { oa.sideLabels[Q.i] = P.sh.sides[Q.i] + " cm"; oa.sideLabels[Q.other] = P.sh.sides[Q.other] + " cm"; ob.sideLabels[Q.i] = Q.done ? P.sh.sides[Q.i] + " cm" : "?"; ob.ask = { t: "s", i: Q.i }; }
+      else if (Q.type === "a") { oa.angLabels[Q.i] = P.sh.angles[Q.i] + "°"; oa.angLabels[Q.other] = P.sh.angles[Q.other] + "°"; ob.angLabels[Q.i] = Q.done ? P.sh.angles[Q.i] + "°" : "?"; ob.ask = { t: "a", i: Q.i }; }
+      else for (let i = 0; i < n; i++) (Q.onA[i] ? oa : ob).sideLabels[i] = P.sh.sides[i] + " cm";
+    } else {
+      const e = exprText(Q.expr);
+      if (Q.type === "s") { oa.sideLabels[Q.i] = P.sh.sides[Q.i] + " cm"; ob.sideLabels[Q.i] = e; ob.ask = { t: "s", i: Q.i }; }
+      else { oa.angLabels[Q.i] = P.sh.angles[Q.i] + "°"; ob.angLabels[Q.i] = "(" + e + ")°"; ob.ask = { t: "a", i: Q.i }; }
+    }
+    Q.refs = drawPair(P, oa, ob);
+    if (level === 1 && Q.type !== "poly") {
+      Q.refs.A[Q.type][Q.i].classList.add("on");
+      Q.pickedWrong.forEach(j => Q.refs.B[Q.type][j].classList.add("bad"));
+      if (Q.done) Q.refs.B[Q.type][Q.i].classList.add("good");
+    }
+    if (level > 1 && Q.done && Q.type !== "per") { Q.refs.A[Q.type][Q.i].classList.add("good"); Q.refs.B[Q.type][Q.i].classList.add("good"); }
+    $("pmarks").textContent = Q.marks ? "Hide marks" : "Show marks";
+  }
+
+  function g7pracPanel() {
+    const P = Q.P, n = P.n;
+    const kinds = { 1: "Notation", 2: "Measures", 3: "Algebra" };
+    $("pkind").textContent = kinds[level];
+    $("pchoicecard").hidden = level !== 1;
+    $("panscard").hidden = level === 1;
+    $("pchoices").className = "choices";
+    if (level === 1) {
+      $("psub").textContent = Q.type === "poly" ? "Pick the correct congruence statement." : "Pick the matching part of shape B. You can tap it on the shape too.";
+      let btns;
+      if (Q.type === "s") {
+        $("pq").innerHTML = `<span class="A">${ov(segA(P, Q.i))}</span><span>≅</span><span>?</span>`;
+        btns = Array.from({ length: n }, (_, j) => j).sort((a, b) => LB.indexOf(segB(P, a)[0]) - LB.indexOf(segB(P, b)[0]))
+          .map(j => ({ j, html: ov(segB(P, j)) }));
+      } else if (Q.type === "a") {
+        $("pq").innerHTML = `<span class="A">∠${LA[Q.i]}</span><span>≅</span><span>?</span>`;
+        btns = Array.from({ length: n }, (_, j) => j).sort((a, b) => LB.indexOf(P.lb[a]) - LB.indexOf(P.lb[b])).map(j => ({ j, html: "∠" + P.lb[j] }));
+      } else {
+        $("pq").innerHTML = `<span class="A">${nameA(P)}</span><span>≅</span><span>?</span>`;
+        const right = nameB(P);
+        const cands = [];
+        for (let k = 0; k < n; k++) for (const dir of [1, -1]) cands.push(Array.from({ length: n }, (_, j) => P.lb[((k + dir * j) % n + n) % n]).join(""));
+        const wrong = shuffle([...new Set(cands)].filter(c => c !== right));
+        const alpha = LB.slice(0, n);
+        const pickW = [];
+        if (alpha !== right) pickW.push(alpha);
+        for (const w of wrong) { if (pickW.length >= 2) break; if (!pickW.includes(w)) pickW.push(w); }
+        btns = shuffle([{ j: "ok", html: right }, ...pickW.map(w => ({ j: w, html: w }))]);
+        $("pchoices").className = "choices wide";
+      }
+      const box = $("pchoices"); box.innerHTML = "";
+      btns.forEach(b => {
+        const bt = document.createElement("button"); bt.type = "button"; bt.innerHTML = b.html; bt.dataset.j = b.j;
+        bt.onclick = () => (Q.type === "poly" ? polyAnswer(b.j, bt) : l1answer(b.j));
+        box.appendChild(bt);
+      });
+      Q.btns = box;
+    } else if (level === 2) {
+      if (Q.type === "s") {
+        $("pq").innerHTML = `<span>Find</span><span class="B">${ov(segB(P, Q.i))}</span>`;
+        $("psub").textContent = "The polygons are congruent.";
+        $("plbl").innerHTML = ov(segB(P, Q.i)) + " ="; $("punit").textContent = "cm";
+      } else if (Q.type === "a") {
+        $("pq").innerHTML = `<span>Find</span><span class="B">∠${P.lb[Q.i]}</span>`;
+        $("psub").textContent = "The polygons are congruent.";
+        $("plbl").textContent = `∠${P.lb[Q.i]} =`; $("punit").textContent = "°";
+      } else {
+        $("pq").innerHTML = `<span>Perimeter of</span><span class="B">${nameB(P)}</span>`;
+        $("psub").textContent = `${nameA(P)} ≅ ${nameB(P)}. Some side lengths are on each shape.`;
+        $("plbl").textContent = "P ="; $("punit").textContent = "cm";
+      }
+    } else {
+      $("pq").innerHTML = `<span>Solve for</span><span class="var">x</span>`;
+      $("psub").textContent = `${nameA(P)} ≅ ${nameB(P)}`;
+      $("plbl").innerHTML = `<span class="var" style="font-size:1.7rem">x</span> =`; $("punit").textContent = "";
+    }
+  }
+  function g7score() { const s = scores[level]; $("pscore").textContent = s[1] ? `First try: ${s[0]} of ${s[1]}` : ""; }
+  function mark(correct) {
+    if (!Q.tried) { scores[level][1]++; if (correct) scores[level][0]++; }
+    Q.tried = true; g7score();
+  }
+
+  // Level 1
+  function l1answer(j) {
+    if (Q.done) return;
+    const P = Q.P, ok = j === Q.i;
+    mark(ok);
+    const btn = Q.btns.querySelector(`[data-j="${j}"]`);
+    if (ok) {
+      Q.done = true;
+      if (btn) btn.classList.add("right");
+      if (Q.type === "s") setFb($("pfb"), "ok", "Correct!", `${segA(P, Q.i)} ≅ ${segB(P, Q.i)}. They are in the same place in each shape.`);
+      else setFb($("pfb"), "ok", "Correct!", `∠${LA[Q.i]} ≅ ∠${P.lb[Q.i]}. They are in the same place in each shape.`);
+      $("pq").lastElementChild.outerHTML = `<span class="B">${Q.type === "s" ? ov(segB(P, Q.i)) : "∠" + P.lb[Q.i]}</span>`;
+      $("pshow").disabled = true;
+    } else {
+      if (!Q.pickedWrong.includes(j)) Q.pickedWrong.push(j);
+      if (btn) btn.classList.add("wrong");
+      setFb($("pfb"), "no", "Try again.", Q.type === "s" ? `Find where ${segA(P, Q.i)} sits in shape A, then find that spot in shape B.` : `Find the corner of shape B that matches corner ${LA[Q.i]}.`);
+    }
+    g7pracDraw();
+  }
+  function polyAnswer(j, bt) {
+    if (Q.done) return;
+    const P = Q.P, ok = j === "ok";
+    mark(ok);
+    if (ok) {
+      Q.done = true; bt.classList.add("right");
+      setFb($("pfb"), "ok", "Correct!", polyWhy(P));
+      $("pshow").disabled = true;
+    } else {
+      bt.classList.add("wrong");
+      setFb($("pfb"), "no", "Try again.", `Match each corner: ${LA[0]} goes with which letter? Then ${LA[1]}?`);
+    }
+  }
+  const polyWhy = P => Array.from({ length: P.n }, (_, i) => `${LA[i]} ↔ ${P.lb[i]}`).join(",  ");
+
+  // Level 2 and 3
+  function checkAnswer() {
+    if (Q.done || level === 1) return;
+    const raw = $("pin").value.trim().replace("−", "-");
+    if (raw === "") return;
+    const v = Number(raw), P = Q.P;
+    let right, msg;
+    if (level === 2) {
+      if (Q.type === "s") right = P.sh.sides[Q.i];
+      else if (Q.type === "a") right = P.sh.angles[Q.i];
+      else right = P.sh.sides.reduce((a, b) => a + b, 0);
+    } else right = Q.expr.x;
+    const ok = v === right;
+    mark(ok);
+    $("pin").className = ok ? "ok" : "no";
+    if (ok) {
+      Q.done = true;
+      if (level === 2) {
+        if (Q.type === "s") msg = `${segB(P, Q.i)} ≅ ${segA(P, Q.i)}, so ${segB(P, Q.i)} = ${right} cm.`;
+        else if (Q.type === "a") msg = `∠${P.lb[Q.i]} ≅ ∠${LA[Q.i]}, so ∠${P.lb[Q.i]} = ${right}°.`;
+        else msg = `Congruent polygons have equal perimeters: ${right} cm.`;
+      } else {
+        const e = Q.expr;
+        msg = `Check: ${e.a}(${e.x}) ${e.b < 0 ? "−" : "+"} ${Math.abs(e.b)} = ${e.a * e.x + e.b} ✓`;
+      }
+      setFb($("pfb"), "ok", "Correct!", msg);
+      $("pshow").disabled = true;
+      g7pracDraw();
+    } else {
+      if (level === 2 && Q.type === "s" && v === P.sh.sides[Q.other]) msg = `That is the length of ${segA(P, Q.other)}. Which side of shape A matches ${segB(P, Q.i)}?`;
+      else if (level === 2 && Q.type === "a" && v === P.sh.angles[Q.other]) msg = `That is ∠${LA[Q.other]}. Which angle of shape A matches ∠${P.lb[Q.i]}?`;
+      else if (level === 2 && Q.type === "per") msg = `Add all ${P.n} sides. Each side of ${nameB(P)} matches a side of ${nameA(P)}.`;
+      else if (level === 2) msg = "Find the part of shape A in the same place.";
+      else {
+        const e = Q.expr, val = e.a * e.x + e.b;
+        if (v === val) msg = "That is the measure. Solve the equation for x.";
+        else if (v * e.a === val + e.b) msg = `Check the sign: undo ${e.b < 0 ? "− " + Math.abs(e.b) : "+ " + e.b} by doing the opposite.`;
+        else msg = "Set the two matching parts equal, then solve.";
+      }
+      setFb($("pfb"), "no", "Try again.", msg);
+    }
+  }
+  $("pcheck").onclick = checkAnswer;
+  $("pin").addEventListener("keydown", e => { if (e.key === "Enter") checkAnswer(); });
+  $("pin").addEventListener("input", () => { $("pin").className = ""; });
+
+  /* Show me: one line per press. Each line is [left, sign, right, step name]. */
+  const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+  function buildSteps() {
+    const P = Q.P, i = Q.i;
+    if (level === 1) {
+      if (Q.type === "s") return [[ov(segA(P, i)), "≅", ov(segB(P, i)), `Same place: ${Q.marks ? "same tick marks" : "match the corners"}`]];
+      if (Q.type === "a") return [["∠" + LA[i], "≅", "∠" + P.lb[i], "Same corner in each shape"]];
+      return Array.from({ length: P.n }, (_, k) => [LA[k], "↔", P.lb[k], k ? "" : "Matching corners"]).concat([[nameA(P), "≅", nameB(P), "Same order"]]);
+    }
+    if (level === 2) {
+      if (Q.type === "s") return [
+        [ov(segB(P, i)), "≅", ov(segA(P, i)), "Corresponding sides"],
+        [segB(P, i), "=", segA(P, i), "Congruent sides are equal"],
+        [segB(P, i), "=", P.sh.sides[i] + " cm", "Substitute"]];
+      if (Q.type === "a") return [
+        ["∠" + P.lb[i], "≅", "∠" + LA[i], "Corresponding angles"],
+        ["∠" + P.lb[i], "=", "∠" + LA[i], "Congruent angles are equal"],
+        ["∠" + P.lb[i], "=", P.sh.angles[i] + "°", "Substitute"]];
+      const names = Array.from({ length: P.n }, (_, k) => segB(P, k));
+      const sum = P.sh.sides.reduce((a, b) => a + b, 0);
+      return [
+        ["P", "=", names.join(" + "), "Add all the sides"],
+        ["P", "=", P.sh.sides.join(" + "), "Use the matching sides"],
+        ["P", "=", sum + " cm", "Add"]];
+    }
+    const e = Q.expr, val = e.a * e.x + e.b, ex = exprText(e), lhsA = `${e.a}x`;
+    const pB = Q.type === "s" ? segB(P, i) : "∠" + P.lb[i], pA = Q.type === "s" ? segA(P, i) : "∠" + LA[i];
+    const undo = e.b > 0 ? `${ex} − ${e.b}` : `${ex} + ${-e.b}`, undoR = e.b > 0 ? `${val} − ${e.b}` : `${val} + ${-e.b}`;
+    return [
+      [pB, "=", pA, Q.type === "s" ? "Corresponding sides are equal" : "Corresponding angles are equal"],
+      [ex, "=", String(val), "Substitute"],
+      [undo, "=", undoR, e.b > 0 ? `Subtract ${e.b} from both sides` : `Add ${-e.b} to both sides`],
+      [lhsA, "=", String(val - e.b), "Simplify"],
+      [frac(lhsA, e.a), "=", frac(val - e.b, e.a), `Divide both sides by ${e.a}`],
+      ["x", "=", String(e.x), "Simplify"]];
+  }
+  function renderSteps() {
+    $("pwork").innerHTML = Q.steps.slice(0, Q.shown).map(([l, s, r, w]) => `<span class="l">${l}</span><span>${s}</span><span class="r">${r}</span><span class="why">${w}</span>`).join("");
+  }
+  $("pshow").onclick = () => {
+    if (!Q.shown) {
+      Q.steps = buildSteps();
+      if (!Q.tried) mark(false);
+      if (level === 1 && Q.type !== "poly") {
+        Q.done = true; g7pracDraw();
+        const P = Q.P;
+        $("pq").lastElementChild.outerHTML = `<span class="B">${Q.type === "s" ? ov(segB(P, Q.i)) : "∠" + P.lb[Q.i]}</span>`;
+        const bt = Q.btns.querySelector(`[data-j="${Q.i}"]`); if (bt) bt.classList.add("right");
+      }
+    }
+    Q.shown++;
+    renderSteps();
+    const all = Q.shown >= Q.steps.length;
+    $("pshow").textContent = all ? "Show me" : "Next step";
+    if (all) {
+      $("pshow").disabled = true; Q.done = true;
+      if (level === 1 && Q.type === "poly") Q.btns.querySelector('[data-j="ok"]').classList.add("right");
+      if (level > 1) { const right = level === 3 ? Q.expr.x : null; if (right != null) $("pin").value = right; g7pracDraw(); }
+      setFb($("pfb"), "", "");
+    }
+  };
+  $("pmarks").onclick = () => { Q.marks = !Q.marks; g7pracDraw(); };
+  $("pnext").onclick = g7pracNew;
+
+  /* ---------- Feedback ---------- */
+  function setFb(node, kind, head, rest) {
+    node.className = "fb" + (kind ? " " + kind : "");
+    node.innerHTML = "";
+    if (head) node.append(head);
+    if (rest) { const s = document.createElement("span"); s.className = "plain"; s.textContent = " " + rest; node.append(s); }
+  }
+
+  /* ---------- Switching ---------- */
+  function show() {
+    document.querySelectorAll("#gradeSeg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.grade === grade)));
+    document.querySelectorAll("#modeSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    document.querySelectorAll("#levelSeg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.level === level)));
+    const v = grade === 6 ? (mode === "learn" ? "g6learn" : "g6prac") : (mode === "learn" ? "g7learn" : "g7prac");
+    stopAnim();
+    for (const k in views) views[k].hidden = k !== v;
+    ({ g6learn: g6learnNew, g6prac: g6pracNew, g7learn: g7learnNew, g7prac: g7pracNew })[v]();
+  }
+  document.querySelectorAll("#gradeSeg button").forEach(b => (b.onclick = () => {
+    grade = +b.dataset.grade; try { localStorage.setItem("mv-polycongruence-grade", String(grade)); } catch (e) {}
+    show();
+  }));
+  document.querySelectorAll("#modeSeg button").forEach(b => (b.onclick = () => { mode = b.dataset.mode; show(); }));
+  document.querySelectorAll("#levelSeg button").forEach(b => (b.onclick = () => { level = +b.dataset.level; show(); }));
+  show();
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Congruent Polygons (polycongruence.html). Canadian French: congruent = congru(e), figure = shape. */
+window.I18N_PAGE = {
+ "Congruent Polygons": "Polygones congrus",
+ "Congruent {0}": "{0} congrus",
+ "Polygons": "Polygones",
+ "Grade": "Année",
+ "Learn": "Apprendre",
+ "Level {n}": "Niveau {n}",
+ "Mode": "Mode",
+ "Level": "Niveau",
+ "Two polygons": "Deux polygones",
+ "Your answer": "Ta réponse",
+ "Shape A": "Figure A",
+ "Shape B": "Figure B",
+ "Target": "Cible",
+ /* Grade 6 Learn */
+ "Turn or flip the {0}. Then slide it on top of the {1}.": "Tourne ou retourne la {0}. Ensuite, glisse-la sur la {1}.",
+ "blue shape": "figure bleue",
+ "purple shape": "figure violette",
+ "The orange dots are matching corners.": "Les points orange sont des sommets correspondants.",
+ "Turn left": "Tourner à gauche",
+ "Turn right": "Tourner à droite",
+ "Flip": "Retourner",
+ "Slide on top": "Glisser dessus",
+ "Slide back": "Glisser en arrière",
+ "Show me": "Montre-moi",
+ "New shape": "Nouvelle figure",
+ "New shapes": "Nouvelles figures",
+ "Perfect fit! The shapes are congruent.": "Ça correspond parfaitement! Les figures sont congrues.",
+ "Same size, same shape. Turning, flipping and sliding do not change a shape.": "Même taille, même forme. Tourner, retourner et glisser ne changent pas une figure.",
+ "Not lined up yet.": "Pas encore alignées.",
+ "Turn or flip it again, right here on top.": "Tourne-la ou retourne-la encore, ici même.",
+ /* Grade 6 Practice */
+ "Which shape is {0} to the target?": "Quelle figure est {0} à la cible?",
+ "congruent": "congrue",
+ "Congruent means the same size and the same shape. It can be turned or flipped.": "Congru veut dire de même taille et de même forme. La figure peut être tournée ou retournée.",
+ "Tap A, B or C.": "Touche A, B ou C.",
+ "~Yes! ([ABC]) is congruent\\.": "Oui! $1 est congrue.",
+ "~([ABC]) is congruent\\.": "$1 est congrue.",
+ "~Not ([ABC])\\.": "Pas $1.",
+ "It is the same shape, but a different size.": "C'est la même forme, mais une taille différente.",
+ "It is the same size, but the shape is a little different. Compare the corners.": "C'est la même taille, mais la forme est un peu différente. Compare les sommets.",
+ "It is the same size and shape, and it even faces the same way.": "Même taille et même forme, et elle est même orientée de la même façon.",
+ "Same size and same shape. It was flipped and turned.": "Même taille et même forme. Elle a été retournée et tournée.",
+ "Same size and same shape. It was flipped.": "Même taille et même forme. Elle a été retournée.",
+ "Same size and same shape. It was turned.": "Même taille et même forme. Elle a été tournée.",
+ "First try: {n} of {n}": "Premier essai : {n} sur {n}",
+ /* Grade 7 Learn */
+ "Corresponding parts": "Éléments correspondants",
+ "Point to a side or an angle on either shape.": "Pointe un côté ou un angle sur l'une ou l'autre figure.",
+ "Both sides have {n} tick mark.": "Les deux côtés ont {n} trait.",
+ "Both sides have {n} tick marks.": "Les deux côtés ont {n} traits.",
+ "Both angles have {n} arc.": "Les deux angles ont {n} arc.",
+ "Both angles have {n} arcs.": "Les deux angles ont {n} arcs.",
+ "Corresponding sides are equal.": "Les côtés correspondants sont égaux.",
+ "Corresponding angles are equal.": "Les angles correspondants sont égaux.",
+ "Congruence statement": "Énoncé de congruence",
+ "Matching corners are written in the same order.": "Les sommets correspondants sont écrits dans le même ordre.",
+ "Show perimeters": "Afficher les périmètres",
+ "Hide perimeters": "Masquer les périmètres",
+ "Congruent polygons have equal perimeters.": "Des polygones congrus ont des périmètres égaux.",
+ /* Grade 7 Practice */
+ "Notation": "Notation",
+ "Measures": "Mesures",
+ "Algebra": "Algèbre",
+ "Show marks": "Afficher les marques",
+ "Hide marks": "Masquer les marques",
+ "Pick the correct congruence statement.": "Choisis le bon énoncé de congruence.",
+ "Pick the matching part of shape B. You can tap it on the shape too.": "Choisis l'élément correspondant de la figure B. Tu peux aussi le toucher sur la figure.",
+ "Find": "Trouve",
+ "Perimeter of": "Périmètre de",
+ "Solve for": "Résous pour",
+ "The polygons are congruent.": "Les polygones sont congrus.",
+ "~(\\w+) ≅ (\\w+)\\. Some side lengths are on each shape\\.": "$1 ≅ $2. Des longueurs de côtés sont sur chaque figure.",
+ "~(.+) ≅ (.+)\\. They are in the same place in each shape\\.": "$1 ≅ $2. Ils sont à la même place dans chaque figure.",
+ "~Find where (\\w+) sits in shape A, then find that spot in shape B\\.": "Trouve où est $1 dans la figure A, puis trouve cette place dans la figure B.",
+ "~Find the corner of shape B that matches corner (\\w)\\.": "Trouve le sommet de la figure B qui correspond au sommet $1.",
+ "~Match each corner: (\\w) goes with which letter\\? Then (\\w)\\?": "Associe chaque sommet : $1 va avec quelle lettre? Puis $2?",
+ "~(\\w+) ≅ (\\w+), so (\\w+) = (\\d+) cm\\.": "$1 ≅ $2, donc $3 = $4 cm.",
+ "~∠(\\w) ≅ ∠(\\w), so ∠(\\w) = (\\d+)°\\.": "∠$1 ≅ ∠$2, donc ∠$3 = $4°.",
+ "~Congruent polygons have equal perimeters: (\\d+) cm\\.": "Des polygones congrus ont des périmètres égaux : $1 cm.",
+ "~Check: (.+) ✓": "Vérification : $1 ✓",
+ "~That is the length of (\\w+)\\. Which side of shape A matches (\\w+)\\?": "C'est la longueur de $1. Quel côté de la figure A correspond à $2?",
+ "~That is ∠(\\w)\\. Which angle of shape A matches ∠(\\w)\\?": "C'est ∠$1. Quel angle de la figure A correspond à ∠$2?",
+ "~Add all (\\d) sides\\. Each side of (\\w+) matches a side of (\\w+)\\.": "Additionne les $1 côtés. Chaque côté de $2 correspond à un côté de $3.",
+ "Find the part of shape A in the same place.": "Trouve l'élément de la figure A à la même place.",
+ "That is the measure. Solve the equation for x.": "C'est la mesure. Résous l'équation pour trouver x.",
+ "~Check the sign: undo (.+) by doing the opposite\\.": "Vérifie le signe : annule $1 en faisant l'opération inverse.",
+ "Set the two matching parts equal, then solve.": "Pose les deux éléments correspondants égaux, puis résous.",
+ /* Worked steps */
+ "Same place: same tick marks": "Même place : mêmes traits",
+ "Same place: match the corners": "Même place : associe les sommets",
+ "Same corner in each shape": "Même sommet dans chaque figure",
+ "Matching corners": "Sommets correspondants",
+ "Same order": "Même ordre",
+ "Corresponding sides": "Côtés correspondants",
+ "Corresponding angles": "Angles correspondants",
+ "Congruent sides are equal": "Les côtés congrus sont égaux",
+ "Congruent angles are equal": "Les angles congrus sont égaux",
+ "Corresponding sides are equal": "Les côtés correspondants sont égaux",
+ "Corresponding angles are equal": "Les angles correspondants sont égaux",
+ "Substitute": "Substituer",
+ "Add all the sides": "Additionner tous les côtés",
+ "Use the matching sides": "Utiliser les côtés correspondants",
+ "Add": "Additionner",
+ "Simplify": "Simplifier",
+ "Subtract {n} from both sides": "Soustraire {n} des deux côtés",
+ "Add {n} to both sides": "Additionner {n} aux deux côtés",
+ "Divide both sides by {n}": "Diviser les deux côtés par {n}"
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
