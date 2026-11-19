@@ -277,6 +277,7 @@ sup { font-size: 0.6em; vertical-align: 0.75em; line-height: 0; }
 .miss h2 { width: 100%; margin: 0; font-family: var(--font-display); font-size: 1.25rem; }
 .miss > span { font-family: var(--font-num); font-weight: 700; font-size: 1.5rem; background: var(--chip); border-radius: 8px; padding: 4px 12px; }
 .rc-btns { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); margin: 0; padding: 12px 22px; border-radius: 999px; background: var(--ink); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; box-shadow: 0 6px 20px rgba(0,0,0,.25); animation: pop .25s ease-out; z-index: 50; }
 .rc-btns button { font-family: var(--font-display); font-size: 1.3rem; padding: 12px 24px; border-radius: 12px; }
 </style>
 
@@ -378,7 +379,9 @@ sup { font-size: 0.6em; vertical-align: 0.75em; line-height: 0; }
       <div class="rc-btns">
         <button type="button" class="rc-start" id="rcAgain">Practice again</button>
         <button type="button" id="rcChange">Change practice</button>
+        <button type="button" id="rcSnap">📷 Screenshot results</button>
       </div>
+      <p class="toast" id="rcToast" role="status" aria-live="polite" hidden></p>
     </div>
   </section>
 </div>
@@ -816,8 +819,8 @@ sup { font-size: 0.6em; vertical-align: 0.75em; line-height: 0; }
   function facts(id) {
     const out = [];
     const add = (s, root) => { for (let n = 1; n <= MAX[s]; n++) out.push(root
-      ? { html: rad(s, pow(n, s)), text: (s === "sq" ? "√" : "∛") + pow(n, s), ans: n, root: true }
-      : { html: sup(n, s === "sq" ? 2 : 3), text: n + (s === "sq" ? "²" : "³"), ans: pow(n, s), root: false }); };
+      ? { html: rad(s, pow(n, s)), text: (s === "sq" ? "√" : "∛") + pow(n, s), ans: n, root: true, s, n }
+      : { html: sup(n, s === "sq" ? 2 : 3), text: n + (s === "sq" ? "²" : "³"), ans: pow(n, s), root: false, s, n }); };
     if (id === "sq" || id === "sqm" || id === "all") add("sq", false);
     if (id === "sqr" || id === "sqm" || id === "all") add("sq", true);
     if (id === "cu" || id === "cum" || id === "all") add("cu", false);
@@ -914,9 +917,110 @@ sup { font-size: 0.6em; vertical-align: 0.75em; line-height: 0; }
       miss.append(Object.assign(document.createElement("h2"), { textContent: "Practice these" }));
       for (const f of uniq.slice(0, 12)) { const sp = document.createElement("span"); sp.innerHTML = `${f.html} = ${f.ans}`; miss.append(sp); }
     }
+    last = { set: SETS.find(x => x.id === rc.set).name, right: r, n, per, time: clock(elapsed()), missed: uniq.slice(0, 12) };
     game = null;
     rcShow("rcDone");
   }
+  // ---------- Screenshot results: draws the results card as a picture and copies it ----------
+  let last = null;
+  const frTxt = t => (window.I18N ? I18N.tr(t) : t); // French when the page is in French
+  const isFr = () => !!(window.I18N && I18N.lang === "fr");
+  function snapCanvas() {
+    const W = 1000, pad = 50, F = { d: '"Bricolage Grotesque", "Segoe UI", sans-serif', n: '"Spline Sans Mono", ui-monospace, monospace', b: '"Atkinson Hyperlegible", "Segoe UI", sans-serif' };
+    const C = { ink: "#1b2733", muted: "#5b6b7a", green: "#1f7a5a", orange: "#c2571a", pt: "#2f5fd0", chip: "#eaf0f6", line: "#b9c9d8" };
+    const chipH = 64, gap = 14;
+    const cv = document.createElement("canvas"), ctx = cv.getContext("2d");
+    // Lay the missed facts out in rows first, so the picture is just tall enough.
+    ctx.font = `700 34px ${F.n}`;
+    const chips = last.missed.map(f => ({ f, w: factW(ctx, f, 34) + 36 }));
+    const rows = []; let row = [], rw = 0;
+    for (const c of chips) { if (row.length && rw + c.w > W - 2 * pad) { rows.push(row); row = []; rw = 0; } row.push(c); rw += c.w + gap; }
+    if (row.length) rows.push(row);
+    const H = 420 + (rows.length ? 60 + rows.length * (chipH + gap) : 0) + 30;
+    const k = 2; cv.width = W * k; cv.height = H * k; ctx.scale(k, k);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = C.line; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
+    ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+    ctx.fillStyle = C.ink; ctx.font = `800 40px ${F.d}`; ctx.fillText(frTxt("Squares, Cubes and Roots"), pad, 78);
+    ctx.fillStyle = C.muted; ctx.font = `700 26px ${F.b}`;
+    const date = new Date().toLocaleDateString(isFr() ? "fr-CA" : "en-CA", { year: "numeric", month: "long", day: "numeric" });
+    ctx.fillText(`${frTxt("Recall")}${isFr() ? " :" : ":"} ${frTxt(last.set)}  ·  ${date}`, pad, 122);
+    // Score
+    ctx.textAlign = "center";
+    const sc = `${last.right}`, of = ` / ${last.n}`, rt = ` ${frTxt("right")}`;
+    ctx.font = `700 110px ${F.n}`; const w1 = ctx.measureText(sc).width, w3 = ctx.measureText(of).width;
+    ctx.font = `800 44px ${F.d}`; const w2 = ctx.measureText(rt).width;
+    let x = W / 2 - (w1 + w2 + w3) / 2; ctx.textAlign = "left";
+    ctx.fillStyle = C.green; ctx.font = `700 110px ${F.n}`; ctx.fillText(sc, x, 262); x += w1;
+    ctx.fillStyle = C.muted; ctx.font = `800 44px ${F.d}`; ctx.fillText(rt, x, 262); x += w2;
+    ctx.fillStyle = C.ink; ctx.font = `700 110px ${F.n}`; ctx.fillText(of, x, 262);
+    ctx.textAlign = "center"; ctx.fillStyle = C.pt; ctx.font = `800 34px ${F.d}`;
+    ctx.fillText(`${last.per} ${frTxt(last.per === 1 ? "second" : "seconds")} / ${frTxt("question")}   ·   ${frTxt("Total time")} ${last.time}`, W / 2, 330);
+    if (rows.length) {
+      ctx.fillStyle = C.ink; ctx.font = `800 30px ${F.d}`; ctx.fillText(frTxt("Practice these"), W / 2, 410);
+      let y = 440;
+      for (const r of rows) {
+        const tw = r.reduce((a, c) => a + c.w, 0) + gap * (r.length - 1);
+        let cx = W / 2 - tw / 2;
+        for (const c of r) {
+          ctx.fillStyle = C.chip; roundRect(ctx, cx, y, c.w, chipH, 10); ctx.fill();
+          drawFact(ctx, c.f, cx + 18, y + 45, 34, C, F);
+          cx += c.w + gap;
+        }
+        y += chipH + gap;
+      }
+    }
+    return cv;
+  }
+  function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  // One fact as "7² = 49" or "√49 = 7" (cube root with a small 3); returns or uses its width.
+  function factParts(f) { return f.root ? { a: String(pow(f.n, f.s)), b: `= ${f.ans}` } : { a: String(f.n), e: f.s === "sq" ? "2" : "3", b: `= ${f.ans}` }; }
+  function factW(ctx, f, z) {
+    const p = factParts(f), F = '"Spline Sans Mono", ui-monospace, monospace';
+    ctx.font = `700 ${z}px ${F}`; let w = ctx.measureText(p.a).width + z * 0.25 + ctx.measureText(p.b).width;
+    if (f.root) w += z * 0.72 + 4; else { ctx.font = `700 ${z * 0.6}px ${F}`; w += ctx.measureText(p.e).width + 2; }
+    return w;
+  }
+  function drawFact(ctx, f, x, y, z, C, F) {
+    const p = factParts(f);
+    ctx.textAlign = "left"; ctx.fillStyle = C.ink; ctx.strokeStyle = C.ink;
+    if (f.root) {
+      ctx.font = `700 ${z}px ${F.n}`;
+      const aw = ctx.measureText(p.a).width, top = y - z * 0.95, bot = y + z * 0.12, x0 = x;
+      ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(x0 + z * 0.02, top + (bot - top) * 0.62); ctx.lineTo(x0 + z * 0.16, top + (bot - top) * 0.55);
+      ctx.lineTo(x0 + z * 0.34, bot); ctx.lineTo(x0 + z * 0.62, top); ctx.lineTo(x0 + z * 0.72 + aw + 4, top);
+      ctx.stroke();
+      if (f.s === "cu") { ctx.font = `700 ${z * 0.45}px ${F.n}`; ctx.fillText("3", x0, top + z * 0.42); }
+      ctx.font = `700 ${z}px ${F.n}`; x += z * 0.72 + 2; ctx.fillText(p.a, x, y); x += aw + 2;
+    } else {
+      ctx.font = `700 ${z}px ${F.n}`; ctx.fillText(p.a, x, y); x += ctx.measureText(p.a).width + 1;
+      ctx.font = `700 ${z * 0.6}px ${F.n}`; ctx.fillText(p.e, x, y - z * 0.42); x += ctx.measureText(p.e).width + 1;
+    }
+    ctx.font = `700 ${z}px ${F.n}`; ctx.fillText(p.b, x + z * 0.25, y);
+  }
+  let toastT = 0;
+  function toast(msg) {
+    const t = $("rcToast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+  function saveFile(cv) {
+    const a = document.createElement("a"); a.href = cv.toDataURL("image/png"); a.download = "squares-cubes-results.png";
+    document.body.append(a); a.click(); a.remove();
+    toast("Saved as a picture");
+  }
+  $("rcSnap").onclick = () => {
+    if (!last) return;
+    toast("Copying…");
+    const cv = snapCanvas();
+    // The picture goes to the clipboard; if the browser won't allow that, it is saved as a file instead.
+    if (navigator.clipboard && window.ClipboardItem) {
+      const blob = new Promise(res => cv.toBlob(res, "image/png"));
+      navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => toast("Copied to clipboard"), () => saveFile(cv));
+    } else saveFile(cv);
+  };
+
   function rcSetup() { stopClock(); game = null; drawRcSetup(); rcShow("rcSetup"); }
   for (const k of ["7", "8", "9", "4", "5", "6", "1", "2", "3", "back", "0", "ok"]) {
     const b = document.createElement("button"); b.type = "button";
@@ -1158,7 +1262,12 @@ window.I18N_PAGE = {
  "Perfect! 🎉": "Parfait! 🎉",
  "Great job!": "Excellent travail!",
  "Nice work!": "Beau travail!",
- "Keep practicing!": "Continue à pratiquer!"
+ "Keep practicing!": "Continue à pratiquer!",
+ "📷 Screenshot results": "📷 Capture des résultats",
+ "Copied to clipboard": "Copié dans le presse-papiers",
+ "Saved as a picture": "Enregistré comme image",
+ "Total time": "Temps total",
+ "Copying…": "Copie…"
 };
 </script>
 <script>
