@@ -156,7 +156,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
    and a live typeset preview. Typing follows a/b, x^2, √(x); brackets group and are hidden in the typeset form.
    Placed equations sit on the board, drag to move; with the Eraser, tap one to remove it. No ÷ button: use a fraction.
    Select (Shawn 2026-10-20): tap a drawing or equation to pick it, or drag a box around several; drag to move them
-   (whole squares when the grid snaps), Delete removes them. */
+   (whole squares when the grid snaps), Delete removes them.
+   Classroom (Shawn 2026-11-20): Clock (big time and date), Timer (1/2/5/10 min presets, -/+ 1 min, a shrinking disc,
+   Start/Pause, Reset, soft chime at zero) and List (type items, tap to check off). Each opens as a draggable card on the board. */
 .wbg { display: inline-flex; border: 2px solid var(--grid-major); border-radius: 10px; overflow: hidden; }
 .wbg button { border: 0; border-radius: 0; background: var(--sheet); font-size: 1rem; min-height: 46px; padding: 6px 14px; }
 .wbg button + button { border-left: 2px solid var(--grid-major); }
@@ -227,6 +229,54 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .board canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 #ink { cursor: crosshair; }
 #ink.erase { cursor: cell; }
+/* Classroom helpers (Shawn 2026-11-20): Clock, Timer and List open as cards on the board. Drag a card by its top bar; × closes it. */
+.tgrid3 { grid-template-columns: 1fr 1fr 1fr; }
+.tgrid3 .tool { font-size: 0.85rem; padding: 4px 2px; min-height: 52px; }
+.tgrid3 .tool svg { width: 24px; height: 24px; }
+.wbp { position: absolute; z-index: 3; display: flex; flex-direction: column; padding: 0; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22); border: 2px solid var(--grid-major); max-height: calc(100% - 16px); max-width: calc(100% - 16px); }
+.wbp .bar { display: flex; align-items: center; gap: 8px; padding: 4px 4px 4px 14px; background: var(--chip); border-radius: 8px 8px 0 0; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.wbp .bar.drag { cursor: grabbing; }
+.wbp .bar .label { margin: 0; flex: 1; }
+.wbp .x { min-height: 40px; min-width: 44px; padding: 0; font-size: 1.5rem; line-height: 1; background: transparent; border: 0; color: var(--muted); }
+.wbp .body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.wbp code { font: inherit; background: none; padding: 0; color: inherit; }
+
+#clockp .time { font: 700 clamp(3rem, 7vw, 5.5rem) / 1 var(--font-num); text-align: center; letter-spacing: -0.02em; white-space: nowrap; }
+#clockp .time small { font-size: 0.4em; margin-left: 0.15em; }
+#clockp .date { text-align: center; font-size: 1.25rem; color: var(--muted); }
+
+#timerp { width: 340px; }
+#timerp .disc { position: relative; width: min(220px, 100%, 30vh); aspect-ratio: 1; margin: 0 auto; }
+#timerp .disc svg { width: 100%; height: 100%; display: block; }
+#timerp .left { position: absolute; inset: 0; display: grid; place-items: center; font: 700 3.1rem var(--font-num); }
+#timerp .left span { background: var(--sheet); border-radius: 12px; padding: 0 10px; }
+#timerp.done .left span { color: var(--warn); font: 700 1.9rem var(--font-display); }
+#timerp.done .disc { animation: tpulse 1.2s ease-in-out 3; }
+@keyframes tpulse { 50% { transform: scale(1.06); } }
+#timerp .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+#timerp .presets button, #timerp .adj button { min-height: 48px; font-size: 1.05rem; padding: 4px; white-space: nowrap; background: var(--sheet); border: 2px solid var(--grid-major); }
+#timerp .presets button[aria-pressed="true"] { border-color: var(--pt); outline: 2px solid var(--pt); }
+#timerp .adj { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#timerp .go { display: grid; grid-template-columns: 2fr 1fr; gap: 6px; }
+#timerp .go button { min-height: 56px; font-size: 1.25rem; }
+#tgo { background: var(--green); border-color: var(--green); color: var(--sheet); }
+#tgo.pause { background: var(--orange); border-color: var(--orange); }
+#tgo:disabled { opacity: 0.45; cursor: default; }
+
+#listp { width: 360px; }
+#listp .add { display: flex; gap: 6px; }
+#listp .add input { flex: 1; min-width: 0; font: 1.15rem var(--font-body); padding: 8px 10px; border: 2px solid var(--grid-major); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+#listp .add input:focus { outline: 3px solid var(--pt); outline-offset: 1px; }
+#listp .add button { min-height: 48px; font-size: 1.05rem; padding: 6px 14px; }
+#litems { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; min-height: 0; }
+#litems li { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--grid); }
+#litems .ck { flex: none; width: 44px; height: 44px; padding: 0; border: 3px solid var(--grid-major); border-radius: 10px; background: var(--sheet); font-size: 1.6rem; font-weight: 700; line-height: 1; color: var(--sheet); }
+#litems li.done .ck { background: var(--green); border-color: var(--green); }
+#litems .itxt { flex: 1; min-width: 0; font-size: 1.35rem; overflow-wrap: anywhere; }
+#litems li.done .itxt { text-decoration: line-through; color: var(--muted); }
+#litems .rm { flex: none; min-height: 40px; min-width: 40px; padding: 0; font-size: 1.3rem; background: transparent; border: 0; color: var(--muted); }
+#listp .empty { color: var(--muted); margin: 0; }
+#lclear { align-self: flex-end; min-height: 40px; font-size: 0.95rem; color: var(--warn); }
 .snapnote { position: absolute; right: 10px; bottom: 8px; margin: 0; font-size: 0.85rem; color: var(--muted); background: var(--sheet); padding: 2px 8px; border-radius: 6px; pointer-events: none; }
 </style>
 
@@ -270,6 +320,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
         <button type="button" class="size" data-s="1" aria-pressed="true" aria-label="Medium" title="Medium"><span style="width:12px;height:12px"></span></button>
         <button type="button" class="size" data-s="2" aria-label="Thick" title="Thick"><span style="width:20px;height:20px"></span></button>
       </div>
+      <p class="label">Classroom</p>
+      <div class="tgrid tgrid3" id="helpers">
+        <button type="button" class="tool" data-panel="clockp" aria-pressed="false"><svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10"/><path d="M14 8v6l4 3"/></svg>Clock</button>
+        <button type="button" class="tool" data-panel="timerp" aria-pressed="false"><svg viewBox="0 0 28 28"><circle cx="14" cy="16" r="9"/><path d="M14 16V11M11 4h6M14 4v3"/></svg>Timer</button>
+        <button type="button" class="tool" data-panel="listp" aria-pressed="false"><svg viewBox="0 0 28 28"><path d="M4 8l2 2 4-4M4 18l2 2 4-4M14 8h10M14 18h10"/></svg>List</button>
+      </div>
       <div class="acts">
         <button type="button" id="undo" disabled>Undo</button>
         <button type="button" id="clear" disabled>Clear</button>
@@ -282,6 +338,51 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
       <div id="eqs"></div>
       <button type="button" id="seldel" hidden>Delete</button>
       <p class="snapnote" id="snapnote">Shapes snap to the grid</p>
+
+      <div class="card wbp" id="clockp" hidden>
+        <div class="bar"><p class="label">Clock</p><button type="button" class="x" aria-label="Close" title="Close">×</button></div>
+        <div class="body"><div class="time"><code id="ctime"></code></div><div class="date"><code id="cdate"></code></div></div>
+      </div>
+
+      <div class="card wbp" id="timerp" hidden>
+        <div class="bar"><p class="label">Timer</p><button type="button" class="x" aria-label="Close" title="Close">×</button></div>
+        <div class="body">
+          <div class="disc">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="96" fill="var(--chip)" stroke="var(--grid-major)" stroke-width="3"/>
+              <path id="twedge" fill="var(--green)"/>
+            </svg>
+            <div class="left" aria-live="polite"><span id="tleft">5:00</span></div>
+          </div>
+          <div class="presets" id="tpresets">
+            <button type="button" data-m="1">1 min</button>
+            <button type="button" data-m="2">2 min</button>
+            <button type="button" data-m="5" aria-pressed="true">5 min</button>
+            <button type="button" data-m="10">10 min</button>
+          </div>
+          <div class="adj">
+            <button type="button" id="tminus">− 1 min</button>
+            <button type="button" id="tplus">+ 1 min</button>
+          </div>
+          <div class="go">
+            <button type="button" id="tgo">Start</button>
+            <button type="button" id="treset">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card wbp" id="listp" hidden>
+        <div class="bar"><p class="label">List</p><button type="button" class="x" aria-label="Close" title="Close">×</button></div>
+        <div class="body">
+          <form class="add" id="ladd">
+            <input id="lin" type="text" autocomplete="off" aria-label="New item" placeholder="Type an item, press Enter">
+            <button type="submit">Add</button>
+          </form>
+          <ul id="litems"></ul>
+          <p class="empty" id="lempty">Nothing on the list yet.</p>
+          <button type="button" id="lclear" hidden>Clear list</button>
+        </div>
+      </div>
       <div class="card eqbox" id="eqbox" hidden role="dialog" aria-label="Equation">
         <p class="label">Equation</p>
         <div class="keys" id="eqkeys">
@@ -801,6 +902,163 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   paintSwatches();
   new ResizeObserver(resize).observe(board);
   document.fonts && document.fonts.ready.then(drawBg);
+
+  /* Classroom helpers: Clock, Timer, List. Each is a card on the board; the side buttons open and close them. */
+  const fr = () => window.I18N && window.I18N.lang === "fr";
+  const helpers = document.getElementById("helpers");
+  const panels = ["clockp", "timerp", "listp"].map(id => document.getElementById(id));
+  const placed = new Set();
+  function clampPanel(p) {
+    if (p.hidden) return;
+    const maxL = Math.max(8, board.clientWidth - p.offsetWidth - 8), maxT = Math.max(8, board.clientHeight - p.offsetHeight - 8);
+    p.style.left = Math.min(maxL, Math.max(8, parseFloat(p.style.left) || 8)) + "px";
+    p.style.top = Math.min(maxT, Math.max(8, parseFloat(p.style.top) || 8)) + "px";
+  }
+  function openPanel(p, show) {
+    p.hidden = !show;
+    helpers.querySelector(`[data-panel="${p.id}"]`).setAttribute("aria-pressed", String(show));
+    if (!show) return;
+    board.insertBefore(p, document.getElementById("eqbox")); // newest card on top
+    if (!placed.has(p.id)) { // first time: clock top right, timer under it, list top left
+      placed.add(p.id);
+      const right = board.clientWidth - p.offsetWidth - 12;
+      const clock = panels[0];
+      let left = p.id === "listp" ? 12 : right, top = 12;
+      if (p.id === "timerp" && !clock.hidden) { // under the clock if it fits, otherwise beside it
+        if (clock.offsetTop + clock.offsetHeight + 12 + p.offsetHeight + 8 <= board.clientHeight) top = clock.offsetTop + clock.offsetHeight + 12;
+        else left = clock.offsetLeft - p.offsetWidth - 12;
+      }
+      p.style.left = left + "px"; p.style.top = top + "px";
+    }
+    clampPanel(p);
+    if (p.id === "listp") document.getElementById("lin").focus();
+  }
+  helpers.addEventListener("click", e => {
+    const b = e.target.closest("[data-panel]"); if (!b) return;
+    const p = document.getElementById(b.dataset.panel); openPanel(p, p.hidden);
+  });
+  for (const p of panels) {
+    p.querySelector(".x").addEventListener("click", () => openPanel(p, false));
+    const bar = p.querySelector(".bar");
+    let drag = null;
+    bar.addEventListener("pointerdown", e => {
+      if (e.target.closest("button")) return;
+      board.insertBefore(p, document.getElementById("eqbox"));
+      drag = { id: e.pointerId, x: e.clientX - p.offsetLeft, y: e.clientY - p.offsetTop };
+      bar.setPointerCapture(e.pointerId); bar.classList.add("drag"); e.preventDefault();
+    });
+    bar.addEventListener("pointermove", e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      p.style.left = e.clientX - drag.x + "px"; p.style.top = e.clientY - drag.y + "px"; clampPanel(p);
+    });
+    const up = e => { if (drag && e.pointerId === drag.id) { drag = null; bar.classList.remove("drag"); } };
+    bar.addEventListener("pointerup", up); bar.addEventListener("pointercancel", up);
+  }
+  new ResizeObserver(() => panels.forEach(clampPanel)).observe(board);
+
+  // Clock: hours and minutes, big. English shows 12-hour time with AM/PM; French shows 24-hour time.
+  const ctime = document.getElementById("ctime"), cdate = document.getElementById("cdate");
+  function tickClock() {
+    const d = new Date(), mm = String(d.getMinutes()).padStart(2, "0");
+    ctime.innerHTML = fr() ? `${d.getHours()}:${mm}` : `${d.getHours() % 12 || 12}:${mm}<small>${d.getHours() < 12 ? "AM" : "PM"}</small>`;
+    cdate.textContent = d.toLocaleDateString(fr() ? "fr-CA" : "en-CA", { weekday: "long", month: "long", day: "numeric" });
+  }
+  tickClock(); setInterval(tickClock, 1000);
+  window.addEventListener("langchange", tickClock);
+
+  // Timer: pick 1, 2, 5 or 10 minutes (or nudge by 1 minute), then Start. The green disc shrinks as time runs out,
+  // turns orange for the last quarter and red for the last 10 seconds, and a soft chime plays at zero.
+  const T = { total: 300000, left: 300000, running: false, end: 0, done: false };
+  const tEl = document.getElementById("timerp"), tleft = document.getElementById("tleft"), wedge = document.getElementById("twedge");
+  const tgo = document.getElementById("tgo"), tpre = document.getElementById("tpresets");
+  let audio = null, tInt = null;
+  function chime() {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audio.currentTime;
+      [523.25, 659.25, 783.99].forEach((f, i) => {
+        const o = audio.createOscillator(), g = audio.createGain(), t = t0 + i * 0.35;
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+        o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 1.5);
+      });
+    } catch (e) {}
+  }
+  function showTimer() {
+    const s = Math.ceil(T.left / 1000);
+    tleft.textContent = T.done ? "Time's up!" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    tEl.classList.toggle("done", T.done);
+    const f = T.total ? Math.max(0, Math.min(1, T.left / T.total)) : 0;
+    wedge.setAttribute("fill", T.left <= 10000 && T.total > 10000 ? "var(--warn)" : f <= 0.25 ? "var(--orange)" : "var(--green)");
+    if (f >= 0.9999) wedge.setAttribute("d", "M100 4a96 96 0 1 1 0 192a96 96 0 1 1 0-192z");
+    else if (f <= 0) wedge.setAttribute("d", "");
+    else {
+      const a = f * 2 * Math.PI, x = 100 + 96 * Math.sin(a), y = 100 - 96 * Math.cos(a);
+      wedge.setAttribute("d", `M100 100L100 4A96 96 0 ${f > 0.5 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)}Z`);
+    }
+    tgo.textContent = T.running ? "Pause" : "Start";
+    tgo.classList.toggle("pause", T.running);
+    tgo.disabled = !T.running && (T.done || T.left <= 0);
+  }
+  function tick() {
+    if (!T.running) return;
+    T.left = Math.max(0, T.end - Date.now());
+    if (T.left <= 0) { T.running = false; T.done = true; clearInterval(tInt); chime(); }
+    showTimer();
+  }
+  function stopTimer() { T.running = false; clearInterval(tInt); }
+  function setTime(ms) { stopTimer(); T.total = T.left = ms; T.done = false; showTimer(); }
+  tpre.addEventListener("click", e => {
+    const b = e.target.closest("[data-m]"); if (!b) return;
+    for (const x of tpre.children) x.setAttribute("aria-pressed", String(x === b));
+    setTime(b.dataset.m * 60000);
+  });
+  function nudge(ms) {
+    for (const x of tpre.children) x.setAttribute("aria-pressed", "false");
+    const fresh = !T.running && T.left === T.total;
+    if (T.running) T.left = Math.max(0, T.end - Date.now());
+    if (T.done) { T.done = false; T.left = 0; }
+    T.left = Math.min(99 * 60000, Math.max(fresh ? 60000 : 0, T.left + ms));
+    if (fresh || T.left > T.total) T.total = T.left;
+    if (T.running) { T.end = Date.now() + T.left; tick(); } else showTimer();
+  }
+  document.getElementById("tplus").addEventListener("click", () => nudge(60000));
+  document.getElementById("tminus").addEventListener("click", () => nudge(-60000));
+  tgo.addEventListener("click", () => {
+    if (T.running) { T.left = Math.max(0, T.end - Date.now()); stopTimer(); showTimer(); return; }
+    if (T.done || T.left <= 0) return;
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (e) {} // sound needs a tap first
+    T.running = true; T.end = Date.now() + T.left; clearInterval(tInt); tInt = setInterval(tick, 200); showTimer();
+  });
+  document.getElementById("treset").addEventListener("click", () => setTime(T.total));
+  showTimer();
+
+  // List: type an item and press Enter; tap the box to check it off, × removes it.
+  const list = [];
+  const litems = document.getElementById("litems");
+  function showList() {
+    litems.innerHTML = "";
+    list.forEach((it, i) => {
+      const li = document.createElement("li"); li.className = it.done ? "done" : "";
+      li.innerHTML = '<button type="button" class="ck"></button><code class="itxt"></code><button type="button" class="rm" aria-label="Remove" title="Remove">×</button>';
+      const ck = li.querySelector(".ck"); ck.textContent = "✓"; ck.setAttribute("aria-pressed", String(it.done)); ck.setAttribute("aria-label", "Check off");
+      li.querySelector(".itxt").textContent = it.t;
+      ck.addEventListener("click", () => { it.done = !it.done; showList(); });
+      li.querySelector(".rm").addEventListener("click", () => { list.splice(i, 1); showList(); });
+      litems.appendChild(li);
+    });
+    document.getElementById("lempty").hidden = list.length > 0;
+    document.getElementById("lclear").hidden = !list.length;
+    clampPanel(document.getElementById("listp"));
+  }
+  document.getElementById("ladd").addEventListener("submit", e => {
+    e.preventDefault();
+    const inp = document.getElementById("lin"), t = inp.value.trim();
+    if (t) { list.push({ t, done: false }); inp.value = ""; showList(); litems.scrollTop = litems.scrollHeight; }
+    inp.focus();
+  });
+  document.getElementById("lclear").addEventListener("click", () => { list.length = 0; showList(); });
+  showList();
 })();
 </script>
 
@@ -931,7 +1189,23 @@ window.I18N_PAGE = {
   "Type: 3/4 + x^2 = √(16)": "Écris : 3/4 + x^2 = √(16)",
   "Your equation shows here": "Ton équation s'affiche ici",
   "Cancel": "Annuler",
-  "Place on board": "Placer sur le tableau"
+  "Place on board": "Placer sur le tableau",
+  "Classroom": "Classe",
+  "Clock": "Horloge",
+  "Timer": "Minuterie",
+  "List": "Liste",
+  "Close": "Fermer",
+  "{n} min": "{n} min",
+  "− {n} min": "− {n} min",
+  "+ {n} min": "+ {n} min",
+  "Time's up!": "Temps écoulé!",
+  "New item": "Nouvel élément",
+  "Type an item, press Enter": "Écris un élément, puis Entrée",
+  "Add": "Ajouter",
+  "Nothing on the list yet.": "La liste est vide.",
+  "Clear list": "Vider la liste",
+  "Remove": "Retirer",
+  "Check off": "Cocher"
 };
 </script>
 <script>
