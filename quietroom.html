@@ -1,0 +1,1743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script data-goatcounter="https://shawnlemko.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<title>Quiet Classroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;700&display=swap">
+<style>
+/* MathBoard: shared look for the concept visuals.
+   Layout: graph-paper board on the left, a readout panel on the right; stacks on phones.
+   Concept pages link this file and add only their own small <style> if needed. */
+:root {
+  --paper: #f5f8fb;
+  --sheet: #ffffff;
+  --grid: #dbe5ee;
+  --grid-major: #b9c9d8;
+  --ink: #1b2733;
+  --muted: #5b6b7a;
+  --line: #1b2733;
+  --green: #1f7a5a;
+  --orange: #c2571a;
+  --pt: #2f5fd0;
+  --pt-ring: #ffffff;
+  --chip: #eaf0f6;
+  --warn: #a3263c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Spline Sans Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+    --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+    --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+    --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f161d; --sheet: #151f29; --grid: #1f2c38; --grid-major: #2e3f50;
+  --ink: #e6edf3; --muted: #9aabbb; --line: #e6edf3;
+  --green: #4cc49a; --orange: #f08a4b; --pt: #7aa2ff; --pt-ring: #151f29;
+  --chip: #1d2935; --warn: #ff7d93; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+/* Text grows a little on big screens (projectors, smartboards) so it reads from the back of the room. */
+html { font-size: clamp(16px, 0.55vw + 9px, 21px); }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 1rem; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; margin-bottom: 14px; }
+/* Return button and title share one row to leave the screen for the visual. */
+header > div:first-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.6rem, 3.4vw, 2.3rem); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+/* Every tool page has this at the top-left, linking to index.html (the main page). */
+a.main-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; min-height: 48px;
+  background: var(--pt); color: var(--sheet); font-family: var(--font-display); font-weight: 800; font-size: 1.1rem;
+  text-decoration: none; border-radius: 10px; border: 2px solid var(--pt); flex: none; }
+a.main-btn span { font-size: 1.3rem; line-height: 1; }
+a.main-btn:hover { background: var(--sheet); color: var(--pt); }
+a.main-btn:focus-visible { outline: 3px solid var(--pt); outline-offset: 3px; }
+header p { margin: 0; color: var(--muted); max-width: 52ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: 1fr; } }
+/* Fit the window: on laptops, projectors and tablets in landscape the page fills the screen with no scrolling.
+   The visual takes all the height left under the header and scales with the window; the panel scrolls only if it must. */
+@media (min-width: 861px) and (min-height: 520px) {
+  body .wrap { max-width: none; height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-block: 12px; padding-inline: 20px; }
+  .wrap > * { flex: none; }
+  /* The work area under the header (.main, or a tool's own grid: .stage, .bp, .lc) takes the rest of the height. */
+  .wrap > :is(.main, .board, .stage, .bp, .lc) { flex: 1 1 auto; min-height: 0; }
+  .wrap > :is(.main, .stage, .bp, .lc), .wrap > section > .stage { align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .board { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .wrap .board > svg { flex: 1 1 auto; min-height: 0; height: 100%; max-height: none; }
+  :is(.main, .stage, .bp, .lc) > :not(.board) { overflow-y: auto; min-height: 0; }
+}
+.board { background: var(--sheet); border: 1px solid var(--grid-major); border-radius: 10px; padding: 8px; }
+.board svg { display: block; width: 100%; height: auto; max-width: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card { background: var(--sheet); border: 1px solid var(--grid); border-radius: 10px; padding: 16px; min-width: 0; }
+.label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+.c-green { color: var(--green); font-weight: 700; }
+.c-orange { color: var(--orange); font-weight: 700; }
+.c-pt { color: var(--pt); font-weight: 700; }
+
+/* Math readout */
+.points { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--font-num); font-size: 1.35rem; margin-bottom: 12px; }
+.points b { color: var(--pt); }
+.eq { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-num); font-size: 1.45rem; }
+.eq + .eq { margin-top: 10px; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.frac > span:first-child { border-bottom: 2px solid currentColor; padding: 0 4px 3px; }
+.frac > span:last-child { padding: 3px 4px 0; }
+.var { font-style: italic; font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; }
+.answer { display: inline-flex; align-items: center; gap: 10px; background: var(--chip); border-radius: 8px; padding: 6px 14px; font-size: 2rem; font-weight: 700; }
+.answer.warn { color: var(--warn); font-size: 1.45rem; }
+.answer.hidden { color: var(--muted); font-style: italic; }
+.dec { color: var(--muted); font-size: 1.15rem; }
+.verdict { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--grid-major); }
+.pill { flex: none; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 999px; padding: 4px 10px; border: 2px solid currentColor; }
+.verdict p { margin: 0; min-width: 0; }
+
+/* Controls */
+.slider { display: grid; grid-template-columns: 56px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.slider + .slider { margin-top: 10px; }
+.slider label { font-weight: 700; }
+.slider output { font-family: var(--font-num); font-weight: 700; text-align: right; font-size: 1.5rem; }
+input[type=range] { width: 100%; height: 28px; accent-color: var(--pt); }
+input[type=range].green { accent-color: var(--green); }
+input[type=range].orange { accent-color: var(--orange); }
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 0.9rem; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-weight: 700; font-size: 0.95rem; color: var(--ink); background: var(--chip); border: 1px solid var(--grid-major); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--pt); }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+.toggles label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--pt); }
+
+/* Board drawing (classes MathBoard.js applies) */
+.mb-minor { stroke: var(--grid); stroke-width: 1; }
+.mb-major { stroke: var(--grid-major); stroke-width: 1; }
+.mb-axis { stroke: var(--muted); stroke-width: 2; }
+/* Sized to read from the back of a classroom on a projector. */
+.mb-tick { fill: var(--ink); font-family: var(--font-num); font-size: 17px; font-weight: 700; paint-order: stroke; stroke: var(--sheet); stroke-width: 4px; stroke-linejoin: round; }
+.mb-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+.mb-seg { stroke-width: 4; stroke-dasharray: 9 6; }
+.mb-seg.green { stroke: var(--green); } .mb-seg.orange { stroke: var(--orange); }
+.mb-fill { fill-opacity: 0.08; stroke: none; }
+.mb-fill.green { fill: var(--green); } .mb-fill.orange { fill: var(--orange); }
+.mb-lbl { font-family: var(--font-num); font-size: 22px; font-weight: 700; fill: var(--ink); }
+.mb-lbl.green { fill: var(--green); } .mb-lbl.orange { fill: var(--orange); }
+.mb-lbl-bg { fill: var(--sheet); fill-opacity: 0.92; }
+.mb-arrow.green { fill: var(--green); } .mb-arrow.orange { fill: var(--orange); }
+.mb-handle { cursor: grab; outline: none; }
+.mb-handle.drag { cursor: grabbing; }
+.mb-handle .hit { fill: transparent; }
+.mb-handle .dot { fill: var(--pt); stroke: var(--pt-ring); stroke-width: 3; }
+.mb-handle:focus-visible .dot, .mb-handle.drag .dot { stroke: var(--pt); stroke-width: 4; fill: var(--pt-ring); }
+.mb-handle .ring { fill: none; stroke: var(--pt); stroke-width: 2; opacity: 0.35; }
+.mb-coord { font-family: var(--font-num); font-size: 20px; font-weight: 700; fill: var(--pt); paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; }
+.mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
+</style>
+<style>
+/* Quiet Classroom (All grades, Classroom Tools; Shawn 2026-11-23).
+   A volume monitor for work time. The browser microphone measures the room (never recorded or sent anywhere).
+   The level is smoothed over about a second, so one cough or a dropped pencil changes nothing.
+   Quiet room: a new visitor arrives every few seconds. Loud room (held for about a second): one leaves every second and a half.
+   In between: nothing changes and the picture waits.
+   Five pictures share this engine (header "Picture" menu): Quiet Zoo, Aquarium, Flower Garden (elementary),
+   City at Night and Sound Graph (older students). Each picture is a function that draws into one <g> and returns
+   { max, present, add, remove, clear, frame }; the engine decides when to add or remove.
+   The scene SVG uses preserveAspectRatio "slice" so it always fills the stage; the action stays in the middle 1100 x 300. */
+.wrap { padding-bottom: 12px; }
+header { margin-bottom: 10px; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ctl button { min-height: 46px; padding: 8px 16px; font-size: 1rem; }
+#go { min-width: 9.5em; background: var(--green); border-color: var(--green); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+#go.on { background: var(--sheet); color: var(--green); }
+.sens { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--muted); }
+.sens input { width: 150px; accent-color: var(--green); }
+.sens small { font-size: 0.85rem; font-weight: 700; }
+.toggles { margin: 0; }
+
+.stage { position: relative; overflow: hidden; border-radius: 14px; background: #cfe9f3; min-height: 60vh; flex: 1 1 auto; }
+.stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+@media (min-width: 861px) and (min-height: 520px) { .stage { min-height: 0; } }
+
+/* Readout floating in the sky. */
+.hud { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: rgba(255,255,255,0.86); color: #1f2d24; border-radius: 18px; padding: 8px 26px 10px; box-shadow: 0 6px 24px rgba(30,60,40,0.12);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); max-width: calc(100% - 24px); text-align: center; pointer-events: none; }
+.hud .count { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 2.6vw, 2.4rem); line-height: 1.15; }
+.hud .count b { font-family: var(--font-num); font-size: 1.15em; }
+.hud .status { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: clamp(1rem, 1.5vw, 1.35rem); transition: color 0.4s; }
+.hud .dot { width: 0.8em; height: 0.8em; border-radius: 50%; background: currentColor; flex: none; }
+.hud .status.quiet { color: #237a4f; }
+.hud .status.ok { color: #9a6a12; }
+.hud .status.loud { color: #b0293f; }
+.hud .status.idle { color: #5b6b7a; }
+
+/* Small volume meter, top right. */
+.meter { position: absolute; top: 14px; right: 14px; width: 220px; background: rgba(255,255,255,0.86); color: #1f2d24; border-radius: 14px; padding: 8px 12px 6px;
+  box-shadow: 0 6px 24px rgba(30,60,40,0.12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); pointer-events: none; }
+.meter .label { margin: 0 0 4px; color: #5b6b7a; }
+.meter .bar { position: relative; height: 16px; border-radius: 8px; overflow: hidden; background: #e6ece8; }
+.meter .zone { position: absolute; top: 0; bottom: 0; opacity: 0.28; }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; width: 0; }
+.meter .ticks { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: #5b6b7a; margin-top: 2px; }
+
+/* Start card. */
+.intro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(20,40,30,0.18); }
+.intro .box { background: #fff; color: #1f2d24; border-radius: 20px; padding: 24px 30px; max-width: 34em; text-align: center; box-shadow: 0 12px 40px rgba(20,40,30,0.25); }
+.intro h2 { font-family: var(--font-display); font-weight: 800; font-size: 2rem; margin: 0 0 8px; }
+.intro p { margin: 0 0 14px; font-size: 1.1rem; }
+.intro .big { min-height: 56px; padding: 10px 28px; font-size: 1.3rem; background: #1f7a5a; border-color: #1f7a5a; color: #fff; font-family: var(--font-display); font-weight: 800; }
+.intro small { display: block; color: #5b6b7a; margin-top: 14px; font-size: 0.92rem; }
+.intro .link { background: none; border: 0; color: #2f5fd0; text-decoration: underline; font-size: 1rem; margin-top: 6px; }
+.intro .err { color: #b0293f; font-weight: 700; }
+
+/* Demo: hold the button (or the space bar) to pretend the room is loud. */
+#noise { position: absolute; left: 16px; bottom: 16px; min-height: 54px; padding: 10px 26px; font-size: 1.15rem;
+  background: #fff; border: 2px solid #b0293f; color: #b0293f; border-radius: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); touch-action: none; user-select: none; -webkit-user-select: none; }
+#noise.held { background: #b0293f; color: #fff; }
+.pick { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); }
+.pick select { font: inherit; font-weight: 700; color: var(--ink); background: var(--sheet); border: 2px solid var(--grid-major); border-radius: 8px; min-height: 46px; padding: 6px 10px; font-size: 1rem; }
+.stage.nometer .meter, .stage[data-mode="graph"] .meter { display: none; }
+.stage[data-mode="city"] { background: #0c1430; }
+.stage[data-mode="graph"] { background: #f7fafc; border: 1px solid var(--grid-major); }
+#exitfs { position: absolute; right: 14px; bottom: 14px; display: none; }
+.stage:fullscreen { border-radius: 0; }
+.stage:fullscreen #exitfs { display: block; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
+      <h1>Quiet Classroom</h1>
+    </div>
+    <div class="ctl">
+      <label class="pick">Picture
+        <select id="mode">
+          <option value="zoo">Quiet Zoo</option>
+          <option value="aquarium">Aquarium</option>
+          <option value="garden">Flower Garden</option>
+          <option value="city">City at Night</option>
+          <option value="graph">Sound Graph</option>
+        </select>
+      </label>
+      <button type="button" id="go">Start</button>
+      <label class="sens" title="How much noise is OK">
+        <small>Quiet room</small>
+        <input type="range" id="sens" min="1" max="9" step="1" value="5" aria-label="How much noise is OK">
+        <small>Busy room</small>
+      </label>
+      <div class="toggles"><label><input type="checkbox" id="showMeter" checked> Show volume</label></div>
+      <button type="button" id="reset">Start over</button>
+      <button type="button" id="fs">Full screen</button>
+    </div>
+  </header>
+
+  <section class="stage" id="stage">
+    <svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-label="Zoo picture"></svg>
+
+    <div class="hud" aria-live="polite">
+      <div class="count" id="count"><b>0</b> animals in the zoo</div>
+      <div class="status idle" id="status"><span class="dot"></span><span id="statusText">Press Start to begin</span></div>
+    </div>
+
+    <div class="meter" id="meter">
+      <p class="label">Volume</p>
+      <div class="bar"><div class="zone" id="zq"></div><div class="zone" id="zo"></div><div class="zone" id="zl"></div><div class="fill" id="fill"></div></div>
+      <div class="ticks"><span>Quiet</span><span>Loud</span></div>
+    </div>
+
+    <div class="intro" id="intro">
+      <div class="box">
+        <h2 id="introTitle">Quiet Zoo</h2>
+        <p id="introText">When the room is quiet, little animals come to visit the zoo. If it gets too loud, they walk away.</p>
+        <p class="err" id="err" hidden>The microphone is blocked or missing. Allow it in the browser's address bar and press Start again, or try the demo.</p>
+        <button type="button" class="big" id="go2">Start listening</button>
+        <small>Your browser will ask to use the microphone. Sound is only measured on this computer. Nothing is recorded or sent anywhere.</small>
+        <button type="button" class="link" id="demo">No microphone? Try the demo</button>
+      </div>
+    </div>
+
+    <button type="button" id="noise" hidden>Hold to make noise</button>
+    <button type="button" id="exitfs">Exit full screen</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("scene");
+  const $ = id => document.getElementById(id);
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
+  const store = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+                  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  /* ---------------- Shared scenery helpers ---------------- */
+  const INK = "#2b2630", CHEEK = "#f29b9b";
+  function makeCloud(parent, list, x, y, s, color = "#fff", shade = "#e3f1f6", op = 0.92) {
+    const g = document.createElementNS(NS, "g");
+    g.innerHTML = `<g transform="scale(${s})"><ellipse cx="0" cy="18" rx="92" ry="22" fill="${color}"/><circle cx="-40" cy="6" r="30" fill="${color}"/><circle cx="2" cy="-8" r="40" fill="${color}"/><circle cx="44" cy="6" r="28" fill="${color}"/><ellipse cx="0" cy="28" rx="80" ry="10" fill="${shade}"/></g>`;
+    g.setAttribute("opacity", op);
+    parent.appendChild(g);
+    list.push({ g, x, y, s, v: rand(5, 10) });
+  }
+  function driftClouds(list, dt) {
+    for (const c of list) { c.x += c.v * dt; if (c.x > 1800) c.x = -200; c.g.setAttribute("transform", `translate(${c.x.toFixed(1)},${c.y})`); }
+  }
+  const f2 = n => Math.round(n * 100) / 100;
+  // Smooth turn: the facing value glides from +1 to -1 (the picture narrows through the middle).
+  function turner(o, dir) { if (o.faceTo === dir) return; o.faceFrom = o.face; o.faceTo = dir; o.faceT = 0; }
+  function stepTurn(o, dt, dur) { if (o.faceT < 1) { o.faceT = Math.min(1, o.faceT + dt / dur); o.face = lerp(o.faceFrom, o.faceTo, ease(o.faceT)); } }
+  const easeOutBack = t => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+  /* ---------------- Aquarium ----------------
+     Fish swim in from the sides and wander the tank, steering smoothly toward drifting targets.
+     When it is loud, one fish startles and darts out of the tank. Puffer fish puff up when the room is loud. */
+  function Aquarium(world) {
+    world.innerHTML = `
+    <defs>
+      <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fd3e3"/><stop offset="0.55" stop-color="#3fa3c4"/><stop offset="1" stop-color="#1f6f98"/></linearGradient>
+      <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0dcab"/><stop offset="1" stop-color="#d9bf86"/></linearGradient>
+    </defs>
+    <rect y="-1100" width="1600" height="1100" fill="#7fd3e3"/>
+    <rect width="1600" height="900" fill="url(#water)"/>
+    <g id="rays"></g>
+    <g id="back"></g>
+    <path d="M0 800 C 200 770 380 790 560 784 C 760 776 900 800 1100 790 C 1300 780 1450 770 1600 790 L1600 900 L0 900 Z" fill="url(#sand)"/>
+    <g id="floor"></g>
+    <g id="weeds"></g>
+    <g id="fish"></g>
+    <g id="bubbles"></g>
+    <g id="fore"></g>`;
+    const rays = [];
+    [[200, 120], [520, 90], [860, 140], [1180, 100], [1450, 130]].forEach(([x, w], i) => {
+      const p = document.createElementNS(NS, "path");
+      p.setAttribute("d", `M${x - w / 2} -400 L${x + w / 2} -400 L${x + w * 1.6} 820 L${x - w * 0.2} 820 Z`);
+      p.setAttribute("fill", "url(#ray)");
+      $("rays").appendChild(p); rays.push({ p, seed: i * 1.7 });
+    });
+    // Distant rock silhouettes, then rocks, coral and shells on the sand.
+    $("back").innerHTML = `<path d="M0 800 C 80 690 180 700 240 740 C 300 640 420 650 470 760 L470 800 Z" fill="#3b86a8" opacity="0.55"/>
+      <path d="M1130 800 C 1180 700 1290 660 1360 720 C 1420 650 1540 660 1600 720 L1600 800 Z" fill="#3b86a8" opacity="0.55"/>`;
+    const rock = (x, y, s, c1, c2) => `<g transform="translate(${x},${y}) scale(${s})"><path d="M-80 0 C -86 -46 -40 -80 0 -76 C 50 -74 86 -40 80 0 Z" fill="${c1}"/><path d="M-30 -60 C -6 -74 30 -70 50 -50 C 20 -56 -6 -56 -30 -60 Z" fill="${c2}"/></g>`;
+    const coral = (x, y, s, c) => `<g transform="translate(${x},${y}) scale(${s})" fill="none" stroke="${c}" stroke-width="12" stroke-linecap="round"><path d="M0 0 V-60 M0 -30 Q-26 -36 -28 -70 M0 -40 Q24 -48 26 -86 M-14 -52 Q-36 -56 -42 -78"/></g>`;
+    const shell = (x, y, c) => `<g transform="translate(${x},${y})"><path d="M-12 0 Q-12 -16 0 -18 Q12 -16 12 0 Z" fill="${c}"/><path d="M-6 0 L-3 -15 M0 0 V-17 M6 0 L3 -15" stroke="#fff" stroke-opacity="0.6" stroke-width="1.6"/></g>`;
+    $("floor").innerHTML = rock(150, 826, 1.3, "#6c7f99", "#8798b0") + rock(1460, 830, 1.5, "#6c7f99", "#8798b0") + rock(1300, 840, 0.8, "#5a6c86", "#7486a0") +
+      coral(330, 815, 1, "#f28b82") + coral(1180, 812, 0.9, "#f6b26b") + coral(760, 850, 0.7, "#e98ab5") +
+      shell(560, 830, "#f7c6c0") + shell(980, 846, "#fbe1b6") + shell(1040, 812, "#f7c6c0") +
+      [[420, 860], [640, 812], [880, 870], [1100, 860], [250, 880]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="7" ry="3" fill="#c9ad74"/>`).join("");
+    // Seaweed sways: each plant is redrawn from a few segments every frame.
+    const weeds = [[70, 830, 9, "#3f9a63"], [250, 812, 7, "#56b277"], [460, 820, 6, "#3f9a63"], [680, 800, 5, "#56b277"], [1020, 806, 6, "#3f9a63"], [1240, 820, 8, "#56b277"], [1400, 812, 6, "#3f9a63"], [1560, 830, 9, "#56b277"], [860, 812, 4, "#56b277"]]
+      .map(([x, y, n, c], i) => { const p = document.createElementNS(NS, "path"); p.setAttribute("fill", "none"); p.setAttribute("stroke", c); p.setAttribute("stroke-width", "14"); p.setAttribute("stroke-linecap", "round"); $("weeds").appendChild(p); return { p, x, y, n, seed: i * 0.9 }; });
+    const bubbles = [];
+    for (let i = 0; i < 18; i++) {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("fill", "none"); c.setAttribute("stroke", "#e9fbff"); c.setAttribute("stroke-width", "2");
+      $("bubbles").appendChild(c);
+      bubbles.push({ c, x: 0, y: 0, r: 0, v: 0, seed: 0, reset(first) { this.x = [330, 1180, 150, 1460][i % 4] + rand(-20, 20); this.y = first ? rand(0, 820) : 830; this.r = rand(3, 8); this.v = rand(40, 80); this.seed = rand(0, 6); } });
+      bubbles[i].reset(true);
+    }
+    const fore = (x, s, flip) => `<g transform="translate(${x},900) scale(${flip ? -s : s},${s})"><path d="M-60 0 C -50 -80 -10 -120 20 -160 C 10 -110 30 -60 40 0 Z" fill="#2f7f53"/><path d="M0 0 C 10 -60 50 -100 80 -120 C 60 -80 60 -40 70 0 Z" fill="#3f9a63"/></g>`;
+    $("fore").innerHTML = fore(-10, 1.4, false) + fore(1610, 1.4, true);
+
+    // Fish art: faces right, centred on (0, 0).
+    const FISH = [
+      { c: "#f58a3d", fin: "#e36f24", band: "#fff", rx: 34, ry: 20, speed: 90 },
+      { c: "#3f7fe0", fin: "#f4c542", rx: 38, ry: 18, speed: 110, stripe: "#1f3f86" },
+      { c: "#f7d046", fin: "#eab52c", rx: 27, ry: 25, speed: 80, tall: true },
+      { c: "#e9cf88", fin: "#d6b86a", rx: 27, ry: 24, speed: 60, puffer: true },
+      { c: "#f59bb5", fin: "#e57a9c", rx: 28, ry: 26, speed: 70, tall: true, stripe: "#fff" },
+      { c: "#6cc59a", fin: "#4fa97e", rx: 36, ry: 15, speed: 120, stripe: "#e9fff3" },
+      { c: "#a487e8", fin: "#8668d6", rx: 30, ry: 17, speed: 100 },
+      { jelly: true, c: "#f6c3e3", speed: 35 },
+    ];
+    function fishSVG(k) {
+      if (k.jelly) return `<g class="bell"><path d="M-30 0 C -30 -40 30 -40 30 0 Q 22 6 15 0 Q 7 6 0 0 Q -7 6 -15 0 Q -22 6 -30 0 Z" fill="${k.c}" opacity="0.92"/><path d="M-18 -18 C -10 -30 10 -30 18 -18" fill="none" stroke="#fff" stroke-opacity="0.6" stroke-width="4" stroke-linecap="round"/>` +
+        `<ellipse cx="-9" cy="-12" rx="3" ry="3.6" fill="${INK}"/><ellipse cx="9" cy="-12" rx="3" ry="3.6" fill="${INK}"/><circle cx="-8" cy="-13.5" r="1.1" fill="#fff"/><circle cx="10" cy="-13.5" r="1.1" fill="#fff"/><ellipse cx="-16" cy="-6" rx="4" ry="2.4" fill="${CHEEK}" opacity="0.7"/><ellipse cx="16" cy="-6" rx="4" ry="2.4" fill="${CHEEK}" opacity="0.7"/></g>` +
+        `<g class="tent" fill="none" stroke="${k.c}" stroke-width="4" stroke-linecap="round" opacity="0.8"><path/><path/><path/><path/></g>`;
+      const { rx, ry, c, fin } = k;
+      let s = `<g class="tail" data-px="${-rx + 4}" data-py="0"><path d="M${-rx + 4} 0 L${-rx - 22} ${-ry * 0.9} Q${-rx - 14} 0 ${-rx - 22} ${ry * 0.9} Z" fill="${fin}" stroke="${fin}" stroke-width="4" stroke-linejoin="round"/></g>`;
+      s += `<path d="M${-rx * 0.5} ${-ry * 0.8} Q${-rx * 0.1} ${-ry * (k.tall ? 2 : 1.6)} ${rx * 0.35} ${-ry * 0.85} Z" fill="${fin}"/>`;
+      if (k.tall) s += `<path d="M${-rx * 0.4} ${ry * 0.8} Q${-rx * 0.1} ${ry * 1.8} ${rx * 0.3} ${ry * 0.85} Z" fill="${fin}"/>`;
+      s += `<ellipse cx="0" cy="0" rx="${rx}" ry="${ry}" fill="${c}"/>`;
+      if (k.band) s += `<ellipse cx="${rx * 0.38}" cy="0" rx="5.5" ry="${ry * 0.86}" fill="${k.band}"/><ellipse cx="${-rx * 0.32}" cy="0" rx="5" ry="${ry * 0.86}" fill="${k.band}"/>`;
+      if (k.stripe && !k.tall) s += `<path d="M${-rx * 0.7} ${ry * 0.1} Q0 ${-ry * 0.5} ${rx * 0.55} ${ry * 0.05}" fill="none" stroke="${k.stripe}" stroke-width="5" stroke-linecap="round" opacity="0.85"/>`;
+      if (k.stripe && k.tall) s += [-0.35, 0.05].map(f => `<path d="M${rx * f} ${-ry * 0.85} Q${rx * f + 5} 0 ${rx * f} ${ry * 0.85}" fill="none" stroke="${k.stripe}" stroke-width="5" opacity="0.7"/>`).join("");
+      if (k.puffer) s += [[-12, -10], [-2, -16], [-16, 4], [4, 6], [-6, 14]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#b89a4e"/>`).join("") + `<ellipse cx="2" cy="${ry * 0.45}" rx="${rx * 0.7}" ry="${ry * 0.42}" fill="#f8efcf"/>`;
+      s += `<g class="pec" data-px="${rx * 0.05}" data-py="${ry * 0.2}"><ellipse cx="${rx * 0.05 - 6}" cy="${ry * 0.3}" rx="9" ry="5" fill="${fin}" transform="rotate(25 ${rx * 0.05} ${ry * 0.2})"/></g>`;
+      const ex = rx * 0.52, ey = -ry * 0.18;
+      s += `<g class="eyes" data-px="${ex}" data-py="${ey}"><circle cx="${ex}" cy="${ey}" r="7" fill="#fff"/><circle cx="${ex + 1.5}" cy="${ey}" r="4.4" fill="${INK}"/><circle cx="${ex + 2.8}" cy="${ey - 1.6}" r="1.5" fill="#fff"/></g>`;
+      s += `<ellipse cx="${ex - 4}" cy="${ey + 10}" rx="4.5" ry="2.8" fill="${CHEEK}" opacity="0.6"/><path d="M${rx - 7} ${ry * 0.18} q3 3 6 0" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>`;
+      return s;
+    }
+
+    const fishLayer = $("fish"), school = [];
+    const MAXF = 14;
+    const Y0 = 360, Y1 = 740, X0 = 160, X1 = 1440;
+    function newTarget(f) { f.tx = rand(X0, X1); f.ty = rand(Y0, Y1); f.dwell = rand(0, 1) < 0.25 ? rand(1, 2.5) : 0; }
+    function add() {
+      if (present() >= MAXF) return false;
+      const counts = {}; school.forEach(f => { if (!f.leaving) counts[f.ki] = (counts[f.ki] || 0) + 1; });
+      const pool = FISH.map((k, i) => i).filter(i => !(counts[i] >= (FISH[i].jelly ? 1 : 2)));
+      const ki = pool[Math.floor(Math.random() * pool.length)] ?? 0, k = FISH[ki];
+      const fromLeft = Math.random() < 0.5;
+      const el = document.createElementNS(NS, "g");
+      el.innerHTML = `<g class="body">${fishSVG(k)}</g>`;
+      const f = { ki, k, el, body: el.querySelector(".body"), x: fromLeft ? -120 : 1720, y: rand(Y0, Y1), vx: 0, vy: 0, size: rand(1.2, 1.6) * (k.jelly ? 1.25 : 1),
+        face: fromLeft ? 1 : -1, faceFrom: 1, faceTo: fromLeft ? 1 : -1, faceT: 1, t: rand(0, 9), tail: 0, blinkAt: rand(1, 5), blink: 1, puff: 1, leaving: false, speed: k.speed * rand(0.9, 1.15) };
+      f.tail = el.querySelector(".tail"); f.pec = el.querySelector(".pec"); f.eyes = el.querySelector(".eyes"); f.tent = el.querySelectorAll(".tent path"); f.bell = el.querySelector(".bell");
+      f.tx = fromLeft ? rand(X0 + 100, 800) : rand(800, X1 - 100); f.ty = clamp(f.y + rand(-80, 80), Y0, Y1); f.dwell = 0;
+      fishLayer.appendChild(el); school.push(f);
+      return true;
+    }
+    const present = () => school.filter(f => !f.leaving).length;
+    function leave(f) { f.leaving = true; f.tx = f.x < 800 ? -260 : 1860; f.ty = f.y + rand(-60, 60); f.dwell = 0; f.burst = 1; }
+    function remove() {
+      const here = school.filter(f => !f.leaving);
+      if (!here.length) return false;
+      leave(here[Math.floor(Math.random() * here.length)]);
+      return true;
+    }
+    function frame(dt, zone, celebrate, t) {
+      rays.forEach(r => r.p.setAttribute("opacity", f2(0.55 + 0.45 * Math.sin(t * 0.4 + r.seed))));
+      weeds.forEach(w => {
+        let d = `M${w.x} ${w.y}`, x = w.x, y = w.y;
+        for (let i = 1; i <= w.n; i++) { y -= 26; x = w.x + Math.sin(t * 1.1 + w.seed + i * 0.45) * i * 2.6; d += ` L${f2(x)} ${y}`; }
+        w.p.setAttribute("d", d);
+      });
+      bubbles.forEach(b => { b.y -= b.v * dt; if (b.y < -300) b.reset(false); b.c.setAttribute("cx", f2(b.x + Math.sin(t * 2 + b.seed) * 6)); b.c.setAttribute("cy", f2(b.y)); b.c.setAttribute("r", b.r); });
+      for (const f of school) {
+        f.t += dt;
+        const dx = f.tx - f.x, dy = f.ty - f.y, dist = Math.hypot(dx, dy);
+        let sp = f.speed * (f.leaving ? 2.4 : zone === "loud" ? 1.3 : 1);
+        if (f.k.jelly && !f.leaving) sp *= 0.6 + 0.6 * Math.max(0, Math.sin(f.t * 2.2));
+        if (f.dwell > 0) { f.dwell -= dt; sp *= 0.12; }
+        const want = dist < 30 && !f.leaving ? 0 : sp * Math.min(1, dist / 120);
+        const rate = f.leaving ? 3 : 1.3;
+        f.vx = damp(f.vx, dist ? dx / dist * want : 0, rate, dt);
+        f.vy = damp(f.vy, dist ? dy / dist * want * 0.7 : 0, rate, dt);
+        f.x += f.vx * dt; f.y += f.vy * dt + Math.sin(f.t * 1.3) * 4 * dt;
+        if (!f.leaving && dist < 30 && f.dwell <= 0) newTarget(f);
+        if (f.leaving && (f.x < -220 || f.x > 1820)) f.dead = true;
+        if (!f.k.jelly && Math.abs(f.vx) > 8) turner(f, f.vx > 0 ? 1 : -1);
+        stepTurn(f, dt, 0.35);
+        const speed = Math.hypot(f.vx, f.vy);
+        f.tailPh = (f.tailPh || 0) + dt * (3 + speed * 0.07);
+        f.blinkAt -= dt; if (f.blinkAt <= 0) { f.blinkT = 0; f.blinkAt = rand(2.5, 6); }
+        if (f.blinkT != null) { f.blinkT += dt; const p = f.blinkT / 0.16; f.blink = p >= 1 ? 1 : 1 - 0.9 * Math.sin(Math.PI * p); if (p >= 1) f.blinkT = null; }
+        f.puff = damp(f.puff, f.k.puffer && zone === "loud" ? 1.3 : 1, 4, dt);
+        const face = Math.abs(f.face) < 0.06 ? 0.06 * Math.sign(f.face || 1) : f.face;
+        const tilt = f.k.jelly ? 0 : clamp(Math.atan2(f.vy, Math.abs(f.vx) + 30) * 180 / Math.PI * 0.6, -18, 18);
+        const s = f.size * f.puff;
+        f.el.setAttribute("transform", `translate(${f2(f.x)},${f2(f.y)}) scale(${f2(s * face * 100) / 100},${f2(s)}) rotate(${f2(tilt)})`);
+        if (f.k.jelly) {
+          const pulse = Math.sin(f.t * 2.2);
+          f.bell.setAttribute("transform", `scale(${f2(1 + 0.08 * pulse)},${f2(1 - 0.08 * pulse)})`);
+          f.tent.forEach((p, i) => { const x0 = -18 + i * 12; let d = `M${x0} 2`; for (let j = 1; j <= 5; j++) d += ` L${f2(x0 + Math.sin(f.t * 2.5 + i + j * 0.8) * j * 1.6)} ${2 + j * 11}`; p.setAttribute("d", d); });
+        } else {
+          f.tail.setAttribute("transform", `rotate(${f2(Math.sin(f.tailPh) * (10 + speed * 0.12))} ${f.tail.dataset.px} 0)`);
+          f.body.setAttribute("transform", `rotate(${f2(Math.sin(f.tailPh + 1) * 2)})`);
+          f.pec.setAttribute("transform", `rotate(${f2(Math.sin(f.t * 6) * 18)} ${f.pec.dataset.px} ${f.pec.dataset.py})`);
+          const ey = +f.eyes.dataset.py;
+          f.eyes.setAttribute("transform", `translate(0,${ey}) scale(1,${f2(f.blink)}) translate(0,${-ey})`);
+        }
+      }
+      for (let i = school.length - 1; i >= 0; i--) if (school[i].dead) { school[i].el.remove(); school.splice(i, 1); }
+      // Bigger fish swim in front.
+      school.sort((a, b) => a.size - b.size).forEach((f, i) => { if (fishLayer.children[i] !== f.el) fishLayer.insertBefore(f.el, fishLayer.children[i] || null); });
+    }
+    return { max: MAXF, present, add, remove, frame, clear() { school.forEach(f => f.leaving || leave(f)); },
+      fill(n) { for (let i = 0; i < n; i++) { add(); const f = school[school.length - 1]; f.x = rand(X0, X1); f.y = rand(Y0, Y1); newTarget(f); } } };
+  }
+
+  /* ---------------- Flower Garden ----------------
+     A flower sprouts in a garden bed, its stem grows, leaves unfold, then the bud opens with a little overshoot.
+     When it is loud, one flower closes, droops and sinks back into the soil. Butterflies visit a busy garden. */
+  function Garden(world) {
+    world.innerHTML = `
+    <defs>
+      <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b5e0f2"/><stop offset="0.65" stop-color="#e3f3f3"/><stop offset="1" stop-color="#fff4dc"/></linearGradient>
+      <linearGradient id="ggrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b2d985"/><stop offset="1" stop-color="#8cc565"/></linearGradient>
+      <radialGradient id="gsun"><stop offset="0" stop-color="#fff4c4" stop-opacity="0.9"/><stop offset="1" stop-color="#fff4c4" stop-opacity="0"/></radialGradient>
+    </defs>
+    <rect y="-1100" width="1600" height="1100" fill="#b5e0f2"/>
+    <rect width="1600" height="900" fill="url(#gsky)"/>
+    <circle cx="1180" cy="270" r="150" fill="url(#gsun)"/><circle cx="1180" cy="270" r="54" fill="#ffe08a"/>
+    <g id="gclouds"></g>
+    <path d="M0 460 C 200 400 360 430 520 450 C 700 470 820 410 1000 420 C 1180 430 1300 470 1450 440 C 1520 430 1570 430 1600 436 L1600 560 L0 560 Z" fill="#c4e0a6"/>
+    <rect y="520" width="1600" height="380" fill="url(#ggrass)"/>
+    <g id="picket"></g>
+    <g id="beds"></g>
+    <g id="flowers"></g>
+    <g id="flies"></g>
+    <g id="gfront"></g>`;
+    const clouds = [];
+    makeCloud($("gclouds"), clouds, 300, 250, 0.9); makeCloud($("gclouds"), clouds, 760, 190, 0.7); makeCloud($("gclouds"), clouds, 1450, 310, 0.6); makeCloud($("gclouds"), clouds, 700, -100, 1);
+    let pk = `<rect x="0" y="500" width="1600" height="8" fill="#f4f1ea"/><rect x="0" y="526" width="1600" height="8" fill="#f4f1ea"/>`;
+    for (let x = 10; x < 1600; x += 34) pk += `<path d="M${x - 9} 552 V486 L${x} 474 L${x + 9} 486 V552 Z" fill="#fbf9f4" stroke="#dcd6c8" stroke-width="1.5"/>`;
+    $("picket").innerHTML = pk;
+    // Three soil beds, each with a grass edge.
+    const BEDS = [[600, 1180, 26], [700, 1320, 30], [812, 1460, 34]];
+    $("beds").innerHTML = BEDS.map(([y, w, h]) => `<rect x="${800 - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="${h / 2}" fill="#8a5d3d"/><rect x="${800 - w / 2 + 10}" y="${y - h / 2 + 4}" width="${w - 20}" height="${h * 0.35}" rx="${h * 0.17}" fill="#a06f4a" opacity="0.7"/>`).join("");
+    const tuft = (x, y, s) => `<path transform="translate(${x},${y}) scale(${s})" d="M-10 0 Q-8 -14 -2 -18 Q-4 -8 0 0 Q2 -12 8 -16 Q5 -6 8 0 Z" fill="#6aa94e"/>`;
+    $("gfront").innerHTML = [[90, 880, 1.4], [260, 660, 1], [1340, 650, 1], [1510, 880, 1.4], [700, 880, 1.2], [1000, 660, 1]].map(([x, y, s]) => tuft(x, y, s)).join("") +
+      `<g transform="translate(-20,900) scale(1.4)"><circle cx="40" cy="-30" r="50" fill="#6aac56"/><circle cx="100" cy="-10" r="40" fill="#5e9e4c"/></g><g transform="translate(1620,900) scale(-1.4,1.4)"><circle cx="40" cy="-30" r="50" fill="#6aac56"/><circle cx="100" cy="-10" r="40" fill="#5e9e4c"/></g>`;
+    const SP = [];
+    BEDS.forEach(([y, w], r) => { const n = [5, 5, 6][r]; for (let i = 0; i < n; i++) SP.push({ x: 800 - w / 2 + 90 + i * (w - 180) / (n - 1) + rand(-18, 18), y: y + rand(-3, 3), used: null }); });
+    const TYPES = [
+      { name: "daisy", petal: ["#ffffff", "#fff6fb"], center: "#f6c33c", h: 120, n: 12 },
+      { name: "tulip", petal: ["#f2607a", "#f7a1c4", "#b98ae8", "#ff9a52"], h: 110 },
+      { name: "sun", petal: ["#ffc93c"], center: "#b07a45", h: 170, n: 14 },
+      { name: "round", petal: ["#f78fb3", "#9fb8ff", "#c79bf2", "#ff9f87"], center: "#ffe07a", h: 115, n: 6 },
+    ];
+    const layer = $("flowers"), plants = [];
+    function headSVG(ty, c) {
+      if (ty.name === "tulip") return `<path d="M-15 -6 Q-18 -30 -8 -38 Q-2 -24 0 -22 Q2 -24 8 -38 Q18 -30 15 -6 Q0 6 -15 -6 Z" fill="${c}"/><path d="M-6 -4 Q0 -34 6 -4 Q0 2 -6 -4 Z" fill="#fff" opacity="0.25"/>`;
+      const pl = ty.name === "sun" ? 26 : ty.name === "round" ? 15 : 20, pw = ty.name === "round" ? 13 : ty.name === "sun" ? 7 : 6.5;
+      let s = "";
+      for (let i = 0; i < ty.n; i++) { const a = 360 / ty.n * i; s += `<ellipse cx="0" cy="${-pl * 0.62}" rx="${pw}" ry="${pl * 0.55}" fill="${c}" transform="rotate(${a})"/>`; }
+      const cr = ty.name === "sun" ? 17 : 9;
+      return `<g class="petals">${s}</g><circle r="${cr}" fill="${ty.center}"/><circle cx="-2" cy="-2" r="${cr * 0.45}" fill="#fff" opacity="0.25"/>` +
+        `<g class="eyes" data-py="-1"><ellipse cx="-4" cy="-1" rx="1.8" ry="2.3" fill="${INK}"/><ellipse cx="4" cy="-1" rx="1.8" ry="2.3" fill="${INK}"/></g><path d="M-3 3 q3 3 6 0" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linecap="round"/>`;
+    }
+    function add() {
+      const free = SP.filter(s => !s.used);
+      if (!free.length) return false;
+      const sp = free[Math.floor(Math.random() * free.length)];
+      const ty = TYPES[Math.floor(Math.random() * TYPES.length)], c = ty.petal[Math.floor(Math.random() * ty.petal.length)];
+      const el = document.createElementNS(NS, "g");
+      const scale = (0.8 + (sp.y - 600) / 212 * 0.45) * 1.45;
+      el.setAttribute("transform", `translate(${f2(sp.x)},${f2(sp.y)}) scale(${f2(scale)})`);
+      el.innerHTML = `<ellipse class="mound" cx="0" cy="2" rx="20" ry="6" fill="#6f4a30"/><g class="plant"><path class="stem" fill="none" stroke="#4f9a45" stroke-width="7" stroke-linecap="round"/>` +
+        `<g class="leafL"><path d="M0 0 Q-26 -6 -34 -22 Q-12 -22 0 0 Z" fill="#5fae4f"/></g><g class="leafR"><path d="M0 0 Q26 -6 34 -22 Q12 -22 0 0 Z" fill="#4f9a45"/></g>` +
+        `<g class="head">${headSVG(ty, c)}</g></g><g class="dirt"></g>`;
+      const p = { sp, ty, el, scale, plant: el.querySelector(".plant"), stem: el.querySelector(".stem"), head: el.querySelector(".head"), petals: el.querySelector(".petals"),
+        leafL: el.querySelector(".leafL"), leafR: el.querySelector(".leafR"), eyes: el.querySelector(".eyes"), mound: el.querySelector(".mound"),
+        grow: 0, bloom: 0, droop: 0, t: 0, seed: rand(0, 6), h: ty.h * rand(0.9, 1.1), bend: rand(-14, 14), state: "grow", blinkAt: rand(1, 5), blink: 1 };
+      sp.used = p;
+      // A little puff of soil as it pops up.
+      const dirt = el.querySelector(".dirt");
+      p.puffs = [0, 1, 2, 3, 4].map(i => { const c = document.createElementNS(NS, "circle"); c.setAttribute("fill", "#8a5d3d"); dirt.appendChild(c); return { c, vx: rand(-40, 40), vy: rand(-70, -40) }; });
+      layer.appendChild(el);
+      plants.push(p); plants.sort((a, b) => a.sp.y - b.sp.y).forEach((q, i) => { if (layer.children[i] !== q.el) layer.insertBefore(q.el, layer.children[i] || null); });
+      return true;
+    }
+    const present = () => plants.filter(p => p.state !== "wilt").length;
+    function wilt(p) { if (p.state === "wilt") return; p.state = "wilt"; p.wt = 0; if (p.sp) { p.sp.used = null; } }
+    function remove() {
+      const here = plants.filter(p => p.state !== "wilt");
+      if (!here.length) return false;
+      const grown = here.filter(p => p.bloom > 0.9);
+      const pool = grown.length ? grown : here;
+      wilt(pool[Math.floor(Math.random() * pool.length)]);
+      return true;
+    }
+    // Butterflies: about one for every four flowers.
+    const flyLayer = $("flies"), flies = [];
+    const FLYC = [["#ffb347", "#ff8a3d"], ["#8fc7ff", "#5b9df0"], ["#f7a1c4", "#e7709d"], ["#c8a2f0", "#a079e0"]];
+    function makeFly() {
+      const [c1, c2] = FLYC[flies.length % FLYC.length];
+      const el = document.createElementNS(NS, "g");
+      el.innerHTML = `<g class="wing"><ellipse cx="-8" cy="-6" rx="10" ry="12" fill="${c1}"/><ellipse cx="-7" cy="8" rx="7" ry="8" fill="${c2}"/></g><g class="wing2"><ellipse cx="8" cy="-6" rx="10" ry="12" fill="${c1}"/><ellipse cx="7" cy="8" rx="7" ry="8" fill="${c2}"/></g><rect x="-2" y="-12" width="4" height="26" rx="2" fill="#4a3a35"/>`;
+      flyLayer.appendChild(el);
+      const fromLeft = Math.random() < 0.5;
+      const f = { el, w1: el.querySelector(".wing"), w2: el.querySelector(".wing2"), x: fromLeft ? -60 : 1660, y: rand(420, 600), tx: 0, ty: 0, t: rand(0, 9), leaving: false };
+      f.tx = rand(300, 1300); f.ty = rand(420, 700);
+      flies.push(f);
+    }
+    function frame(dt, zone, celebrate, t) {
+      driftClouds(clouds, dt);
+      for (const p of plants) {
+        p.t += dt;
+        if (p.state === "grow") {
+          p.grow = Math.min(1, p.grow + dt / 2.4);
+          if (p.grow > 0.7) p.bloom = Math.min(1, p.bloom + dt / 1.1);
+          if (p.bloom >= 1) p.state = "idle";
+        } else if (p.state === "wilt") {
+          p.wt += dt;
+          p.bloom = Math.max(0, 1 - p.wt / 0.6) * Math.min(p.bloom, 1);
+          p.droop = Math.min(1, p.wt / 1.0);
+          if (p.wt > 0.9) p.grow = Math.max(0, p.grow - dt / 1.1);
+          if (p.grow <= 0) p.dead = true;
+        }
+        const g = easeOut(p.grow), h = p.h * g;
+        const sway = Math.sin(t * 1.1 + p.seed) * 3 + (zone === "loud" ? Math.sin(t * 22 + p.seed) * 1.6 : 0) + p.droop * 28 * Math.sign(p.bend || 1);
+        const tipX = p.bend * g + p.droop * 26 * Math.sign(p.bend || 1), tipY = -h + p.droop * h * 0.25;
+        p.plant.setAttribute("transform", `rotate(${f2(sway * 0.4)})`);
+        p.stem.setAttribute("d", `M0 0 Q${f2(p.bend * 0.2 * g)} ${f2(-h * 0.55)} ${f2(tipX)} ${f2(tipY)}`);
+        const leaf = clamp((p.grow - 0.35) / 0.35, 0, 1), ls = easeOutBack(leaf) * (1 - p.droop * 0.3);
+        p.leafL.setAttribute("transform", `translate(${f2(p.bend * 0.05 * g)},${f2(-h * 0.32)}) rotate(${f2(-10 + Math.sin(t * 1.4 + p.seed) * 5 + p.droop * 30)}) scale(${f2(ls)})`);
+        p.leafR.setAttribute("transform", `translate(${f2(p.bend * 0.1 * g)},${f2(-h * 0.5)}) rotate(${f2(8 + Math.sin(t * 1.3 + p.seed + 1) * 5 - p.droop * 10)}) scale(${f2(ls * 0.85)})`);
+        const b = p.state === "wilt" ? p.bloom : easeOutBack(p.bloom);
+        const hs = clamp(0.25 + 0.75 * b, 0, 1.2) * clamp(p.grow * 1.6, 0, 1) * 1.3;
+        const nod = Math.sin(t * 1.1 + p.seed + 0.6) * 4 + p.droop * 60 * Math.sign(p.bend || 1);
+        p.head.setAttribute("transform", `translate(${f2(tipX)},${f2(tipY)}) rotate(${f2(nod)}) scale(${f2(hs)})`);
+        if (p.petals) p.petals.setAttribute("transform", `scale(${f2(Math.max(0.05, b))}) rotate(${f2(t * 4 + p.seed * 10)})`);
+        p.blinkAt -= dt; if (p.blinkAt <= 0) { p.blinkT = 0; p.blinkAt = rand(2.5, 6); }
+        if (p.blinkT != null) { p.blinkT += dt; const q = p.blinkT / 0.16; p.blink = q >= 1 ? 1 : 1 - 0.9 * Math.sin(Math.PI * q); if (q >= 1) p.blinkT = null; }
+        if (p.eyes) p.eyes.setAttribute("transform", `translate(0,-1) scale(1,${f2(p.blink * (1 - p.droop))}) translate(0,1)`);
+        p.mound.setAttribute("opacity", f2(clamp(p.grow * 3, 0, 1)));
+        p.puffs.forEach((d, i) => { const q = p.t - i * 0.03; if (q < 0 || q > 0.7 || p.state === "wilt") { d.c.setAttribute("r", 0); return; } d.c.setAttribute("cx", f2(d.vx * q)); d.c.setAttribute("cy", f2(d.vy * q + 160 * q * q)); d.c.setAttribute("r", f2(4 * (1 - q / 0.7))); });
+      }
+      for (let i = plants.length - 1; i >= 0; i--) if (plants[i].dead) { plants[i].el.remove(); plants.splice(i, 1); }
+      const want = zone === "loud" ? 0 : Math.floor(present() / 4);
+      const flying = flies.filter(f => !f.leaving);
+      if (flying.length < want && Math.random() < dt * 0.5) makeFly();
+      if (flying.length > want) { const f = flying[0]; f.leaving = true; f.tx = f.x < 800 ? -120 : 1720; f.ty = rand(200, 400); }
+      for (const f of flies) {
+        f.t += dt;
+        const dx = f.tx - f.x, dy = f.ty - f.y, d = Math.hypot(dx, dy);
+        const sp = f.leaving ? 260 : 90;
+        if (d < 20 && !f.leaving) { const blooms = plants.filter(p => p.state === "idle"); const p = blooms[Math.floor(Math.random() * blooms.length)]; if (p && Math.random() < 0.6) { f.tx = p.sp.x + p.bend; f.ty = p.sp.y - p.h * p.scale - 40; } else { f.tx = rand(250, 1350); f.ty = rand(400, 700); } }
+        f.x += d ? dx / d * Math.min(sp, d * 2) * dt : 0; f.y += d ? dy / d * Math.min(sp, d * 2) * dt : 0;
+        const flap = Math.abs(Math.sin(f.t * 14)), bob = Math.sin(f.t * 3) * 6;
+        f.el.setAttribute("transform", `translate(${f2(f.x)},${f2(f.y + bob)}) rotate(${f2(clamp(dx * 0.05, -20, 20))})`);
+        f.w1.setAttribute("transform", `scale(${f2(0.25 + 0.75 * flap)},1)`); f.w2.setAttribute("transform", `scale(${f2(0.25 + 0.75 * flap)},1)`);
+        if (f.leaving && (f.x < -100 || f.x > 1700)) f.dead = true;
+      }
+      for (let i = flies.length - 1; i >= 0; i--) if (flies[i].dead) { flies[i].el.remove(); flies.splice(i, 1); }
+    }
+    return { max: SP.length, present, add, remove, frame, clear() { plants.forEach((p, i) => setTimeout(() => wilt(p), i * 120)); },
+      fill(n) { for (let i = 0; i < n; i++) { if (add()) { const p = plants.find(q => q.grow === 0); if (p) { p.grow = 1; p.bloom = 1; p.state = "idle"; p.t = 5; } } } } };
+  }
+
+  /* ---------------- City at Night ----------------
+     Twenty steps: each quiet step switches on a handful of windows, one after another with a soft fade.
+     Loud steps switch a handful off. Stars twinkle; when the whole city is lit, shooting stars cross the sky. */
+  function City(world) {
+    world.innerHTML = `
+    <defs>
+      <linearGradient id="night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1430"/><stop offset="0.7" stop-color="#22285a"/><stop offset="1" stop-color="#3b3a74"/></linearGradient>
+      <radialGradient id="moonglow"><stop offset="0" stop-color="#fff6d8" stop-opacity="0.45"/><stop offset="1" stop-color="#fff6d8" stop-opacity="0"/></radialGradient>
+      <linearGradient id="shoot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.95"/></linearGradient>
+    </defs>
+    <rect y="-1100" width="1600" height="1100" fill="#0c1430"/>
+    <rect width="1600" height="900" fill="url(#night)"/>
+    <g id="stars"></g>
+    <circle cx="1240" cy="250" r="140" fill="url(#moonglow)"/>
+    <mask id="moonbite"><rect x="1150" y="160" width="180" height="180" fill="#fff"/><circle cx="1264" cy="234" r="40" fill="#000"/></mask>
+    <circle cx="1240" cy="250" r="46" fill="#fbf1cf" mask="url(#moonbite)"/>
+    <g id="shooting"></g>
+    <g id="farcity"></g>
+    <g id="city"></g>
+    <rect y="836" width="1600" height="64" fill="#11152e"/>
+    <rect y="836" width="1600" height="5" fill="#2a2f5c"/>
+    <g id="road"></g>
+    <g id="cars"></g>`;
+    const stars = [];
+    for (let i = 0; i < 90; i++) {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", f2(rand(0, 1600))); c.setAttribute("cy", f2(rand(-500, 560))); c.setAttribute("r", f2(rand(0.8, 2.4))); c.setAttribute("fill", "#fff");
+      $("stars").appendChild(c); stars.push({ c, seed: rand(0, 9), sp: rand(0.6, 2) });
+    }
+    // Far skyline silhouette.
+    let far = "", x = -20;
+    while (x < 1620) { const w = rand(50, 110), h = rand(140, 300); far += `<rect x="${f2(x)}" y="${f2(840 - h)}" width="${f2(w)}" height="${f2(h)}" fill="#262c5e"/>`; x += w + rand(-10, 6); }
+    $("farcity").innerHTML = far;
+    // Front buildings with window grids.
+    const B = [[40, 150, 330], [200, 120, 250], [330, 170, 400], [510, 130, 290], [650, 160, 460], [820, 120, 320], [950, 170, 380], [1130, 130, 280], [1270, 160, 420], [1440, 140, 300]];
+    const wins = [];
+    let city = "";
+    const COLORS = ["#ffd98a", "#ffe7b0", "#ffcf73", "#cfe8ff"];
+    B.forEach(([bx, bw, bh], i) => {
+      const top = 840 - bh, col = i % 2 ? "#161b3d" : "#1b2148";
+      city += `<rect x="${bx}" y="${top}" width="${bw}" height="${bh}" fill="${col}"/>`;
+      if (i % 3 === 0) city += `<rect x="${bx + bw / 2 - 3}" y="${top - 40}" width="6" height="40" fill="${col}"/><circle class="beacon" cx="${bx + bw / 2}" cy="${top - 42}" r="5" fill="#ff6b6b"/>`;
+      else if (i % 3 === 1) city += `<path d="M${bx + 10} ${top} L${bx + bw / 2} ${top - 30} L${bx + bw - 10} ${top} Z" fill="${col}"/>`;
+      else city += `<rect x="${bx + 16}" y="${top - 18}" width="${bw - 32}" height="18" fill="${col}"/>`;
+    });
+    $("city").innerHTML = city;
+    B.forEach(([bx, bw, bh]) => {
+      const cols = Math.floor((bw - 20) / 26), rows = Math.floor((bh - 40) / 34);
+      const ox = bx + (bw - cols * 26 + 8) / 2;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const w = document.createElementNS(NS, "rect");
+        w.setAttribute("x", f2(ox + c * 26)); w.setAttribute("y", f2(840 - bh + 26 + r * 34)); w.setAttribute("width", 18); w.setAttribute("height", 22); w.setAttribute("rx", 2); w.setAttribute("fill", "#272d58");
+        $("city").appendChild(w);
+        wins.push({ w, v: 0, target: 0, delay: 0, color: COLORS[Math.random() < 0.85 ? Math.floor(Math.random() * 3) : 3], active: false });
+      }
+    });
+    // Shuffle so lights come on scattered across the whole city.
+    for (let i = wins.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [wins[i], wins[j]] = [wins[j], wins[i]]; }
+    const STEPS = 20;
+    let step = 0;
+    const per = () => wins.length / STEPS;
+    function setStep(k) {
+      const from = Math.round(step * per()), to = Math.round(k * per());
+      const lo = Math.min(from, to), hi = Math.max(from, to);
+      for (let i = lo; i < hi; i++) { const w = wins[i]; w.target = k > step ? 1 : 0; w.delay = rand(0, 1.6); w.active = true; }
+      step = k;
+    }
+    const mix = (a, b, t) => { const p = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16)); const A = p(a), Bc = p(b); return `rgb(${A.map((v, i) => Math.round(v + (Bc[i] - v) * t)).join(",")})`; };
+    $("road").innerHTML = [100, 400, 700, 1000, 1300].map(x => `<rect x="${x}" y="866" width="70" height="5" rx="2" fill="#3a3f6e"/>`).join("") +
+      [60, 480, 900, 1320].map(x => `<rect x="${x}" y="760" width="5" height="78" fill="#2c3160"/><circle cx="${x + 2}" cy="758" r="8" fill="#ffe7a6"/><circle cx="${x + 2}" cy="758" r="22" fill="#ffe7a6" opacity="0.15"/>`).join("");
+    const cars = [0, 1, 2].map(i => {
+      const g = document.createElementNS(NS, "g");
+      const right = i !== 1;
+      g.innerHTML = `<rect x="-38" y="-24" width="76" height="20" rx="8" fill="${["#4b5ba8", "#9b4b6b", "#3f7f75"][i]}"/><path d="M-22 -24 L-14 -38 L16 -38 L24 -24 Z" fill="${["#4b5ba8", "#9b4b6b", "#3f7f75"][i]}"/>` +
+        `<path d="M-16 -25 L-11 -34 L-1 -34 L-1 -25 Z M3 -25 L3 -34 L13 -34 L19 -25 Z" fill="#9fc3ff" opacity="0.6"/><circle cx="-22" cy="-4" r="7" fill="#0b0e20"/><circle cx="22" cy="-4" r="7" fill="#0b0e20"/>` +
+        `<path d="M38 -16 L150 -30 L150 2 Z" fill="#fff3c4" opacity="0.12"/><circle cx="36" cy="-16" r="3.5" fill="#fff3c4"/><circle cx="-37" cy="-16" r="3" fill="#ff5d6c"/>`;
+      $("cars").appendChild(g);
+      return { g, x: rand(0, 1600), dir: right ? 1 : -1, y: right ? 884 : 862, v: rand(70, 110) };
+    });
+    let shoot = null;
+    function frame(dt, zone, celebrate, t) {
+      stars.forEach(s => s.c.setAttribute("opacity", f2(0.45 + 0.55 * Math.abs(Math.sin(t * s.sp + s.seed)))));
+      for (const w of wins) {
+        if (!w.active) continue;
+        if (w.delay > 0) { w.delay -= dt; continue; }
+        w.v = damp(w.v, w.target, w.target ? 5 : 7, dt);
+        if (Math.abs(w.v - w.target) < 0.01) { w.v = w.target; w.active = false; }
+        w.w.setAttribute("fill", mix("#272d58", w.color, w.v));
+      }
+      world.querySelectorAll(".beacon").forEach((b, i) => b.setAttribute("opacity", f2(0.3 + 0.7 * Math.max(0, Math.sin(t * 2 + i)))));
+      cars.forEach(c => { c.x += c.v * c.dir * dt; if (c.x > 1760) c.x = -160; if (c.x < -160) c.x = 1760; c.g.setAttribute("transform", `translate(${f2(c.x)},${c.y}) scale(${c.dir},1)`); });
+      if (!shoot && step === STEPS && Math.random() < dt * 0.35) {
+        const p = document.createElementNS(NS, "rect");
+        p.setAttribute("width", 160); p.setAttribute("height", 3); p.setAttribute("rx", 1.5); p.setAttribute("fill", "url(#shoot)");
+        $("shooting").appendChild(p);
+        shoot = { p, x: rand(100, 900), y: rand(-100, 300), t: 0 };
+      }
+      if (shoot) {
+        shoot.t += dt;
+        const q = shoot.t / 1.1;
+        shoot.p.setAttribute("transform", `translate(${f2(shoot.x + q * 700)},${f2(shoot.y + q * 260)}) rotate(20)`);
+        shoot.p.setAttribute("opacity", f2(Math.sin(Math.PI * clamp(q, 0, 1))));
+        if (q >= 1) { shoot.p.remove(); shoot = null; }
+      }
+    }
+    return { max: STEPS, present: () => step, add() { if (step < STEPS) { setStep(step + 1); return true; } return false; }, remove() { if (step > 0) { setStep(step - 1); return true; } return false; },
+      frame, clear() { setStep(0); }, fill(n) { setStep(Math.min(STEPS, n)); } };
+  }
+
+  /* ---------------- Sound Graph ----------------
+     The room's smoothed volume over the whole work period, with the loud line and the quiet band.
+     Quiet time adds up whenever the room is below the loud line. Drawn in screen pixels (the stage size). */
+  function Graph(world) {
+    world.innerHTML = `<rect id="gbg" fill="#f7fafc"/><g id="gzones"></g><g id="ggrid"></g><path id="garea" fill="#2f5fd0" opacity="0.08"/><path id="gline" fill="none" stroke="#1b2733" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path id="ghot" fill="none" stroke="#d23c52" stroke-width="5" stroke-linecap="round"/><circle id="gdot" r="9"/><g id="glabels"></g>`;
+    const pts = [];
+    let acc = 0, W = 1600, H = 900, quiet = 0, total = 0;
+    const box = () => { const L = 96, R = W - 36, T = Math.min(150, H * 0.22), Bt = H - 74; return { L, R, T, B: Bt }; };
+    function resize(w, h) { W = w; H = h; const g = $("gbg"); g.setAttribute("width", w); g.setAttribute("height", h); }
+    function frame(dt, zone, celebrate, t, S) {
+      const b = box();
+      if (S.running) {
+        total += dt; if (zone !== "loud") quiet += dt;
+        acc += dt;
+        if (acc >= 0.5 || !pts.length) { acc = 0; pts.push([total, S.level, zone]); }
+      }
+      const span = Math.max(120, total);
+      const X = s => b.L + (b.R - b.L) * s / span, Y = v => b.B - (b.B - b.T) * v / 100;
+      const q = S.quietLine(), l = S.loudLine();
+      $("gzones").innerHTML = `<rect x="${b.L}" y="${Y(q)}" width="${b.R - b.L}" height="${Y(0) - Y(q)}" fill="#2e9e62" opacity="0.12"/>` +
+        `<rect x="${b.L}" y="${Y(l)}" width="${b.R - b.L}" height="${Y(q) - Y(l)}" fill="#e0a526" opacity="0.14"/>` +
+        `<rect x="${b.L}" y="${Y(100)}" width="${b.R - b.L}" height="${Y(l) - Y(100)}" fill="#d23c52" opacity="0.1"/>` +
+        `<line x1="${b.L}" x2="${b.R}" y1="${Y(l)}" y2="${Y(l)}" stroke="#d23c52" stroke-width="2.5" stroke-dasharray="10 7"/>`;
+      // Minute marks: 1, 2, 5 or 10 minutes apart so labels never crowd.
+      const mins = span / 60, stepM = mins <= 6 ? 1 : mins <= 15 ? 2 : mins <= 40 ? 5 : 10;
+      let grid = "", lab = "";
+      for (let m = 0; m <= mins + 0.001; m += stepM) { const x = X(m * 60); grid += `<line x1="${f2(x)}" x2="${f2(x)}" y1="${b.T}" y2="${b.B}" stroke="#dbe5ee" stroke-width="1.5"/>`; lab += `<text x="${f2(x)}" y="${b.B + 30}" text-anchor="middle">${m}</text>`; }
+      grid += `<line x1="${b.L}" x2="${b.R}" y1="${b.B}" y2="${b.B}" stroke="#5b6b7a" stroke-width="2"/><line x1="${b.L}" x2="${b.L}" y1="${b.T}" y2="${b.B}" stroke="#5b6b7a" stroke-width="2"/>`;
+      lab += `<text x="${b.L - 14}" y="${Y(l) + 6}" text-anchor="end" fill="#b0293f">Loud</text><text x="${b.L - 14}" y="${Y(q / 2) + 6}" text-anchor="end" fill="#237a4f">Quiet</text>` +
+        `<text x="${(b.L + b.R) / 2}" y="${b.B + 58}" text-anchor="middle" fill="#5b6b7a">Time (minutes)</text>`;
+      $("ggrid").innerHTML = grid;
+      $("glabels").innerHTML = lab;
+      $("glabels").setAttribute("style", "font: 700 18px var(--font-body); fill: #1b2733");
+      if (pts.length) {
+        let d = "";
+        pts.forEach(([s, v], i) => d += `${i ? "L" : "M"}${f2(X(s))} ${f2(Y(v))}`);
+        $("gline").setAttribute("d", d);
+        let hot = ""; pts.forEach(([s0, v, z], i) => { if (i && z === "loud") hot += `M${f2(X(pts[i - 1][0]))} ${f2(Y(pts[i - 1][1]))}L${f2(X(s0))} ${f2(Y(v))}`; });
+        $("ghot").setAttribute("d", hot);
+        $("garea").setAttribute("d", d + `L${f2(X(pts[pts.length - 1][0]))} ${b.B} L${f2(X(pts[0][0]))} ${b.B} Z`);
+        const lastV = S.running ? S.level : pts[pts.length - 1][1];
+        const dot = $("gdot");
+        dot.setAttribute("cx", f2(X(total))); dot.setAttribute("cy", f2(Y(lastV)));
+        dot.setAttribute("fill", zone === "loud" ? "#d23c52" : zone === "ok" ? "#e0a526" : "#2e9e62");
+      }
+    }
+    const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+    return { continuous: true, fullView: true, resize, frame, max: Infinity, present: () => 0, add() {}, remove() {},
+      clear() { pts.length = 0; quiet = 0; total = 0; }, count: () => `Quiet time <b>${mmss(quiet)}</b> of ${mmss(total)}` };
+  }
+
+  /* ---------------- Quiet Zoo ----------------
+     Animals walk in from the sides to a free spot on the lawn and live there (blink, look around, hop, wander).
+     When it is loud, one startles, turns and hurries off the nearest side. */
+  function Zoo(world) {
+  world.innerHTML = `
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9dbee"/><stop offset="0.62" stop-color="#d6eef2"/><stop offset="1" stop-color="#fbf0d6"/></linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7d37c"/><stop offset="1" stop-color="#7fbb5c"/></linearGradient>
+    <radialGradient id="sunglow"><stop offset="0" stop-color="#fff4c4" stop-opacity="0.9"/><stop offset="1" stop-color="#fff4c4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect y="-1100" width="1600" height="1100" fill="#a9dbee"/><rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="470" cy="270" r="150" fill="url(#sunglow)"/>
+  <circle cx="470" cy="270" r="54" fill="#ffe08a"/>
+  <g id="clouds"></g>
+  <path d="M0 430 C 160 360 300 380 430 410 C 560 440 650 350 800 360 C 950 370 1040 430 1180 405 C 1320 380 1450 350 1600 395 L1600 560 L0 560 Z" fill="#c4e0a6"/>
+  <path d="M0 470 C 140 430 260 450 380 470 C 520 492 640 430 790 440 C 950 450 1060 490 1220 470 C 1380 450 1490 430 1600 455 L1600 560 L0 560 Z" fill="#acd48b"/>
+  <g id="trees"></g>
+  <rect x="0" y="528" width="1600" height="372" fill="url(#grass)"/>
+  <path d="M0 540 C 300 528 500 548 800 540 C 1100 532 1300 548 1600 538 L1600 556 L0 556 Z" fill="#98c96f" opacity="0.6"/>
+  <g id="fence"></g>
+  <g id="lawn"></g>
+  <g id="actors"></g>
+  <g id="front"></g>`;
+
+  // Clouds drift slowly.
+  const clouds = [];
+  [[620, 250, 0.9], [1000, 200, 0.7], [1380, 300, 0.8], [160, 300, 0.55], [900, -80, 1], [300, -200, 0.8]].forEach(([x, y, s]) => makeCloud($("clouds"), clouds, x, y, s));
+
+  // Trees along the back, behind the fence.
+  const trees = [[60, 520, 1.15], [210, 500, 0.9], [1320, 505, 1.0], [1480, 520, 1.2], [700, 490, 0.7], [930, 495, 0.75]];
+  $("trees").innerHTML = trees.map(([x, y, s]) => `<g transform="translate(${x},${y}) scale(${s})">
+    <rect x="-9" y="-70" width="18" height="74" rx="6" fill="#8a6446"/>
+    <circle cx="0" cy="-120" r="62" fill="#6fae5a"/><circle cx="-38" cy="-92" r="40" fill="#6fae5a"/><circle cx="40" cy="-96" r="42" fill="#6fae5a"/>
+    <circle cx="18" cy="-104" r="40" fill="#5f9f4f"/><circle cx="34" cy="-80" r="28" fill="#5f9f4f"/>
+    <circle cx="-22" cy="-140" r="16" fill="#86c06d" opacity="0.8"/></g>`).join("");
+
+  // Wooden zoo fence and a sign.
+  let fence = `<rect x="0" y="512" width="1600" height="9" rx="4" fill="#c99a62"/><rect x="0" y="538" width="1600" height="9" rx="4" fill="#c99a62"/>`;
+  for (let x = 20; x < 1600; x += 64) fence += `<rect x="${x - 6}" y="494" width="12" height="64" rx="5" fill="#b9874f"/><rect x="${x - 6}" y="494" width="12" height="10" rx="5" fill="#d4a76e"/>`;
+  fence += `<g transform="translate(330,470)"><rect x="-6" y="0" width="12" height="80" rx="4" fill="#9c6e40"/><rect x="-78" y="-46" width="156" height="58" rx="12" fill="#e0b273"/><rect x="-70" y="-38" width="140" height="42" rx="8" fill="#c8945a"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="800" font-size="34" fill="#fff8e8" letter-spacing="4">ZOO</text></g>`;
+  $("fence").innerHTML = fence;
+
+  // Lawn detail: soft mow bands, tufts and flowers.
+  let lawn = "";
+  [[300, 640, 260], [1150, 700, 300], [720, 820, 340]].forEach(([x, y, r]) => lawn += `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.12}" fill="#b4da8c" opacity="0.45"/>`);
+  const tuft = (x, y, s) => `<path transform="translate(${x},${y}) scale(${s})" d="M-10 0 Q-8 -14 -2 -18 Q-4 -8 0 0 Q2 -12 8 -16 Q5 -6 8 0 Z" fill="#6aa94e"/>`;
+  const flower = (x, y, c) => `<g transform="translate(${x},${y})"><path d="M0 0 V-12" stroke="#5e9a45" stroke-width="2.4"/>${[0, 72, 144, 216, 288].map(a => `<circle cx="${Math.cos(a * Math.PI / 180) * 5}" cy="${-14 + Math.sin(a * Math.PI / 180) * 5}" r="4" fill="${c}"/>`).join("")}<circle cx="0" cy="-14" r="3" fill="#ffd45c"/></g>`;
+  [[140, 600], [470, 575], [610, 880], [990, 590], [1260, 860], [1460, 620], [820, 610], [250, 760], [1380, 740], [80, 840], [1530, 820], [680, 700]].forEach(([x, y], i) => lawn += tuft(x, y, 0.9 + (y - 560) / 400));
+  [[110, 640, "#f6a5b5"], [520, 600, "#fff"], [1500, 680, "#f6a5b5"], [960, 860, "#fff"], [180, 880, "#c9b6f2"], [1420, 590, "#fff"], [760, 875, "#f6a5b5"], [1220, 600, "#c9b6f2"]].forEach(([x, y, c]) => lawn += flower(x, y, c));
+  $("lawn").innerHTML = lawn;
+
+  // Bushes in the front corners: animals walk in from behind them.
+  const bush = (x, y, s, flip) => `<g transform="translate(${x},${y}) scale(${flip ? -s : s},${s})">
+    <circle cx="-60" cy="-30" r="56" fill="#5e9e4c"/><circle cx="10" cy="-58" r="68" fill="#6aac56"/><circle cx="80" cy="-24" r="54" fill="#5e9e4c"/>
+    <circle cx="-10" cy="-70" r="30" fill="#7dbd66" opacity="0.8"/><circle cx="60" cy="-48" r="20" fill="#7dbd66" opacity="0.7"/>
+    <circle cx="-30" cy="-50" r="6" fill="#f6a5b5"/><circle cx="40" cy="-80" r="6" fill="#fff"/><circle cx="76" cy="-30" r="6" fill="#f6a5b5"/></g>`;
+  $("front").innerHTML = bush(-10, 930, 1.5, false) + bush(1610, 930, 1.5, true);
+
+  /* ---------------- Animal art ----------------
+     Every animal faces right with its feet at (0, 0). Parts that move are groups with a pivot (data-px, data-py):
+     legs (walk), feet (waddle), head (tilt), ears (twitch), tail (wag), eyes (blink), wing, trunk, flap. */
+  const piv = (cls, x, y, inner) => `<g class="${cls}" data-px="${x}" data-py="${y}">${inner}</g>`;
+  function eyes(hx, hy, o = {}) {
+    const r = o.r || 1, c = o.c || INK;
+    const e = (x, y, s) => `<ellipse cx="${x}" cy="${y}" rx="${3.5 * s * r}" ry="${4.2 * s * r}" fill="${c}"/><circle cx="${x + 1.1 * r}" cy="${y - 1.6 * r}" r="${1.3 * r}" fill="#fff"/>`;
+    return piv("eyes", hx + 10, hy - 2.5, e(hx + 3, hy - 2, 1) + e(hx + 17, hy - 3, 0.9));
+  }
+  const cheeks = (hx, hy) => `<ellipse cx="${hx - 5}" cy="${hy + 8}" rx="5.5" ry="3.6" fill="${CHEEK}" opacity="0.6"/>`;
+  const smile = (x, y, c = INK) => `<path d="M${x} ${y} q2.2 2.6 4.4 0 q2.2 2.6 4.4 0" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round"/>`;
+  const muzzle = (hx, hy, c, nose = "#3a2e2e") => `<ellipse cx="${hx + 13}" cy="${hy + 9}" rx="11" ry="8" fill="${c}"/><ellipse cx="${hx + 15}" cy="${hy + 4}" rx="4.6" ry="3.4" fill="${nose}"/>` + smile(hx + 10.5, hy + 10.5);
+
+  function earRound(x, y, r, c, ci, cls) { return piv(cls, x, y + r * 0.6, `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x}" cy="${y + 1}" r="${r * 0.55}" fill="${ci}"/>`); }
+  function earPoint(x, y, c, ci, cls, h = 22, w = 11, tip) {
+    return piv(cls, x, y, `<path d="M${x - w} ${y + 4} Q${x - 3} ${y - h} ${x + 1} ${y - h} Q${x + 4} ${y - h} ${x + w} ${y + 3} Z" fill="${c}" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M${x - w * 0.5} ${y + 2} Q${x - 1} ${y - h * 0.65} ${x + 1} ${y - h * 0.65} Q${x + 2} ${y - h * 0.6} ${x + w * 0.5} ${y + 2} Z" fill="${ci}"/>` +
+      (tip ? `<path d="M${x - 3.5} ${y - h * 0.72} Q${x} ${y - h - 2} ${x + 4} ${y - h * 0.72} Z" fill="${tip}"/>` : ""));
+  }
+  function earLong(x, y, rot, c, ci, cls) {
+    return piv(cls, x, y, `<g transform="rotate(${rot} ${x} ${y})"><ellipse cx="${x}" cy="${y - 22}" rx="7.5" ry="23" fill="${c}"/><ellipse cx="${x + 0.5}" cy="${y - 20}" rx="3.6" ry="16" fill="${ci}"/></g>`);
+  }
+
+  // Four-legged animals.
+  function quad(o) {
+    const rx = o.rx || 38, ry = o.ry || 25, legH = o.legH || 22, legW = o.legW || 13, hr = o.hr || 27;
+    const by = -(legH + ry - 8);
+    const hx = o.hx ?? 34, hy = by - (o.hl ?? 24);
+    const legTop = by + ry * 0.35;
+    const leg = (cls, x, c, sock) => piv(cls, x, legTop, `<rect x="${x - legW / 2}" y="${legTop}" width="${legW}" height="${-legTop}" rx="${legW / 2}" fill="${c}"/>` +
+      (sock ? `<rect x="${x - legW / 2}" y="${-9}" width="${legW}" height="9" rx="${legW / 2}" fill="${sock}"/>` : ""));
+    const bx = -rx * 0.55, fx = rx * 0.5;
+    const tailP = o.tailP || [-rx + 4, by - 6];
+    return {
+      w: rx + 8, top: hy - hr - (o.extraTop || 18), pivot: [hx - 6, hy + 16], tailP,
+      svg:
+        piv("tail", tailP[0], tailP[1], o.tail || "") +
+        leg("lb", bx + 7, o.far || o.legs || o.body, o.farSock) + leg("lf", fx + 7, o.far || o.legs || o.body, o.farSock) +
+        (o.legsBehind ? leg("nb", bx, o.legs || o.body, o.sock) + leg("nf", fx, o.legs || o.body, o.sock) : "") +
+        `<ellipse cx="0" cy="${by}" rx="${rx}" ry="${ry}" fill="${o.body}"/>` +
+        (o.belly ? `<ellipse cx="${rx * 0.15}" cy="${by + ry * 0.38}" rx="${rx * 0.62}" ry="${ry * 0.52}" fill="${o.belly}"/>` : "") +
+        (o.bodyArt ? o.bodyArt(by, rx, ry) : "") +
+        (o.legsBehind ? "" : leg("nb", bx, o.legs || o.body, o.sock) + leg("nf", fx, o.legs || o.body, o.sock)) +
+        piv("head", hx - 6, hy + 16,
+          (o.behind ? o.behind(hx, hy, hr) : "") + (o.ears ? o.ears(hx, hy, hr) : "") +
+          `<circle cx="${hx}" cy="${hy}" r="${hr}" fill="${o.head || o.body}"/>` +
+          (o.headArt ? o.headArt(hx, hy, hr) : "") +
+          (o.face ? o.face(hx, hy, hr) : muzzle(hx, hy, o.muzzle || "#f4e3cc", o.nose) + cheeks(hx, hy) + eyes(hx, hy)) +
+          (o.front ? o.front(hx, hy, hr) : ""))
+    };
+  }
+
+  // Two-legged birds (waddle).
+  function bird(o) {
+    const rx = o.rx || 27, ry = o.ry || 36, by = -(ry + 4);
+    const foot = (cls, x, c) => piv(cls, x, -2, `<ellipse cx="${x + 3}" cy="-2.5" rx="9" ry="4.2" fill="${c}"/>`);
+    return {
+      w: rx + 6, top: by - ry - (o.extraTop || 10), pivot: [4, by - ry * 0.2], tailP: [-rx + 2, by + ry * 0.5], bird: true,
+      svg:
+        foot("fb", 6, o.farFoot || o.foot) +
+        piv("tail", -rx + 2, by + ry * 0.5, o.tail || "") +
+        `<ellipse cx="0" cy="${by}" rx="${rx}" ry="${ry}" fill="${o.body}"/>` +
+        (o.bodyArt ? o.bodyArt(by, rx, ry) : "") +
+        piv("wing", -4, by - ry * 0.3, `<ellipse cx="-6" cy="${by + 2}" rx="${rx * 0.36}" ry="${ry * 0.56}" fill="${o.wing}" transform="rotate(10 -6 ${by})"/>`) +
+        foot("fa", -6, o.foot) +
+        piv("head", 4, by - ry * 0.2, o.face(by, rx, ry))
+    };
+  }
+
+  const K = {
+    bear: { speed: 110, scale: 1.05, build: () => quad({ body: "#b47c4d", far: "#9a6840", belly: "#d8b58c", muzzle: "#e7cba5",
+      ears: (x, y) => earRound(x - 13, y - 20, 10, "#b47c4d", "#d8b58c", "ear") + earRound(x + 13, y - 23, 9, "#9a6840", "#c9a27a", "ear"),
+      tail: `<circle cx="-36" cy="-48" r="7" fill="#9a6840"/>` }) },
+    panda: { speed: 100, scale: 1.05, build: () => quad({ body: "#f6f3ec", legs: "#383a44", far: "#2b2d35", head: "#f6f3ec",
+      bodyArt: (by, rx, ry) => `<path d="M${rx * 0.05} ${by - ry} Q${rx * 0.45} ${by - ry - 2} ${rx * 0.6} ${by - ry * 0.4} L${rx * 0.65} ${by + ry * 0.5} Q${rx * 0.3} ${by + ry * 0.7} ${rx * 0.12} ${by + ry * 0.2} Z" fill="#383a44"/>`,
+      ears: (x, y) => earRound(x - 13, y - 20, 10, "#383a44", "#383a44", "ear") + earRound(x + 13, y - 23, 9, "#2b2d35", "#2b2d35", "ear"),
+      face: (x, y) => `<ellipse cx="${x + 2}" cy="${y - 1}" rx="7" ry="8.5" fill="#383a44" transform="rotate(20 ${x + 2} ${y})"/><ellipse cx="${x + 18}" cy="${y - 2}" rx="5.5" ry="7.5" fill="#383a44" transform="rotate(-15 ${x + 18} ${y})"/>` +
+        `<ellipse cx="${x + 13}" cy="${y + 9}" rx="10" ry="7" fill="#fff"/><ellipse cx="${x + 15}" cy="${y + 4}" rx="4.4" ry="3.2" fill="#2b2630"/>` + smile(x + 10.5, y + 10.5) + cheeks(x, y) + eyes(x, y, { c: "#fff", r: 0.85 }),
+      tail: `<circle cx="-36" cy="-46" r="6" fill="#f6f3ec"/>` }) },
+    bunny: { speed: 125, scale: 0.92, gait: "hop", build: () => quad({ body: "#efe7df", far: "#ddd2c7", belly: "#fbf7f2", rx: 32, ry: 23, legH: 16, hl: 22, hr: 24, extraTop: 44, muzzle: "#fbf7f2", nose: "#e88f9a",
+      ears: (x, y) => earLong(x + 6, y - 18, 8, "#ddd2c7", "#f0b5b5", "ear") + earLong(x - 7, y - 18, -10, "#efe7df", "#f4bcbc", "ear"),
+      tail: `<circle cx="-31" cy="-38" r="10" fill="#fff"/>` }) },
+    fox: { speed: 125, scale: 1, build: () => quad({ body: "#e8853e", far: "#cf7333", sock: "#4a3a35", farSock: "#3a2d29", belly: "#fbf1e4", legW: 11,
+      ears: (x, y) => earPoint(x + 12, y - 19, "#cf7333", "#fbe5cf", "ear", 22, 10, "#4a3a35") + earPoint(x - 10, y - 18, "#e8853e", "#fbe5cf", "ear", 24, 11, "#4a3a35"),
+      face: (x, y) => `<path d="M${x - 8} ${y + 4} Q${x + 10} ${y + 22} ${x + 30} ${y + 6} Q${x + 18} ${y - 4} ${x - 8} ${y + 4} Z" fill="#fbf1e4"/><ellipse cx="${x + 29}" cy="${y + 5}" rx="4.2" ry="3.2" fill="#2b2630"/>` + smile(x + 18, y + 10) + cheeks(x, y) + eyes(x, y),
+      tail: `<path d="M-34 -44 Q-70 -60 -74 -86 Q-62 -78 -48 -76 Q-30 -64 -30 -50 Z" fill="#e8853e"/><path d="M-66 -78 Q-74 -84 -74 -88 Q-64 -84 -60 -80 Z" fill="#fbf1e4"/><path d="M-62 -80 Q-72 -84 -74 -89 Q-60 -86 -52 -80 Q-56 -78 -62 -80Z" fill="#fbf1e4"/>` }) },
+    pig: { speed: 100, scale: 1, build: () => quad({ body: "#f4b3b5", far: "#e39ca0", legW: 12,
+      ears: (x, y) => earPoint(x + 13, y - 20, "#e39ca0", "#ec9ca2", "ear", 16, 10) + earPoint(x - 10, y - 20, "#f4b3b5", "#ec9ca2", "ear", 18, 11),
+      face: (x, y) => `<ellipse cx="${x + 18}" cy="${y + 6}" rx="9" ry="7.5" fill="#ec9ca2"/><ellipse cx="${x + 15.5}" cy="${y + 6}" rx="1.8" ry="2.6" fill="#b5626b"/><ellipse cx="${x + 21}" cy="${y + 6}" rx="1.8" ry="2.6" fill="#b5626b"/>` + smile(x + 6, y + 13) + cheeks(x, y) + eyes(x, y),
+      tail: `<path d="M-36 -46 q-10 -2 -10 -10 q0 -6 6 -5 q5 1 1 6 q-4 4 -10 0" fill="none" stroke="#e39ca0" stroke-width="3.5" stroke-linecap="round"/>` }) },
+    elephant: { speed: 80, scale: 1.25, build: () => quad({ body: "#a5b5c6", far: "#8d9db0", rx: 44, ry: 30, legW: 17, legH: 24, hr: 29, hl: 22,
+      headArt: (x, y) => piv("flap", x - 12, y - 12, `<ellipse cx="${x - 17}" cy="${y + 2}" rx="15" ry="21" fill="#8d9db0"/><ellipse cx="${x - 16}" cy="${y + 3}" rx="8.5" ry="13" fill="#c9b3bd" opacity="0.7"/>`),
+      face: (x, y) => `<ellipse cx="${x + 1}" cy="${y + 9}" rx="5" ry="3.4" fill="${CHEEK}" opacity="0.6"/>` + eyes(x + 2, y - 2),
+      front: (x, y) => piv("trunk", x + 20, y + 4, `<path d="M${x + 18} ${y + 2} Q${x + 34} ${y + 6} ${x + 34} ${y + 24} Q${x + 34} ${y + 36} ${x + 42} ${y + 36}" fill="none" stroke="#a5b5c6" stroke-width="13" stroke-linecap="round"/>`),
+      tail: `<path d="M-42 -56 Q-52 -48 -50 -36" fill="none" stroke="#8d9db0" stroke-width="4" stroke-linecap="round"/><circle cx="-50" cy="-34" r="4" fill="#6f7f92"/>` }) },
+    lion: { speed: 110, scale: 1.08, build: () => quad({ body: "#e9b85c", far: "#d6a148", belly: "#f3d59a", muzzle: "#f8e6c2", nose: "#8a4f3b", extraTop: 20,
+      behind: (x, y, r) => [0, 40, 80, 120, 160, 200, 240, 280, 320].map(a => `<circle cx="${x - 2 + Math.cos(a * Math.PI / 180) * 30}" cy="${y + Math.sin(a * Math.PI / 180) * 30}" r="14" fill="#c97a3c"/>`).join("") + `<circle cx="${x - 2}" cy="${y}" r="32" fill="#c97a3c"/>`,
+      ears: (x, y) => earRound(x - 12, y - 21, 8, "#e9b85c", "#f3d59a", "ear") + earRound(x + 14, y - 22, 7, "#d6a148", "#f3d59a", "ear"),
+      tail: `<path d="M-36 -52 Q-58 -52 -60 -74" fill="none" stroke="#e9b85c" stroke-width="5" stroke-linecap="round"/><ellipse cx="-60" cy="-78" rx="7" ry="9" fill="#c97a3c"/>` }) },
+    frog: { speed: 115, scale: 0.95, gait: "hop", build: () => quad({ body: "#86c35a", far: "#6fab47", belly: "#dcefb3", rx: 32, ry: 20, legH: 12, legW: 14, hr: 26, hl: 16, hx: 26, extraTop: 20,
+      ears: (x, y) => piv("ear", x + 16, y - 18, `<circle cx="${x + 16}" cy="${y - 20}" r="10" fill="#6fab47"/>`) + piv("ear", x - 2, y - 18, `<circle cx="${x - 2}" cy="${y - 21}" r="11" fill="#86c35a"/>`),
+      face: (x, y) => `<path d="M${x - 4} ${y + 8} Q${x + 12} ${y + 18} ${x + 26} ${y + 6}" fill="none" stroke="#3f6b2c" stroke-width="2.2" stroke-linecap="round"/>` + cheeks(x, y) +
+        piv("eyes", x + 7, y - 21, `<circle cx="${x - 2}" cy="${y - 21}" r="6" fill="#fff"/><circle cx="${x - 0.5}" cy="${y - 21}" r="3.6" fill="${INK}"/><circle cx="${x + 0.8}" cy="${y - 22.6}" r="1.2" fill="#fff"/><circle cx="${x + 16}" cy="${y - 20}" r="5.4" fill="#fff"/><circle cx="${x + 17.5}" cy="${y - 20}" r="3.3" fill="${INK}"/><circle cx="${x + 18.6}" cy="${y - 21.4}" r="1.1" fill="#fff"/>`) }) },
+    tiger: { speed: 115, scale: 1.05, build: () => quad({ body: "#ee9b46", far: "#d9853a", belly: "#fbeedd", muzzle: "#fbeedd", nose: "#d46a6a",
+      bodyArt: (by, rx, ry) => [-0.5, -0.15, 0.2].map(f => `<path d="M${rx * f - 4} ${by - ry + 1} Q${rx * f + 2} ${by - ry * 0.3} ${rx * f - 2} ${by + ry * 0.1} Q${rx * f + 6} ${by - ry * 0.4} ${rx * f + 5} ${by - ry + 2} Z" fill="#4a3a35"/>`).join(""),
+      headArt: (x, y) => `<path d="M${x - 4} ${y - 26} Q${x} ${y - 18} ${x + 4} ${y - 26} Z" fill="#4a3a35"/><path d="M${x - 24} ${y - 4} Q${x - 16} ${y - 2} ${x - 25} ${y + 4} Z" fill="#4a3a35"/>`,
+      ears: (x, y) => earRound(x - 13, y - 20, 9, "#ee9b46", "#fbeedd", "ear") + earRound(x + 13, y - 23, 8, "#d9853a", "#fbeedd", "ear"),
+      tail: `<path d="M-36 -48 Q-60 -46 -64 -70" fill="none" stroke="#ee9b46" stroke-width="7" stroke-linecap="round"/><path d="M-50 -46 l2 -7 M-60 -56 l6 -2 M-63 -66 l6 0" stroke="#4a3a35" stroke-width="3.5" stroke-linecap="round"/>` }) },
+    koala: { speed: 85, scale: 1, build: () => quad({ body: "#a9b0b9", far: "#949ba5", belly: "#e7e4e1", legW: 14,
+      ears: (x, y) => earRound(x - 16, y - 16, 15, "#a9b0b9", "#ece7e4", "ear") + earRound(x + 18, y - 19, 13, "#949ba5", "#dcd6d3", "ear"),
+      face: (x, y) => `<ellipse cx="${x + 15}" cy="${y + 5}" rx="6.5" ry="8.5" fill="#41404a"/><ellipse cx="${x + 13.5}" cy="${y + 2}" rx="1.8" ry="2.6" fill="#6a6873"/>` + cheeks(x, y) + eyes(x - 2, y - 1) }) },
+    mouse: { speed: 150, scale: 0.72, build: () => quad({ body: "#bdb6b0", far: "#a8a09a", belly: "#ece6e0", muzzle: "#ece6e0", nose: "#ef9aa6", legW: 11,
+      ears: (x, y) => earRound(x - 15, y - 18, 15, "#bdb6b0", "#f4b9c0", "ear") + earRound(x + 16, y - 22, 13, "#a8a09a", "#eaa9b2", "ear"),
+      front: (x, y) => `<path d="M${x + 22} ${y + 6} l14 -3 M${x + 22} ${y + 9} l14 2" stroke="#7d7570" stroke-width="1.3" stroke-linecap="round"/>`,
+      tail: `<path d="M-36 -42 Q-60 -40 -62 -58 Q-64 -74 -50 -76" fill="none" stroke="#e7a4ac" stroke-width="3.5" stroke-linecap="round"/>` }) },
+    sheep: { speed: 95, scale: 1.05, build: () => quad({ body: "#fbf8f1", legs: "#4d4652", far: "#3c3640", head: "#4d4652", legW: 11, hr: 22, hl: 20, hx: 36,
+      bodyArt: (by, rx, ry) => [[-30, -10], [-14, -20], [6, -22], [24, -16], [32, 0], [-34, 8], [-16, 14], [8, 14], [24, 10]].map(([dx, dy]) => `<circle cx="${dx}" cy="${by + dy}" r="15" fill="#fbf8f1"/>`).join("") + `<circle cx="-6" cy="${by - 6}" r="10" fill="#fff"/>`,
+      ears: (x, y) => piv("ear", x - 16, y - 6, `<ellipse cx="${x - 22}" cy="${y - 4}" rx="11" ry="5" fill="#3c3640" transform="rotate(-20 ${x - 16} ${y - 6})"/>`),
+      headArt: (x, y) => `<circle cx="${x - 8}" cy="${y - 20}" r="11" fill="#fbf8f1"/><circle cx="${x + 5}" cy="${y - 22}" r="10" fill="#fbf8f1"/><circle cx="${x - 14}" cy="${y - 10}" r="8" fill="#fbf8f1"/>`,
+      face: (x, y) => smile(x + 8, y + 10, "#fbf8f1") + `<ellipse cx="${x - 3}" cy="${y + 6}" rx="4.5" ry="3" fill="${CHEEK}" opacity="0.55"/>` + eyes(x - 1, y, { c: "#fff", r: 0.9 }),
+      tail: `<circle cx="-40" cy="-46" r="9" fill="#fbf8f1"/>` }) },
+    turtle: { speed: 55, scale: 1.05, build: () => quad({ body: "#a9c972", far: "#94b45f", rx: 40, ry: 18, legH: 14, legW: 15, hr: 17, hl: 2, hx: 50, extraTop: 50, legsBehind: true,
+      bodyArt: (by, rx) => `<path d="M${-rx - 2} ${by + 6} Q${-rx} ${by - 44} 0 ${by - 46} Q${rx} ${by - 44} ${rx + 2} ${by + 6} Z" fill="#6f9e4f"/>` +
+        `<path d="M${-rx + 6} ${by + 2} Q${-rx + 10} ${by - 34} 0 ${by - 38} Q${rx - 10} ${by - 34} ${rx - 6} ${by + 2} Z" fill="#88b964"/>` +
+        `<path d="M-14 ${by - 22} l14 -8 l14 8 l0 14 l-14 8 l-14 -8 Z" fill="#a3cf7c"/><path d="M-36 ${by - 6} l10 -16 l12 4 l0 14 Z M36 ${by - 6} l-10 -16 l-12 4 l0 14 Z" fill="#a3cf7c"/>` +
+        `<rect x="${-rx - 2}" y="${by + 1}" width="${rx * 2 + 4}" height="8" rx="4" fill="#5e8a43"/>`,
+      face: (x, y) => smile(x + 4, y + 6, "#3f6b2c") + `<ellipse cx="${x - 2}" cy="${y + 6}" rx="3.6" ry="2.4" fill="${CHEEK}" opacity="0.6"/>` + eyes(x - 4, y - 2, { r: 0.85 }),
+      tail: `<path d="M-38 -24 l-10 4 l10 4 Z" fill="#94b45f"/>` }) },
+    penguin: { speed: 75, scale: 1, gait: "waddle", build: () => bird({ body: "#3e4859", wing: "#2f3846", foot: "#f2a33a", farFoot: "#d98b26",
+      bodyArt: (by, rx, ry) => `<ellipse cx="5" cy="${by + 6}" rx="${rx * 0.7}" ry="${ry * 0.74}" fill="#f8f5ee"/>`,
+      face: (by, rx, ry) => `<ellipse cx="10" cy="${by - ry * 0.5}" rx="15" ry="12" fill="#f8f5ee"/><path d="M18 ${by - ry * 0.42} L32 ${by - ry * 0.35} L18 ${by - ry * 0.26} Z" fill="#f2a33a" stroke="#f2a33a" stroke-width="2" stroke-linejoin="round"/>` +
+        `<ellipse cx="3" cy="${by - ry * 0.34}" rx="4.5" ry="3" fill="${CHEEK}" opacity="0.6"/>` + eyes(1, by - ry * 0.52, { r: 0.9 }) }) },
+    chick: { speed: 95, scale: 0.8, gait: "waddle", build: () => bird({ body: "#f8d457", wing: "#efc23e", foot: "#f0a03a", farFoot: "#d98b26", rx: 25, ry: 26, extraTop: 16,
+      face: (by, rx, ry) => `<path d="M-4 ${by - ry + 2} q-2 -12 6 -14 q-2 6 2 10 q2 -8 9 -8 q-5 6 -5 12 Z" fill="#efc23e"/><path d="M18 ${by - 6} L31 ${by - 2} L18 ${by + 3} Z" fill="#f0a03a" stroke="#f0a03a" stroke-width="2" stroke-linejoin="round"/>` +
+        `<ellipse cx="4" cy="${by + 3}" rx="5" ry="3.2" fill="${CHEEK}" opacity="0.6"/>` + eyes(2, by - 9, { r: 0.95 }) }) },
+    owl: { speed: 80, scale: 0.98, gait: "waddle", build: () => bird({ body: "#a98762", wing: "#8e6f4e", foot: "#e8a23e", farFoot: "#cf8a2e", extraTop: 18,
+      bodyArt: (by, rx, ry) => `<ellipse cx="5" cy="${by + 8}" rx="${rx * 0.64}" ry="${ry * 0.66}" fill="#ecd9b8"/>` + [[-4, 0], [10, 0], [2, 10], [-6, 20], [10, 20]].map(([dx, dy]) => `<path d="M${dx - 4} ${by + dy} q4 5 8 0" fill="none" stroke="#c7a982" stroke-width="2" stroke-linecap="round"/>`).join(""),
+      face: (by, rx, ry) => `<path d="M-18 ${by - ry + 12} L-14 ${by - ry - 6} L-4 ${by - ry + 6} Z M22 ${by - ry + 10} L22 ${by - ry - 7} L10 ${by - ry + 5} Z" fill="#8e6f4e"/>` +
+        `<circle cx="-1" cy="${by - ry * 0.45}" r="10" fill="#f6ecd8"/><circle cx="18" cy="${by - ry * 0.46}" r="9" fill="#f6ecd8"/><path d="M8 ${by - ry * 0.32} L13 ${by - ry * 0.2} L8 ${by - ry * 0.12} Z" fill="#e8a23e"/>` +
+        piv("eyes", 9, by - ry * 0.45, `<circle cx="0" cy="${by - ry * 0.45}" r="5" fill="${INK}"/><circle cx="1.6" cy="${by - ry * 0.45 - 2}" r="1.6" fill="#fff"/><circle cx="19" cy="${by - ry * 0.46}" r="4.6" fill="${INK}"/><circle cx="20.4" cy="${by - ry * 0.46 - 2}" r="1.5" fill="#fff"/>`) }) },
+  };
+  const KIND_NAMES = Object.keys(K);
+
+  /* ---------------- Animals: movement and life ---------------- */
+  const actors = $("actors");
+  const animals = [];
+  // Places to stand: three loose rows on the lawn, inside the middle area that every screen shape shows.
+  const SPOTS = [
+    [330, 600], [570, 592], [820, 598], [1060, 590], [1290, 600],
+    [220, 700], [460, 690], [700, 704], [950, 694], [1200, 700], [1420, 690],
+    [330, 808], [600, 800], [880, 812], [1150, 804], [1400, 816],
+  ].map(([x, y]) => ({ x: x + rand(-14, 14), y: y + rand(-8, 8), used: null }));
+  const MAX = SPOTS.length;
+  const depth = y => 0.92 + (y - 570) / 300 * 0.55;
+
+  function setPivots(a) {
+    a.parts = {};
+    a.el.querySelectorAll("[data-px]").forEach(g => {
+      const c = g.getAttribute("class");
+      (a.parts[c] = a.parts[c] || []).push({ g, x: +g.dataset.px, y: +g.dataset.py, seed: Math.random() * 6 });
+    });
+  }
+
+  function makePath(x0, y0, x1, y1, bend) {
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + bend;
+    const pts = [], cum = [0];
+    for (let i = 0; i <= 48; i++) {
+      const t = i / 48, u = 1 - t;
+      pts.push([u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]);
+      if (i) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    }
+    return { pts, cum, total: cum[48] };
+  }
+  function samplePath(p, s) {
+    s = clamp(s, 0, p.total);
+    let i = 1; while (i < 48 && p.cum[i] < s) i++;
+    const t = (s - p.cum[i - 1]) / Math.max(0.001, p.cum[i] - p.cum[i - 1]);
+    return [lerp(p.pts[i - 1][0], p.pts[i][0], t), lerp(p.pts[i - 1][1], p.pts[i][1], t), p.pts[i][0] - p.pts[i - 1][0]];
+  }
+
+  function addAnimal(force) {
+    const free = SPOTS.filter(s => !s.used);
+    if (!free.length) return false;
+    const present = new Set(animals.filter(a => !a.leaving).map(a => a.kind));
+    const kinds = KIND_NAMES.filter(k => !present.has(k));
+    const kind = force || kinds[Math.floor(Math.random() * kinds.length)] || KIND_NAMES[0];
+    const spot = free[Math.floor(Math.random() * free.length)];
+    const def = K[kind], art = def.build();
+    const fromLeft = (spot.x < 800) !== (Math.random() < 0.22);
+    const x0 = fromLeft ? -160 : 1760, y0 = clamp(spot.y + rand(-40, 40), 575, 860);
+    const el = document.createElementNS(NS, "g");
+    el.innerHTML = `<ellipse class="shadow" cx="4" cy="0" rx="${art.w}" ry="${art.w * 0.17}" fill="#3d6b2a" opacity="0.2"/><g class="inner">${art.svg}</g>`;
+    actors.appendChild(el);
+    const a = {
+      kind, def, el, inner: el.querySelector(".inner"), shadow: el.querySelector(".shadow"), shadowW: art.w, spot,
+      x: x0, y: y0, sc: depth(y0) * def.scale, face: fromLeft ? 1 : -1, faceFrom: 1, faceTo: fromLeft ? 1 : -1, faceT: 1,
+      phase: Math.random() * 6, amp: 0, v: 0, vmax: def.speed * rand(0.9, 1.1), state: "path", leaving: false,
+      path: makePath(x0, y0, spot.x, spot.y, rand(-50, 50)), s: 0, after: "arrive",
+      t: Math.random() * 10, blinkAt: rand(1, 4), blink: 1, nextFidget: rand(3, 7), hop: null,
+      tilt: 0, tiltTo: 0, ear: 0, earTo: 0, wagBoost: 0, seed: Math.random() * 10, gait: def.gait || "walk",
+    };
+    spot.used = a;
+    setPivots(a);
+    animals.push(a);
+    return true;
+  }
+
+  function turnTo(a, dir) {
+    if (a.faceTo === dir) return;
+    a.faceFrom = a.face; a.faceTo = dir; a.faceT = 0;
+  }
+  function startHop(a, h, dur) { a.hop = { t: 0, h, dur }; }
+
+  function sendAway(a, quick) {
+    if (a.leaving) return;
+    a.leaving = true;
+    if (a.spot) { a.spot.used = null; a.spot = null; }
+    a.state = "startle"; a.wait = quick ? 0.15 : 0.55;
+    if (!quick) { startHop(a, 20, 0.42); a.earTo = -18; }
+  }
+  function removeOne() {
+    const here = animals.filter(a => !a.leaving);
+    if (!here.length) return false;
+    // Prefer animals already standing (not still arriving) so arrivals do not turn around mid-walk.
+    const settled = here.filter(a => a.state === "idle");
+    const pool = settled.length ? settled : here;
+    sendAway(pool[Math.floor(Math.random() * pool.length)], false);
+    return true;
+  }
+  const present = () => animals.filter(a => !a.leaving).length;
+
+  function hopShape(h) {
+    const p = h.t / h.dur;
+    if (p < 0.18) { const q = Math.sin(Math.PI * p / 0.18); return { lift: 0, sy: 1 - 0.13 * q }; }
+    if (p < 0.84) { const q = (p - 0.18) / 0.66; return { lift: Math.sin(Math.PI * q) * h.h, sy: 1 + 0.09 * Math.sin(Math.PI * q) }; }
+    const q = (p - 0.84) / 0.16; return { lift: 0, sy: 1 - 0.1 * Math.sin(Math.PI * q) };
+  }
+
+  function update(a, dt, zone) {
+    a.t += dt;
+    let moving = false;
+    if (a.state === "path") {
+      const rem = a.path.total - a.s;
+      const vmax = a.leaving ? a.vmax * 1.55 : a.vmax;
+      a.v = Math.min(vmax, a.v + (a.leaving ? 260 : 150) * dt);
+      if (!a.leaving) a.v = Math.min(a.v, Math.max(10, Math.sqrt(2 * 110 * rem)));
+      a.s += a.v * dt;
+      const [x, y, dx] = samplePath(a.path, a.s);
+      a.x = x; a.y = y; moving = true;
+      if (Math.abs(dx) > 0.05) turnTo(a, dx > 0 ? 1 : -1);
+      if (a.s >= a.path.total - 0.5) {
+        a.v = 0;
+        if (a.leaving) { a.dead = true; return; }
+        a.state = "idle";
+        if (a.after === "arrive") { startHop(a, 12, 0.4); a.nextFidget = rand(0.8, 1.6); a.greet = true; a.wagBoost = 1; }
+        else a.nextFidget = rand(3, 7);
+      }
+    } else if (a.state === "startle") {
+      a.wait -= dt;
+      if (a.wait <= 0 && !a.hop) {
+        const toLeft = a.x < 800;
+        a.path = makePath(a.x, a.y, toLeft ? -180 : 1780, clamp(a.y + rand(-50, 50), 575, 870), rand(-30, 30));
+        a.s = 0; a.v = 20; a.state = "path";
+      }
+    } else if (a.state === "idle") {
+      a.nextFidget -= dt;
+      if (a.nextFidget <= 0) fidget(a, zone);
+    }
+    a.y && (a.sc = depth(a.y) * a.def.scale);
+    a.amp = damp(a.amp, moving ? 1 : 0, 7, dt);
+    const step = a.gait === "hop" ? 62 : a.gait === "waddle" ? 30 : 38;
+    if (moving) a.phase += a.v * dt / (step * a.sc) * Math.PI * 2;
+    else if (a.amp < 0.03) a.phase = damp(a.phase, Math.round(a.phase / Math.PI) * Math.PI, 6, dt);
+    // Turning: squash through the middle, eased.
+    if (a.faceT < 1) { a.faceT = Math.min(1, a.faceT + dt / 0.3); a.face = lerp(a.faceFrom, a.faceTo, ease(a.faceT)); }
+    // Blink now and then, sometimes twice.
+    a.blinkAt -= dt;
+    if (a.blinkAt <= 0) { a.blinkT = 0; a.blinkAt = Math.random() < 0.2 ? 0.28 : rand(2, 5.5); }
+    if (a.blinkT != null) { a.blinkT += dt; const p = a.blinkT / 0.16; a.blink = p >= 1 ? 1 : 1 - 0.9 * Math.sin(Math.PI * p); if (p >= 1) a.blinkT = null; }
+    if (a.hop) { a.hop.t += dt; if (a.hop.t >= a.hop.dur) a.hop = null; }
+    a.tilt = damp(a.tilt, a.tiltTo, 5, dt);
+    a.ear = damp(a.ear, a.earTo, 9, dt);
+    a.wagBoost = damp(a.wagBoost, 0, 0.8, dt);
+  }
+
+  function fidget(a, zone) {
+    a.tiltTo = 0; a.earTo = 0;
+    if (a.greet) { a.greet = false; turnTo(a, a.x < 800 ? 1 : -1); a.nextFidget = rand(2, 5); return; }
+    const r = Math.random();
+    if (zone === "loud" && r < 0.5) { a.earTo = -14; a.tiltTo = rand(-6, 6); startHop(a, 6, 0.3); a.nextFidget = rand(0.8, 1.8); return; }
+    if (r < 0.22) { turnTo(a, -a.faceTo); a.nextFidget = rand(2, 5); }
+    else if (r < 0.42) { a.tiltTo = rand(8, 14) * (Math.random() < 0.5 ? -1 : 1); a.nextFidget = rand(1.2, 2.4); }
+    else if (r < 0.55) { startHop(a, zone === "quiet" ? 14 : 9, 0.42); a.wagBoost = 1; a.nextFidget = rand(2.5, 5); }
+    else if (r < 0.68) { a.earTo = 16; a.nextFidget = rand(0.4, 0.8); }
+    else if (r < 0.86 && a.spot) {
+      // A short wander near home, then back later.
+      const home = a.spot, tx = home.x + rand(-45, 45), ty = clamp(home.y + rand(-14, 14), 570, 860);
+      a.path = makePath(a.x, a.y, tx, ty, rand(-10, 10)); a.s = 0; a.v = 0; a.state = "path"; a.after = "wander";
+    } else { a.wagBoost = 1; a.nextFidget = rand(2, 5); }
+  }
+
+  function render(a, t) {
+    const P = a.parts, amp = a.amp, ph = a.phase;
+    let lift = 0, sy = 1, rot = 0;
+    const br = Math.sin(a.t * 2.3 + a.seed);
+    sy += 0.014 * br;
+    if (a.gait === "walk") { lift = (1 + Math.cos(2 * ph)) * 1.6 * amp; sy += 0.025 * Math.cos(2 * ph) * amp; }
+    else if (a.gait === "hop") { const s = Math.sin(ph); lift = Math.max(0, s) * 20 * amp; sy += (s > 0 ? 0.07 * s : 0.09 * s) * amp; }
+    else { rot = Math.sin(ph) * 8 * amp; lift = Math.abs(Math.sin(ph)) * 2.5 * amp; }
+    if (a.hop) { const h = hopShape(a.hop); lift += h.lift; sy *= h.sy; }
+    const sx = 1 + (1 - sy) * 0.85;
+    const face = Math.abs(a.face) < 0.06 ? 0.06 * Math.sign(a.face || 1) : a.face;
+    a.el.setAttribute("transform", `translate(${f2(a.x)},${f2(a.y)}) scale(${f2(a.sc * face * 1000) / 1000},${f2(a.sc * 1000) / 1000})`);
+    a.inner.setAttribute("transform", `translate(0,${f2(-lift)}) rotate(${f2(rot)}) scale(${f2(sx * 1000) / 1000},${f2(sy * 1000) / 1000})`);
+    const shs = clamp(1 - lift / 70, 0.5, 1);
+    a.shadow.setAttribute("transform", `scale(${f2(shs)},${f2(shs)})`);
+    const rotP = (p, deg) => p.g.setAttribute("transform", `rotate(${f2(deg)} ${p.x} ${p.y})`);
+    if (P.lb) {
+      const k = a.gait === "hop" ? 0 : 1;
+      const legA = Math.sin(ph) * 24 * amp * k, hopLeg = a.gait === "hop" ? -Math.max(0, Math.sin(ph)) * 30 * amp : 0;
+      rotP(P.nf[0], legA + hopLeg * 0.4); rotP(P.lb[0], legA + hopLeg); rotP(P.lf[0], -legA + hopLeg * 0.4); rotP(P.nb[0], -legA + hopLeg);
+    }
+    if (P.fa) {
+      const s = Math.sin(ph) * amp;
+      P.fa[0].g.setAttribute("transform", `translate(${f2(s * 5)},${f2(-Math.max(0, s) * 6)})`);
+      P.fb[0].g.setAttribute("transform", `translate(${f2(-s * 5)},${f2(-Math.max(0, -s) * 6)})`);
+    }
+    if (P.head) rotP(P.head[0], a.tilt + Math.sin(2 * ph) * 2.2 * amp + Math.sin(a.t * 0.9 + a.seed) * 1.6);
+    if (P.eyes) P.eyes.forEach(p => p.g.setAttribute("transform", `translate(0,${p.y}) scale(1,${f2(a.blink)}) translate(0,${-p.y})`));
+    if (P.ear) P.ear.forEach((p, i) => rotP(p, a.ear * (i ? 0.7 : 1) + Math.sin(a.t * 1.7 + p.seed) * 2.5 + (a.gait === "hop" ? -Math.max(0, Math.sin(ph)) * 10 * amp : 0)));
+    if (P.tail) rotP(P.tail[0], Math.sin(a.t * (5 + 7 * a.wagBoost) + a.seed) * (5 + 14 * a.wagBoost + 8 * amp));
+    if (P.wing) rotP(P.wing[0], -Math.abs(Math.sin(ph)) * 12 * amp - (a.hop ? 25 * Math.sin(Math.PI * a.hop.t / a.hop.dur) : 0) + Math.sin(a.t * 2 + a.seed) * 2);
+    if (P.trunk) rotP(P.trunk[0], Math.sin(a.t * 1.2 + a.seed) * 7 + Math.sin(ph) * 6 * amp);
+    if (P.flap) rotP(P.flap[0], Math.sin(a.t * 1.6 + a.seed) * 7 + Math.sin(ph * 2) * 5 * amp);
+  }
+
+    function frame(dt, zone, celebrate, t) {
+      for (const a of animals) update(a, dt, zone);
+      for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) { animals[i].el.remove(); animals.splice(i, 1); }
+      // Animals nearer the front are drawn on top.
+      animals.sort((p, q) => p.y - q.y);
+      animals.forEach((a, i) => { if (actors.children[i] !== a.el) actors.insertBefore(a.el, actors.children[i] || null); render(a, t); });
+      // When the zoo is full, little happy hops ripple through.
+      if (celebrate && Math.random() < dt * 1.2) {
+        const a = animals[Math.floor(Math.random() * animals.length)];
+        if (a && a.state === "idle" && !a.hop) { startHop(a, 16, 0.42); a.wagBoost = 1; }
+      }
+      driftClouds(clouds, dt);
+    }
+    return { max: MAX, present, add: () => addAnimal(), remove: removeOne, frame, animals, spawn: addAnimal,
+      clear() { animals.filter(a => !a.leaving).forEach((a, i) => setTimeout(() => sendAway(a, false), i * 140 + rand(0, 120))); },
+      fill(n) { for (let i = 0; i < n; i++) if (addAnimal()) { const a = animals[animals.length - 1]; a.x = a.spot.x; a.y = a.spot.y; a.s = a.path.total; a.state = "idle"; a.nextFidget = rand(0.5, 4); } } };
+  }
+
+  /* ---------------- Pictures (modes) ---------------- */
+  const MODES = {
+    zoo: { make: Zoo, title: "Quiet Zoo", intro: "When the room is quiet, little animals come to visit the zoo. If it gets too loud, they walk away.",
+      count: n => `<b>${n}</b> ${n === 1 ? "animal" : "animals"} in the zoo`,
+      msg: { quiet: "Nice and quiet. More animals are coming!", ok: "A little noisy. The animals are listening.", loud: "Too loud! The animals are leaving.", full: "The zoo is full! Wonderful quiet work." } },
+    aquarium: { make: Aquarium, title: "Aquarium", intro: "When the room is quiet, fish swim into the tank. If it gets too loud, they swim away.",
+      count: n => `<b>${n}</b> fish in the tank`,
+      msg: { quiet: "Nice and quiet. More fish are swimming in!", ok: "A little noisy. The fish are watching.", loud: "Too loud! The fish are swimming away.", full: "The tank is full! Wonderful quiet work." } },
+    garden: { make: Garden, title: "Flower Garden", intro: "When the room is quiet, flowers grow and bloom. If it gets too loud, they close up and shrink away.",
+      count: n => `<b>${n}</b> ${n === 1 ? "flower" : "flowers"} in bloom`,
+      msg: { quiet: "Nice and quiet. The garden is growing!", ok: "A little noisy. The flowers are waiting.", loud: "Too loud! The flowers are closing up.", full: "The garden is in full bloom! Wonderful quiet work." } },
+    city: { make: City, title: "City at Night", intro: "When the room is quiet, the city's windows light up one by one. If it gets too loud, the lights go out.",
+      count: (n, max) => `<b>${Math.round(n / max * 100)}%</b> of the city is lit`,
+      msg: { quiet: "Quiet. The lights are coming on.", ok: "A little noisy. The city is holding.", loud: "Too loud. The lights are going out.", full: "The whole city is lit. Excellent focus." } },
+    graph: { make: Graph, title: "Sound Graph", intro: "A live graph of the room's volume. Quiet time adds up while the room stays under the loud line.",
+      msg: { quiet: "Nice and quiet.", ok: "Getting louder.", loud: "Too loud. Bring it back down.", full: "Nice and quiet." } },
+  };
+  let modeKey = store.get("quietroom-mode", "zoo");
+  if (!MODES[modeKey]) modeKey = "zoo";
+  let mode = null, world = null;
+  const stage = $("stage");
+  function setMode(key) {
+    modeKey = key; store.set("quietroom-mode", key);
+    if (world) world.remove();
+    world = document.createElementNS(NS, "g");
+    svg.appendChild(world);
+    mode = MODES[key].make(world);
+    $("mode").value = key;
+    $("introTitle").textContent = MODES[key].title;
+    $("introText").textContent = MODES[key].intro;
+    svg.setAttribute("aria-label", MODES[key].title);
+    stage.dataset.mode = key;
+    shownCount = null; shownMsg = "";
+    fitView();
+  }
+
+  // Each picture keeps its full width and grows or trims sky at the top, so the ground always shows.
+  // The Sound Graph draws in screen pixels instead.
+  function fitView() {
+    const r = stage.getBoundingClientRect();
+    if (!r.width || !r.height || !mode) return;
+    if (mode.fullView) { svg.setAttribute("viewBox", `0 0 ${Math.round(r.width)} ${Math.round(r.height)}`); mode.resize(Math.round(r.width), Math.round(r.height)); return; }
+    const h = clamp(1600 * r.height / r.width, 560, 2000);
+    svg.setAttribute("viewBox", `0 ${f2(900 - h)} 1600 ${f2(h)}`);
+  }
+  new ResizeObserver(fitView).observe(stage);
+
+  /* ---------------- Sound ---------------- */
+  const sens = $("sens");
+  sens.value = store.get("quietroom-sens", "5");
+  // Level 0 to 100 from the microphone loudness (decibels from about -75 to -12).
+  const loudLine = () => 30 + (+sens.value) * 6;
+  const quietLine = () => loudLine() - 12;
+  const S = { running: false, demo: false, noisy: false, raw: 0, level: 0, zone: "ok", nextChange: 0, ctx: null, an: null, buf: null, stream: null, started: false, loudLine, quietLine };
+
+  function micLevel() {
+    if (S.demo) return S.noisy ? rand(84, 92) : rand(18, 26);
+    if (!S.an) return 0;
+    S.an.getFloatTimeDomainData(S.buf);
+    let sum = 0;
+    for (let i = 0; i < S.buf.length; i++) sum += S.buf[i] * S.buf[i];
+    const db = 20 * Math.log10(Math.sqrt(sum / S.buf.length) + 1e-9);
+    return clamp((db + 75) * 1.6, 0, 100);
+  }
+
+  async function startMic() {
+    $("err").hidden = true;
+    try {
+      if (!S.stream) {
+        S.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        S.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = S.ctx.createMediaStreamSource(S.stream);
+        S.an = S.ctx.createAnalyser(); S.an.fftSize = 2048;
+        S.buf = new Float32Array(S.an.fftSize);
+        src.connect(S.an);
+      }
+      if (S.ctx.state === "suspended") await S.ctx.resume();
+      S.demo = false; $("noise").hidden = true;
+      begin();
+    } catch (e) {
+      // Inside a preview frame (like the claude.ai preview) the browser does not let the page use the microphone at all.
+      let framed = false; try { framed = window.top !== window; } catch (x) { framed = true; }
+      $("err").textContent = framed
+        ? "The microphone can't be used in this preview. It works on the website. For now, try the demo."
+        : "The microphone is blocked or missing. Allow it in the browser's address bar and press Start again, or try the demo.";
+      $("intro").hidden = false; $("err").hidden = false;
+    }
+  }
+  function startDemo() { S.demo = true; $("noise").hidden = false; begin(); }
+  function begin() {
+    S.running = true; S.nextChange = 0;
+    if (!S.started) { S.level = 22; S.zone = "quiet"; S.started = true; }
+    $("intro").hidden = true;
+    setGo();
+  }
+  function pause() { S.running = false; if (S.ctx) S.ctx.suspend(); setGo(); }
+  function setGo() { $("go").textContent = S.running ? "Pause" : "Start"; $("go").classList.toggle("on", S.running); }
+  $("go").onclick = () => S.running ? pause() : (S.demo ? startDemo() : startMic());
+  $("go2").onclick = startMic;
+  $("demo").onclick = startDemo;
+  $("reset").onclick = () => { mode.clear(); S.nextChange = 1.5; };
+  $("mode").onchange = e => setMode(e.target.value);
+  sens.oninput = () => { store.set("quietroom-sens", sens.value); drawZones(); };
+
+  // Demo noise: hold the button or the space bar.
+  const noise = $("noise");
+  const hold = v => { S.noisy = v; noise.classList.toggle("held", v); };
+  noise.addEventListener("pointerdown", e => { e.preventDefault(); noise.setPointerCapture(e.pointerId); hold(true); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => noise.addEventListener(ev, () => hold(false)));
+  addEventListener("keydown", e => { if (S.demo && e.code === "Space" && !e.repeat && !/INPUT|SELECT|BUTTON/.test(e.target.tagName)) { e.preventDefault(); hold(true); } });
+  addEventListener("keyup", e => { if (e.code === "Space") hold(false); });
+
+  // Meter.
+  const showMeter = $("showMeter");
+  showMeter.checked = store.get("quietroom-meter", "1") === "1";
+  const applyMeter = () => { stage.classList.toggle("nometer", !showMeter.checked); store.set("quietroom-meter", showMeter.checked ? "1" : "0"); };
+  showMeter.onchange = applyMeter; applyMeter();
+  function drawZones() {
+    const q = quietLine(), l = loudLine();
+    Object.assign($("zq").style, { left: 0, width: q + "%", background: "#2e9e62" });
+    Object.assign($("zo").style, { left: q + "%", width: (l - q) + "%", background: "#e0a526" });
+    Object.assign($("zl").style, { left: l + "%", width: (100 - l) + "%", background: "#d23c52" });
+  }
+  drawZones();
+
+  // Full screen shows only the picture.
+  $("fs").onclick = () => { if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {}); else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen(); };
+  $("exitfs").onclick = () => { if (document.exitFullscreen) document.exitFullscreen(); };
+
+  /* ---------------- Main loop ---------------- */
+  let shownCount = null, shownMsg = "";
+  function hud() {
+    const M = MODES[modeKey], n = mode.present();
+    const c = mode.count ? mode.count() : M.count(n, mode.max);
+    if (c !== shownCount) { shownCount = c; $("count").innerHTML = c; }
+    let key = !S.started ? "idle" : !S.running ? "paused" : S.zone;
+    if (S.running && S.zone !== "loud" && n === mode.max) key = "full";
+    const text = key === "idle" ? "Press Start to begin" : key === "paused" ? "Paused" : M.msg[key];
+    const cls = key === "full" ? "quiet" : key === "paused" ? "idle" : key;
+    if (text !== shownMsg) { shownMsg = text; $("statusText").textContent = text; $("status").className = "status " + cls; }
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (S.running) {
+      S.raw = micLevel();
+      // About one second of smoothing: a single cough barely moves it.
+      S.level = damp(S.level, S.raw, 1 / 1.1, dt);
+      const q = quietLine(), l = loudLine();
+      const zone = S.level > l ? "loud" : S.level < q ? "quiet" : "ok";
+      if (zone !== S.zone) { S.zone = zone; S.nextChange = zone === "loud" ? 0.9 : 1.0; }
+      S.nextChange -= dt;
+      if (S.nextChange <= 0 && !mode.continuous) {
+        if (zone === "quiet" && mode.present() < mode.max) { mode.add(); S.nextChange = rand(2.2, 3.2); }
+        else if (zone === "loud" && mode.present() > 0) { mode.remove(); S.nextChange = 1.5; }
+        else S.nextChange = 0.5;
+      }
+      $("fill").style.width = S.level.toFixed(1) + "%";
+      $("fill").style.background = zone === "loud" ? "#d23c52" : zone === "ok" ? "#e0a526" : "#2e9e62";
+    }
+    const zone = S.running ? S.zone : "ok";
+    mode.frame(dt, zone, S.running && zone !== "loud" && mode.present() === mode.max, now / 1000, S);
+    hud();
+    requestAnimationFrame(frame);
+  }
+  setMode(modeKey);
+  requestAnimationFrame(frame);
+
+  // Test hook (used for screenshots).
+  window.__qr = { S, setMode, get mode() { return mode; } };
+})();
+</script>
+
+<script>
+/* French for words that appear on many pages. Page-only words go in i18n/<page>.js. Canadian French math terms. */
+window.I18N_COMMON = {
+  "Return to Main Page": "Retour à la page principale",
+  "{0} Return to Main Page": "{0} Retour à la page principale",
+  "Check": "Vérifier",
+  "Check answer": "Vérifier la réponse",
+  "Show answer": "Afficher la réponse",
+  "Hide answer": "Masquer la réponse",
+  "Show": "Afficher",
+  "Hide": "Masquer",
+  "Clear": "Effacer",
+  "Reset": "Réinitialiser",
+  "Start": "Commencer",
+  "Start over": "Recommencer",
+  "Stop": "Arrêter",
+  "Pause": "Pause",
+  "Play": "Lecture",
+  "Next": "Suivant",
+  "Back": "Retour",
+  "Previous": "Précédent",
+  "Go": "Go",
+  "Undo": "Annuler",
+  "New question": "Nouvelle question",
+  "New problem": "Nouveau problème",
+  "New puzzle": "Nouveau casse-tête",
+  "Hint": "Indice",
+  "Next step": "Étape suivante",
+  "Step": "Étape",
+  "Step {n}": "Étape {n}",
+  "Answer": "Réponse",
+  "Correct!": "Bonne réponse!",
+  "Correct.": "Bonne réponse.",
+  "Correct": "Bonne réponse",
+  "Not quite.": "Pas tout à fait.",
+  "Not quite": "Pas tout à fait",
+  "Try again.": "Essaie encore.",
+  "Try again": "Essaie encore",
+  "Nice work!": "Beau travail!",
+  "Great job!": "Excellent travail!",
+  "Well done!": "Bravo!",
+  "Score": "Pointage",
+  "Easy": "Facile",
+  "Medium": "Moyen",
+  "Hard": "Difficile",
+  "Practice": "Pratique",
+  "Challenge": "Défi",
+  "Explore": "Explorer",
+  "Settings": "Paramètres",
+  "Options": "Options",
+  "Grid": "Quadrillage",
+  "Show grid": "Afficher le quadrillage",
+  "Show labels": "Afficher les étiquettes",
+  "Show coordinates": "Afficher les coordonnées",
+  "Random": "Aléatoire",
+  "Random example": "Exemple aléatoire",
+  "Example": "Exemple",
+  "Examples": "Exemples",
+  "Hide slope": "Masquer la pente",
+  "Show slope": "Afficher la pente",
+  "Slope": "Pente",
+  "slope": "pente",
+  "Mean": "Moyenne",
+  "mean": "moyenne",
+  "Median": "Médiane",
+  "median": "médiane",
+  "Mode": "Mode",
+  "Range": "Étendue",
+  "Domain": "Domaine",
+  "Numerator": "Numérateur",
+  "Denominator": "Dénominateur",
+  "numerator": "numérateur",
+  "denominator": "dénominateur",
+  "Area": "Aire",
+  "Perimeter": "Périmètre",
+  "Volume": "Volume",
+  "Surface area": "Aire totale",
+  "Grades": "Années",
+  "All": "Toutes",
+  "Yes": "Oui",
+  "No": "Non",
+  "and": "et",
+  "or": "ou",
+  "Language / Langue": "Langue / Language",
+  "Coordinate plane": "Plan cartésien"
+};
+</script>
+<script>
+/* French for Quiet Classroom (quietroom.html). */
+window.I18N_PAGE = {
+  "Quiet Classroom": "Classe silencieuse",
+  "Picture": "Image",
+  "Quiet Zoo": "Le zoo tranquille",
+  "Aquarium": "Aquarium",
+  "Flower Garden": "Jardin de fleurs",
+  "City at Night": "La ville la nuit",
+  "Sound Graph": "Graphique du son",
+  "Quiet room": "Classe calme",
+  "Busy room": "Classe animée",
+  "How much noise is OK": "Combien de bruit est correct",
+  "Show volume": "Afficher le volume",
+  "Start over": "Recommencer",
+  "Full screen": "Plein écran",
+  "Exit full screen": "Quitter le plein écran",
+  "Volume": "Volume",
+  "Quiet": "Calme",
+  "Loud": "Fort",
+  "Start listening": "Commencer l'écoute",
+  "No microphone? Try the demo": "Pas de micro? Essaie la démo",
+  "Hold to make noise": "Maintiens pour faire du bruit",
+  "Press Start to begin": "Appuie sur Commencer",
+  "Paused": "En pause",
+  "Your browser will ask to use the microphone. Sound is only measured on this computer. Nothing is recorded or sent anywhere.": "Le navigateur va demander d'utiliser le micro. Le son est seulement mesuré sur cet ordinateur. Rien n'est enregistré ni envoyé.",
+  "The microphone is blocked or missing. Allow it in the browser's address bar and press Start again, or try the demo.": "Le micro est bloqué ou absent. Autorise-le dans la barre d'adresse du navigateur et appuie de nouveau sur Commencer, ou essaie la démo.",
+  "When the room is quiet, little animals come to visit the zoo. If it gets too loud, they walk away.": "Quand la classe est calme, de petits animaux viennent visiter le zoo. Si c'est trop bruyant, ils s'en vont.",
+  "When the room is quiet, fish swim into the tank. If it gets too loud, they swim away.": "Quand la classe est calme, des poissons entrent dans l'aquarium. Si c'est trop bruyant, ils s'en vont.",
+  "When the room is quiet, flowers grow and bloom. If it gets too loud, they close up and shrink away.": "Quand la classe est calme, les fleurs poussent et s'ouvrent. Si c'est trop bruyant, elles se referment et disparaissent.",
+  "When the room is quiet, the city's windows light up one by one. If it gets too loud, the lights go out.": "Quand la classe est calme, les fenêtres de la ville s'allument une à une. Si c'est trop bruyant, les lumières s'éteignent.",
+  "A live graph of the room's volume. Quiet time adds up while the room stays under the loud line.": "Un graphique en direct du volume de la classe. Le temps calme s'additionne tant que la classe reste sous la ligne du bruit.",
+  "The microphone can't be used in this preview. It works on the website. For now, try the demo.": "Le micro ne peut pas être utilisé dans cet aperçu. Il fonctionne sur le site Web. Pour l'instant, essaie la démo.",
+  "animals in the zoo": "animaux au zoo",
+  "animal in the zoo": "animal au zoo",
+  "fish in the tank": "poissons dans l'aquarium",
+  "flowers in bloom": "fleurs ouvertes",
+  "flower in bloom": "fleur ouverte",
+  "of the city is lit": "de la ville est éclairée",
+  "Quiet time": "Temps calme",
+  "~of (\\d+:\\d\\d)": "sur $1",
+  "Time (minutes)": "Temps (minutes)",
+  "Nice and quiet. More animals are coming!": "C'est calme. D'autres animaux arrivent!",
+  "A little noisy. The animals are listening.": "Un peu de bruit. Les animaux écoutent.",
+  "Too loud! The animals are leaving.": "Trop fort! Les animaux s'en vont.",
+  "The zoo is full! Wonderful quiet work.": "Le zoo est plein! Bravo pour le calme.",
+  "Nice and quiet. More fish are swimming in!": "C'est calme. D'autres poissons arrivent!",
+  "A little noisy. The fish are watching.": "Un peu de bruit. Les poissons regardent.",
+  "Too loud! The fish are swimming away.": "Trop fort! Les poissons s'en vont.",
+  "The tank is full! Wonderful quiet work.": "L'aquarium est plein! Bravo pour le calme.",
+  "Nice and quiet. The garden is growing!": "C'est calme. Le jardin pousse!",
+  "A little noisy. The flowers are waiting.": "Un peu de bruit. Les fleurs attendent.",
+  "Too loud! The flowers are closing up.": "Trop fort! Les fleurs se referment.",
+  "The garden is in full bloom! Wonderful quiet work.": "Le jardin est en pleine floraison! Bravo pour le calme.",
+  "Quiet. The lights are coming on.": "Calme. Les lumières s'allument.",
+  "A little noisy. The city is holding.": "Un peu de bruit. La ville attend.",
+  "Too loud. The lights are going out.": "Trop fort. Les lumières s'éteignent.",
+  "The whole city is lit. Excellent focus.": "Toute la ville est éclairée. Excellente concentration.",
+  "Nice and quiet.": "C'est calme.",
+  "Getting louder.": "Ça devient bruyant.",
+  "Too loud. Bring it back down.": "Trop fort. On baisse le ton.",
+  "minutes": "minutes",
+};
+</script>
+<script>
+/* English / French switch shared by every page (build.py adds it to each built page).
+   The pages are written in English. In French, every visible string that appears in the dictionaries
+   (i18n/common.js for all pages, i18n/<page>.js for one page) is swapped, and switched back for English.
+   The choice is remembered across pages in localStorage ("mv-lang").
+
+   Dictionary entries:
+     "Exact text": "Texte exact"
+     "Slope = {n}": "Pente = {n}"          {n} stands for any number in the live text
+     "{0} over {1} Lab": "Labo {0} sur {1}" an element mixing text and child elements: {0}, {1} are its child
+                                            elements in order; French may reorder them (the elements themselves move)
+     "~Score: (.+)": "Pointage : $1"        a leading ~ makes the key a regular expression
+   Text the page changes later is translated as it appears (a MutationObserver), so readouts stay French. */
+(function () {
+  const KEY = "mv-lang";
+  const dict = Object.assign({}, window.I18N_COMMON || {}, window.I18N_PAGE || {});
+  const res = [];
+  for (const k in dict) if (k[0] === "~") res.push([new RegExp("^" + k.slice(1) + "$"), dict[k]]);
+  const NUM = /(?<![{\w])[−-]?\d+(?:[.,]\d+)?(?![}])/g; // numbers, but not the {0} placeholders
+  const norm = s => s.replace(/\s+/g, " ").trim();
+
+  function tr(s) {
+    const k = norm(s);
+    if (!k || !/[A-Za-z]/.test(k)) return null;
+    if (Object.prototype.hasOwnProperty.call(dict, k)) return dict[k];
+    const nums = k.match(NUM);
+    if (nums) {
+      const t = dict[k.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; return t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+    }
+    for (const [re, out] of res) {
+      const m = k.match(re);
+      if (m) return out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; });
+    }
+    // Feedback built from several sentences: translate each one.
+    const parts = k.split(/(?<=[.!?])\s+(?=\S)/);
+    if (parts.length > 1) {
+      const t = parts.map(p => tr(p));
+      if (t.every(x => x != null)) return t.join(" ");
+    }
+    return null;
+  }
+  // Keep the spaces around a text node so words do not run together.
+  const wrapSpace = (orig, t) => orig.match(/^\s*/)[0] + t + orig.match(/\s*$/)[0];
+
+  let lang = "en";
+  try { lang = localStorage.getItem(KEY) === "fr" ? "fr" : "en"; } catch (e) {}
+
+  const ATTRS = ["title", "aria-label", "placeholder", "alt"];
+  const SKIP = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE"]);
+
+  function doText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) return; // already ours
+    n.__en = n.nodeValue;
+    const t = tr(n.__en);
+    if (t == null) { n.__fr = undefined; return; }
+    n.__fr = wrapSpace(n.__en, t);
+    n.nodeValue = n.__fr;
+  }
+  function undoText(n) {
+    if (n.__fr !== undefined && n.nodeValue === n.__fr) n.nodeValue = n.__en;
+    n.__fr = undefined;
+  }
+
+  // An element mixing words and child elements ("<b>A</b> is on the line") is matched as one template.
+  function templateOf(el) {
+    let hasText = false, hasEl = false, i = 0, s = "";
+    for (const c of el.childNodes) {
+      if (c.nodeType === 3) { s += c.nodeValue; if (/[A-Za-z]/.test(c.nodeValue)) hasText = true; }
+      else if (c.nodeType === 1) { s += "{" + i++ + "}"; hasEl = true; }
+    }
+    return hasText && hasEl ? norm(s) : null;
+  }
+  function doTemplate(el) {
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) return true;
+    el.__frNodes = null;
+    const key = templateOf(el);
+    if (!key) return false;
+    let fr = dict[key];
+    if (fr == null) {
+      const nums = key.match(NUM), t = nums && dict[key.replace(NUM, "{n}")];
+      if (t != null) { let i = 0; fr = t.replace(/\{n\}/g, () => nums[i++] ?? ""); }
+      else {
+        for (const [re, out] of res) { const m = key.match(re); if (m) { fr = out.replace(/\$(\d)/g, (_, d) => { const g = m[+d] ?? ""; return tr(g) ?? g; }); break; } }
+        if (fr == null) return false;
+      }
+    }
+    const orig = [...el.childNodes];
+    const kids = orig.filter(c => c.nodeType === 1);
+    const out = [];
+    fr.split(/(\{\d+\})/).forEach(part => {
+      const m = part.match(/^\{(\d+)\}$/);
+      if (m) { if (kids[+m[1]]) out.push(kids[+m[1]]); }
+      else if (part) out.push(document.createTextNode(part));
+    });
+    const first = orig.find(c => c.nodeType === 3), last = [...orig].reverse().find(c => c.nodeType === 3);
+    if (out[0] && out[0].nodeType === 3 && first) out[0].nodeValue = first.nodeValue.match(/^\s*/)[0] + out[0].nodeValue.replace(/^\s+/, "");
+    const e = out[out.length - 1];
+    if (e && e.nodeType === 3 && last) e.nodeValue = e.nodeValue.replace(/\s+$/, "") + last.nodeValue.match(/\s*$/)[0];
+    el.__enNodes = orig;
+    el.replaceChildren(...out);
+    el.__frNodes = [...el.childNodes];
+    kids.forEach(walk);
+    return true;
+  }
+  function undoTemplate(el) {
+    if (!el.__enNodes) return;
+    if (el.__frNodes && el.__frNodes.length === el.childNodes.length && el.__frNodes.every((c, i) => c === el.childNodes[i])) el.replaceChildren(...el.__enNodes);
+    el.__enNodes = el.__frNodes = null;
+  }
+
+  function doAttrs(el) {
+    for (const a of ATTRS) {
+      if (!el.hasAttribute(a)) continue;
+      const v = el.getAttribute(a);
+      const mine = el.__frAttr && el.__frAttr[a];
+      if (mine !== undefined && v === mine) continue;
+      const t = tr(v);
+      if (t == null) continue;
+      (el.__enAttr ||= {})[a] = v;
+      (el.__frAttr ||= {})[a] = t;
+      el.setAttribute(a, t);
+    }
+    if (el.tagName === "INPUT" && (el.type === "button" || el.type === "submit") && el.value) {
+      const t = tr(el.value);
+      if (t != null && el.value !== t) { el.__enVal = el.value; el.value = t; }
+    }
+  }
+  function undoAttrs(el) {
+    if (el.__frAttr) for (const a in el.__frAttr) if (el.getAttribute(a) === el.__frAttr[a]) el.setAttribute(a, el.__enAttr[a]);
+    el.__frAttr = el.__enAttr = null;
+    if (el.__enVal !== undefined) { el.value = el.__enVal; el.__enVal = undefined; }
+  }
+
+  function walk(node) {
+    if (node.nodeType === 3) { doText(node); return; }
+    if (node.nodeType !== 1 || node.id === "lang-switch") return;
+    if (SKIP.has(node.tagName)) { if (node.tagName === "TEXTAREA") doAttrs(node); return; } // a text box's label, never what is typed
+    doAttrs(node);
+    if (doTemplate(node)) return;
+    for (const c of [...node.childNodes]) walk(c);
+  }
+  function unwalk(node) {
+    if (node.nodeType === 3) { undoText(node); return; }
+    if (node.nodeType !== 1) return;
+    undoAttrs(node);
+    if (SKIP.has(node.tagName)) return;
+    undoTemplate(node);
+    for (const c of [...node.childNodes]) unwalk(c);
+  }
+
+  // Watch for text the page writes later (readouts, feedback, new rows) while French is on.
+  let busy = false;
+  const mo = new MutationObserver(recs => {
+    if (busy || lang !== "fr") return;
+    busy = true;
+    const seen = new Set();
+    for (const r of recs) {
+      const t = r.type === "characterData" ? r.target : r.type === "attributes" ? r.target : r.target;
+      if (r.type === "childList") { seen.add(r.target); r.addedNodes.forEach(n => seen.add(n)); }
+      else seen.add(t.nodeType === 3 && t.parentNode && t.parentNode.__enNodes ? t.parentNode : t);
+    }
+    seen.forEach(n => { if (n.isConnected) walk(n); });
+    mo.takeRecords();
+    busy = false;
+  });
+  const watch = () => mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+
+  // Canvas drawings: translate words passed to fillText / strokeText.
+  const C2D = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+  if (C2D) ["fillText", "strokeText", "measureText"].forEach(fn => {
+    const orig = C2D[fn];
+    C2D[fn] = function (s, ...rest) { if (lang === "fr" && typeof s === "string") { const t = tr(s); if (t != null) s = t; } return orig.call(this, s, ...rest); };
+  });
+
+  let titleEn = document.title;
+  function apply() {
+    busy = true;
+    document.documentElement.lang = lang;
+    if (lang === "fr") { titleEn = document.title; const t = tr(titleEn); if (t != null) document.title = t; walk(document.body); }
+    else { unwalk(document.body); document.title = titleEn; }
+    mo.takeRecords();
+    busy = false;
+    sw.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    window.dispatchEvent(new CustomEvent("langchange", { detail: lang }));
+  }
+
+  // The switch: a small pill at the top centre of the page, in its own strip above the content.
+  const st = document.createElement("style");
+  st.textContent =
+    // Room is kept above each page so the switch never sits on a title; fit-the-window pages shrink by the same amount.
+    "body{padding-top:40px}@media (min-width:861px) and (min-height:520px){html body .wrap{height:calc(100vh - 40px);height:calc(100dvh - 40px)}}" +
+    "#lang-switch{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;gap:2px;padding:3px;" +
+    "background:var(--sheet,#fff);border:2px solid var(--grid-major,#b9c9d8);border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.12)}" +
+    "#lang-switch button{font:700 .85rem var(--font-body,system-ui,sans-serif);letter-spacing:.04em;border:0;border-radius:999px;" +
+    "padding:3px 12px;min-height:26px;background:transparent;color:var(--muted,#5b6b7a);cursor:pointer}" +
+    "#lang-switch button[aria-pressed=true]{background:var(--pt,#2f5fd0);color:var(--sheet,#fff)}" +
+    "#lang-switch button:focus-visible{outline:3px solid var(--pt,#2f5fd0);outline-offset:2px}" +
+    "@media print{#lang-switch{display:none}}";
+  document.head.appendChild(st);
+  const sw = document.createElement("div");
+  sw.id = "lang-switch";
+  sw.setAttribute("role", "group");
+  sw.setAttribute("aria-label", "Language / Langue");
+  sw.innerHTML = '<button type="button" data-lang="en" lang="en" title="English">EN</button><button type="button" data-lang="fr" lang="fr" title="Français">FR</button>';
+  sw.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b || b.dataset.lang === lang) return;
+    lang = b.dataset.lang;
+    try { localStorage.setItem(KEY, lang); } catch (err) {}
+    apply();
+  });
+  document.body.appendChild(sw);
+
+  window.I18N = { tr: s => (lang === "fr" ? tr(s) ?? s : s), get lang() { return lang; } };
+  watch();
+  if (lang === "fr") apply();
+  else sw.querySelector('[data-lang="en"]').setAttribute("aria-pressed", "true"), sw.querySelector('[data-lang="fr"]').setAttribute("aria-pressed", "false");
+  // Another tab switched language: follow it.
+  window.addEventListener("storage", e => { if (e.key === KEY && (e.newValue === "fr" ? "fr" : "en") !== lang) { lang = e.newValue === "fr" ? "fr" : "en"; apply(); } });
+})();
+</script>
+</body>
+</html>
