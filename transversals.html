@@ -165,7 +165,7 @@ h1 .m { color: var(--pt); }
 .c-blue { color: var(--pt); font-weight: 700; }
 .tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .seg { display: inline-flex; }
-.seg button { border-radius: 0; font-size: 1.05rem; padding: 10px 18px; }
+.seg button { border-radius: 0; font-size: 1.05rem; padding: 9px 13px; }
 .seg button:first-child { border-radius: 10px 0 0 10px; }
 .seg button:last-child { border-radius: 0 10px 10px 0; }
 .seg button + button { border-left: 0; }
@@ -290,6 +290,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
         <button type="button" data-mode="learn" aria-pressed="true">Learn</button>
         <button type="button" data-mode="practice" aria-pressed="false">Level 1</button>
         <button type="button" data-mode="challenge" aria-pressed="false">Level 2</button>
+        <button type="button" data-mode="level3" aria-pressed="false">Level 3</button>
       </div>
     </div>
   </header>
@@ -1046,13 +1047,63 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
       draw(shown) { drawG6(G, [1, 2], [th + "°", shown >= 2 ? x + "°" : "x"], false); },
     };
   }
+  // Level 3 (grade 7): the two angles are written with x. Write an equation, solve it, then find the angles.
+  function genEq() {
+    const t = pick(allowed()), T = { ...TYPES[t], rule: TYPES[t].eq ? `${TYPES[t].name} angles are equal.` : "Adjacent angles add to 180°." };  // short notes keep the work on screen
+    let theta; do { theta = rnd(40, 140); } while (Math.abs(theta - 90) < 12);
+    const f = figure(theta, pick([0, 0, rnd(-15, 15)]));
+    const [a, b] = shuffle(pick(T.pairs)), ma = f.meas(a), mb = f.meas(b);
+    const plain = Math.random() < 0.3;  // one angle is just a number
+    let x, k1, k2, c1, c2;
+    do {
+      x = rnd(4, 20); k1 = rnd(2, 6); k2 = plain ? 0 : rnd(1, 5);
+      c1 = ma - k1 * x; c2 = plain ? mb : mb - k2 * x;
+    } while (Math.abs(c1) > 70 || c1 === 0 || (T.eq && k1 === k2) || (!plain && (c2 === 0 || Math.abs(c2) > 70)));
+    const term = k => (k === 1 ? "x" : k + "x");
+    const expr = (k, c) => (k === 0 ? String(c) : c === 0 ? term(k) : `${term(k)} ${c < 0 ? MINUS : "+"} ${Math.abs(c)}`);
+    const e1 = expr(k1, c1), e2 = expr(k2, c2), fr = (n, d) => `<span class="fr"><span>${num(n)}</span><span>${d}</span></span>`;
+    const rows = [];
+    // Get to: K x + C = N
+    let K, C, N;
+    if (T.eq) {
+      // Keep the bigger x on the left.
+      let [kl, cl, kr, cr, el, er] = k1 >= k2 ? [k1, c1, k2, c2, e1, e2] : [k2, c2, k1, c1, e2, e1];
+      rows.push({ L: el, R: er, note: T.rule });
+      if (kr) rows.push({ L: expr(kl - kr, cl), R: num(cr), note: `Subtract ${term(kr)} from both sides` });
+      [K, C, N] = [kl - kr, cl, cr];
+    } else {
+      rows.push({ L: `∠${a} + ∠${b}`, R: "180", note: T.rule }, { L: `${e1} + ${e2}`, R: "180", note: "Put in the expressions" });
+      [K, C, N] = [k1 + k2, c1 + c2, 180];
+      rows.push({ L: expr(K, C), R: "180", note: "Combine like terms" });
+    }
+    if (C) rows.push({ L: term(K), R: num(N - C), note: C > 0 ? `Subtract ${C} from both sides` : `Add ${-C} to both sides` });
+    if (K !== 1) rows.push({ L: "x", R: fr(N - C, K), note: `Divide both sides by ${K}` });
+    if (rows[rows.length - 1].R !== String(x)) rows.push({ L: "x", R: String(x) });
+    rows.push({ L: `∠${a}`, R: `${k1} × ${x} ${c1 < 0 ? MINUS : "+"} ${Math.abs(c1)}`, note: `Put x = ${x} into ∠${a}` }, { L: "", R: ma + "°" });
+    // The second angle comes from the first (unless it was already a number).
+    if (k2) rows.push(T.eq ? { L: `∠${b}`, R: mb + "°", note: T.rule } : { L: `∠${b}`, R: `180° ${MINUS} ${ma}° = ${mb}°`, note: T.rule });
+    return {
+      title: "Solve with an equation", q: "Find x. Then find the angles.", ask: "x =", unit: "", answer: x, rows,
+      tip: `Name the angle pair. ${T.rule} Write an equation.`,
+      draw(shown, hint) {
+        if (hint || shown >= 1) drawShape(f, a, b);
+        drawFigure(f, false);
+        drawAngle(f, a, "B"); drawAngle(f, b, "O");
+        ndot(f.lab(a), a, "B"); ndot(f.lab(b), b, "O");
+        const done = shown >= rows.length;
+        chip(f.lab(a, 140), done ? ma + "°" : `(${e1})°`, "B");
+        chip(f.lab(b, 140), done ? mb + "°" : k2 ? `(${e2})°` : mb + "°", "O");
+      },
+    };
+  }
   const GENS = { chain: genChain, bowtie: genBowtie, tri: genTri, bend: genBend, pairs: genPairs, parcheck: genParCheck, line: () => genFan(180), right: () => genFan(90), apart: genApart };
-  const CS = { n: 0, right: 0, total: 0, bag: [] };
-  let cz = null;
+  // Level 2 and Level 3 share the panel; each keeps its own score and puzzle.
+  const LV = { challenge: { n: 0, right: 0, total: 0, bag: [], cz: null }, level3: { n: 0, right: 0, total: 0, bag: [], cz: null } };
+  let CS = LV.challenge, cz = null;
   function newChallenge() {
     CS.n++;
-    if (!CS.bag.length) CS.bag = shuffle(GRADES[grade].gens.map(k => GENS[k]));
-    cz = CS.bag.pop()();
+    if (!CS.bag.length) CS.bag = mode === "level3" ? [genEq, genEq, genEq] : shuffle(GRADES[grade].gens.map(k => GENS[k]));
+    cz = CS.cz = CS.bag.pop()();
     Object.assign(cz, { shown: 0, hint: false, first: true, done: false });
     $("ctitle").textContent = cz.title; $("cq").textContent = cz.q;
     $("clbl").textContent = cz.ask; $("cunit").hidden = !cz.unit;
@@ -1069,7 +1120,7 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     $("cwork").innerHTML = workHTML(cz.rows, cz.shown, cz.done);
     svg.textContent = "";
     cz.draw(cz.shown, cz.hint);
-    $("hint").textContent = g6() ? "" : cz.yesno ? "No > marks here. You can't tell from the picture alone." : "The same marks (> or >>) mean the lines are parallel.";
+    $("hint").textContent = g6() ? "" : mode === "level3" ? "The > marks mean the two lines are parallel." : cz.yesno ? "No > marks here. You can't tell from the picture alone." : "The same marks (> or >>) mean the lines are parallel.";
   }
   function finishC(good) {
     cz.done = true; cz.shown = cz.rows.length;
@@ -1122,7 +1173,8 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
   function setMode(m) {
     mode = m;
     document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.mode === m)));
-    $("learnP").hidden = m !== "learn"; $("pracP").hidden = m !== "practice"; $("chalP").hidden = m !== "challenge";
+    $("learnP").hidden = m !== "learn"; $("pracP").hidden = m !== "practice"; $("chalP").hidden = m !== "challenge" && m !== "level3";
+    if (LV[m]) { CS = LV[m]; cz = CS.cz; }
     if (m === "learn") renderLearn();
     else if (m === "practice") { if (!pq) newPractice(); else drawPractice(); }
     else { if (!cz) newChallenge(); else renderChal(); }
@@ -1137,8 +1189,9 @@ button.wrong { background: var(--warn); color: var(--sheet); border-color: var(-
     document.querySelectorAll("[data-grade]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.grade === g)));
     buildPairButtons();
     Object.assign(PS, { n: 0, right: 0, total: 0 }); pq = null;
-    Object.assign(CS, { n: 0, right: 0, total: 0, bag: [] }); cz = null;
-    setMode(mode);
+    for (const k in LV) Object.assign(LV[k], { n: 0, right: 0, total: 0, bag: [], cz: null }); cz = null;
+    document.querySelector('[data-mode="level3"]').hidden = g6();
+    setMode(g6() && mode === "level3" ? "challenge" : mode);
   }
   document.querySelectorAll("[data-grade]").forEach(x => x.addEventListener("click", () => setGrade(+x.dataset.grade)));
   document.addEventListener("keydown", e => {
@@ -1245,6 +1298,13 @@ window.I18N_PAGE = {
  "Transversals": "sécantes",
  "transversal": "sécante",
  "Learn": "Apprendre",
+ "Level 3": "Niveau 3",
+ "Opposite angles are equal.": "Les angles opposés sont égaux.",
+ "Adjacent angles add to 180°.": "La somme des angles adjacents est 180°.",
+ "Solve with an equation": "Résous avec une équation",
+ "Find x. Then find the angles.": "Trouve x. Ensuite, trouve les angles.",
+ "Write an equation.": "Écris une équation.",
+ "Put x = {n} into ∠{n}": "Remplace x par {n} dans ∠{n}",
  "Opposite": "Opposés",
  "Adjacent": "Adjacents",
  "Congruent": "Congrus",
