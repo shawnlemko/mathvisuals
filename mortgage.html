@@ -146,6 +146,62 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
+/* Workbench look (Shawn 2026-11-27): the manipulative tools feel like real classroom materials, not a web form.
+   Shared by every tool that links it, so the same pieces look the same everywhere:
+   - .wb-board   the work area sits in a wooden frame (same wood as the puzzles' game board)
+   - .wb-btn     chunky buttons that press down; add .go (green), .warm (orange), .dark (ink) for colour
+   - .wb-card    a cream index card with ruled lines for the step-by-step work
+   Pieces drawn in SVG come from workbench.js. Fixed colours, the same in light and dark mode. */
+.wb {
+  --wb-wood: #b97b43; --wb-rim: #7a4a22; --wb-cream: #fffaf0; --wb-rule: #d8e3ee; --wb-margin: #e8a0a0;
+  --wb-ink: #23170c;
+}
+.wb .wb-board {
+  background: linear-gradient(180deg, #dcab70, #b97b43);
+  border: 6px solid var(--wb-rim); border-radius: 16px; padding: 8px;
+  box-shadow: inset 0 0 30px rgba(60, 30, 10, 0.45), 0 8px 22px rgba(40, 20, 5, 0.22);
+}
+.wb .wb-board svg { display: block; border-radius: 10px; }
+/* Pieces: the drop shadow makes them sit on the mat; a carried piece lifts. */
+.wb .wb-body { filter: url(#wb-shadow); }
+.wb .lift .wb-body, .wb .dragging .wb-body { filter: url(#wb-lift); }
+.wb .wb-label { font-family: var(--font-num); font-weight: 700; letter-spacing: -0.06em; pointer-events: none; }
+/* Chunky press-down buttons. */
+.wb .wb-btn {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.01em;
+  padding: 12px 16px; border-radius: 12px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #4d7ce6, #2f5fd0); border: 0;
+  box-shadow: 0 5px 0 #1d3f94, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+.wb .wb-btn:hover { filter: brightness(1.06); }
+.wb .wb-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d3f94, 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn:focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }
+.wb .wb-btn.go { background: linear-gradient(180deg, #34a873, #1f7a5a); box-shadow: 0 5px 0 #125240, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.warm { background: linear-gradient(180deg, #ef8a3e, #c2571a); box-shadow: 0 5px 0 #8a3a0d, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.dark { background: linear-gradient(180deg, #3a4a5a, #1b2733); box-shadow: 0 5px 0 #0b1118, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+.wb .wb-btn.go:active { box-shadow: 0 1px 0 #125240; } .wb .wb-btn.warm:active { box-shadow: 0 1px 0 #8a3a0d; } .wb .wb-btn.dark:active { box-shadow: 0 1px 0 #0b1118; }
+/* Index card: cream, ruled lines, a red margin line; the writing stays dark in both modes. */
+.wb .wb-card {
+  color: var(--wb-ink); border: 0; border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 2.6em, var(--wb-margin) 2.6em, var(--wb-margin) calc(2.6em + 2px), transparent calc(2.6em + 2px)),
+    repeating-linear-gradient(180deg, transparent 0 calc(2.2em - 1px), var(--wb-rule) calc(2.2em - 1px) 2.2em),
+    var(--wb-cream);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(40, 20, 5, 0.18);
+  transform: rotate(-0.4deg);
+}
+.wb .wb-card input { background: #fff; color: var(--wb-ink); }
+/* Inside the wooden frame and on the cards the writing stays dark, even in dark mode (the mat is always cream). */
+.wb .wb-board, .wb .wb-card { --ink: #1b2733; --line: #1b2733; --muted: #6b5a48; --pt: #2f5fd0; --green: #1f7a5a; --orange: #c2571a; --warn: #a3263c; --sheet: #fffaf0; --chip: #efe3cc; --grid: #e7dcc6; --grid-major: #c9b48f; }
+/* Shared SVG parts that the tile tools already use: the work mat is paper, the tray is wood. */
+.wb .ws-bg { fill: url(#wb-paper); filter: url(#wb-mat); }
+.wb .tray-bg { fill: url(#wb-walnut); filter: url(#wb-tray); stroke: #5e3a1a; stroke-width: 5; }
+.wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
+/* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
+.wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
+</style>
+<style>
 /* Mortgage Basics, grades 9-10 (Shawn 2026-10-21): the parts of a mortgage and the cost of interest.
    The parts ARE the inputs: House price − Down payment = Mortgage, then Rate and Years give the Monthly payment.
    The payment comes from the standard Canadian calculator (interest compounded twice a year, paid monthly);
@@ -255,9 +311,11 @@ dl.words dt::after { content: ": "; }
 .ibars .track { height: 34px; }
 .ibars .seg { justify-content: flex-start; }
 @media (max-width: 640px) { .pg2 { grid-template-columns: 1fr; } .chartbox { min-height: 260px; } }
+#picCard { background: #fffaf0; }
+#pic { display: block; width: 100%; height: auto; max-height: 52vh; }
 </style>
 
-<div class="wrap">
+<div class="wrap wb">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Mortgage Basics</h1></div>
@@ -322,14 +380,17 @@ dl.words dt::after { content: ": "; }
 
     <div class="panel">
       <div class="btns">
-        <button type="button" class="go" id="pinBtn">Pin to compare</button>
+        <button type="button" class="go wb-btn warm" id="pinBtn">Pin to compare</button>
         <button type="button" id="unpinBtn" hidden>Clear pin</button>
       </div>
       <div class="seg-btns" role="group" aria-label="Panel">
-        <button type="button" id="tabWords" class="on" aria-pressed="true">The words</button>
+        <button type="button" id="tabPic" class="on" aria-pressed="true">The picture</button>
+        <button type="button" id="tabWords" aria-pressed="false">The words</button>
         <button type="button" id="tabMath" aria-pressed="false">The math</button>
       </div>
-      <div class="card" id="wordsCard">
+      <!-- Shawn 2026-11-27: "a page of text, way too much". The picture comes first; the words wait behind a tab. -->
+      <div class="card wb-card" id="picCard"><svg id="pic" viewBox="0 0 360 330" role="img" aria-label="A house paid for with a down payment and a mortgage from the bank"></svg></div>
+      <div class="card wb-card" id="wordsCard" hidden>
         <dl class="words">
           <div><dt>House price</dt> <dd>what the home costs.</dd></div>
           <div><dt class="k-down">Down payment</dt> <dd>money you pay up front from savings. In Canada it is at least 5%.</dd></div>
@@ -342,7 +403,7 @@ dl.words dt::after { content: ": "; }
         </dl>
         <p class="note">With less than 20% down, Canadian buyers also pay for mortgage insurance. It is left out here.</p>
       </div>
-      <div class="card" id="mathCard" hidden>
+      <div class="card wb-card" id="mathCard" hidden>
         <div class="work" id="work"></div>
         <p class="note">The monthly payment comes from a mortgage calculator. Canadian mortgages add interest twice a year and you pay every month.</p>
       </div>
@@ -452,6 +513,61 @@ dl.words dt::after { content: ": "; }
     host.append(l, t, v);
   }
 
+  // The picture (Shawn 2026-11-27): the house, and the stack of money that pays for it.
+  // One column the height of the house: green bills are the down payment, blue bills are the bank's loan.
+  function drawPic(c) {
+    const svg = $("pic"), NS = "http://www.w3.org/2000/svg";
+    const el = (tag, a, parent = svg, text) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (text != null) e.textContent = text; parent.appendChild(e); return e; };
+    svg.replaceChildren();
+    const G = 262, TOP = 66, H = G - TOP; // ground line, roof top, house height
+    const dg = el("defs", {});
+    const grad = (id, a, b) => { const g = el("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 }, dg); el("stop", { offset: 0, "stop-color": a }, g); el("stop", { offset: 1, "stop-color": b }, g); };
+    grad("mp-roof", "#c8553d", "#9c3a27"); grad("mp-wall", "#fbe9cf", "#efd3ab"); grad("mp-down", "#5fd08f", "#2a9a5a"); grad("mp-loan", "#6d9bff", "#2f5fd0");
+    // Ground and a soft shadow.
+    el("ellipse", { cx: 180, cy: G + 4, rx: 170, ry: 7, fill: "#2b1606", "fill-opacity": 0.12 });
+    el("line", { x1: 8, y1: G, x2: 352, y2: G, stroke: "#8a6a45", "stroke-width": 3, "stroke-linecap": "round" });
+    // House: chimney, roof, walls, door, windows.
+    el("rect", { x: 128, y: TOP + 6, width: 18, height: 40, fill: "#8c4a32" });
+    el("path", { d: `M14,${TOP + 72} L94,${TOP} L174,${TOP + 72} Z`, fill: "url(#mp-roof)", stroke: "#6e2a1c", "stroke-width": 3, "stroke-linejoin": "round" });
+    el("rect", { x: 28, y: TOP + 70, width: 132, height: G - TOP - 70, fill: "url(#mp-wall)", stroke: "#a3825a", "stroke-width": 2.5 });
+    el("rect", { x: 80, y: G - 62, width: 30, height: 62, rx: 4, fill: "#2f5fd0", stroke: "#1d3f94", "stroke-width": 2 });
+    el("circle", { cx: 103, cy: G - 30, r: 2.6, fill: "#f3dc8a" });
+    [[40, TOP + 86], [124, TOP + 86]].forEach(([x, y]) => {
+      el("rect", { x, y, width: 26, height: 26, rx: 2, fill: "#cfe6ff", stroke: "#a3825a", "stroke-width": 2.5 });
+      el("path", { d: `M${x + 13},${y} V${y + 26} M${x},${y + 13} H${x + 26}`, stroke: "#a3825a", "stroke-width": 2 });
+    });
+    // Price tag on a string from the roof.
+    const tag = el("g", { transform: `translate(88,${TOP - 26}) rotate(-5)` });
+    el("path", { d: "M-46,-14 H38 L50,0 L38,14 H-46 Z", fill: "#fffaf0", stroke: "#a3825a", "stroke-width": 2 }, tag);
+    el("circle", { cx: 40, cy: 0, r: 3, fill: "#a3825a" }, tag);
+    el("text", { x: -4, y: 1, "text-anchor": "middle", "dominant-baseline": "central", "font-family": "var(--font-num)", "font-weight": 700, "font-size": 14, fill: "#23170c" }, tag, money(st.price));
+    // The money column: as tall as the house, down payment at the bottom.
+    const X = 196, W = 52, hd = Math.max(0, H * st.downPct / 100), hl = H - hd;
+    const bills = (y, h, fill, edge) => {
+      if (h <= 0.5) return;
+      el("rect", { x: X, y, width: W, height: h, rx: 4, fill, stroke: edge, "stroke-width": 2 });
+      for (let k = y + 12; k < y + h - 4; k += 12) el("line", { x1: X + 3, y1: k, x2: X + W - 3, y2: k, stroke: edge, "stroke-opacity": 0.45, "stroke-width": 1.5 });
+      el("rect", { x: X + 4, y: y + 3, width: 10, height: Math.max(0, h - 6), rx: 2, fill: "#ffffff", "fill-opacity": 0.22 });
+    };
+    bills(TOP, hl, "url(#mp-loan)", "#1d3f94");
+    bills(G - hd, hd, "url(#mp-down)", "#1f7a4a");
+    // A brace from the house to the column: the house costs exactly this much.
+    el("path", { d: `M186,${TOP} h-5 V${G} h5`, fill: "none", stroke: "#6b5a48", "stroke-width": 2 });
+    // Labels beside each part.
+    const lab = (y, top, val, col) => {
+      el("text", { x: X + W + 8, y: y - 8, "font-family": "var(--font-body)", "font-weight": 700, "font-size": 13, fill: col }, svg, top);
+      el("text", { x: X + W + 8, y: y + 10, "font-family": "var(--font-num)", "font-weight": 700, "font-size": 15, fill: col }, svg, val);
+    };
+    const yl = TOP + Math.max(18, hl / 2), yd = G - Math.max(18, hd / 2);
+    lab(Math.min(yl, yd - 40), L("Bank lends", "La banque prête"), money(c.loan), "#2f5fd0");
+    lab(Math.max(yd, yl + 40), L("You pay now", "Tu paies"), money(st.price - c.loan), "#1f7a5a");
+    // Then: pay the bank back every month.
+    el("text", { x: 180, y: G + 30, "text-anchor": "middle", "font-family": "var(--font-body)", "font-weight": 700, "font-size": 14, fill: "#6b5a48" }, svg,
+      L(`Then you pay the bank back ${money(c.pay, true)} a month`, `Puis tu rembourses ${money(c.pay, true)} par mois`));
+    el("text", { x: 180, y: G + 50, "text-anchor": "middle", "font-family": "var(--font-body)", "font-weight": 700, "font-size": 14, fill: "#6b5a48" }, svg,
+      L(`for ${st.years} years.`, `pendant ${st.years} ans.`));
+  }
+
   function render() {
     const c = calc(st);
     const d = down();
@@ -496,6 +612,7 @@ dl.words dt::after { content: ": "; }
           : L(`That is <b class="k-int">${money(-diff)}</b> less interest than the pinned mortgage.`, `C’est <b class="k-int">${money(-diff)}</b> d’intérêts de moins que l’hypothèque épinglée.`)}</span>`;
     }
     $("say").innerHTML = say;
+    drawPic(c);
 
     // Split of one payment: interest first, the rest pays down the loan.
     const split = $("split");
@@ -635,13 +752,15 @@ dl.words dt::after { content: ": "; }
 
   $("pinBtn").addEventListener("click", () => { st.pin = Object.assign({ rate: st.rate, years: st.years }, calc(st)); render(); });
   $("unpinBtn").addEventListener("click", () => { st.pin = null; render(); });
-  function tab(math) {
-    $("wordsCard").hidden = math; $("mathCard").hidden = !math;
-    $("tabWords").classList.toggle("on", !math); $("tabMath").classList.toggle("on", math);
-    $("tabWords").setAttribute("aria-pressed", String(!math)); $("tabMath").setAttribute("aria-pressed", String(math));
+  function tab(name) {
+    [["Pic", "picCard"], ["Words", "wordsCard"], ["Math", "mathCard"]].forEach(([k, card]) => {
+      const on = k === name;
+      $(card).hidden = !on; $("tab" + k).classList.toggle("on", on); $("tab" + k).setAttribute("aria-pressed", String(on));
+    });
   }
-  $("tabWords").addEventListener("click", () => tab(false));
-  $("tabMath").addEventListener("click", () => tab(true));
+  $("tabPic").addEventListener("click", () => tab("Pic"));
+  $("tabWords").addEventListener("click", () => tab("Words"));
+  $("tabMath").addEventListener("click", () => tab("Math"));
   // Playground controls.
   $("extra").addEventListener("input", e => { st.extra = +e.target.value; render(); });
   $("lump").addEventListener("input", e => { st.lump = +e.target.value; render(); });
@@ -787,6 +906,7 @@ window.I18N_PAGE = {
   "Pin to compare": "Épingler pour comparer",
   "Clear pin": "Retirer l’épingle",
   "The words": "Les mots",
+  "The picture": "L’image",
   "The math": "Les calculs",
   "Panel": "Panneau",
   "what the home costs.": "ce que coûte la maison.",
