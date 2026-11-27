@@ -198,9 +198,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wb .ws-bg { fill: url(#wb-paper); filter: url(#wb-mat); }
 .wb .tray-bg { fill: url(#wb-walnut); filter: url(#wb-tray); stroke: #5e3a1a; stroke-width: 5; }
 .wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
-/* Area-model outlines drawn like pencil on paper. */
-.wb .mat { fill: #f1e4c8; fill-opacity: 0.7; stroke: #b59b6e; }
-.wb .cell { stroke: #a08660; }
+/* .wb-board.paper: the whole drawing area is the cream work mat (tools whose drawing has no background of its own). */
+.wb .wb-board.paper svg { background: linear-gradient(180deg, #fffaf0, #f6ecd8); }
 /* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
 .wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
 </style>
@@ -299,8 +298,10 @@ const Workbench = (() => {
     grad("wb-pos", [[0, "#6fe09d"], [0.55, "#3fbf74"], [1, "#24924f"]]);
     grad("wb-neg", [[0, "#ff8f86"], [0.55, "#ec564c"], [1, "#bf2f27"]]);
     grad("wb-gloss", [[0, "#ffffff", 0.55], [1, "#ffffff", 0]]);
+    grad("wb-shade", [[0, "#000000", 0], [0.6, "#000000", 0], [1, "#000000", 0.18]]);
     grad("wb-wood", [[0, "#dcab70"], [1, "#b97b43"]]);
     grad("wb-paper", [[0, "#fffaf0"], [1, "#f6ecd8"]]);
+    grad("wb-brass", [[0, "#f3dc8a"], [0.5, "#d2ab45"], [1, "#9a7b2f"]]);
     grad("wb-walnut", [[0, "#a86d3a"], [1, "#82512a"]]);
     // Dark stripes on every negative piece (Shawn 2026-10-23, for black-and-white printing).
     const st = el("pattern", { id: "wb-stripe", width: 14, height: 14, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, d);
@@ -347,13 +348,21 @@ const Workbench = (() => {
     return t;
   }
 
-  function tile(g, { w, h, neg, label, fs }) {
+  function tile(g, { w, h, neg, label, fs, color }) {
     g.replaceChildren();
     const body = el("g", { class: "wb-body" }, g);
     const r = Math.min(9, Math.min(w, h) * 0.16), lip = Math.max(3, Math.min(6, Math.min(w, h) * 0.09));
     // Thick edge (the side of the tile), then the top face, then the shine.
-    el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: neg ? "#8f1f19" : "#16703b", class: "wb-edge" }, body);
-    el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: `url(#wb-${neg ? "neg" : "pos"})` }, body);
+    if (color) {
+      // Any colour: the edge is the same colour darkened, the face is lit from above.
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: color, class: "wb-edge" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: "#000", "fill-opacity": 0.3, "pointer-events": "none" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: color }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: "url(#wb-shade)", "pointer-events": "none" }, body);
+    } else {
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: neg ? "#8f1f19" : "#16703b", class: "wb-edge" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: `url(#wb-${neg ? "neg" : "pos"})` }, body);
+    }
     if (neg) el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: "url(#wb-stripe)" }, body);
     el("rect", { x: 3, y: 3, width: w - 6, height: Math.min(h * 0.42, 70), rx: Math.max(2, r - 2), fill: "url(#wb-gloss)", "pointer-events": "none" }, body);
     el("rect", { x: 1, y: 1, width: w - 2, height: h - lip - 2, rx: r, fill: "none", stroke: "#ffffff", "stroke-opacity": 0.35, "stroke-width": 1.5, "pointer-events": "none" }, body);
