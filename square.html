@@ -185,7 +185,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wb .wb-card {
   color: var(--wb-ink); border: 0; border-radius: 6px;
   background:
-    linear-gradient(90deg, transparent 2.6em, var(--wb-margin) 2.6em, var(--wb-margin) calc(2.6em + 2px), transparent calc(2.6em + 2px)),
+    linear-gradient(90deg, transparent 0.55em, var(--wb-margin) 0.55em, var(--wb-margin) calc(0.55em + 2px), transparent calc(0.55em + 2px)),
     repeating-linear-gradient(180deg, transparent 0 calc(2.2em - 1px), var(--wb-rule) calc(2.2em - 1px) 2.2em),
     var(--wb-cream);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(40, 20, 5, 0.18);
@@ -329,6 +329,14 @@ const Workbench = (() => {
     grad("wb-paper", [[0, "#fffaf0"], [1, "#f6ecd8"]]);
     grad("wb-brass", [[0, "#f3dc8a"], [0.5, "#d2ab45"], [1, "#9a7b2f"]]);
     grad("wb-walnut", [[0, "#a86d3a"], [1, "#82512a"]]);
+    // Glass marbles: one shading layer over any colour (light top-left, dark rim).
+    const rg = el("radialGradient", { id: "wb-ball", cx: "38%", cy: "32%", r: "72%" }, d);
+    [[0, "#fff", 0.6], [0.28, "#fff", 0], [0.72, "#000", 0], [1, "#000", 0.42]].forEach(([o, c, a]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": a }, rg));
+    // Burlap for cloth bags: a woven tan pattern.
+    const bp = el("pattern", { id: "wb-burlap", width: 8, height: 8, patternUnits: "userSpaceOnUse" }, d);
+    el("rect", { width: 8, height: 8, fill: "#d9bd8c" }, bp);
+    el("path", { d: "M0 2H8M0 6H8", stroke: "#b8955c", "stroke-width": 1.6, "stroke-opacity": 0.55 }, bp);
+    el("path", { d: "M2 0V8M6 0V8", stroke: "#f0dcb4", "stroke-width": 1.2, "stroke-opacity": 0.5 }, bp);
     // Dark stripes on every negative piece (Shawn 2026-10-23, for black-and-white printing).
     const st = el("pattern", { id: "wb-stripe", width: 14, height: 14, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, d);
     el("rect", { x: 0, y: 0, width: 5, height: 14, fill: "#5a0f0a", "fill-opacity": 0.28 }, st);
@@ -406,6 +414,15 @@ const Workbench = (() => {
     if (label) text(g, cx, cy - lip / 2 + 1, label, fs || r, neg ? INK_NEG : INK);
   }
 
+  // A glass marble of any colour, centred at 0, 0.
+  function marble(g, { r, color }) {
+    const body = el("g", { class: "wb-body" }, g);
+    el("circle", { r, fill: color }, body);
+    el("circle", { r, fill: "url(#wb-ball)" }, body);
+    el("ellipse", { cx: -r * 0.36, cy: -r * 0.42, rx: r * 0.26, ry: r * 0.17, fill: "#fff", "fill-opacity": 0.85, transform: `rotate(-30 ${-r * 0.36} ${-r * 0.42})` }, body);
+    return body;
+  }
+
   // A wooden tray with a darker rim, like the puzzles' game board.
   function wood(parent, { x, y, w, h, rx = 14 }) {
     const g = el("g", { class: "wb-wood" }, parent);
@@ -422,7 +439,7 @@ const Workbench = (() => {
     return g;
   }
 
-  return { defs, tile, chip, wood, paper, text };
+  return { defs, tile, chip, marble, wood, paper, text };
 })();
 </script>
 <script>
