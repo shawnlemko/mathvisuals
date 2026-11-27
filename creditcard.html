@@ -146,6 +146,64 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
+/* Workbench look (Shawn 2026-11-27): the manipulative tools feel like real classroom materials, not a web form.
+   Shared by every tool that links it, so the same pieces look the same everywhere:
+   - .wb-board   the work area sits in a wooden frame (same wood as the puzzles' game board)
+   - .wb-btn     chunky buttons that press down; add .go (green), .warm (orange), .dark (ink) for colour
+   - .wb-card    a cream index card with ruled lines for the step-by-step work
+   Pieces drawn in SVG come from workbench.js. Fixed colours, the same in light and dark mode. */
+.wb {
+  --wb-wood: #b97b43; --wb-rim: #7a4a22; --wb-cream: #fffaf0; --wb-rule: #d8e3ee; --wb-margin: #e8a0a0;
+  --wb-ink: #23170c;
+}
+.wb .wb-board {
+  background: linear-gradient(180deg, #dcab70, #b97b43);
+  border: 6px solid var(--wb-rim); border-radius: 16px; padding: 8px;
+  box-shadow: inset 0 0 30px rgba(60, 30, 10, 0.45), 0 8px 22px rgba(40, 20, 5, 0.22);
+}
+.wb .wb-board svg { display: block; border-radius: 10px; }
+/* Pieces: the drop shadow makes them sit on the mat; a carried piece lifts. */
+.wb .wb-body { filter: url(#wb-shadow); }
+.wb .lift .wb-body, .wb .dragging .wb-body { filter: url(#wb-lift); }
+.wb .wb-label { font-family: var(--font-num); font-weight: 700; letter-spacing: -0.06em; pointer-events: none; }
+/* Chunky press-down buttons. */
+.wb .wb-btn {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.01em;
+  padding: 12px 16px; border-radius: 12px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #4d7ce6, #2f5fd0); border: 0;
+  box-shadow: 0 5px 0 #1d3f94, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+.wb .wb-btn:hover { filter: brightness(1.06); }
+.wb .wb-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d3f94, 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn:focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }
+.wb .wb-btn.go { background: linear-gradient(180deg, #34a873, #1f7a5a); box-shadow: 0 5px 0 #125240, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.warm { background: linear-gradient(180deg, #ef8a3e, #c2571a); box-shadow: 0 5px 0 #8a3a0d, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.dark { background: linear-gradient(180deg, #3a4a5a, #1b2733); box-shadow: 0 5px 0 #0b1118, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+.wb .wb-btn.go:active { box-shadow: 0 1px 0 #125240; } .wb .wb-btn.warm:active { box-shadow: 0 1px 0 #8a3a0d; } .wb .wb-btn.dark:active { box-shadow: 0 1px 0 #0b1118; }
+/* Index card: cream, ruled lines, a red margin line; the writing stays dark in both modes. */
+.wb .wb-card {
+  color: var(--wb-ink); border: 0; border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 0.55em, var(--wb-margin) 0.55em, var(--wb-margin) calc(0.55em + 2px), transparent calc(0.55em + 2px)),
+    repeating-linear-gradient(180deg, transparent 0 calc(2.2em - 1px), var(--wb-rule) calc(2.2em - 1px) 2.2em),
+    var(--wb-cream);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(40, 20, 5, 0.18);
+  transform: rotate(-0.4deg);
+}
+.wb .wb-card input { background: #fff; color: var(--wb-ink); }
+/* Inside the wooden frame and on the cards the writing stays dark, even in dark mode (the mat is always cream). */
+.wb .wb-board, .wb .wb-card { --ink: #1b2733; --line: #1b2733; --muted: #6b5a48; --pt: #2f5fd0; --green: #1f7a5a; --orange: #c2571a; --warn: #a3263c; --sheet: #fffaf0; --chip: #efe3cc; --grid: #e7dcc6; --grid-major: #c9b48f; }
+/* Shared SVG parts that the tile tools already use: the work mat is paper, the tray is wood. */
+.wb .ws-bg { fill: url(#wb-paper); filter: url(#wb-mat); }
+.wb .tray-bg { fill: url(#wb-walnut); filter: url(#wb-tray); stroke: #5e3a1a; stroke-width: 5; }
+.wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
+/* .wb-board.paper: the whole drawing area is the cream work mat (tools whose drawing has no background of its own). */
+.wb .wb-board.paper svg { background: linear-gradient(180deg, #fffaf0, #f6ecd8); }
+/* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
+.wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
+</style>
+<style>
 /* Credit Card Debt (grades 7-9 and 10-12; Shawn 2026-10-21: only the simplest case, very simple).
    The simplest defensible model, stated on the page:
      - interest is charged once a month on the balance at the start of the month,
@@ -254,9 +312,10 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
   .work { font-size: 1.3rem; overflow-x: auto; }
   .tbl { font-size: 1.1rem; overflow-x: auto; }
 }
+#ccPic { display: block; width: 100%; max-width: 760px; height: auto; max-height: 17vh; flex: none; }
 </style>
 
-<div class="wrap">
+<div class="wrap wb">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Credit Card Debt</h1></div>
@@ -275,6 +334,8 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       </div>
       <p class="warnline" id="warn" hidden></p>
       <div class="body" id="oneView">
+        <!-- Shawn 2026-11-27: picture first. One month on a card: what you owe, + interest, − payment, what you owe next. -->
+        <svg id="ccPic" viewBox="0 0 760 150" role="img" aria-label="One month on the credit card"></svg>
         <div class="work" id="work" aria-live="polite"></div>
         <div class="split" id="split" hidden></div>
       </div>
@@ -285,25 +346,25 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     </div>
 
     <div class="side">
-      <section class="card" id="viewCard">
+      <section class="card wb-card" id="viewCard">
         <p class="label">Show</p>
         <div class="seg-btns wide" role="group" aria-label="View" id="views">
           <button type="button" data-view="one" class="on">One month</button><button type="button" data-view="months">Month by month</button><button type="button" data-view="compare">Compare cards</button>
         </div>
       </section>
-      <section class="card">
+      <section class="card wb-card">
         <p class="label">Question</p>
         <p class="story" id="story"></p>
         <p class="model">Pay the full balance by the due date and there is no interest. Interest is charged only on a balance you carry over. Simple model: once a month, no new purchases.</p>
       </section>
 
       <div class="panel" id="learn">
-        <section class="card">
+        <section class="card wb-card">
           <p class="steplbl" id="steplbl"></p>
           <p class="say" id="say"></p>
         </section>
         <div class="btns">
-          <button type="button" class="go" id="next">Next step</button>
+          <button type="button" class="go wb-btn" id="next">Next step</button>
           <button type="button" id="back">Back</button>
           <button type="button" id="all">Show all</button>
           <button type="button" id="newex">New example</button>
@@ -311,10 +372,10 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       </div>
 
       <div class="panel" id="practice" hidden>
-        <section class="card">
+        <section class="card wb-card">
           <div class="arow"><label for="ansInt" class="k-int">Interest this month</label><span class="unit">$</span><input class="big-in" id="ansInt" type="text" inputmode="decimal" autocomplete="off"></div>
           <div class="arow"><label for="ansBal" class="k-bal">New balance</label><span class="unit">$</span><input class="big-in" id="ansBal" type="text" inputmode="decimal" autocomplete="off"></div>
-          <div class="btns"><button type="button" class="go" id="check">Check</button></div>
+          <div class="btns"><button type="button" class="go wb-btn go" id="check">Check</button></div>
           <p class="fb" id="fb" aria-live="polite"></p>
           <p class="score">Correct: <b id="right">0</b> of <b id="total">0</b></p>
         </section>
@@ -481,6 +542,42 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
     if (view === "compare") return CMP_STEPS;
     return view === "one" ? oneSteps(m) : monthSteps(schedule(q.bal, q.rate, q.pay));
   }
+  // The picture: two plastic cards with the month between them. The interest and the new balance stay "?" until the
+  // steps have found them (and always in Practice), so the picture never gives the answer away.
+  function drawCard(m, reveal) {
+    const svg = $("#ccPic"), NS = "http://www.w3.org/2000/svg";
+    const el = (tag, a, parent = svg, text) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (text != null) e.textContent = text; parent.appendChild(e); return e; };
+    svg.replaceChildren();
+    const d = el("defs", {});
+    const lg = (id, a, b) => { const g = el("linearGradient", { id, x1: 0, y1: 0, x2: 1, y2: 1 }, d); el("stop", { offset: 0, "stop-color": a }, g); el("stop", { offset: 1, "stop-color": b }, g); };
+    lg("cc-blue", "#3b6fe0", "#1b3a8c"); lg("cc-chip", "#f3dc8a", "#b98a1f");
+    const f = el("filter", { id: "cc-sh", x: "-10%", y: "-10%", width: "120%", height: "140%" }, d);
+    el("feDropShadow", { dx: 0, dy: 4, stdDeviation: 4, "flood-color": "#1b2733", "flood-opacity": 0.3 }, f);
+    const T = (x, y, txt, size, fill, anchor = "middle", font = "var(--font-num)") => el("text", { x, y, "text-anchor": anchor, "dominant-baseline": "central", "font-family": font, "font-weight": 700, "font-size": size, fill }, svg, txt);
+    const card = (x, label, amount) => {
+      el("rect", { x, y: 12, width: 210, height: 128, rx: 14, fill: "url(#cc-blue)", filter: "url(#cc-sh)" });
+      el("rect", { x: x + 4, y: 16, width: 202, height: 40, rx: 11, fill: "#fff", "fill-opacity": 0.12 });
+      el("rect", { x: x + 18, y: 34, width: 34, height: 26, rx: 5, fill: "url(#cc-chip)" });
+      el("path", { d: `M${x + 18},47 h34 M${x + 35},34 v26`, stroke: "#9a7b2f", "stroke-width": 1.2 });
+      T(x + 196, 40, label, 15, "#dbe6ff", "end", "var(--font-body)");
+      T(x + 105, 100, amount, 30, "#ffffff");
+    };
+    const hide = v => (reveal ? money(v) : "?");
+    card(8, "Owes now", money(m.bal));
+    card(542, "Owes next month", m.full ? (reveal ? money(0) : "?") : hide(m.end));
+    // The month in the middle: interest added (orange), payment taken off (green).
+    el("path", { d: "M232,76 H528", stroke: "#b9a888", "stroke-width": 3, "stroke-dasharray": "2 8", "stroke-linecap": "round" });
+    el("path", { d: "M520,68 L532,76 L520,84", fill: "none", stroke: "#b9a888", "stroke-width": 3, "stroke-linecap": "round" });
+    const coin = (cx, fill, edge, sign, top, val) => {
+      el("circle", { cx, cy: 76, r: 30, fill, stroke: edge, "stroke-width": 3, filter: "url(#cc-sh)" });
+      T(cx, 77, sign, 34, "#ffffff");
+      T(cx, 26, top, 15, edge, "middle", "var(--font-body)");
+      T(cx, 126, val, 20, edge);
+    };
+    coin(320, "#e0782e", "#b2541a", "+", "interest", m.full ? "$0" : hide(m.int));
+    coin(440, "#2f9a66", "#1f7a5a", "−", "payment", money(m.paid));
+  }
+
   function render() {
     const learn = mode === "learn";
     $("#learn").hidden = !learn; $("#practice").hidden = learn; $("#viewCard").hidden = !learn;
@@ -514,6 +611,7 @@ header .seg-btns button { font-size: 1.2rem; padding: 6px 20px; }
       $("#split").hidden = m.full || step < ONE_STEPS;
       if (!m.full && step >= ONE_STEPS) $("#split").innerHTML = splitHtml(m);
       $("#say").innerHTML = oneSay(m, step);
+      drawCard(m, learn && step >= ONE_STEPS);
     } else if (cmp) {
       const A = schedule(q.bal, q.rate, q.pay), Bc = schedule(q.bal, q.rateB, q.pay);
       $("#tbl").innerHTML = cmpHtml(A, Bc);
