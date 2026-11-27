@@ -146,6 +146,64 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
+/* Workbench look (Shawn 2026-11-27): the manipulative tools feel like real classroom materials, not a web form.
+   Shared by every tool that links it, so the same pieces look the same everywhere:
+   - .wb-board   the work area sits in a wooden frame (same wood as the puzzles' game board)
+   - .wb-btn     chunky buttons that press down; add .go (green), .warm (orange), .dark (ink) for colour
+   - .wb-card    a cream index card with ruled lines for the step-by-step work
+   Pieces drawn in SVG come from workbench.js. Fixed colours, the same in light and dark mode. */
+.wb {
+  --wb-wood: #b97b43; --wb-rim: #7a4a22; --wb-cream: #fffaf0; --wb-rule: #d8e3ee; --wb-margin: #e8a0a0;
+  --wb-ink: #23170c;
+}
+.wb .wb-board {
+  background: linear-gradient(180deg, #dcab70, #b97b43);
+  border: 6px solid var(--wb-rim); border-radius: 16px; padding: 8px;
+  box-shadow: inset 0 0 30px rgba(60, 30, 10, 0.45), 0 8px 22px rgba(40, 20, 5, 0.22);
+}
+.wb .wb-board svg { display: block; border-radius: 10px; }
+/* Pieces: the drop shadow makes them sit on the mat; a carried piece lifts. */
+.wb .wb-body { filter: url(#wb-shadow); }
+.wb .lift .wb-body, .wb .dragging .wb-body { filter: url(#wb-lift); }
+.wb .wb-label { font-family: var(--font-num); font-weight: 700; letter-spacing: -0.06em; pointer-events: none; }
+/* Chunky press-down buttons. */
+.wb .wb-btn {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.01em;
+  padding: 12px 16px; border-radius: 12px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #4d7ce6, #2f5fd0); border: 0;
+  box-shadow: 0 5px 0 #1d3f94, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+.wb .wb-btn:hover { filter: brightness(1.06); }
+.wb .wb-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d3f94, 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn:focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }
+.wb .wb-btn.go { background: linear-gradient(180deg, #34a873, #1f7a5a); box-shadow: 0 5px 0 #125240, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.warm { background: linear-gradient(180deg, #ef8a3e, #c2571a); box-shadow: 0 5px 0 #8a3a0d, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.dark { background: linear-gradient(180deg, #3a4a5a, #1b2733); box-shadow: 0 5px 0 #0b1118, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+.wb .wb-btn.go:active { box-shadow: 0 1px 0 #125240; } .wb .wb-btn.warm:active { box-shadow: 0 1px 0 #8a3a0d; } .wb .wb-btn.dark:active { box-shadow: 0 1px 0 #0b1118; }
+/* Index card: cream, ruled lines, a red margin line; the writing stays dark in both modes. */
+.wb .wb-card {
+  color: var(--wb-ink); border: 0; border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 2.6em, var(--wb-margin) 2.6em, var(--wb-margin) calc(2.6em + 2px), transparent calc(2.6em + 2px)),
+    repeating-linear-gradient(180deg, transparent 0 calc(2.2em - 1px), var(--wb-rule) calc(2.2em - 1px) 2.2em),
+    var(--wb-cream);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(40, 20, 5, 0.18);
+  transform: rotate(-0.4deg);
+}
+.wb .wb-card input { background: #fff; color: var(--wb-ink); }
+/* Inside the wooden frame and on the cards the writing stays dark, even in dark mode (the mat is always cream). */
+.wb .wb-board, .wb .wb-card { --ink: #1b2733; --line: #1b2733; --muted: #6b5a48; --pt: #2f5fd0; --green: #1f7a5a; --orange: #c2571a; --warn: #a3263c; --sheet: #fffaf0; --chip: #efe3cc; --grid: #e7dcc6; --grid-major: #c9b48f; }
+/* Shared SVG parts that the tile tools already use: the work mat is paper, the tray is wood. */
+.wb .ws-bg { fill: url(#wb-paper); filter: url(#wb-mat); }
+.wb .tray-bg { fill: url(#wb-walnut); filter: url(#wb-tray); stroke: #5e3a1a; stroke-width: 5; }
+.wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
+/* .wb-board.paper: the whole drawing area is the cream work mat (tools whose drawing has no background of its own). */
+.wb .wb-board.paper svg { background: linear-gradient(180deg, #fffaf0, #f6ecd8); }
+/* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
+.wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
+</style>
+<style>
 /* Modeling Integers (grades 6-7). Green chips are +1, red chips are -1, like integers.html and algebra tiles.
    Playground: tap or drag chips in, drag a green onto a red (or a group onto a group) and each touching pair vanishes as a zero pair.
    Add and subtract: a question puts the first number's chips on the mat; students act out the operation with the same tools.
@@ -167,7 +225,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .seg-btns.small button { font-size: 1.05rem; min-height: 44px; padding: 4px 14px; }
 
 /* Board */
-.mat { fill: var(--mat); stroke: var(--grid-major); stroke-width: 2; stroke-dasharray: 10 7; }
+.mat { fill: url(#wb-paper); filter: url(#wb-mat); }
 .mat-tip { fill: var(--muted); font-family: var(--font-display); font-weight: 800; font-size: 30px; text-anchor: middle; opacity: .55; pointer-events: none; }
 .tray-bg { fill: var(--chip); stroke: var(--grid-major); stroke-width: 1.5; }
 .tray-lbl { fill: var(--ink); font-family: var(--font-num); font-weight: 700; font-size: 30px; text-anchor: middle; pointer-events: none; }
@@ -198,8 +256,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .words { margin: 0; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
 .words .pos, .words .neg { font-weight: 800; }
 .counts { margin: 0; font-size: 1.15rem; color: var(--muted); }
-button.go { background: var(--pt); color: var(--sheet); border-color: var(--pt); font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; padding: 8px 18px; min-height: 50px; }
-button.go:hover { background: var(--sheet); color: var(--pt); }
+button.go { font-size: 1.25rem; padding: 8px 18px; min-height: 50px; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .btn-row + .btn-row, .label + .btn-row { margin-top: 0; }
 .btn-row button { font-size: 1.1rem; min-height: 46px; }
@@ -220,7 +277,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 [data-show]:not(.on) { display: none !important; }
 </style>
 
-<div class="wrap">
+<div class="wrap wb">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Modeling Integers</h1></div>
@@ -232,22 +289,22 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   </header>
 
   <div class="main">
-    <div class="board">
+    <div class="board wb-board">
       <svg id="svg" viewBox="0 0 1000 620" role="img" aria-label="Integer chips: green chips are plus one, red chips are minus one"></svg>
     </div>
     <div class="panel">
       <!-- Playground -->
-      <div class="card" data-show="play">
+      <div class="card wb-card" data-show="play">
         <p class="label">Total</p>
         <div class="big hidden" id="total">Hidden</div>
         <p class="counts" id="counts"></p>
-        <div class="btn-row" style="margin-top:10px"><button type="button" class="go" id="totalBtn">Show total</button></div>
+        <div class="btn-row" style="margin-top:10px"><button type="button" class="wb-btn go" id="totalBtn">Show total</button></div>
       </div>
 
       <!-- Add and subtract -->
-      <div class="card" data-show="calc">
+      <div class="card wb-card" data-show="calc">
         <p class="label">Question</p>
-        <div class="btn-row"><button type="button" class="go" id="newQ">New question</button></div>
+        <div class="btn-row"><button type="button" class="wb-btn go" id="newQ">New question</button></div>
         <p class="or">or type your own</p>
         <div class="type-row">
           <input id="qa" inputmode="numeric" maxlength="3" aria-label="First number" value="3">
@@ -256,32 +313,32 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
             <button type="button" data-op="-" aria-pressed="false" aria-label="subtract">−</button>
           </div>
           <input id="qb" inputmode="numeric" maxlength="3" aria-label="Second number" value="-5">
-          <button type="button" class="go" id="goQ">Go</button>
+          <button type="button" class="wb-btn go" id="goQ">Go</button>
         </div>
       </div>
-      <div class="card" data-show="calc">
+      <div class="card wb-card" data-show="calc">
         <div class="big" id="qText"></div>
         <p class="words" id="qWords"></p>
       </div>
 
       <!-- Challenge -->
-      <div class="card" data-show="game">
+      <div class="card wb-card" data-show="game">
         <p class="label">You can</p>
         <div class="seg-btns small" role="group" aria-label="Rule" id="rules">
           <button type="button" data-rule="add" class="on" aria-pressed="true">Only add</button>
           <button type="button" data-rule="take" aria-pressed="false">Only take away</button>
           <button type="button" data-rule="any" aria-pressed="false">Either</button>
         </div>
-        <div class="btn-row" style="margin-top:10px"><button type="button" class="go" id="newC">New challenge</button></div>
+        <div class="btn-row" style="margin-top:10px"><button type="button" class="wb-btn go" id="newC">New challenge</button></div>
       </div>
-      <div class="card" data-show="game">
+      <div class="card wb-card" data-show="game">
         <div class="big" id="cText"></div>
         <p class="words" id="cWords"></p>
         <p class="solved" id="solved"></p>
       </div>
 
       <div class="btn-row" data-show="calc game">
-        <button type="button" class="go" id="check">Check</button>
+        <button type="button" class="wb-btn go" id="check">Check</button>
         <button type="button" id="hint">Show hint</button>
         <button type="button" id="restart">Start over</button>
       </div>
@@ -298,9 +355,144 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
 </div>
 
 <script>
+/* Workbench: shared physical pieces for the manipulative tools (Shawn 2026-11-27: "more analog, like a game").
+   One set of pieces so every tool matches: a wooden tray (same wood as the puzzles' game board),
+   a cream paper work mat, and thick glossy plastic algebra tiles and chips.
+   Green positive, red negative with dark stripes (so they still read when printed in black and white).
+
+   Workbench.defs(svg)                       adds the shared gradients, stripes, textures and shadows (once per svg)
+   Workbench.tile(g, {w, h, neg, label, fs}) draws one plastic tile into group g (clears g first); label may end in ²
+   Workbench.chip(g, {cx, cy, r, neg, label, fs}) draws one round counter
+   Workbench.wood(parent, {x, y, w, h, rx}) and Workbench.paper(parent, {...}) draw a tray or a work mat
+   Fixed colours, the same in light and dark mode, like the puzzles. */
+const Workbench = (() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const INK = "#14261b", INK_NEG = "#3a0d0a";
+
+  function defs(svg) {
+    if (svg.querySelector(":scope > defs.wb-defs")) return;
+    const d = el("defs", { class: "wb-defs" });
+    svg.insertBefore(d, svg.firstChild);
+    const grad = (id, stops, x2 = 0, y2 = 1) => {
+      const g = el("linearGradient", { id, x1: 0, y1: 0, x2, y2 }, d);
+      stops.forEach(([o, c, a = 1]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": a }, g));
+    };
+    // Plastic: lit from above, a little darker at the bottom edge.
+    grad("wb-pos", [[0, "#6fe09d"], [0.55, "#3fbf74"], [1, "#24924f"]]);
+    grad("wb-neg", [[0, "#ff8f86"], [0.55, "#ec564c"], [1, "#bf2f27"]]);
+    grad("wb-gloss", [[0, "#ffffff", 0.55], [1, "#ffffff", 0]]);
+    grad("wb-shade", [[0, "#000000", 0], [0.6, "#000000", 0], [1, "#000000", 0.18]]);
+    grad("wb-wood", [[0, "#dcab70"], [1, "#b97b43"]]);
+    grad("wb-paper", [[0, "#fffaf0"], [1, "#f6ecd8"]]);
+    grad("wb-brass", [[0, "#f3dc8a"], [0.5, "#d2ab45"], [1, "#9a7b2f"]]);
+    grad("wb-walnut", [[0, "#a86d3a"], [1, "#82512a"]]);
+    // Dark stripes on every negative piece (Shawn 2026-10-23, for black-and-white printing).
+    const st = el("pattern", { id: "wb-stripe", width: 14, height: 14, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, d);
+    el("rect", { x: 0, y: 0, width: 5, height: 14, fill: "#5a0f0a", "fill-opacity": 0.28 }, st);
+    // Wood grain and paper fibre come from noise, so no image files are needed.
+    const tex = (id, freq, opacity, tint) => {
+      const f = el("filter", { id, x: 0, y: 0, width: 1, height: 1, "color-interpolation-filters": "sRGB" }, d);
+      el("feTurbulence", { type: "fractalNoise", baseFrequency: freq, numOctaves: 3, seed: 7, result: "n" }, f);
+      el("feColorMatrix", { in: "n", type: "matrix", values: `0 0 0 0 ${tint[0]}  0 0 0 0 ${tint[1]}  0 0 0 0 ${tint[2]}  0 0 0 ${opacity} 0`, result: "c" }, f);
+      el("feComposite", { in: "c", in2: "SourceGraphic", operator: "in", result: "t" }, f);
+      const m = el("feMerge", {}, f);
+      el("feMergeNode", { in: "SourceGraphic" }, m);
+      el("feMergeNode", { in: "t" }, m);
+    };
+    tex("wb-grain", "0.006 0.18", 0.55, [0.32, 0.17, 0.05]);
+    tex("wb-fibre", "0.9", 0.12, [0.45, 0.35, 0.2]);
+    // A paper mat or a tray sitting on the wooden frame: the texture plus a soft shadow under it.
+    const sit = (id, from) => {
+      const f = el("filter", { id, x: "-5%", y: "-5%", width: "110%", height: "115%", "color-interpolation-filters": "sRGB" }, d);
+      [...d.querySelector("#" + from).children].forEach(c => f.appendChild(c.cloneNode(true)));
+      const m = f.querySelector("feMerge");
+      el("feDropShadow", { in: "SourceAlpha", dx: 0, dy: 6, stdDeviation: 7, "flood-color": "#2b1606", "flood-opacity": 0.45, result: "s" }, f);
+      f.insertBefore(f.lastChild, m);
+      m.insertBefore(el("feMergeNode", { in: "s" }), m.firstChild);
+    };
+    sit("wb-mat", "wb-fibre");
+    sit("wb-tray", "wb-grain");
+    // Soft shadow under a piece; a bigger one while it is being carried.
+    const sh = (id, dy, blur, a) => {
+      const f = el("filter", { id, x: "-20%", y: "-20%", width: "140%", height: "150%" }, d);
+      el("feDropShadow", { dx: 0, dy, stdDeviation: blur, "flood-color": "#2b1606", "flood-opacity": a }, f);
+    };
+    sh("wb-shadow", 3, 2.5, 0.35);
+    sh("wb-lift", 12, 8, 0.3);
+    sh("wb-sunk", 1, 1.5, 0.25);
+  }
+
+  // A label like "x²" is drawn with a raised 2 (the font's ² glyph reads as a separate character).
+  function text(parent, x, y, label, fs, fill) {
+    const t = el("text", { x, y, "font-size": fs, fill, "text-anchor": "middle", "dominant-baseline": "central", class: "wb-label" }, parent);
+    if (!label.endsWith("²")) { t.textContent = label; return t; }
+    t.textContent = label.slice(0, -1);
+    el("tspan", { dy: "-0.42em", "font-size": "0.62em" }, t).textContent = "2";
+    return t;
+  }
+
+  function tile(g, { w, h, neg, label, fs, color }) {
+    g.replaceChildren();
+    const body = el("g", { class: "wb-body" }, g);
+    const r = Math.min(9, Math.min(w, h) * 0.16), lip = Math.max(3, Math.min(6, Math.min(w, h) * 0.09));
+    // Thick edge (the side of the tile), then the top face, then the shine.
+    if (color) {
+      // Any colour: the edge is the same colour darkened, the face is lit from above.
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: color, class: "wb-edge" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: "#000", "fill-opacity": 0.3, "pointer-events": "none" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: color }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: "url(#wb-shade)", "pointer-events": "none" }, body);
+    } else {
+      el("rect", { x: 0, y: 0, width: w, height: h, rx: r, fill: neg ? "#8f1f19" : "#16703b", class: "wb-edge" }, body);
+      el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: `url(#wb-${neg ? "neg" : "pos"})` }, body);
+    }
+    if (neg) el("rect", { x: 0, y: 0, width: w, height: h - lip, rx: r, fill: "url(#wb-stripe)" }, body);
+    el("rect", { x: 3, y: 3, width: w - 6, height: Math.min(h * 0.42, 70), rx: Math.max(2, r - 2), fill: "url(#wb-gloss)", "pointer-events": "none" }, body);
+    el("rect", { x: 1, y: 1, width: w - 2, height: h - lip - 2, rx: r, fill: "none", stroke: "#ffffff", "stroke-opacity": 0.35, "stroke-width": 1.5, "pointer-events": "none" }, body);
+    if (label) text(g, w / 2, (h - lip) / 2 + 1, label, fs, neg ? INK_NEG : INK);
+  }
+
+  function chip(g, { cx, cy, r, neg, label, fs }) {
+    const body = el("g", { class: "wb-body" }, g);
+    const lip = Math.max(3, r * 0.12);
+    el("circle", { cx, cy: cy + lip / 2, r, fill: neg ? "#8f1f19" : "#16703b", class: "wb-edge" }, body);
+    el("circle", { cx, cy: cy - lip / 2, r, fill: `url(#wb-${neg ? "neg" : "pos"})` }, body);
+    if (neg) el("circle", { cx, cy: cy - lip / 2, r, fill: "url(#wb-stripe)" }, body);
+    el("ellipse", { cx, cy: cy - lip / 2 - r * 0.42, rx: r * 0.62, ry: r * 0.36, fill: "url(#wb-gloss)", "pointer-events": "none" }, body);
+    el("circle", { cx, cy: cy - lip / 2, r: r - 1, fill: "none", stroke: "#ffffff", "stroke-opacity": 0.35, "stroke-width": 1.5, "pointer-events": "none" }, body);
+    if (label) text(g, cx, cy - lip / 2 + 1, label, fs || r, neg ? INK_NEG : INK);
+  }
+
+  // A wooden tray with a darker rim, like the puzzles' game board.
+  function wood(parent, { x, y, w, h, rx = 14 }) {
+    const g = el("g", { class: "wb-wood" }, parent);
+    el("rect", { x, y, width: w, height: h, rx, fill: "url(#wb-wood)", filter: "url(#wb-grain)" }, g);
+    el("rect", { x: x + 3, y: y + 3, width: w - 6, height: h - 6, rx: rx - 2, fill: "none", stroke: "#7a4a22", "stroke-width": 6 }, g);
+    el("rect", { x: x + 7, y: y + 7, width: w - 14, height: h - 14, rx: rx - 5, fill: "none", stroke: "#ffffff", "stroke-opacity": 0.18, "stroke-width": 2 }, g);
+    return g;
+  }
+
+  // A cream paper work mat with a faint fibre texture.
+  function paper(parent, { x, y, w, h, rx = 10 }) {
+    const g = el("g", { class: "wb-paper" }, parent);
+    el("rect", { x, y, width: w, height: h, rx, fill: "url(#wb-paper)", filter: "url(#wb-fibre)" }, g);
+    return g;
+  }
+
+  return { defs, tile, chip, wood, paper, text };
+})();
+</script>
+<script>
 (() => {
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.getElementById("svg");
+  Workbench.defs(svg);
   const $ = id => document.getElementById(id);
   const R = 32;                                   // chip radius
   const MAT = { x: 180, y: 12, w: 808, h: 596 };
@@ -326,8 +518,8 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
   [[1, 110], [-1, 270]].forEach(([v, y]) => {
     const g = el("g", { class: "tray-chip " + (v > 0 ? "p" : "n"), transform: `translate(90,${y})`, "data-tray": v, tabindex: 0, role: "button",
       "aria-label": v > 0 ? "Add a positive chip" : "Add a negative chip" }, svg);
-    el("circle", { r: 40 }, g);
-    el("text", { "font-size": 46 }, g).textContent = v > 0 ? "+" : "−";
+    // Thick glossy plastic counters from the shared workbench kit; negatives are red with stripes.
+    Workbench.chip(g, { cx: 0, cy: 0, r: 40, neg: v < 0, label: v > 0 ? "+" : "−", fs: 46 });
     el("text", { x: 90, y: y + 76, class: "tray-lbl" }, svg).textContent = v > 0 ? "+1" : "−1";
     tray[v] = g;
   });
@@ -358,8 +550,7 @@ button.go:hover { background: var(--sheet); color: var(--pt); }
     c.el = el("g", { class: "chip " + (v > 0 ? "p" : "n"), "data-chip": c.id }, chipLayer);
     c.inner = el("g", {}, c.el);
     el("circle", { r: R + 6, class: "sel" }, c.inner);
-    el("circle", { r: R, class: "face" }, c.inner);
-    el("text", { "font-size": 38 }, c.inner).textContent = v > 0 ? "+" : "−";
+    Workbench.chip(c.inner, { cx: 0, cy: 0, r: R, neg: v < 0, label: v > 0 ? "+" : "−", fs: 38 });
     place(c);
     chips().push(c);
     return c;
