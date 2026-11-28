@@ -146,6 +146,86 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .mb-name { font-family: var(--font-display); font-weight: 800; font-size: 18px; fill: var(--sheet); pointer-events: none; }
 </style>
 <style>
+/* Workbench look (Shawn 2026-11-27): the manipulative tools feel like real classroom materials, not a web form.
+   Shared by every tool that links it, so the same pieces look the same everywhere:
+   - .wb-board   the work area sits in a wooden frame (same wood as the puzzles' game board)
+   - .wb-btn     chunky buttons that press down; add .go (green), .warm (orange), .dark (ink) for colour
+   - .wb-card    a cream index card with ruled lines for the step-by-step work
+   Pieces drawn in SVG come from workbench.js. Fixed colours, the same in light and dark mode. */
+.wb {
+  --wb-wood: #b97b43; --wb-rim: #7a4a22; --wb-cream: #fffaf0; --wb-rule: #d8e3ee; --wb-margin: #e8a0a0;
+  --wb-ink: #23170c;
+}
+.wb .wb-board {
+  background: linear-gradient(180deg, #dcab70, #b97b43);
+  border: 6px solid var(--wb-rim); border-radius: 16px; padding: 8px;
+  box-shadow: inset 0 0 30px rgba(60, 30, 10, 0.45), 0 8px 22px rgba(40, 20, 5, 0.22);
+}
+.wb .wb-board svg { display: block; border-radius: 10px; }
+/* Pieces: the drop shadow makes them sit on the mat; a carried piece lifts. */
+.wb .wb-body { filter: url(#wb-shadow); }
+.wb .lift .wb-body, .wb .dragging .wb-body { filter: url(#wb-lift); }
+.wb .wb-label { font-family: var(--font-num); font-weight: 700; letter-spacing: -0.06em; pointer-events: none; }
+/* Chunky press-down buttons. */
+.wb .wb-btn {
+  font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: 0.01em;
+  padding: 12px 16px; border-radius: 12px; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, #4d7ce6, #2f5fd0); border: 0;
+  box-shadow: 0 5px 0 #1d3f94, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out;
+}
+.wb .wb-btn:hover { filter: brightness(1.06); }
+.wb .wb-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #1d3f94, 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn:focus-visible { outline: 3px solid #f2b705; outline-offset: 3px; }
+.wb .wb-btn.go { background: linear-gradient(180deg, #34a873, #1f7a5a); box-shadow: 0 5px 0 #125240, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.warm { background: linear-gradient(180deg, #ef8a3e, #c2571a); box-shadow: 0 5px 0 #8a3a0d, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+.wb .wb-btn.dark { background: linear-gradient(180deg, #3a4a5a, #1b2733); box-shadow: 0 5px 0 #0b1118, 0 7px 12px rgba(0, 0, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+.wb .wb-btn.go:active { box-shadow: 0 1px 0 #125240; } .wb .wb-btn.warm:active { box-shadow: 0 1px 0 #8a3a0d; } .wb .wb-btn.dark:active { box-shadow: 0 1px 0 #0b1118; }
+/* Index card: cream, ruled lines, a red margin line; the writing stays dark in both modes. */
+.wb .wb-card {
+  color: var(--wb-ink); border: 0; border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 0.55em, var(--wb-margin) 0.55em, var(--wb-margin) calc(0.55em + 2px), transparent calc(0.55em + 2px)),
+    repeating-linear-gradient(180deg, transparent 0 calc(2.2em - 1px), var(--wb-rule) calc(2.2em - 1px) 2.2em),
+    var(--wb-cream);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 6px 14px rgba(40, 20, 5, 0.18);
+  transform: rotate(-0.4deg);
+}
+.wb .wb-card input { background: #fff; color: var(--wb-ink); }
+/* Inside the wooden frame and on the cards the writing stays dark, even in dark mode (the mat is always cream). */
+.wb .wb-board, .wb .wb-card { --ink: #1b2733; --line: #1b2733; --muted: #6b5a48; --pt: #2f5fd0; --green: #1f7a5a; --orange: #c2571a; --warn: #a3263c; --sheet: #fffaf0; --chip: #efe3cc; --grid: #e7dcc6; --grid-major: #c9b48f; }
+/* Shared SVG parts that the tile tools already use: the work mat is paper, the tray is wood. */
+.wb .ws-bg { fill: url(#wb-paper); filter: url(#wb-mat); }
+.wb .tray-bg { fill: url(#wb-walnut); filter: url(#wb-tray); stroke: #5e3a1a; stroke-width: 5; }
+.wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
+/* .wb-board.paper: the whole drawing area is the cream work mat (tools whose drawing has no background of its own). */
+.wb .wb-board.paper svg { background: linear-gradient(180deg, #fffaf0, #f6ecd8); }
+/* .wb-board.graph (Shawn 2026-11-28, graphing tools): the coordinate grid is printed graph paper clipped to a
+   wooden clipboard. Fine blue lines, ink axes, points are glossy push pins that cast a small shadow. */
+.wb .wb-board.graph { position: relative; overflow: visible; }
+.wb .wb-board.graph svg { background: #fdfcf7; box-shadow: inset 0 0 0 1px rgba(60, 40, 20, 0.08); }
+.wb .wb-board.graph { --sheet: #fdfcf7; }
+.wb .wb-board.clip::before { content: ""; position: absolute; z-index: 3; left: 50%; top: -16px; width: 168px; height: 36px; transform: translateX(-50%);
+  border-radius: 10px 10px 18px 18px; pointer-events: none;
+  background: linear-gradient(180deg, #fbfcfd 0%, #d3d9df 38%, #9aa3ad 62%, #c4cbd2 100%);
+  box-shadow: 0 5px 10px rgba(20, 20, 30, 0.35), inset 0 1px 0 #fff, inset 0 -2px 3px rgba(0, 0, 0, 0.25); }
+.wb .wb-board.clip::after { content: ""; position: absolute; z-index: 4; left: 50%; top: -6px; width: 34px; height: 12px; transform: translateX(-50%);
+  border-radius: 6px; background: #4a525b; box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.6); pointer-events: none; }
+.wb .mb-minor { stroke: #d3e2ef; stroke-width: 1; }
+.wb .mb-major { stroke: #a8c3dc; stroke-width: 1.4; }
+.wb .mb-axis { stroke: #1b2733; stroke-width: 2.6; stroke-linecap: round; }
+.wb .mb-tick { fill: #1b2733; stroke: #fdfcf7; }
+.wb .mb-line { stroke: #1b2733; stroke-width: 3.4; filter: url(#wb-sunk); }
+.wb .mb-lbl-bg { fill: #fdfcf7; }
+.wb .mb-handle .dot { fill: url(#wb-pin) #2f5fd0; stroke: #16327a; stroke-width: 1.5; filter: url(#wb-shadow); transition: r 0.15s ease-out; }
+.wb .mb-handle .ring { stroke: #2f5fd0; opacity: 0.22; stroke-width: 2; }
+.wb .mb-handle:hover .dot, .wb .mb-handle:focus-visible .dot, .wb .mb-handle.drag .dot { r: 16px; fill: url(#wb-pin) #2f5fd0; stroke: #f2b705; stroke-width: 3; filter: url(#wb-lift); }
+.wb .mb-name { fill: #ffffff; }
+.wb .mb-coord { fill: #2f5fd0; stroke: #fdfcf7; }
+/* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
+.wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
+</style>
+<style>
 /* Written: shared look for Stacked Multiplication (stackmult.html), Long Division (longdiv.html) and Stacked Addition and Subtraction (stackadd.html).
    A grid of digit boxes fills the board; written.js sizes it with --cs (one cell) so the digits stay as big as the window allows. */
 :root { --c1: var(--pt); --c2: #7a3fc0; --bd: #0f7f8c; }
@@ -182,8 +262,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .make button { flex: none; min-height: 48px; }
 .wr .hint { margin: 8px 0 0; }
 .err { margin: 8px 0 0; color: var(--warn); font-weight: 700; }
-#check { width: 100%; min-height: 60px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; background: var(--pt); color: var(--sheet); border: 2px solid var(--pt); }
-#check:hover { background: var(--sheet); color: var(--pt); }
+#check { width: 100%; min-height: 60px; font-size: 1.45rem; }
 .under { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
 .under label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; font-weight: 700; }
 .under input { width: 22px; height: 22px; accent-color: var(--pt); }
@@ -257,6 +336,24 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .msg .why .big { display: block; font-family: var(--font-num); font-weight: 700; font-size: 2.1rem; line-height: 1.3; }
 .msg .why .do { display: block; margin-top: 6px; font-family: var(--font-display); font-weight: 800; font-size: 1.45rem; line-height: 1.25; }
 .msg .why .tag { vertical-align: middle; }
+
+/* Notebook page (Shawn 2026-11-27, Workbench look): the work is written on a sheet of graph paper with a red margin
+   and binder holes, like a real math notebook. Fixed colours, so it looks the same in light and dark mode. */
+.wb .wr .board {
+  --ink: #1b2733; --muted: #6b6f78; --paper: rgba(255, 255, 255, 0.55); --sheet: #ffffff; --grid-major: #a9bfd6; --pt: #2f5fd0;
+  --green: #1f7a5a; --orange: #c2571a; --warn: #a3263c; --c1: #2f5fd0; --c2: #7a3fc0; --bd: #0f7f8c;
+  border: 0; border-radius: 6px; padding-left: 64px;
+  background:
+    radial-gradient(circle at 26px 50%, #d8dde3 0 8px, #b9c0c8 9px, transparent 10px) 0 0 / 100% 64px repeat-y,
+    linear-gradient(90deg, transparent 50px, #e58f8f 50px, #e58f8f 52px, transparent 52px),
+    linear-gradient(#d6e4f2 1px, transparent 1px) 0 0 / 26px 26px,
+    linear-gradient(90deg, #d6e4f2 1px, transparent 1px) 0 0 / 26px 26px,
+    #fdfcf7;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06), 0 10px 24px rgba(30, 40, 60, 0.16), 4px 4px 0 #f1efe6, 8px 8px 0 #e8e5da;
+  color: var(--ink);
+}
+.wb .wr .board .empty { color: #6b6f78; }
+.wb .wr .board .empty b { color: #2f5fd0; }
 </style>
 <!-- Long Division (grades 3 to 7): type a question like 126 ÷ 4 or press New question, work it out in the digit boxes,
      then Check answer finds the first wrong box. The answer goes above the bracket (blue); each step has a row to
@@ -266,7 +363,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
      are added after the point (grey) until it divides evenly, up to 3 decimal places; the student clicks where the
      point goes in the answer. A decimal divisor is turned away with how to make it whole. -->
 
-<div class="wrap">
+<div class="wrap wb">
   <header>
     <div><a class="main-btn" href="index.html"><span aria-hidden="true">←</span> Return to Main Page</a>
     <h1>Long Division</h1></div>
@@ -279,7 +376,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
   <div class="main wr">
     <div class="board" id="board"><p class="empty" id="empty">Type a question in the <b>Question</b> boxes, or press <b>New question</b>.</p></div>
     <div class="panel">
-      <section class="card">
+      <section class="card wb-card">
         <p class="label">Question</p>
         <div class="q">
           <input id="qa" data-pad="dec" type="text" inputmode="decimal" autocomplete="off" placeholder="number to share" aria-label="Number being divided">
@@ -295,12 +392,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
             <option value="3/2">3 digits ÷ 2 digits</option>
             <option value="4/2">4 digits ÷ 2 digits</option>
           </select>
-          <button type="button" id="newq">New question</button>
+          <button type="button" class="wb-btn" id="newq">New question</button>
         </div>
         <p class="err" id="err" hidden></p>
       </section>
-      <section class="card">
-        <button type="button" id="check">Check answer</button>
+      <section class="card wb-card">
+        <button type="button" class="wb-btn go" id="check">Check answer</button>
         <div class="under">
           <label><input type="checkbox" id="explain" checked> Show explanation</label>
           <button type="button" id="clear">Clear my work</button>

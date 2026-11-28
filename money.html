@@ -200,6 +200,28 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--pt); outlin
 .wb .trash .can { fill: #f3e6cc; stroke: #5a3818; } .wb .trash .rib { stroke: #5a3818; } .wb .trash .pad { stroke: rgba(58, 36, 16, 0.45); }
 /* .wb-board.paper: the whole drawing area is the cream work mat (tools whose drawing has no background of its own). */
 .wb .wb-board.paper svg { background: linear-gradient(180deg, #fffaf0, #f6ecd8); }
+/* .wb-board.graph (Shawn 2026-11-28, graphing tools): the coordinate grid is printed graph paper clipped to a
+   wooden clipboard. Fine blue lines, ink axes, points are glossy push pins that cast a small shadow. */
+.wb .wb-board.graph { position: relative; overflow: visible; }
+.wb .wb-board.graph svg { background: #fdfcf7; box-shadow: inset 0 0 0 1px rgba(60, 40, 20, 0.08); }
+.wb .wb-board.graph { --sheet: #fdfcf7; }
+.wb .wb-board.clip::before { content: ""; position: absolute; z-index: 3; left: 50%; top: -16px; width: 168px; height: 36px; transform: translateX(-50%);
+  border-radius: 10px 10px 18px 18px; pointer-events: none;
+  background: linear-gradient(180deg, #fbfcfd 0%, #d3d9df 38%, #9aa3ad 62%, #c4cbd2 100%);
+  box-shadow: 0 5px 10px rgba(20, 20, 30, 0.35), inset 0 1px 0 #fff, inset 0 -2px 3px rgba(0, 0, 0, 0.25); }
+.wb .wb-board.clip::after { content: ""; position: absolute; z-index: 4; left: 50%; top: -6px; width: 34px; height: 12px; transform: translateX(-50%);
+  border-radius: 6px; background: #4a525b; box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.6); pointer-events: none; }
+.wb .mb-minor { stroke: #d3e2ef; stroke-width: 1; }
+.wb .mb-major { stroke: #a8c3dc; stroke-width: 1.4; }
+.wb .mb-axis { stroke: #1b2733; stroke-width: 2.6; stroke-linecap: round; }
+.wb .mb-tick { fill: #1b2733; stroke: #fdfcf7; }
+.wb .mb-line { stroke: #1b2733; stroke-width: 3.4; filter: url(#wb-sunk); }
+.wb .mb-lbl-bg { fill: #fdfcf7; }
+.wb .mb-handle .dot { fill: url(#wb-pin) #2f5fd0; stroke: #16327a; stroke-width: 1.5; filter: url(#wb-shadow); transition: r 0.15s ease-out; }
+.wb .mb-handle .ring { stroke: #2f5fd0; opacity: 0.22; stroke-width: 2; }
+.wb .mb-handle:hover .dot, .wb .mb-handle:focus-visible .dot, .wb .mb-handle.drag .dot { r: 16px; fill: url(#wb-pin) #2f5fd0; stroke: #f2b705; stroke-width: 3; filter: url(#wb-lift); }
+.wb .mb-name { fill: #ffffff; }
+.wb .mb-coord { fill: #2f5fd0; stroke: #fdfcf7; }
 /* Buttons drawn on the board (Zero pair, Rotate, Duplicate, Delete) sit up off the mat like the HTML buttons. */
 .wb :is(.zp, .tb) .bg { filter: url(#wb-shadow); }
 </style>
@@ -447,6 +469,9 @@ const Workbench = (() => {
     // Glass marbles: one shading layer over any colour (light top-left, dark rim).
     const rg = el("radialGradient", { id: "wb-ball", cx: "38%", cy: "32%", r: "72%" }, d);
     [[0, "#fff", 0.6], [0.28, "#fff", 0], [0.72, "#000", 0], [1, "#000", 0.42]].forEach(([o, c, a]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": a }, rg));
+    // Push-pin heads for graph points: glossy blue, lit from the top left.
+    const pin = el("radialGradient", { id: "wb-pin", cx: "35%", cy: "30%", r: "75%" }, d);
+    [[0, "#b9ccff"], [0.35, "#4f7fe8"], [1, "#1a3a8f"]].forEach(([o, c]) => el("stop", { offset: o, "stop-color": c }, pin));
     // Burlap for cloth bags: a woven tan pattern.
     const bp = el("pattern", { id: "wb-burlap", width: 8, height: 8, patternUnits: "userSpaceOnUse" }, d);
     el("rect", { width: 8, height: 8, fill: "#d9bd8c" }, bp);
@@ -554,7 +579,16 @@ const Workbench = (() => {
     return g;
   }
 
-  return { defs, tile, chip, marble, wood, paper, text };
+  // One hidden page-wide copy of the defs, so pages that clear and redraw their SVG keep the shared materials.
+  function pageDefs() {
+    if (document.querySelector("svg.wb-page-defs")) return;
+    const s = el("svg", { class: "wb-page-defs", width: 0, height: 0, "aria-hidden": "true", style: "position:absolute;width:0;height:0;overflow:hidden" });
+    document.body.appendChild(s);
+    defs(s);
+  }
+  if (document.body) pageDefs(); else document.addEventListener("DOMContentLoaded", pageDefs);
+
+  return { defs, tile, chip, marble, wood, paper, text, pageDefs };
 })();
 </script>
 <script>
